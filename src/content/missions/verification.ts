@@ -60,7 +60,7 @@ export const theVerySureAnswer: Mission = {
           feedback: {
             tone: "strong",
             headline: "That is the big idea of this mission",
-            body: "These tools always sound sure. They sound exactly that sure when they are right and when they are wrong. So the sureness tells you nothing at all.",
+            body: "AskMe can sound sure when it is right and when it is wrong. That means the confident tone is not evidence. You still need something you can check.",
           },
           evidence: { skillId: "verify.confidence", result: "demonstrated" },
           next: "s4",
@@ -116,7 +116,7 @@ export const theVerySureAnswer: Mission = {
           feedback: {
             tone: "strong",
             headline: "Exactly right",
-            body: "They cannot both be true. And AskMe was equally confident both times. That is proof that confidence is not a clue.",
+            body: "They cannot both be true, but AskMe sounded equally sure both times. The tone did not help you choose. Now you need evidence you can check.",
           },
           evidence: { skillId: "verify.confidence", result: "demonstrated" },
           next: "s6",
@@ -243,9 +243,9 @@ export const theVerySureAnswer: Mission = {
         "Underneath it, in smaller letters, you write where you found out.",
       ],
       wrapUp: [
-        "AI tools sound just as sure when they are wrong as when they are right.",
-        "If it names no one, no one has checked it.",
-        "Two different answers to one question means you need a source from outside.",
+        "An AI answer can sound sure and still be wrong.",
+        "If an answer names no source, you cannot see who checked it.",
+        "When answers disagree, check a source outside the tool.",
       ],
     },
   ],
@@ -272,22 +272,22 @@ export const theVerySureAnswer: Mission = {
       {
         student: "It said it was confirmed, so somebody checked.",
         response:
-          "Have the class hunt for the name. No name, no check. This transfers directly to the benchmark items.",
+          "Have the class look for a source they can identify. If the answer does not show one, the class has no check it can repeat. This transfers directly to the benchmark items.",
       },
     ],
     extension:
-      "Give the class a real, harmless myth (bats are blind, we use ten percent of our brains) and race to find one named source that settles it.",
+      "Give the class a real, harmless myth (bats are blind, we use ten percent of our brains) and race to find one checkable source that settles it. Name the person or organisation responsible for the information.",
   },
   family: {
     summary:
-      "We learned that AI answers sound equally confident whether they are right or wrong. Your child watched the same tool give two different answers to the same question, then went and checked a book.",
+      "We learned that a confident AI answer can still be wrong. Your child watched the same tool give two different answers to the same question, then went and checked a book.",
     questions: [
       "How can you tell if something on a screen is true?",
       "If a computer sounds really sure, does that mean it is right?",
       "Where could you look to check a fact about animals?",
     ],
     tryAtHome:
-      "Pick a fact your family is not sure about and find one source with a real author's name on it.",
+      "Pick a fact your family is not sure about and find one source that names the person or organisation responsible for the information.",
     familyRule: "Sounding sure is not the same as being right.",
   },
 };

@@ -398,7 +398,7 @@ export const fourDoors: Mission = {
           feedback: {
             tone: "partial",
             headline: "It would give you a number",
-            body: "It might even be right. But a look-it-up source shows you who measured it, and an AI tool usually does not. For plain facts, prefer the door that names its source.",
+            body: "An AI tool can give you a number, but a number without a source is hard to check. For plain facts, choose a source that shows who measured it.",
           },
           evidence: { skillId: "own.toolchoice", result: "developing" },
           next: "s4",
@@ -578,7 +578,7 @@ export const fourDoors: Mission = {
       {
         student: "Looking it up and using a tool are the same thing.",
         response:
-          "Anchor on sourcing. A look-it-up source names who checked; an AI answer usually does not. That is the practical difference.",
+          "Anchor on checkability. A look-it-up source lets the student see who measured or published the fact. If a tool names a source, follow it and check that source before using the answer.",
       },
     ],
     extension:

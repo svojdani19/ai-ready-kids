@@ -79,19 +79,65 @@ describe("mission content integrity", () => {
     expect(Object.keys(MISSION_BY_SLUG)).toHaveLength(MISSIONS.length);
   });
 
-  it("keeps student-facing sentences short enough to read aloud at grade 3", () => {
+  it("keeps all student-facing sentences short enough to read aloud at grade 3", () => {
     for (const mission of MISSIONS) {
       for (const scene of mission.scenes) {
-        for (const line of scene.narration) {
-          const sentences = line.split(/(?<=[.?!])\s+/).filter(Boolean);
+        const studentStrings = [
+          ...scene.narration.map((text, index) => ({
+            label: `narration ${index + 1}`,
+            text,
+          })),
+          ...(scene.prompt ? [{ label: "prompt", text: scene.prompt }] : []),
+          ...(scene.wrapUp ?? []).map((text, index) => ({
+            label: `wrap-up ${index + 1}`,
+            text,
+          })),
+          ...(scene.choices ?? []).flatMap((choice) => [
+            { label: `choice ${choice.id}`, text: choice.label },
+            { label: `feedback headline ${choice.id}`, text: choice.feedback.headline },
+            { label: `feedback body ${choice.id}`, text: choice.feedback.body },
+          ]),
+        ];
+
+        for (const item of studentStrings) {
+          const sentences = item.text.split(/(?<=[.?!])\s+/).filter(Boolean);
           for (const sentence of sentences) {
             expect(
               sentence.split(/\s+/).length,
-              `${mission.slug}/${scene.id}: "${sentence}"`,
+              `${mission.slug}/${scene.id}/${item.label}: "${sentence}"`,
             ).toBeLessThanOrEqual(32);
           }
         }
       }
+    }
+  });
+
+  it("avoids brittle technical absolutes in student-facing guidance", () => {
+    const studentCopy = MISSIONS.flatMap((mission) =>
+      mission.scenes.flatMap((scene) => [
+        ...scene.narration,
+        scene.prompt ?? "",
+        ...(scene.wrapUp ?? []),
+        ...(scene.choices ?? []).flatMap((choice) => [
+          choice.label,
+          choice.feedback.headline,
+          choice.feedback.body,
+        ]),
+      ]),
+    )
+      .join(" ")
+      .toLowerCase();
+
+    // These phrases turn a useful habit into a false claim about every app,
+    // permission model or AI product. Keep the rule observable and durable.
+    for (const overclaim of [
+      "ai tools always sound sure",
+      "exactly where you are, all day",
+      "photos means every picture",
+      "if it names no one, no one has checked it",
+      "an ai tool usually does not",
+    ]) {
+      expect(studentCopy).not.toContain(overclaim);
     }
   });
 });

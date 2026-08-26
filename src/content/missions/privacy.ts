@@ -421,7 +421,7 @@ export const theFilterThatWantedMore: Mission = {
           feedback: {
             tone: "rethink",
             headline: "Location is the risky one",
-            body: "Location tells the app exactly where you are, all day, even when you are not using it. A fox filter has no reason to know that. Try again.",
+            body: "Location can tell an app where you are. A fox filter does not need that to add ears. Turn on only what the feature needs. Try again.",
           },
           next: "s3",
           retry: true,
@@ -432,7 +432,7 @@ export const theFilterThatWantedMore: Mission = {
           feedback: {
             tone: "partial",
             headline: "That is a real trade-off",
-            body: "You are thinking about what you get, which is good. But Photos means every picture on the tablet, including ones with other people in them. Camera only is the safer trade.",
+            body: "That would let the app use old pictures, including pictures with other people. But the live fox only needs the camera. Camera only shares less.",
           },
           evidence: { skillId: "privacy.media", result: "developing" },
           next: "s4",

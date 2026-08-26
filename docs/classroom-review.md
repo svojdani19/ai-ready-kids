@@ -115,6 +115,10 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       Warm without being babyish: this age group notices being talked down to.
 - [ ] **Instructional clarity.** Can a teacher say, in one sentence, what this
       screen teaches? Can a child?
+- [ ] **Technical durability.** Claims about permissions, sources and AI
+      behaviour are scoped to what the child can observe in the scenario. The
+      lesson teaches a checkable decision rule, not an absolute that will stop
+      being true when an app, device or model changes.
 - [ ] **Privacy.** Did this sprint add a field, a log, a timing, an export or
       an inference? If so, justify it against data minimisation or remove it.
       New columns are the thing to be suspicious of.
