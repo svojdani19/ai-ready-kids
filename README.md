@@ -30,7 +30,7 @@ Requires Node 22 or newer (developed on 24).
 | `npm run db:reset` | Rebuild the demo data (safe to run while `dev` is going) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint |
-| `npm test` | Vitest, 141 tests |
+| `npm test` | Vitest, 151 tests |
 | `npm run build` | Production build |
 | `npm run verify` | All four, in order |
 
@@ -128,6 +128,11 @@ the ending reads *Saving your badge…* first, and the ways out of the mission
 only open once it is recorded. Finishing a check-in waits visibly too, keeps all
 nine answers on failure, and routes onward only after the completion marker
 succeeds. Retries are idempotent.
+
+Coming back works too. A part-finished check-in resumes at the first story
+without an answer; one where every answer is saved but the completion marker
+never landed opens straight on a *Let's finish saving* screen, which says the
+answers are safe and asks for nothing but the final tap.
 Badges are flat: nine of them, all equal, no streaks, no timers, no points, no
 leaderboard. Read-aloud is available on every dense screen using the browser's
 own speech synthesis (playback only — no microphone is ever requested).
@@ -199,7 +204,10 @@ added the touch-board branch switcher and made every student save complete
 before the child moves on. Sprint 03's
 ([`docs/reviews/2026-08-26-sprint-03.md`](docs/reviews/2026-08-26-sprint-03.md))
 extended that to the last step of both flows, so nothing is claimed or exited
-before it is recorded.
+before it is recorded. Sprint 04's
+([`docs/reviews/2026-08-26-sprint-04.md`](docs/reviews/2026-08-26-sprint-04.md))
+added interrupted-session recovery and a visible keyboard focus ring on the
+check-in options.
 
 ---
 
@@ -299,7 +307,7 @@ and no font files.
 npm test
 ```
 
-141 tests across eight files:
+151 tests across eight files:
 
 - **`content.test.ts`** — structural safety review of all nine missions:
   reachability, termination, feedback coverage, retry-on-unsafe, evidence
@@ -335,7 +343,12 @@ npm test
   and never loses the pick, Try again resends and then advances, and the last
   story cannot finish on a failed save. Plus finalisation: it waits visibly,
   never routes away on failure, keeps every answer, ignores extra taps, and
-  finishes on a later retry.
+  finishes on a later retry. Plus interrupted-session recovery: a 9/9 unfinalized
+  check-in opens on the finishing screen and rewrites nothing, a partial set
+  still resumes at the first unanswered story, and a failure followed by a
+  remount finishes cleanly. Plus keyboard focus: Tab reaches the group, the ring
+  is painted on the visible card rather than the clipped input, and it stays
+  distinct from the selected state.
 - **`classroom-mode.test.tsx`** — branch comparison on a touch board: the
   switcher appears with the feedback, switches branches by click alone without
   leaving the scene, marks the live branch pressed, sets rather than toggles,

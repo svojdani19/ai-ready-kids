@@ -36,11 +36,30 @@ export function CheckInPlayer({
   initialResponses: Record<string, string>;
 }) {
   const router = useRouter();
-  const [stage, setStage] = useState<"intro" | "items" | "done">("intro");
-  const [index, setIndex] = useState(() => {
-    const firstUnanswered = content.items.findIndex((i) => !initialResponses[i.id]);
-    return firstUnanswered === -1 ? 0 : firstUnanswered;
-  });
+
+  /**
+   * Where a returning child picks up.
+   *
+   * Three states, not two. A part-finished check-in resumes at the first
+   * story without an answer. A check-in where every authored item already has
+   * a saved answer but the completion marker never landed is a *recovery*:
+   * the work is done and only the marker is missing, so the child opens
+   * straight on the finishing screen. The earlier code folded that case into
+   * "no unanswered item found, so start at zero", which marched a child back
+   * through all nine stories they had already answered — and invited them to
+   * rewrite answers that were only ever waiting on one failed request.
+   */
+  const firstUnanswered = content.items.findIndex((i) => !initialResponses[i.id]);
+  const recovering = content.items.length > 0 && firstUnanswered === -1;
+
+  const [stage, setStage] = useState<"intro" | "items" | "done">(
+    recovering ? "done" : "intro",
+  );
+  const [index, setIndex] = useState(
+    firstUnanswered === -1 ? Math.max(0, content.items.length - 1) : firstUnanswered,
+  );
+  /** True only for a session that opened straight on the finishing screen. */
+  const [openedInRecovery] = useState(recovering);
   /** Saved answers. Only ever written after an explicit confirmation. */
   const [responses, setResponses] = useState(initialResponses);
   /**
@@ -170,13 +189,20 @@ export function CheckInPlayer({
   }
 
   if (stage === "done") {
+    const closingLines = openedInRecovery
+      ? [
+          `You already answered all ${content.items.length} stories, and every one of them is safe.`,
+          "There is nothing to do again. Just tap Finish so we can write down that you are done.",
+        ]
+      : content.outro;
+
     return (
       <div className="mx-auto max-w-2xl">
         <h1 ref={headingRef} tabIndex={-1} className="font-display text-3xl text-ink focus:outline-none">
-          All done
+          {openedInRecovery ? "Let's finish saving" : "All done"}
         </h1>
         <div className="mt-5 space-y-3.5 rounded-3xl border-4 border-ink bg-pine-wash p-6">
-          {content.outro.map((line) => (
+          {closingLines.map((line) => (
             <p key={line} className="text-lg leading-relaxed text-ink">
               {line}
             </p>
@@ -205,7 +231,7 @@ export function CheckInPlayer({
                   ? "Try again"
                   : "Finish"}
             </Button>
-            <ReadAloud key="outro" text={content.outro.join(" ")} />
+            <ReadAloud key="outro" text={closingLines.join(" ")} />
           </div>
         </div>
       </div>
@@ -255,8 +281,15 @@ export function CheckInPlayer({
               const chosen = selected === option.id;
               return (
                 <li key={option.id}>
+                  {/* The real radio is visually hidden, so the focus ring has
+                      to be moved onto the card the child can actually see —
+                      otherwise tabbing into an unanswered group outlines a
+                      clipped 1px input and looks like nothing happened. The
+                      ring is marigold and sits outside the border, so it stays
+                      distinguishable from the denim selected state even when a
+                      card is both focused and chosen. */}
                   <label
-                    className={`ark-sticker flex w-full cursor-pointer items-start gap-3 rounded-2xl border-4 px-4 py-3.5 text-left transition-colors ${
+                    className={`ark-sticker flex w-full cursor-pointer items-start gap-3 rounded-2xl border-4 px-4 py-3.5 text-left transition-colors has-[input:focus-visible]:outline-4 has-[input:focus-visible]:outline-offset-[3px] has-[input:focus-visible]:outline-marigold-deep ${
                       chosen
                         ? "border-denim-deep bg-denim-wash"
                         : "border-ink bg-paper hover:bg-marigold-wash"
@@ -268,7 +301,7 @@ export function CheckInPlayer({
                       value={option.id}
                       checked={chosen}
                       onChange={() => select(option.id)}
-                      className="sr-only"
+                      className="sr-only focus-visible:outline-none"
                     />
                     <span
                       aria-hidden="true"

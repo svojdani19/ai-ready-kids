@@ -462,3 +462,162 @@ describe("check-in finalization", () => {
     expect(push).toHaveBeenCalledWith("/student");
   });
 });
+
+describe("check-in interrupted-session recovery", () => {
+  const allAnswered = Object.fromEntries(
+    content.items.map((i) => [i.id, i.options[0].id]),
+  );
+
+  it("opens straight on the finishing screen when every answer is already saved", () => {
+    render(<CheckInPlayer content={content} initialResponses={allAnswered} />);
+
+    expect(screen.getByRole("heading", { name: "Let's finish saving" })).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        `You already answered all ${content.items.length} stories, and every one of them is safe.`,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Finish" })).toBeEnabled();
+  });
+
+  it("does not march the child back through stories they have answered", () => {
+    render(<CheckInPlayer content={content} initialResponses={allAnswered} />);
+
+    // No story, no options, nothing to re-answer.
+    expect(screen.queryByRole("radio")).toBeNull();
+    expect(screen.queryByText(content.items[0].scenario)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Start" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Carry on" })).toBeNull();
+    expect(screen.queryByText(/Story \d+ of/)).toBeNull();
+  });
+
+  it("rewrites no answers on the way to finishing", async () => {
+    const user = userEvent.setup();
+    render(<CheckInPlayer content={content} initialResponses={allAnswered} />);
+
+    await user.click(screen.getByRole("button", { name: "Finish" }));
+
+    expect(submitCheckInAnswer).not.toHaveBeenCalled();
+    expect(finishCheckIn).toHaveBeenCalledTimes(1);
+    expect(push).toHaveBeenCalledWith("/student");
+  });
+
+  it("still resumes a partly answered check-in at the first unanswered story", async () => {
+    const partial = Object.fromEntries(
+      content.items.slice(0, 4).map((i) => [i.id, i.options[0].id]),
+    );
+    const user = userEvent.setup();
+    render(<CheckInPlayer content={content} initialResponses={partial} />);
+
+    // A partial set still goes through the intro, then lands on story 5.
+    expect(screen.queryByRole("heading", { name: "Let's finish saving" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Carry on" }));
+    expect(
+      screen.getByRole("heading", { name: `Story 5 of ${content.items.length}` }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(content.items[4].scenario)).toBeInTheDocument();
+  });
+
+  it("treats a check-in with no answers as a fresh start, not a recovery", () => {
+    render(<CheckInPlayer content={content} initialResponses={{}} />);
+    expect(screen.queryByRole("heading", { name: "Let's finish saving" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Start" })).toBeInTheDocument();
+  });
+
+  it("recovers after a finalization failure, a walk away, and a fresh open", async () => {
+    // First visit: every answer saved, then finishing fails.
+    finishCheckIn.mockRejectedValueOnce(new Error("Failed to fetch"));
+    const user = userEvent.setup();
+    const first = render(
+      <CheckInPlayer content={content} initialResponses={allAnswered} />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Finish" }));
+    expect(screen.getByRole("alert")).toBeInTheDocument();
+    expect(push).not.toHaveBeenCalled();
+
+    // The child closes the tab. The server still holds nine answers and no
+    // completion marker, which is exactly what the page would hand back.
+    first.unmount();
+
+    render(<CheckInPlayer content={content} initialResponses={allAnswered} />);
+    expect(screen.getByRole("heading", { name: "Let's finish saving" })).toBeInTheDocument();
+    expect(screen.queryByRole("radio")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Finish" }));
+    expect(submitCheckInAnswer).not.toHaveBeenCalled();
+    expect(push).toHaveBeenCalledWith("/student");
+  });
+
+  it("says 'All done' rather than the recovery copy on a normal finish", async () => {
+    const saved = Object.fromEntries(
+      content.items.slice(0, -1).map((i) => [i.id, i.options[0].id]),
+    );
+    const user = userEvent.setup();
+    render(<CheckInPlayer content={content} initialResponses={saved} />);
+    await user.click(screen.getByRole("button", { name: "Carry on" }));
+
+    const last = content.items.at(-1)!;
+    await user.click(screen.getByRole("radio", { name: last.options[0].label }));
+    await user.click(screen.getByRole("button", { name: "Finish" }));
+
+    expect(screen.getByRole("heading", { name: "All done" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Let's finish saving" })).toBeNull();
+  });
+});
+
+describe("check-in keyboard focus visibility", () => {
+  it("moves focus into the option group with Tab and shows it on the card", async () => {
+    const user = await startCheckIn();
+    const first = content.items[0];
+
+    await user.tab();
+    let guard = 0;
+    while (
+      guard++ < 12 &&
+      (document.activeElement as HTMLElement)?.getAttribute("type") !== "radio"
+    ) {
+      await user.tab();
+    }
+
+    const focused = document.activeElement as HTMLInputElement;
+    expect(focused.type).toBe("radio");
+    expect(focused.value).toBe(first.options[0].id);
+
+    // The ring is painted on the visible card, not the clipped input.
+    const card = focused.closest("label")!;
+    expect(card.className).toContain("has-[input:focus-visible]:outline-4");
+    expect(card.className).toContain("has-[input:focus-visible]:outline-marigold-deep");
+    expect(focused.className).toContain("focus-visible:outline-none");
+  });
+
+  it("keeps the focus ring distinct from the selected state", async () => {
+    const user = await startCheckIn();
+    const first = content.items[0];
+
+    await user.click(screen.getByRole("radio", { name: first.options[1].label }));
+    const card = screen
+      .getByRole("radio", { name: first.options[1].label })
+      .closest("label")!;
+
+    // Selected is denim on the border and background; focus is a marigold
+    // outline outside it. A card can show both at once without ambiguity.
+    expect(card.className).toContain("border-denim-deep");
+    expect(card.className).toContain("bg-denim-wash");
+    expect(card.className).toContain("has-[input:focus-visible]:outline-marigold-deep");
+  });
+
+  it("selects with arrow keys once the group has focus", async () => {
+    const user = await startCheckIn();
+    const first = content.items[0];
+
+    screen.getAllByRole("radio")[0].focus();
+    await user.keyboard("{ArrowDown}");
+
+    expect(screen.getByRole("radio", { name: first.options[1].label })).toBeChecked();
+    expect(document.activeElement).toBe(
+      screen.getByRole("radio", { name: first.options[1].label }),
+    );
+    expect(submitCheckInAnswer).not.toHaveBeenCalled();
+  });
+});

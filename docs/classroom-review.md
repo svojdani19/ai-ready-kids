@@ -80,6 +80,10 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       failure must leave them where they are, with what they chose still on
       screen and one obvious way to retry. School wifi drops; silent data loss
       in an assessment is undetectable afterwards.
+- [ ] **Coming back works.** Close the tab mid-flow and reopen it, including
+      after a failed save. A child must land where their work actually left
+      off — never earlier, and never anywhere that invites them to redo or
+      overwrite something already stored.
 - [ ] **Nothing is claimed before it is recorded.** Badges, "all done", streak-
       free congratulations of any kind: if it asserts that something was
       written down, it does not appear until it was. Check the last step of
@@ -92,6 +96,11 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       than via the action that would lose their work.
 - [ ] **Keyboard and touch both work.** Tab order follows the reading order;
       focus is visible; focus moves with the content when the content changes.
+- [ ] **Focus is visible on the thing the child can see.** Any control whose
+      real input is visually hidden — a card wrapping an `sr-only` radio or
+      checkbox — must paint its focus ring on the visible element. Tab into it
+      and look; do not infer it from the markup. The focused state must also
+      stay distinct from the selected state when a control is both.
 - [ ] **Feedback is calm.** No buzzers, no red X, no shame. A wrong choice
       explains and offers another go.
 - [ ] **No addictive mechanics.** No streaks, countdowns, points-per-second,
