@@ -1,0 +1,149 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   AI Ready Kids design tokens.
+   Warm paper-and-ink palette. Deliberately no multi-stop "AI" gradients:
+   surfaces are flat, depth comes from solid offset shadows and rules.
+   ------------------------------------------------------------------ */
+@theme {
+  --color-ink: #241f1a;
+  --color-ink-soft: #574e45;
+  /* Darkened from #857a6e, which measured 3.94:1 on paper. This token
+     carries eyebrow labels, hints and table metadata — the smallest text
+     in the product — so it has to clear 4.5:1 on paper, white and the
+     paper-deep wells alike. */
+  --color-ink-faint: #6a5f53;
+  --color-paper: #fdf7ee;
+  --color-paper-deep: #f7ecdc;
+  --color-surface: #ffffff;
+  --color-sand: #efe3d1;
+  --color-sand-deep: #d9c4a5;
+
+  --color-marigold: #e08a1e;
+  --color-marigold-deep: #9c5605;
+  --color-marigold-wash: #fdefd6;
+
+  --color-pine: #1c6b58;
+  --color-pine-deep: #12503f;
+  --color-pine-wash: #e2f0eb;
+
+  --color-denim: #2b6193;
+  --color-denim-deep: #1d4770;
+  --color-denim-wash: #e5eef6;
+
+  --color-berry: #a8375a;
+  --color-berry-deep: #7f2340;
+  --color-berry-wash: #fbe6ec;
+
+  --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino,
+    "Times New Roman", serif;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+
+  --radius-sticker: 1.25rem;
+
+  --shadow-sticker: 0 3px 0 0 var(--color-sand-deep);
+  --shadow-sticker-deep: 0 5px 0 0 var(--color-sand-deep);
+  --shadow-panel: 0 1px 2px 0 rgb(36 31 26 / 0.06), 0 8px 24px -12px rgb(36 31 26 / 0.18);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-synthesis-weight: none;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+
+  /* One visible, high-contrast focus ring everywhere. */
+  :focus-visible {
+    outline: 3px solid var(--color-denim-deep);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+}
+
+@layer components {
+  /* Chunky "sticker" control used across the student experience. */
+  .ark-sticker {
+    box-shadow: var(--shadow-sticker);
+    transition:
+      transform 120ms ease,
+      box-shadow 120ms ease;
+  }
+
+  .ark-sticker:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow: 0 0 0 0 var(--color-sand-deep);
+  }
+
+  .ark-tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Ruled paper texture for story panels; two flat repeating lines only. */
+  .ark-ruled {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 39px,
+      var(--color-sand) 39px,
+      var(--color-sand) 40px
+    );
+  }
+}
+
+/* Honour the OS reduced-motion setting for every animation we ship. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .ark-sticker:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+@media print {
+  .ark-no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .ark-print-plain {
+    box-shadow: none !important;
+    border-color: #999 !important;
+  }
+
+  a[href]::after {
+    content: "";
+  }
+
+  @page {
+    margin: 1.6cm;
+  }
+}

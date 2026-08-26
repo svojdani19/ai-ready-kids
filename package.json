@@ -1,0 +1,44 @@
+{
+  "name": "ai-ready-kids",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3210",
+    "build": "next build",
+    "start": "next start --port 3210",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:reset": "tsx scripts/reset-db.ts",
+    "verify": "npm run typecheck && npm run lint && npm run test && npm run build"
+  },
+  "dependencies": {
+    "next": "16.3.3",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.6",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.1.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.3",
+    "jsdom": "^30.0.1",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.12",
+    "typescript": "^5",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.11"
+  },
+  "allowScripts": {
+    "unrs-resolver@1.12.2": true
+  },
+  "description": "AI safety practice and benchmarking for grades 2-4"
+}

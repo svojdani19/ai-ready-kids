@@ -1,0 +1,408 @@
+# AI Ready Kids
+
+An annual school-subscription platform that gives students in grades 2–4
+rehearsed practice at the decisions AI actually puts in front of them, and
+gives their school something honest to report about it.
+
+It is not an AI tutor, a chatbot, a coding course, or detection software. There
+is no generative model anywhere in the request path: every word a child can
+read was written by a person and ships with the build.
+
+---
+
+## Run it
+
+```bash
+npm install
+npm run db:reset
+npm run dev
+```
+
+Then open **http://localhost:3210**. No API keys, no `.env`, no Docker, no
+database server. Persistence is SQLite through Node's built-in `node:sqlite`,
+so there is no native module to compile either.
+
+Requires Node 22 or newer (developed on 24).
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Dev server on port 3210 |
+| `npm run db:reset` | Rebuild the demo data (safe to run while `dev` is going) |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run lint` | ESLint |
+| `npm test` | Vitest, 141 tests |
+| `npm run build` | Production build |
+| `npm run verify` | All four, in order |
+
+---
+
+## Demo paths
+
+The landing page has a **Demo** section with one-click entry for each role, and
+the same three buttons appear on the sign-in page. Everything below is
+fictional: no real school, staff member or child appears anywhere in this
+repository.
+
+| Role | How to get in | What you land in |
+| --- | --- | --- |
+| **Student** | Landing page → *Open the student demo* | Amina A., Grade 3: 7 of 9 missions finished, 7 badges, 8 of 9 skills demonstrated |
+| **Student (real route)** | `/join` → class code **`MAPLE-317`** → tap a name | The flow a child actually uses. Codes are case- and punctuation-insensitive: `maple 317` works |
+| **Teacher** | Landing page → *Open the teacher demo* | Amara Okafor, Room 12: 23 students, nine missions assigned, certification complete |
+| **Administrator** | Landing page → *Open the administrator demo* | Rosa Delgado, Instructional Technology: 4 classes, 90 students, a full year of data, renewal due |
+| **Family** | `/family/four-doors` | Printable take-home. No account, nothing to sign into |
+
+Staff can also sign in by email with no password: `a.okafor@brightwood.demo`,
+`r.delgado@brightwood.demo`, and the rest are listed on `/signin`.
+
+Other class codes: `ACORN-208` (Grade 2), `HERON-455` (Grade 4), `CEDAR-361`
+(Grade 3).
+
+### Worth looking at specifically
+
+- `/teacher/classroom/sprocket-wants-to-know` — **Classroom Mode**, the
+  projector experience. Arrow keys drive it; `1`/`2`/`3` reveal what any branch
+  does and `Esc` returns to the list; `N` toggles your notes. On a touch board,
+  the branch switcher does all of that without a keyboard.
+- `/teacher/missions/the-very-sure-answer` — every scene, every branch and
+  every coach note in one page, before you assign anything.
+- `/admin/report` — the annual report, with CSV and JSON export.
+- `/admin/data` — what is collected, what is refused, when it deletes.
+- `/privacy` — the public data model.
+
+---
+
+## The curriculum
+
+Three competencies, three named skills each, three missions each. Nine missions,
+seven to nine minutes apiece.
+
+| Competency | Skills | Missions |
+| --- | --- | --- |
+| **Privacy and Personal Information** | withholds identifying information · evaluates photo, camera and location requests · stops and involves a trusted adult | Sprocket Wants to Know · The Filter That Wanted More · The Question at Bedtime |
+| **Verification and Evidence** | separates confident delivery from accuracy · spots indicators of synthetic media · checks a claim against an authoritative source | The Very Sure Answer · The Penguin on the Playground · Two Answers, One Truth |
+| **Learning Ownership** | attempts the task before asking · chooses think / look up / ask a person / use AI · reports assistance accurately | The Homework That Did Itself · Four Doors · The Spelling Test Surprise |
+
+All nine share a cast and a setting — Room 12 at Brightwood Elementary, Theo,
+Ms. Okafor, Mr. Ruiz — so a class builds continuity across the year.
+
+### Content model
+
+A mission is a finite graph of authored scenes (`src/content/types.ts`):
+
+```
+Mission → Scene[] → Choice[] → Feedback + Evidence + next
+```
+
+Rules the structure enforces, checked by `tests/content.test.ts` on every
+shipped mission:
+
+- Every scene is reachable from the opening and every path terminates.
+- Every choice carries authored feedback. There is no generated text.
+- Every `rethink` (unsafe) choice **loops back and records no evidence**, so a
+  child is never locked into an unsafe path and never penalised for exploring.
+- Every `strong` choice records evidence against a skill that exists.
+- No student-facing sentence runs longer than 32 words.
+- Both benchmark forms are balanced by competency and share no scenario with
+  any mission, so the spring window measures transfer rather than recall.
+
+Coach notes are authored per choice and are shown only to teachers, in the
+mission preview and in Classroom Mode's hideable notes strip. A component test
+asserts a student never sees one.
+
+---
+
+## The four experiences
+
+**Student.** Joins with a class code and taps their own name — no password, no
+account. A competency map, not a score. Missions resume where they were left.
+Check-in answers take two deliberate taps — one to select, one to confirm — so a
+stray finger on a trackpad cannot silently record an answer a child never meant.
+Nothing advances until the server has confirmed the save: on a dropped school
+network the child stays put with their answer intact and a calm *Try again*,
+because assessment data that vanishes quietly is worse than a save that fails
+loudly. Mission decisions work the same way — the authored feedback appears at
+once, but the way forward waits until the choice is recorded.
+
+The same holds at the end. A badge is not claimed until completion is written:
+the ending reads *Saving your badge…* first, and the ways out of the mission
+only open once it is recorded. Finishing a check-in waits visibly too, keeps all
+nine answers on failure, and routes onward only after the completion marker
+succeeds. Retries are idempotent.
+Badges are flat: nine of them, all equal, no streaks, no timers, no points, no
+leaderboard. Read-aloud is available on every dense screen using the browser's
+own speech synthesis (playback only — no microphone is ever requested).
+
+**Teacher.** Preview every branch before assigning. Completion and demonstrated
+skills per student. A printable discussion guide and a family take-home for
+each mission. **Classroom Mode** for teaching a mission on a projector or
+interactive board. A five-module, ~38-minute micro-certification with a
+printable certificate.
+
+**Administrator.** School-level trends only — there is no route in the product
+that shows an administrator a named student's answers. Fall-to-spring benchmark
+growth on matched students. Staff and class management, retention controls with
+real deletion, an audit log, a subscription placeholder, and an exportable
+annual report.
+
+**Family.** A one-page take-home per mission: what was practised, three
+questions to ask, one thing to try, and one sentence worth keeping. Public
+links, no parent account, nothing to submit.
+
+### Classroom Mode
+
+The teacher-led facilitation experience, and the piece most products in this
+space skip. It differs from the student player in three deliberate ways:
+
+1. **It records nothing.** A group lesson is instruction, not assessment.
+2. **The teacher can reveal any branch**, including the ones that loop back.
+   In a group the most valuable question is "what would have happened if we
+   picked B?", and a child should not have to answer wrongly on purpose.
+3. **Type is sized for the back of a room**, scaling with the viewport rather
+   than sitting at a fixed size.
+
+It also carries a pre-flight plan screen, a hands-up tally that is cleared on
+every scene change and never leaves the browser, hideable coach notes, keyboard
+driving, and a paced debrief built from the mission's discussion questions.
+
+While a branch is open, a **branch switcher** keeps every other branch one tap
+away, so a teacher on a touch-only board can compare A, B and C without leaving
+the decision. It is kept visually and verbally distinct from the hands-up tally:
+one changes what the room is reading, the other counts votes.
+
+---
+
+## Post-sprint classroom review
+
+**Standing requirement, documented in `docs/classroom-review.md`.** Every sprint
+ends with a classroom-centered product and UI review, and the findings are fixed
+before the sprint is called complete.
+
+The review has three parts: **teacher-led group instruction** (projector
+legibility, teacher preview and control, branch reveal, whole-class prompts,
+transitions, driving without a mouse), **independent grade 2–4 use** (reading
+load, narration, 44px targets, no confusing states, keyboard and touch, calm
+feedback, no addictive mechanics), and a cross-cutting pass covering
+developmental appropriateness, instructional clarity, privacy, accessibility,
+cultural inclusion and teacher workload.
+
+Every feature is judged against the actual goal — building calibrated trust and
+safe habits, and preparing children for later responsible use — rather than
+against engagement or tool familiarity.
+
+Reviews are recorded in `docs/reviews/`. The first is
+[`docs/reviews/2026-08-26-sprint-01.md`](docs/reviews/2026-08-26-sprint-01.md),
+which is what produced Classroom Mode, its sticky launch control, the two-step
+check-in answering rule, the 44px touch-target pass, read-aloud in the
+check-in, and seven bug fixes. Sprint 02's review
+([`docs/reviews/2026-08-26-sprint-02.md`](docs/reviews/2026-08-26-sprint-02.md))
+added the touch-board branch switcher and made every student save complete
+before the child moves on. Sprint 03's
+([`docs/reviews/2026-08-26-sprint-03.md`](docs/reviews/2026-08-26-sprint-03.md))
+extended that to the last step of both flows, so nothing is claimed or exited
+before it is recorded.
+
+---
+
+## Privacy model
+
+The strongest protection available here is not collecting the data.
+
+**Held about a student:** a display name (first name, last initial), an assigned
+animal avatar, their class, which authored choices they tapped, which check-in
+options they selected, and open/complete timestamps. That is the entire list.
+
+**Has no column in the schema:** surnames, dates of birth, addresses, phone
+numbers, student email, photographs, audio, video, location, IP geolocation,
+device fingerprints, time-on-task, idle timers, keystroke timing, risk scores,
+readiness bands, personality inferences, advertising identifiers, third-party
+analytics.
+
+These are absent from `src/lib/db/schema.ts`, not merely hidden from the UI — a
+column that exists eventually gets filled in. `tests/access-control.test.ts`
+asserts the `students` table has exactly five columns and that no telemetry or
+scoring table exists.
+
+Other load-bearing decisions:
+
+- **Children cannot type free text anywhere.** Every student input is a tap on
+  an authored option, so there is nothing a child could disclose for us to store.
+- **No camera, microphone, ads or trackers.** The product requests no device
+  permission at any point.
+- **Teachers see their roster; administrators see aggregates.** Groups below
+  five students are reported as "too few to report", in the product and in every
+  export, the way state report cards handle small cells.
+- **Deletion is a date, not a paragraph.** The admin sets a retention window and
+  sees the resulting deletion date per class before clicking anything. Deleting
+  removes the roster, every attempt and both check-ins in one operation; rows are
+  removed, not flagged. Every configuration change and deletion writes an audit
+  entry.
+- **Reporting shows demonstrated competencies, never labels.** There is no
+  overall score for a child anywhere in the product.
+
+**On FERPA and COPPA.** Mission and check-in records are education records under
+FERPA, held and deleted by the school on its own schedule. Because the product
+collects no personal information beyond a display name a teacher chose, and
+gives a child no way to disclose any, the COPPA surface is deliberately small.
+This is an accurate description of how the software is built. It is not a legal
+opinion and AI Ready Kids claims no compliance certification.
+
+---
+
+## Architecture
+
+Next.js 16 App Router · React 19 · TypeScript strict · Tailwind CSS 4 ·
+`node:sqlite` · Vitest.
+
+```
+src/
+  content/        Missions, benchmark forms, certification, competencies.
+                  Pure data — no imports from lib or app.
+  lib/
+    db/           Schema, connection, demo seed, reset
+    repo/         Data access, one module per aggregate. Server-only.
+    domain/       Pure logic: evidence, benchmark scoring, retention,
+                  mission-path walking and content validation
+    auth/         Signed-cookie sessions; token logic split out to be testable
+  components/     Design system, original SVG art, staff and student widgets
+  app/            Routes. Server Components by default; Server Actions for
+                  every mutation
+docs/             The classroom review checklist and recorded reviews
+tests/            92 tests
+```
+
+**Why `node:sqlite`.** Real persistence with no native module to compile, no
+database server to run and nothing to configure. `openDatabase(path)` is
+exported separately from the process singleton so every test file gets its own
+isolated database.
+
+**Server Actions validate everything.** A submitted decision is re-checked
+against the shipped content before it is written, and staff actions verify the
+target class belongs to the caller's school. The browser can only ever ask to
+record something that exists in the authored graph.
+
+**Evidence is sticky.** Once a student demonstrates a skill, a later weaker
+answer does not downgrade it. This is a record of what a child can do, not an
+average, and a replay of a finished mission records nothing at all.
+
+**Design.** A warm paper-and-ink palette with flat surfaces and solid offset
+shadows — deliberately not the gradient-and-glass house style. All illustration
+is original inline SVG. Student surfaces use chunky "sticker" controls with 4px
+ink borders; adult dashboards use hairline borders, tabular numerals and a calm
+neutral palette. System font stacks throughout, so the build needs no network
+and no font files.
+
+---
+
+## Testing
+
+```bash
+npm test
+```
+
+141 tests across eight files:
+
+- **`content.test.ts`** — structural safety review of all nine missions:
+  reachability, termination, feedback coverage, retry-on-unsafe, evidence
+  validity, skill coverage, reading level. Plus benchmark balance, form pairing,
+  transfer-scenario enforcement and the rule that no student-facing check-in copy
+  frames the check-in as a graded test.
+- **`student-journey.test.ts`** — join by code (case, spacing, punctuation,
+  bad codes), roster shape, a full mission walk-through, resume, sticky evidence,
+  badge award, replay, both check-in windows and per-competency scoring.
+- **`teacher-journey.test.ts`** — class creation and unique codes, roster
+  add/remove with cascade, assign/unassign idempotency, cohort summaries,
+  next-teaching-focus, started-versus-completed, and the certification flow.
+- **`admin-journey.test.ts`** — report assembly, matched-only growth,
+  null-not-zero before the spring window, export contains no identifiers,
+  small-cell suppression, CSV escaping, retention arithmetic, cascading deletes
+  and audit entries.
+- **`access-control.test.ts`** — session signing and five tamper cases,
+  content validation of submitted ids, school scoping, and the schema assertions
+  that keep the student record minimal.
+- **`mission-player.test.tsx`** — the real player component under React
+  Testing Library: authored feedback, unsafe choices looping back, coach notes
+  never reaching a student, the polite live region, badge award, replay recording
+  nothing, and keyboard operation. Plus completion integrity: the badge is not
+  claimed while the save is in flight, no exit exists until it lands, a failure
+  keeps the wrap-up and offers a retry without claiming the badge, and a replay
+  is immediate and write-free.
+- **`checkin-player.test.tsx`** — the two-step answering rule: a first tap
+  selects and saves nothing, Next stays disabled until something is chosen,
+  changing a mind before confirming saves only the last pick, Back restores the
+  saved answer and discards unconfirmed edits, resume lands on the first
+  unanswered story, and no score is ever shown. Plus save resilience: a held-open
+  save keeps the child on the story, a rejected or dropped save never advances
+  and never loses the pick, Try again resends and then advances, and the last
+  story cannot finish on a failed save. Plus finalisation: it waits visibly,
+  never routes away on failure, keeps every answer, ignores extra taps, and
+  finishes on a later retry.
+- **`classroom-mode.test.tsx`** — branch comparison on a touch board: the
+  switcher appears with the feedback, switches branches by click alone without
+  leaving the scene, marks the live branch pressed, sets rather than toggles,
+  returns to the list, keeps the question visible, still answers number keys and
+  Escape, stays distinct from the hands-up tally, names every control by its
+  effect, and records nothing.
+
+Verified in the browser at 1280×800 and 1366×768 (projector and classroom
+laptop), 890×762 and 768×1024 (tablet portrait) across student, teacher and
+administrator surfaces, with every student-facing control measured against the
+44px minimum.
+
+---
+
+## Assumptions
+
+- **One school per deployment.** The schema carries `school_id` throughout and
+  the queries are scoped, but the UI assumes a single school. District rollup is
+  a real change, not a config flag.
+- **Teachers enter rosters by hand.** Reasonable for a pilot, not for a
+  district; see roster sync below.
+- **The school year is `2025–2026`** and the demo sits just after it ends, so
+  renewal is due and the annual report is ready to export.
+- **Class codes are the whole student security model.** Proportionate to what
+  sits behind them — a child's own progress list — and replaced by SSO in
+  production.
+- **Read-aloud uses the browser's voice.** Quality varies by platform. Recorded
+  narration per mission is the right answer and is a content job.
+- **Prices on the landing page are illustrative.**
+
+## Deliberately deferred
+
+Everything here is a production integration, not a missing feature:
+
+- **Roster sync — Clever, ClassLink, Google Classroom.** The data model is
+  shaped for it: classes own students, students carry an opaque id, and nothing
+  depends on how a roster arrived. Needs an external id column, a sync job and
+  conflict handling for mid-year moves.
+- **SSO — SAML or OIDC, Google Workspace for Education, Clever Instant Login.**
+  `src/lib/auth/` is the only thing that changes; every route already asks a
+  session for a user and a role. The email-only sign-in exists so a local
+  reviewer needs no credentials, and is not production authentication.
+- **Billing.** The plan page records an intent and writes an audit entry. It
+  takes no card details, stores no billing identifiers and calls no payment
+  processor. Schools buy on a purchase order, so the real flow is quote → PO →
+  invoice, which is an account-team workflow before it is software.
+- **Production hosting.** SQLite on a local disk suits one school on one box.
+  Multi-school hosting wants Postgres; the repository layer is the seam, and the
+  domain logic is already pure functions over plain objects.
+- **Backups and soft delete.** Deletion here is immediate and final. Production
+  wants a grace period and a restore path — but note that a grace period is a
+  privacy trade-off, not a free win, and should be a district decision.
+- **Rate limiting, CSRF hardening, audit export, email.** Standard production
+  work, none of it load-bearing for evaluating the product.
+- **Accessibility audit with real users.** The build meets WCAG AA contrast, is
+  keyboard operable, honours reduced motion and has been screen-reader
+  smoke-tested. It has not been tested with children who use assistive
+  technology, which is the only test that actually counts.
+
+## Next steps for a district deployment
+
+1. Roster sync and SSO, in that order — they remove the two biggest sources of
+   teacher setup work.
+2. Postgres behind the existing repository interface, then multi-school and
+   district rollup reporting.
+3. Record professional narration for all nine missions and both check-in forms.
+4. Run the accessibility audit with students who use assistive technology, and
+   a reading-level review with a literacy specialist.
+5. Pilot with two or three schools across a full year and publish the benchmark
+   growth honestly, including where it did not move.

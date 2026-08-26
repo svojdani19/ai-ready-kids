@@ -1,0 +1,17 @@
+node_modules
+.next
+out
+build
+next-env.d.ts
+*.tsbuildinfo
+
+# Local demo database. Rebuild any time with `npm run db:reset`.
+/data/*.db
+/data/*.db-wal
+/data/*.db-shm
+
+.DS_Store
+*.log
+.env*
+!.env.example
+tsconfig.tsbuildinfo

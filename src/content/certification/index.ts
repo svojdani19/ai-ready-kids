@@ -1,0 +1,146 @@
+import type { CertificationModule } from "../types";
+
+/**
+ * "AI Ready Educator: Foundations" — a five module, roughly forty minute
+ * micro-certification for classroom teachers. It is deliberately short,
+ * text-only and printable, because the realistic slot for this is a staff
+ * meeting or a prep period, not a summer institute.
+ */
+export const CERTIFICATION_MODULES: CertificationModule[] = [
+  {
+    id: "cert-1",
+    order: 1,
+    title: "What grades 2 to 4 actually need",
+    minutes: 7,
+    body: [
+      "Seven to ten year olds are not going to be taught their way out of encountering AI. They meet it in a sibling's phone, a game, a smart speaker in someone else's kitchen, and a search box that now answers in sentences. The question is not whether they will use it. It is whether the first time they meet a request for their address, or a confident wrong answer, is the first time they have thought about it.",
+      "That is the whole design brief for this program: practice before exposure. Children at this age are concrete thinkers, and they learn decision rules far better from specific situations than from principles. So the curriculum is nine situations, not nine rules.",
+      "What this age band can genuinely do is impressive. They can distinguish a fact about themselves from a fact that locates them. They can hold the idea that a confident voice proves nothing. They can tell you which of four kinds of help fits a problem. What they cannot yet do reliably is generalise from an abstract warning, which is why every mission is a story with a decision in it.",
+    ],
+    keyPoints: [
+      "Practice before exposure, not after an incident",
+      "Concrete situations transfer better than stated rules at this age",
+      "The goal is a decision habit, not fear of technology",
+    ],
+    check: {
+      question: "A colleague suggests waiting until fifth grade, when students actually get accounts. What is the strongest response?",
+      options: [
+        { id: "a", label: "Students already encounter AI outside school, so the practice needs to come first", correct: true },
+        { id: "b", label: "Fifth grade is too late for any technology instruction", correct: false },
+        { id: "c", label: "Younger students learn abstract rules more easily", correct: false },
+      ],
+      explanation:
+        "Exposure is not controlled by the school's account policy. Children meet these systems in homes, cars and other people's devices well before a district issues them a login, so the rehearsal has to precede the account.",
+    },
+  },
+  {
+    id: "cert-2",
+    order: 2,
+    title: "Student data and the tools in your room",
+    minutes: 8,
+    body: [
+      "The practical risk in an elementary classroom is rarely dramatic. It is a free app, adopted quickly because it solved a real problem on a hard week, that quietly collects more than it needs. Under FERPA the school stays responsible for education records even when a vendor holds them, and under COPPA a vendor collecting personal information from a child under thirteen needs verifiable consent, which schools can give for educational use only in limited circumstances.",
+      "None of that requires you to become a lawyer. It requires three habits. Check whether a tool is on your district's approved list before students touch it. Notice what the tool asks students to type. Report it when a tool asks for something it does not need.",
+      "The most useful thing you can model is the last one. When you tell a class that you turned an app off because it asked for their addresses, you have taught the lesson better than any mission can.",
+    ],
+    keyPoints: [
+      "The common failure is a well-meant quick adoption, not a malicious vendor",
+      "Approved list first, then watch what students are asked to type",
+      "Reporting a bad request out loud teaches the class more than a slide does",
+    ],
+    check: {
+      question: "A free reading app asks each student for a full name, birthday and home ZIP code at sign-up. What is the right first move?",
+      options: [
+        { id: "a", label: "Have students enter initials instead and continue", correct: false },
+        { id: "b", label: "Stop, and check the district approved list before students use it", correct: true },
+        { id: "c", label: "Let students use it but skip the birthday field", correct: false },
+      ],
+      explanation:
+        "Field-level workarounds still put the class in a tool nobody has vetted. The check belongs before use, and the request itself is worth reporting so the next classroom does not repeat it.",
+    },
+  },
+  {
+    id: "cert-3",
+    order: 3,
+    title: "Teaching verification without teaching cynicism",
+    minutes: 8,
+    body: [
+      "There is a failure mode at the other end of this work, and it is worth naming early. A student who concludes that nothing can be known and everything is fake has not become a critical thinker. They have become unreachable, and they are harder to teach than the student who believes the first answer.",
+      "The move that avoids it is to always pair doubt with a destination. Never stop at that might not be true. Always continue with so where would we find out. Every verification mission in this program ends at a source, not at a shrug.",
+      "The second thing to protect is the student's self-image as a detector. Synthetic media is getting better every year, and a curriculum built on spotting six fingers will expire. Teach provenance as the durable skill: who made this, who saw it happen, does it match what I know first-hand. Artefact-spotting is a bonus, not the lesson.",
+    ],
+    keyPoints: [
+      "Pair every doubt with a destination: where would we find out",
+      "Provenance outlasts artefact-spotting",
+      "Universal cynicism is a failure of the unit, not a success",
+    ],
+    check: {
+      question: "A student announces that all photos online are fake now. What is the best response?",
+      options: [
+        { id: "a", label: "Agree, since generated images are now very common", correct: false },
+        { id: "b", label: "Correct them and move on with the lesson", correct: false },
+        { id: "c", label: "Ask them how they could find out whether one specific photo is real", correct: true },
+      ],
+      explanation:
+        "Blanket disbelief is as unhelpful as blanket belief and cannot be argued away. Redirecting to a specific, answerable question gives the student a method instead of a posture.",
+    },
+  },
+  {
+    id: "cert-4",
+    order: 4,
+    title: "Protecting learning ownership",
+    minutes: 8,
+    body: [
+      "Over-reliance in elementary school almost never looks like cheating. It looks like a child who believes that homework is a product to be handed in, meeting a tool that produces exactly that product. The belief comes first, and it is one we teach accidentally every time completion is what gets praised.",
+      "The practical intervention is small and repeatable. Ask the class what the assignment is for before it starts. If the answer is practice, then the practice has to happen in the student's own handwriting or their own mouth, and a tool's job is to check afterwards. If the answer is producing a thing, a tool may legitimately help make it.",
+      "Give students a sentence for asking well. Give me a hint, not the answer. Ask me a question about it. Tell me if my first step is right. Children who have these sentences use tools better than children who have a ban, because a ban ends the moment they are unsupervised.",
+    ],
+    keyPoints: [
+      "Over-reliance follows from believing homework is a product, not from laziness",
+      "Name what the task is for before it starts",
+      "Teach request sentences; bans stop working the moment nobody is watching",
+    ],
+    check: {
+      question: "Which classroom policy is most likely to build durable learning ownership?",
+      options: [
+        { id: "a", label: "No AI tools may be used for any homework", correct: false },
+        { id: "b", label: "Name the purpose of each task, and teach students to ask for hints rather than answers", correct: true },
+        { id: "c", label: "Allow AI tools only for students who finish early", correct: false },
+      ],
+      explanation:
+        "A prohibition transfers no skill and is unenforceable at home. Naming the purpose gives students a rule they can apply themselves, which is the only kind that survives being unsupervised.",
+    },
+  },
+  {
+    id: "cert-5",
+    order: 5,
+    title: "Talking with families",
+    minutes: 7,
+    body: [
+      "Families arrive at this topic from very different places. Some are worried and want the school to ban everything. Some use these tools daily at work and find the worry overblown. Both groups respond well to the same thing: a specific description of what their child practised, and one question to ask at dinner.",
+      "That is why every mission in this program ships with a one page take-home in plain language, and why none of them require a parent account. Adding an account is a data collection decision, and for a take-home sheet it is not a trade worth making.",
+      "One caution on wording. Avoid telling families the school will keep their child safe from AI, which is a promise no school can keep. What the school can say honestly is that their child has practised specific decisions and can name what to do. That claim is true, it is checkable, and it holds up at a board meeting.",
+    ],
+    keyPoints: [
+      "Lead with what the child practised and one question to ask",
+      "No parent account required, because collecting one is not worth the trade",
+      "Promise practised decisions, never protection",
+    ],
+    check: {
+      question: "A caregiver asks whether this program will keep their child safe from AI. What is the most honest answer?",
+      options: [
+        { id: "a", label: "Yes, students who complete all nine missions are protected", correct: false },
+        { id: "b", label: "No, and the school should not be responsible for this at all", correct: false },
+        { id: "c", label: "No school can promise that, but your child has practised specific decisions and can tell you what they are", correct: true },
+      ],
+      explanation:
+        "Safety guarantees are unkeepable and cost credibility the first time something happens. A claim about practised, demonstrable decisions is both accurate and more reassuring, because families can verify it themselves at home.",
+    },
+  },
+];
+
+export const CERTIFICATION_TITLE = "AI Ready Educator: Foundations";
+export const CERTIFICATION_MINUTES = CERTIFICATION_MODULES.reduce(
+  (total, m) => total + m.minutes,
+  0,
+);
