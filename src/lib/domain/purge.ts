@@ -56,7 +56,10 @@ export function runScheduledPurge(db: Db, now = new Date()): PurgeResult {
     }));
 
     const due = retentionRows(school, classes, now).filter(
-      (row) => startOfUtcDay(row.purgeOn) <= startOfUtcDay(now),
+      // A cohort whose school-year end was never recorded is never due. The
+      // job would rather leave records in place than delete them on a date
+      // nobody supplied.
+      (row) => row.purgeOn !== null && startOfUtcDay(row.purgeOn) <= startOfUtcDay(now),
     );
     if (due.length === 0) continue;
 

@@ -165,8 +165,9 @@ describe("retention and deletion", () => {
     setRetentionMonths(db, school.id, 12);
     const updated = getPrimarySchool(db);
     expect(updated.retention_months).toBe(12);
-    expect(purgeDateFor(updated).getUTCFullYear()).toBe(
-      new Date(updated.term_renews_on).getUTCFullYear() + 1,
+    // Counted from the school year end, not the renewal — sprint 32.
+    expect(purgeDateFor(updated)!.getUTCFullYear()).toBe(
+      new Date(updated.year_ends_on).getUTCFullYear() + 1,
     );
   });
 
@@ -198,8 +199,8 @@ describe("retention and deletion", () => {
     expect(archived.archived).toBe(true);
     // Archiving mid-year must not delete records early, and archiving late
     // must not extend them past the policy the administrator set.
-    expect(archived.purgeOn.getTime()).toBe(active.purgeOn.getTime());
-    expect(archived.purgeOn.getTime()).toBe(purgeDateFor(school).getTime());
+    expect(archived.purgeOn!.getTime()).toBe(active.purgeOn!.getTime());
+    expect(archived.purgeOn!.getTime()).toBe(purgeDateFor(school)!.getTime());
     deleteClass(db, classroom.id);
   });
 
@@ -517,7 +518,7 @@ describe("the retention date has a job behind it", () => {
   const school = () => getPrimarySchool(db5);
 
   it("deletes nothing before the date", () => {
-    const due = purgeDateFor(school());
+    const due = purgeDateFor(school())!;
     const dayBefore = new Date(due.getTime() - 24 * 60 * 60 * 1000);
     const before = listClasses(db5, DEMO_SCHOOL, true).length;
 
@@ -527,7 +528,7 @@ describe("the retention date has a job behind it", () => {
   });
 
   it("deletes on the day itself, whatever hour the job runs", () => {
-    const due = purgeDateFor(school());
+    const due = purgeDateFor(school())!;
     // Eligibility is a day in UTC, not an instant, so the small hours count.
     const earlyOnTheDay = new Date(
       Date.UTC(due.getUTCFullYear(), due.getUTCMonth(), due.getUTCDate(), 0, 1),
@@ -728,8 +729,8 @@ describe("the academic year is not the subscription term", () => {
 
   it("counts retention from the school year, not the renewal", () => {
     const s = getPrimarySchool(db7);
-    expect(purgeDateFor(s)).toEqual(addMonths(s.year_ends_on, s.retention_months));
-    expect(purgeDateFor(s)).not.toEqual(addMonths(s.term_renews_on, s.retention_months));
+    expect(purgeDateFor(s)!).toEqual(addMonths(s.year_ends_on, s.retention_months));
+    expect(purgeDateFor(s)!).not.toEqual(addMonths(s.term_renews_on, s.retention_months));
   });
 
   it("gives each cohort its own due date from its own year end", () => {
@@ -750,11 +751,11 @@ describe("the academic year is not the subscription term", () => {
       yearEndsOn: "2026-06-12",
     });
     const s = getPrimarySchool(db7);
-    expect(purgeDateForClass(old, s.retention_months)).toEqual(addMonths("2025-06-13", 12));
-    expect(purgeDateForClass(current, s.retention_months)).toEqual(addMonths("2026-06-12", 12));
+    expect(purgeDateForClass(old, s.retention_months)!).toEqual(addMonths("2025-06-13", 12));
+    expect(purgeDateForClass(current, s.retention_months)!).toEqual(addMonths("2026-06-12", 12));
     // Mixed years in one school, and each row is right about itself.
-    expect(purgeDateForClass(old, s.retention_months).getTime()).toBeLessThan(
-      purgeDateForClass(current, s.retention_months).getTime(),
+    expect(purgeDateForClass(old, s.retention_months)!.getTime()).toBeLessThan(
+      purgeDateForClass(current, s.retention_months)!.getTime(),
     );
   });
 
@@ -772,7 +773,7 @@ describe("the academic year is not the subscription term", () => {
     // this cohort would have been 2027-09-01 — nine months before its own year
     // had even finished its retention window.
     const fromOldTerm = addMonths(s.term_renews_on, s.retention_months);
-    const fromOwnYear = purgeDateForClass(nextYear, s.retention_months);
+    const fromOwnYear = purgeDateForClass(nextYear, s.retention_months)!;
     expect(fromOwnYear.getTime()).toBeGreaterThan(fromOldTerm.getTime());
 
     // A run in the gap between the two dates must leave it alone. This is the
@@ -829,7 +830,7 @@ describe("rolling over into the next school year", () => {
       setBenchmarkWindow(db9, DEMO_SCHOOL, "post");
       const before = listClasses(db9, DEMO_SCHOOL).map((c) => ({
         id: c.id,
-        due: purgeDateForClass(c, getPrimarySchool(db9).retention_months).getTime(),
+        due: purgeDateForClass(c, getPrimarySchool(db9).retention_months)!.getTime(),
       }));
       expect(before.length).toBeGreaterThan(0);
 
@@ -855,7 +856,7 @@ describe("rolling over into the next school year", () => {
       // own snapshot.
       for (const row of before) {
         const c = listClasses(db9, DEMO_SCHOOL, true).find((x) => x.id === row.id)!;
-        expect(purgeDateForClass(c, after.retention_months).getTime()).toBe(row.due);
+        expect(purgeDateForClass(c, after.retention_months)!.getTime()).toBe(row.due);
       }
     } finally {
       cleanup();

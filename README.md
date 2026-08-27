@@ -401,10 +401,23 @@ administrator surfaces, with every student-facing control measured against the
   An administrator rolls the school forward from Program & plan; the preview
   states what will be archived, the new year's dates, that check-ins close, and
   that no existing deletion date moves.
-- **Adding a column needs a fresh database file.** `db:reset` truncates and
-  re-seeds in place so a running dev server keeps working, which means it does
-  not pick up schema changes. Delete `data/airk.db` and reset. There are no
-  migrations in this build.
+- **Schema changes ship as migrations, not as "delete the database".**
+  `src/lib/db/migrations.ts` holds an ordered list; `openDatabase` reads the
+  stored `schema_version`, applies whatever is pending, and writes the new
+  version **inside the same transaction** as the change, so a failure rolls both
+  back and the process stops rather than leaving a half-migrated file. Bump
+  `SCHEMA_VERSION` and add an entry whenever the shape changes: `CREATE TABLE IF
+  NOT EXISTS` creates missing tables and does nothing at all about missing
+  columns, so a schema change without a migration is an existing database that
+  stops working. `npm run db:reset` is **demo data only** — it truncates and
+  re-seeds so a running dev server survives it, and it is not an upgrade path.
+  Back up `data/airk.db` before upgrading anyway; it is one file.
+- **A migrated database has no academic dates, on purpose.** Nothing in the old
+  schema recorded when a school year ended, and "2025-2026" is a label rather
+  than a date — districts finish in May, June or July. Guessing early would
+  delete a child's records before the school's own window elapsed, so retention
+  is **blocked** for those cohorts and the administrator records the real dates
+  on Program & plan, which backfills them.
 - **Retention deletes when the job runs, not when the date arrives.** The
   product shows when a class becomes *due*, and `npm run purge` deletes
   everything past its date with each roster, attempt and check-in, writing an

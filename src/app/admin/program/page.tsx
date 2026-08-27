@@ -14,6 +14,7 @@ import { SchoolForm } from "./SchoolForm";
 import { PlanForm } from "./PlanForm";
 import { WindowForm } from "./WindowForm";
 import { RolloverForm } from "./RolloverForm";
+import { AcademicDatesForm } from "./AcademicDatesForm";
 import { previewRollover } from "@/lib/domain/rollover";
 import { listClasses } from "@/lib/repo/classroom";
 
@@ -120,10 +121,21 @@ export default async function AdminProgram() {
 
         <Panel
           title="Academic year"
-          description={`Currently ${school.academic_year}, ending ${formatDate(school.year_ends_on)}.`}
+          description={
+            school.year_ends_on
+              ? `Currently ${school.academic_year}, ending ${formatDate(school.year_ends_on)}.`
+              : "No dates recorded yet. Retention is blocked until they are."
+          }
         >
-          <PanelBody>
-            <RolloverForm preview={previewRollover(school, listClasses(db, school.id, true))} />
+          <PanelBody className="space-y-6">
+            <AcademicDatesForm
+              academicYear={school.academic_year}
+              startsOn={school.year_starts_on}
+              endsOn={school.year_ends_on}
+            />
+            {school.year_ends_on && (
+              <RolloverForm preview={previewRollover(school, listClasses(db, school.id, true))} />
+            )}
           </PanelBody>
         </Panel>
 

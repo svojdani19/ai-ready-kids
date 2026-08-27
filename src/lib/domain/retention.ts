@@ -35,7 +35,8 @@ export function addMonths(iso: string, months: number): Date {
  * could have come due before its own retention period had elapsed. Renewal is
  * when money changes hands; the school year ends when the children go home.
  */
-export function purgeDateFor(school: School): Date {
+export function purgeDateFor(school: School): Date | null {
+  if (!school.year_ends_on) return null;
   return addMonths(school.year_ends_on, school.retention_months);
 }
 
@@ -49,7 +50,13 @@ export function purgeDateFor(school: School): Date {
 export function purgeDateForClass(
   classroom: Pick<Classroom, "year_ends_on">,
   retentionMonths: number,
-): Date {
+): Date | null {
+  // Empty means the school year end was never recorded — a database migrated
+  // from before sprint 32, where nothing held that date. Retention is blocked
+  // rather than guessed: a guessed date that lands early would delete a
+  // child's records before the school's own window had elapsed, and that is
+  // not a decision this code gets to make on a school's behalf.
+  if (!classroom.year_ends_on) return null;
   return addMonths(classroom.year_ends_on, retentionMonths);
 }
 
@@ -60,7 +67,9 @@ export interface RetentionRow {
   schoolYear: string;
   studentCount: number;
   archived: boolean;
-  purgeOn: Date;
+  /** Null when this cohort's school-year end has never been recorded. */
+  purgeOn: Date | null;
+  /** Never true while `purgeOn` is null. Unknown is not the same as due. */
   eligibleNow: boolean;
 }
 
@@ -96,7 +105,7 @@ export function retentionRows(
       studentCount: c.studentCount,
       archived: Boolean(c.archived_at),
       purgeOn,
-      eligibleNow: purgeOn.getTime() <= now.getTime(),
+      eligibleNow: purgeOn !== null && purgeOn.getTime() <= now.getTime(),
     };
   });
 }

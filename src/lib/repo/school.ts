@@ -42,6 +42,30 @@ export function setRetentionMonths(db: Db, id: string, months: number): void {
  * explicit: the spring form does not become available because the fall one was
  * finished, it becomes available because somebody opened spring.
  */
+/**
+ * Record the academic dates and fill in any cohort that has none.
+ *
+ * A database migrated from before sprint 32 arrives with these empty, because
+ * nothing in the old schema said when a school year ended and guessing could
+ * have deleted a child's records early. This is how an administrator supplies
+ * the real date, and it backfills the classes in that year at the same time so
+ * retention starts working for them rather than staying blocked forever.
+ */
+export function setAcademicDates(
+  db: Db,
+  id: string,
+  input: { year: string; startsOn: string; endsOn: string },
+): number {
+  setAcademicYear(db, id, input);
+  const result = db
+    .prepare(
+      `UPDATE classes SET year_ends_on = ?
+       WHERE school_id = ? AND school_year = ? AND year_ends_on = ''`,
+    )
+    .run(input.endsOn, id, input.year);
+  return Number(result.changes);
+}
+
 /** Move the school into a new academic year. Subscription dates untouched. */
 export function setAcademicYear(
   db: Db,

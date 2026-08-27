@@ -22,6 +22,7 @@ import {
   listUsers,
   recordAudit,
   getSchool,
+  setAcademicDates,
   setAcademicYear,
   setBenchmarkWindow,
   setRetentionMonths,
@@ -237,6 +238,47 @@ export async function reassignClassAction(
   revalidatePath("/admin/classes");
   revalidatePath("/admin/staff");
   return {};
+}
+
+/**
+ * Record when the school year starts and ends.
+ *
+ * Needed because a migrated database has no academic dates — the old schema
+ * held none — and retention stays blocked until somebody who knows the answer
+ * supplies it. Backfills the cohorts in that year at the same time.
+ */
+export async function setAcademicDatesAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const { user } = await requireAdmin();
+  const year = String(formData.get("academicYear") ?? "").trim();
+  const startsOn = String(formData.get("startsOn") ?? "").trim();
+  const endsOn = String(formData.get("endsOn") ?? "").trim();
+
+  if (!/^\d{4}-\d{4}$/.test(year)) return { error: "Write the year like 2025-2026." };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(startsOn) || !/^\d{4}-\d{2}-\d{2}$/.test(endsOn)) {
+    return { error: "Give both dates as year-month-day, like 2026-06-12." };
+  }
+  if (new Date(endsOn).getTime() <= new Date(startsOn).getTime()) {
+    return { error: "The year has to end after it starts." };
+  }
+
+  const db = getDb();
+  const backfilled = setAcademicDates(db, user.school_id, { year, startsOn, endsOn });
+  recordAudit(db, {
+    schoolId: user.school_id,
+    actorLabel: user.name,
+    action: "year.dates_set",
+    detail: `${year} recorded as running ${startsOn} to ${endsOn}. ${backfilled} class${backfilled === 1 ? "" : "es"} given a retention date that had none.`,
+  });
+  revalidatePath("/admin/program");
+  revalidatePath("/admin/data");
+  return {
+    ok: backfilled
+      ? `Saved. ${backfilled} class${backfilled === 1 ? "" : "es"} now ${backfilled === 1 ? "has" : "have"} a deletion date.`
+      : "Saved.",
+  };
 }
 
 /**

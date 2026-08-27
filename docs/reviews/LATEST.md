@@ -7,10 +7,10 @@ likely to be.
 
 ---
 
-## Sprint 32 — the product could not survive its own first renewal
+## Sprint 33 — P0: the upgrade destroyed the data it was upgrading
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-27-sprint-32.md`](2026-08-27-sprint-32.md)
+- **Full review:** [`2026-08-27-sprint-33.md`](2026-08-27-sprint-33.md)
 - **Review trail:** sprints 01–16 in this directory. Sprint 09 tripled the
   curriculum to 27 missions. Sprint 10 fixed two mechanism defects found in it.
   Sprints 11 to 15 fixed content defects in ten of them, two per sprint.
@@ -20,80 +20,72 @@ likely to be.
   one of the 27 missions has now been read, and 26 had findings. Sprints 22-23
   are the second pass over the reporting layer, sprint 24 the assessment layer.
   sprint 25 the educator orientation. Every body of authored content has been
-  read once. Sprints 26-30 audit what the product permits and promises.
-  **Sprints 31-32 walk ordinary school workflows. Sprint 32 found that the
-  academic year and the subscription term were the same field, and that there
-  was no rollover at all.**
+  read once. Sprints 26-30 audit what the product permits and promises, 31-32
+  walk ordinary school workflows. **Sprint 33 is a P0 fix for a defect sprint 32
+  created: it added four required columns with no migration, so an existing
+  database failed on first use and the README said to delete it.**
 
 ### What changed
 
-1. **There was no school year, only a subscription term.** The classes page took
-   the year from whichever class sorted first with `?? "2025-2026"` behind it,
-   the create form hid it, and the action had the same literal as its fallback —
-   so **on 27 August 2026 every new class was still being created in
-   2025-2026**. Nothing anywhere moved the term dates, and reports took the year
-   from `classes[0]`, labelling a mixed-cohort school by an accident of
-   ordering.
-2. **Retention was anchored to the renewal date.** `purgeDateFor` used
-   `term_renews_on` for every class while the interface said "months after the
-   school year ends". In the seed those are **1 September and 12 June**.
-   `class.school_year` already existed and was ignored, and a future cohort
-   would have inherited that fixed date and could have come due **before its own
-   retention period elapsed**.
-3. **They are separate fields now.** A school carries `academic_year`,
-   `year_starts_on` and `year_ends_on` beside the subscription dates, and every
-   class **snapshots its cohort's year end at creation**. Retention is per class
-   from that snapshot, so a rollover cannot move an existing cohort's date and a
-   new cohort cannot inherit an old term's. The seed keeps the two sets
-   deliberately apart and a test asserts they differ.
-4. **There is a rollover, and it previews before it acts** — what will be
-   archived, the new year and its dates, that check-ins close, and that every
-   class keeps the year-end it was created with. Subscription dates are
-   explicitly untouched. `nextYearLabel` refuses a label it cannot parse;
-   `addYear` turns 29 February into 28 February.
-5. **A name can be corrected without deleting the child.** The roster had Add
-   and Remove and nothing between, so a typo meant a wrong name all year or
-   losing every attempt, check-in and badge. `renameStudent` moves only
-   `display_name`, scoped by class and student, sharing one `validateDisplayName`
-   with adding so the two cannot drift. The audit names the class, never the
-   child.
+1. **Sprint 32 added four columns and nothing migrated them.** `openDatabase`
+   ran `CREATE TABLE IF NOT EXISTS` — which creates missing tables and does
+   nothing about missing columns — then wrote `schema_version = 1`
+   **unconditionally, without ever reading it**. An existing database claimed to
+   be current and failed on the first query touching a new column. The README
+   said to delete `data/airk.db`: every roster, attempt, skill record, badge and
+   check-in, and a direct contradiction of the retention story on the privacy
+   page.
+2. **There is a migration path now.** `src/lib/db/migrations.ts` holds an
+   ordered list. The opener **reads** the stored version first, stamps a
+   brand-new file at the latest version so nothing migrates a current schema,
+   and runs each pending migration **in its own transaction with the version row
+   written inside it** — so a failure rolls the columns and the version back
+   together and stops. Idempotent by construction.
+3. **`db:reset` preserves `schema_version`.** It had been deleting it, harmless
+   only while the opener rewrote the version regardless; with real migrations
+   that would make the next open mistake an old database for a new one. The
+   README now says reset is demo data and not an upgrade path.
+4. **The backfill records nothing, deliberately.** Nothing in the old schema
+   says when a school year ended, and `school_year` is a label, not a date. The
+   renewal date is available and is exactly the wrong answer — sprint 32 existed
+   to stop it being used for this. Guessing early deletes a child's records
+   before the school's window elapsed; guessing late holds them past the policy.
+   So the migration carries the **year label** forward and leaves every date
+   empty, and **retention treats empty as blocked, not due**: null due date,
+   never eligible, purge skips it. An administrator supplies the real dates on
+   Program & plan, which backfills that year's cohorts.
 
 ### Already verified — please do not redo
 
-- `npm run verify` green: typecheck, lint, **440 tests**, Turbopack build.
-- The year tests include the one that matters: a 2026-2027 cohort run through
-  the purge **in the gap between the old term-derived date and its own** must
-  survive, and go only when its own date arrives. Plus mixed cohorts each right
-  about themselves, the leap-day boundary, the preview's four claims, and a full
-  rollover asserting no historical deletion date moved and the subscription date
-  did not either.
-- Rename tests: a typo corrected with attempt, evidence, badge and avatar
-  intact; a preferred-name change; a colleague's student refused; both actions
-  sharing one validator.
-- Verified in the app: rolled Brightwood to 2026-2027, four classes archived,
-  check-ins closed, and the 2025-2026 cohorts still read June 12, 2027 on the
-  retention page afterwards.
+- `npm run verify` green: typecheck, lint, **448 tests**, Turbopack build.
+- New `tests/migration.test.ts` built on `tests/fixtures/v1-schema.sql` — the
+  **literal** pre-sprint-32 schema extracted from the commit before it, so the
+  test cannot drift into asserting the current shape. The fixture holds one of
+  everything, linked, and is opened through the ordinary `openDatabase` path.
+- Covered: columns added and version advanced; **every record and link survives**
+  including `path_json` and `evidence_json`; the year label carried forward with
+  dates empty and `year_ends_on !== term_renews_on`; retention blocked with the
+  purge deleting nothing in 2099; re-running a no-op; **a forced failure rolling
+  back with the version still 1 and the column gone**; a fresh database stamped
+  without migrating; a demo reset keeping the version.
+- Outside the suite: a hand-built v1 database opened through
+  `openSeededDatabase` came up at version 2 with data intact, and the running
+  app showed "Not set — Nothing is deleted until you do" and backfilled four
+  classes when the dates were supplied.
 
 ### Where this is most likely still wrong
 
-- **Nothing here had ever run the year forward.** Thirty-one sprints ran against
-  a database seeded to a single school year and all of them passed. The defect
-  was not that something computed wrongly — it was that the passage of time had
-  never happened. There was no second cohort, no archived year, no August. That
-  is a whole category: not "is this correct" but "is this correct *the second
-  time*".
-- **Two ideas sharing one field** is now the fourth appearance: school
-  membership doing the work of ownership (26), "fall and spring" with no state
-  (27), a friendly identifier doing the work of a credential (30), and the
-  invoice date doing the work of the last day of school (32). Each time the
-  interface described the second idea, the code stored only the first, and they
-  coincided closely enough in the demo that nothing looked wrong.
-- **No migrations.** Adding a column needs `data/airk.db` deleted, because
-  `db:reset` truncates in place. Documented in the README; a real deployment
-  needs migrations.
-- **Rollover is one school at a time** and archives everything in the current
-  year. Two cohorts running side by side is not modelled.
-- **Bulk reassignment does not exist** — sprint 31.
+- **A version that is stamped rather than checked is worse than none.**
+  `schema_version` existed the whole time and was written without ever being
+  read, which is what let an out-of-date database claim to be current.
+- **Every test builds its database from the current schema**, so none of them
+  had ever seen an old one. That is sprint 32's blind spot one layer down: that
+  sprint asked "is this correct the second time" about the calendar; this asks
+  it about the schema. Any future schema change needs a migration *and* a test
+  starting from the previous shape.
+- **No down-migrations.** Forward only; a rollback means restoring the file,
+  which is why the README says to back it up.
+- **Rollover is one school at a time**, and bulk reassignment does not exist.
 - **The route and action inventory is still not complete.**
 - **`enterDemo("student")` writes a student session directly**, and
   **`simulateAttempt` writes seed paths directly**.

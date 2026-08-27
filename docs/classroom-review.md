@@ -266,6 +266,15 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       and from a coached recovery, and the page cannot tell them apart — so
       "you worked these out after a Try again" told a child who chose
       thoughtfully that they had needed correcting.
+- [ ] **A schema change ships with a migration.** `CREATE TABLE IF NOT EXISTS`
+      creates missing tables and does nothing about missing columns, so a new
+      column without a migration is an existing database that stops working.
+      The version must be **read** before it is written: one that is stamped
+      rather than checked is worse than none, because it makes an out-of-date
+      database claim to be current.
+- [ ] **A migration never guesses a date that could delete something early.**
+      Where the old data cannot say, record nothing and block the operation
+      until an adult supplies it. Unknown is not the same as due.
 - [ ] **It still works the second time.** Run the year forward. A product sold
       annually needs a second cohort, an archived year, and an August in which
       last year's classes are finished and this year's do not exist yet. Every

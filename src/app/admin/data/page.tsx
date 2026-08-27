@@ -59,12 +59,25 @@ export default async function AdminData() {
         <Stat
           label="Retention window"
           value={`${school.retention_months} months`}
-          hint={`After a cohort's own school year ends. This year's ends ${formatDate(school.year_ends_on)}.`}
+          hint={
+            school.year_ends_on
+              ? `After a cohort's own school year ends. This year's ends ${formatDate(school.year_ends_on)}.`
+              : "After a cohort's own school year ends — and this school has not recorded when that is."
+          }
         />
         <Stat
           label="This year due"
-          value={formatDate(purgeDateFor(school))}
-          hint={eligible.length ? `${eligible.length} classes eligible now` : "Nothing eligible yet"}
+          value={(() => {
+            const due = purgeDateFor(school);
+            return due ? formatDate(due) : "Not set";
+          })()}
+          hint={
+            purgeDateFor(school) === null
+              ? "Record when the school year ends on Program & plan. Nothing is deleted until you do."
+              : eligible.length
+                ? `${eligible.length} classes eligible now`
+                : "Nothing eligible yet"
+          }
           tone={eligible.length ? "berry" : "neutral"}
         />
       </div>
@@ -143,8 +156,14 @@ export default async function AdminData() {
                     <td className="ark-tabular px-3 py-3 text-ink-soft">{row.studentCount}</td>
                     <td className="px-3 py-3">
                       <span className={row.eligibleNow ? "font-semibold text-berry-deep" : "text-ink-soft"}>
-                        {formatDate(row.purgeOn)}
+                        {row.purgeOn ? formatDate(row.purgeOn) : "Not set"}
                       </span>
+                      {row.purgeOn === null && (
+                        <span className="block text-xs text-ink-faint">
+                          This year has no recorded end date, so nothing here is deleted
+                          automatically.
+                        </span>
+                      )}
                       {row.eligibleNow && (
                         <span className="block text-xs text-berry-deep">Eligible now</span>
                       )}
