@@ -158,6 +158,12 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       resting on a wrong reason — a technical claim that will not hold, a
       conclusion the evidence does not reach — teaches the reason, not the
       answer. Ask what happens to the child's rule when the reason fails.
+- [ ] **Walk every path into a shared scene.** Where several choices lead to
+      the same next scene, check that what earns mastery there is *true* for
+      each of them. A disclosure scene is the usual place this breaks: a child
+      who kept an answer and a child who took a hint cannot honestly say the
+      same sentence, and the graph will happily let them. Reachability tests
+      will not catch it. Trace the branches by hand.
 - [ ] **The verdict is no wider than what was checked.** Where a mission
       settles one thing, make sure it does not quietly claim the neighbouring
       thing too. Two artefacts checked to different depths get reported

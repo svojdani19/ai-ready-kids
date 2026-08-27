@@ -59,7 +59,7 @@ export const theHomeworkThatDidItself: Mission = {
           feedback: {
             tone: "strong",
             headline: "Also a great kind of help",
-            body: "An example you work through yourself leaves the thinking with you. That is the test for good help.",
+            body: "It gives you a different one about buckets of apples and leaves it blank underneath. You work that one out, and number two turns out to be the same shape. The thinking stayed with you.",
           },
           evidence: { skillId: "own.effort", result: "demonstrated" },
           next: "s3",
@@ -100,7 +100,7 @@ export const theHomeworkThatDidItself: Mission = {
       choices: [
         {
           id: "c1",
-          label: "Clear the answers and do the five you had not tried yet",
+          label: "Clear the answers and do all six yourself",
           feedback: {
             tone: "strong",
             headline: "You took your homework back",
@@ -111,17 +111,28 @@ export const theHomeworkThatDidItself: Mission = {
         },
         {
           id: "c2",
-          label: "Keep number two's answer and redo the other five yourself",
+          label: "Clear it, and have a proper go at number two before asking anything",
           feedback: {
             tone: "strong",
-            headline: "Fair trade",
-            body: "You asked for help on the one you were stuck on and kept the rest. That is exactly the deal you want with any tool.",
+            headline: "That is the bit you skipped the first time",
+            body: "Crates of oranges, on paper, with a pencil. It takes eleven minutes and you get there. Trying first is what makes the help you ask for afterwards the small kind.",
           },
           evidence: { skillId: "own.effort", result: "demonstrated" },
           next: "s5",
         },
         {
           id: "c3",
+          label: "Keep number two's answer and redo the other five yourself",
+          feedback: {
+            tone: "partial",
+            headline: "Allowed, and now the report is different",
+            body: "You were stuck on that one and you kept what it gave you. Five out of six is real work. Just remember that an answer you kept is not a hint you used, and those two get said differently.",
+          },
+          evidence: { skillId: "own.effort", result: "developing" },
+          next: "s5b",
+        },
+        {
+          id: "c4",
           label: "Hand it in as it is. The answers are right.",
           feedback: {
             tone: "rethink",
@@ -146,7 +157,7 @@ export const theHomeworkThatDidItself: Mission = {
       choices: [
         {
           id: "c1",
-          label: "“Sprocket gave me a hint on number two and I did the rest.”",
+          label: "“I asked it for help with number two and it did the whole page, so I cleared it.”",
           feedback: {
             tone: "strong",
             headline: "Clear and true",
@@ -157,6 +168,17 @@ export const theHomeworkThatDidItself: Mission = {
         },
         {
           id: "c2",
+          label: "“Sprocket filled the whole thing in without being asked. I did them again.”",
+          feedback: {
+            tone: "strong",
+            headline: "And that second half matters to somebody else",
+            body: "You did the work, and now a grown-up knows the app does that to a page. Somebody in your class will meet it tomorrow without knowing to look.",
+          },
+          evidence: { skillId: "own.honesty", result: "demonstrated" },
+          next: "s6",
+        },
+        {
+          id: "c3",
           label: "“Fine.”",
           feedback: {
             tone: "partial",
@@ -167,14 +189,59 @@ export const theHomeworkThatDidItself: Mission = {
           next: "s6",
         },
         {
+          id: "c4",
+          label: "“I did it all by myself.”",
+          feedback: {
+            tone: "rethink",
+            headline: "The answers, yes. The page, no.",
+            body: "You did every question, and the page was already full before you started. Leaving out what the app did means nobody finds out it does that. Try again.",
+          },
+          next: "s5",
+          retry: true,
+        },
+      ],
+    },
+    {
+      id: "s5b",
+      kind: "decision",
+      art: "kitchen",
+      narration: [
+        "Your grown-up looks over at the table. “How is it going?”",
+        "Number two is still Sprocket's, sitting there in the middle of five that are yours.",
+      ],
+      prompt: "What do you say?",
+      choices: [
+        {
+          id: "c1",
+          label: "“Sprocket gave me the answer to number two. I did the other five.”",
+          feedback: {
+            tone: "strong",
+            headline: "That is the accurate word for it",
+            body: "An answer you kept is not a hint you used. Saying which one it was takes the same three seconds and means nobody thinks you worked out something you did not.",
+          },
+          evidence: { skillId: "own.honesty", result: "demonstrated" },
+          next: "s6",
+        },
+        {
+          id: "c2",
+          label: "“Sprocket gave me a hint on number two and I did the rest.”",
+          feedback: {
+            tone: "partial",
+            headline: "Nearly, and hint is the wrong word",
+            body: "It did not point you at anything. It handed you the answer and you kept it, which is a fine thing to have done and a different thing to say. Calling it a hint makes the help sound smaller than it was.",
+          },
+          evidence: { skillId: "own.honesty", result: "developing" },
+          next: "s6",
+        },
+        {
           id: "c3",
           label: "“I did it all by myself.”",
           feedback: {
             tone: "rethink",
-            headline: "That part is not quite right",
-            body: "You did do most of it, and that is worth saying out loud. Leaving out the hint means nobody knows you needed one. Try again.",
+            headline: "Five out of six is not all six",
+            body: "You did most of it, and that is worth saying out loud. Leaving out number two means nobody knows that one is still hard for you. Try again.",
           },
-          next: "s5",
+          next: "s5b",
           retry: true,
         },
       ],
@@ -252,17 +319,19 @@ export const theHomeworkThatDidItself: Mission = {
   ],
   guide: {
     setup:
-      "This mission separates help from answers. The tool over-delivers without being asked, which mirrors real behaviour and keeps blame off the student. The phrase to keep all year is: good help leaves the thinking with you.",
+      "This mission separates help from answers. The tool over-delivers without being asked, which mirrors real behaviour and keeps blame off the student. The phrase to keep all year is: good help leaves the thinking with you.\n\nThe branch in scene four is deliberate and worth knowing about. A child who clears the page and does everything reports one thing; a child who keeps Sprocket's answer to number two reports another, and the mission sends them to different conversations rather than a shared one. On that second path, calling it a hint is explicitly the partly-there answer. The distinction between a hint and an answer is the entire mission, so a reporting scene that let a kept answer be described as a hint would have taught the opposite in its last five minutes.",
     lookFor: [
       "Students who see homework as a product to hand in rather than practice",
       "Whether students can request a smaller kind of help unprompted",
       "Students who omit assistance when reporting, without intending to deceive",
+      "Whether anyone calls a kept answer a hint, which makes the help sound smaller than it was",
     ],
     questions: [
       "What is the difference between a hint and an answer?",
       "Sprocket did all six. Who asked it to?",
       "How did it feel to get number four right on the board?",
       "What would you type next time to get help without getting the answer?",
+      "If you kept one of its answers, what would you say? Is hint the right word?",
     ],
     misconceptions: [
       {
@@ -631,16 +700,17 @@ export const theSpellingTestSurprise: Mission = {
   estimatedMinutes: 8,
   teaser: "All week the practice sentences were easy. On Friday there is no tablet.",
   summary:
-    "The consequence mission. A week of AI-written practice sentences leaves the student unable to spell the words on test day. Students practise noticing when help has replaced learning and saying so plainly.",
+    "The consequence mission. A week of AI-written practice sentences leaves the student unable to spell the words on test day, even though they wrote every one of them out. Students learn the difference between copying a word that is in front of them and getting it out of their own head, and practise saying plainly what help they used.",
   learningGoals: [
+    "Tell copying a word apart from remembering one",
     "Notice when help has replaced the learning",
     "Say plainly what help was used, without shame",
-    "Choose a different plan for next week",
+    "Choose a practice plan that hides the answer first",
   ],
   badge: {
     id: "badge-own-3",
     name: "Straight Talker",
-    blurb: "You noticed what the help replaced, and said so.",
+    blurb: "You worked out what the help replaced, and said so.",
   },
   openingSceneId: "s1",
   scenes: [
@@ -675,11 +745,11 @@ export const theSpellingTestSurprise: Mission = {
       choices: [
         {
           id: "c1",
-          label: "The sentences got written, but you never practised the words",
+          label: "The sentences got written, but I never had to remember anything",
           feedback: {
             tone: "strong",
             headline: "You worked out exactly what happened",
-            body: "The homework got finished. The practice did not happen. Those are two different things, and only one of them was the point.",
+            body: "The homework got finished and every word got copied out. Nobody ever asked your brain to come up with the letters, and coming up with the letters is what Friday asks for.",
           },
           evidence: { skillId: "own.honesty", result: "demonstrated" },
           next: "s4",
@@ -690,7 +760,7 @@ export const theSpellingTestSurprise: Mission = {
           feedback: {
             tone: "rethink",
             headline: "That is not what happened",
-            body: "You did not get a chance to be good or bad at it. You never actually practised. There is a real difference, and it matters. Try again.",
+            body: "You never once had a go with the word out of sight, so nobody found out whether you can spell it or not. That is a plan going wrong, not a person. Try again.",
             coachNote:
               "Students commonly convert a strategy problem into a fixed self-belief, and this is the moment it happens. Correct it as a general point to the room — what went wrong here was a plan, not a person — without turning towards whoever chose it. A child who says they are bad at spelling may also be telling you something true, and that conversation belongs one to one.",
           },
@@ -699,11 +769,11 @@ export const theSpellingTestSurprise: Mission = {
         },
         {
           id: "c3",
-          label: "The tablet did the spelling, so my hand never learned it",
+          label: "I copied every word. I never once wrote one without looking.",
           feedback: {
             tone: "strong",
-            headline: "Same answer, and you can feel where it went",
-            body: "The letters went from the app to the page without ever going through you. That is why the paper is blank now: nothing was ever put anywhere it could be got back from.",
+            headline: "That is the difference exactly",
+            body: "Copying a word sitting in front of you and finding one in your head are two different jobs. All week the answer was on the screen, so you only ever did the first one.",
           },
           evidence: { skillId: "own.honesty", result: "demonstrated" },
           next: "s4",
@@ -748,7 +818,7 @@ export const theSpellingTestSurprise: Mission = {
           feedback: {
             tone: "partial",
             headline: "True, and it leaves out the important half",
-            body: "You did do it every night. If she does not know how, she cannot help you fix it. Try adding the part about how.",
+            body: "You did do it every night, and you copied every word out. If she does not know that the answer was on the screen the whole time, she cannot help you fix it. Try adding the part about how.",
           },
           evidence: { skillId: "own.honesty", result: "developing" },
           next: "s5",
@@ -777,17 +847,28 @@ export const theSpellingTestSurprise: Mission = {
       choices: [
         {
           id: "c1",
-          label: "Write your own sentences first, then check the spelling",
+          label: "Make up my own sentence, cover the word, and have a go from memory",
           feedback: {
             tone: "strong",
             headline: "Now the tool is in the right place",
-            body: "You do the thinking, then a tool checks the work. Same tablet, completely different job. Your sentences are worse than AskMe's, and they are teaching you the words.",
+            body: "You do the remembering first, with nothing to copy from, and then the tablet checks it. Same tablet, completely different job. Your sentences are worse than AskMe's and they are teaching you the words.",
           },
           evidence: { skillId: "own.effort", result: "demonstrated" },
           next: "s6",
         },
         {
           id: "c2",
+          label: "Cover it and say the letters out loud, then check",
+          feedback: {
+            tone: "strong",
+            headline: "Whichever way gets them out of your head",
+            body: "Out loud, typed, on a whiteboard, with letter tiles, whatever you and your grown-up have agreed. How the letters come out does not matter much. Having them out of sight while you find them matters a lot.",
+          },
+          evidence: { skillId: "own.effort", result: "demonstrated" },
+          next: "s6",
+        },
+        {
+          id: "c3",
           label: "Do it all by yourself and never use the tablet again",
           feedback: {
             tone: "partial",
@@ -798,12 +879,12 @@ export const theSpellingTestSurprise: Mission = {
           next: "s6",
         },
         {
-          id: "c3",
+          id: "c4",
           label: "Ask AskMe for the sentences again, but read them carefully this time",
           feedback: {
             tone: "rethink",
-            headline: "Reading is not practising",
-            body: "You read them carefully all last week too. The words go in when your hand writes them and your brain picks the letters. Try again.",
+            headline: "Reading is not remembering",
+            body: "You read them carefully all last week, and copied them out too. What never happened was one single go at a word with the answer out of sight. Try again.",
           },
           next: "s5",
           retry: true,
@@ -822,11 +903,11 @@ export const theSpellingTestSurprise: Mission = {
       choices: [
         {
           id: "c1",
-          label: "“Mine too. That is what practising looks like.”",
+          label: "“Mine too. That is what having a go looks like.”",
           feedback: {
             tone: "strong",
-            headline: "Messy is the evidence",
-            body: "A page with crossings-out is a page where somebody was learning. A perfect page can mean anything at all.",
+            headline: "Every crossing-out is a word you tried before you knew",
+            body: "Some people's tries come out neat and some come out a mess, and that part is not the point. The point is that you had a go before you looked. A perfect copied page can mean anything at all.",
           },
           evidence: { skillId: "own.effort", result: "demonstrated" },
           next: "s7",
@@ -859,31 +940,39 @@ export const theSpellingTestSurprise: Mission = {
       kind: "ending",
       art: "desk-test",
       narration: [
-        "This Friday, Ms. Okafor says “enormous” and your pencil moves straight away.",
-        "E-N-O-R-M-O-U-S. It was in there the whole time. You just had to be the one to put it there.",
+        "This Friday, Ms. Okafor says “enormous” and it arrives straight away.",
+        "E-N-O-R-M-O-U-S. It came out of you this time, because this week you were the one who had to go and find it.",
       ],
       wrapUp: [
         "Finishing the homework and doing the learning are two different things.",
+        "Copying a word is not the same as getting it out of your head.",
+        "Cover the answer, have a go, then check. That is what practice is.",
         "Saying what help you used lets somebody actually help you.",
-        "Do the thinking first, then let a tool check it.",
       ],
     },
   ],
   guide: {
     setup:
-      "The consequence mission, and the one to schedule late in a pass rather than early. It shows a delayed cost, which is the hardest thing about over-reliance to teach, because the cost never arrives on the night the shortcut is taken. Keep the tone free of blame throughout: the teacher character is curious, never cross.",
+      "The consequence mission, and the one to schedule late in a pass rather than early. It shows a delayed cost, which is the hardest thing about over-reliance to teach, because the cost never arrives on the night the shortcut is taken. Keep the tone free of blame throughout: the teacher character is curious, never cross.\n\nBe precise about what went wrong, because the obvious explanation is not the right one. The child in this story wrote every word out five times, in their own handwriting. Writing was not what was missing. What was missing was ever producing the letters without the answer in view — copying is recognition, and Friday asks for recall. Say that difference out loud, because a class that concludes spelling lives in the hand will have learned something false, and it lands worst on the children who type, dictate, use assistive technology, or have dysgraphia. The plan in scene five is deliberately modality-free: cover the word, produce it however you produce things, then check with something allowed. Neat or messy is not the evidence; having a go before looking is.",
     lookFor: [
       "Students who convert a strategy problem into a fixed belief about themselves",
       "Students who over-correct into refusing tools entirely",
       "Whether students can describe assistance accurately without treating it as a confession",
+      "Students who conclude that spelling lives in the hand, rather than in trying before looking",
     ],
     questions: [
-      "The homework was finished every night. What did not happen?",
+      "The words were written out every night. So what did not happen?",
+      "What is the difference between copying a word and remembering it?",
       "Why is it useful for a teacher to know what help you used?",
       "What is a good job to give a spelling tool? What is a bad one?",
-      "Theo's page was messy. What did that actually mean?",
+      "Theo's page was messy. What did that actually mean, and what did it not?",
     ],
     misconceptions: [
+      {
+        student: "So you have to handwrite them or it does not count.",
+        response:
+          "Correct this one promptly and plainly, because it is the wrong lesson to take and it excludes people. The child in the story handwrote every word and still could not spell one. What counts is producing the letters without the answer in view. Typing from memory counts, saying them counts, letter tiles count, and so does whatever a child uses by agreement.",
+      },
       {
         student: "So we are not allowed to use it.",
         response:
@@ -900,14 +989,14 @@ export const theSpellingTestSurprise: Mission = {
   },
   family: {
     summary:
-      "We looked at what happens when a tool does the practice for you. Your child saw a week of AI-written spelling sentences lead to a hard test day, and made a new plan: do the thinking first, then let the tool check.",
+      "We looked at what happens when a tool does the practice for you. Your child wrote every word out all week and still could not spell one on Friday, because the answer was on the screen the whole time. Copying a word and getting it out of your own head are different jobs. The new plan is: cover the word, have a go, then check.",
     questions: [
       "What is the difference between finishing homework and learning something?",
       "What is a good job to give a spelling helper? What is a bad one?",
-      "Why is a messy page with crossings-out sometimes a good sign?",
+      "Why is a page with crossings-out on it sometimes a good sign?",
     ],
     tryAtHome:
-      "Ask what the homework is for before it starts. If the answer is practice, the practice has to happen in their handwriting.",
+      "When you test them on a word, cover it up first. However they give you the letters — written, typed, said out loud, spelled on their fingers — the part that does the work is that the answer was out of sight while they found it.",
     familyRule: "We do the thinking first, then let a tool check it.",
   },
 };

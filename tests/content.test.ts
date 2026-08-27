@@ -180,6 +180,12 @@ describe("mission content integrity", () => {
       "they cannot both be right",
       // A subject's denial is context, not a universal proof about a recording.
       "asking the real person is the check",
+      // Spelling is not stored in the hand. The child in that story handwrote
+      // every word and still could not spell one.
+      "my hand never learned it",
+      "when your hand writes them",
+      "in their handwriting",
+      "messy is the evidence",
     ]) {
       expect(studentCopy).not.toContain(overclaim);
     }
@@ -968,6 +974,95 @@ describe("conflicting answers are reconciled before one is called wrong", () => 
     expect(wrapUp).toMatch(/work out what the question is/);
     expect(wrapUp).toMatch(/erected is not the same as founded/);
     expect(wrapUp).not.toMatch(/first-hand beats/);
+  });
+});
+
+describe("every path into a reporting scene can honestly say what it awards", () => {
+  const homework = MISSION_BY_SLUG["the-homework-that-did-itself"];
+
+  it("sends a kept answer to a different conversation from a hint", () => {
+    // Keeping Sprocket's answer to number two and clearing the page are
+    // different actions, so they cannot share a disclosure scene: on the first
+    // path, "it gave me a hint" is simply false.
+    const action = homework.scenes.find((s) => s.id === "s4")!;
+    const kept = action.choices!.find((c) => /keep number two/i.test(c.label))!;
+    const cleared = action.choices!.filter((c) => /^clear/i.test(c.label));
+    expect(cleared.length).toBeGreaterThanOrEqual(2);
+    expect(new Set(cleared.map((c) => c.next)).size).toBe(1);
+    expect(kept.next).not.toBe(cleared[0].next);
+    // Keeping a supplied answer is allowed, and it is less of the practice.
+    expect(kept.feedback.tone).toBe("partial");
+    expect(kept.evidence?.result).toBe("developing");
+  });
+
+  it("never awards honesty for calling a kept answer a hint", () => {
+    const keptReport = homework.scenes.find((s) => s.id === "s5b")!;
+    const strong = keptReport.choices!.filter((c) => c.feedback.tone === "strong");
+    expect(strong).toHaveLength(1);
+    expect(strong[0].label.toLowerCase()).toMatch(/gave me the answer/);
+
+    const calledAHint = keptReport.choices!.find((c) => /gave me a hint/i.test(c.label))!;
+    expect(calledAHint.feedback.tone).toBe("partial");
+    expect(calledAHint.evidence?.result).toBe("developing");
+    expect(calledAHint.feedback.body.toLowerCase()).toMatch(/sound smaller than it was/);
+  });
+
+  it("makes the shared reporting scene true on every path that reaches it", () => {
+    // s5 is reached only by paths where the child did all six themselves, and
+    // on all of them the child did type "I am stuck on number two".
+    const report = homework.scenes.find((s) => s.id === "s5")!;
+    const strong = report.choices!.filter((c) => c.feedback.tone === "strong");
+    for (const choice of strong) {
+      expect(choice.label.toLowerCase()).not.toMatch(/hint/);
+    }
+    // The example offered at the opening is stated to be unworked, because
+    // that changes what the child can truthfully report.
+    const opening = homework.scenes.find((s) => s.id === "s2")!;
+    const example = opening.choices!.find((c) => /problem like it/i.test(c.label))!;
+    expect(example.feedback.body.toLowerCase()).toMatch(/leaves it blank/);
+  });
+});
+
+describe("practice is defined by recall, not by handwriting", () => {
+  const spelling = MISSION_BY_SLUG["the-spelling-test-surprise"];
+  const studentCopy = spelling.scenes
+    .flatMap((scene) => [
+      ...scene.narration,
+      scene.prompt ?? "",
+      ...(scene.wrapUp ?? []),
+      ...(scene.choices ?? []).flatMap((c) => [c.label, c.feedback.headline, c.feedback.body]),
+    ])
+    .join(" ")
+    .toLowerCase();
+
+  it("names copying versus remembering, not the hand", () => {
+    // The story says the child handwrote every word five times, so any
+    // explanation resting on handwriting contradicts its own setup.
+    expect(studentCopy).toMatch(/copying a word/);
+    expect(studentCopy).toMatch(/out of (your|my) head|out of sight|without looking/);
+    expect(studentCopy).not.toMatch(/hand never learned/);
+    expect(studentCopy).not.toMatch(/when your hand writes them/);
+  });
+
+  it("lets the plan be any modality, as long as the answer is hidden", () => {
+    const plan = spelling.scenes.find((s) => s.id === "s5")!;
+    const strong = plan.choices!.filter((c) => c.feedback.tone === "strong");
+    expect(strong.length).toBeGreaterThanOrEqual(2);
+    expect(strong.map((c) => c.label.toLowerCase()).join(" ")).toMatch(/cover/);
+    const anyWay = strong.map((c) => c.feedback.body.toLowerCase()).join(" ");
+    expect(anyWay).toMatch(/typed/);
+    expect(anyWay).toMatch(/letter tiles/);
+    expect(anyWay).toMatch(/out of sight/);
+  });
+
+  it("does not make a messy page the evidence of learning", () => {
+    const peer = spelling.scenes.find((s) => s.id === "s6")!;
+    const strong = peer.choices!.find((c) => c.feedback.tone === "strong")!;
+    expect(strong.feedback.body.toLowerCase()).toMatch(/neat and some come out a mess/);
+    expect(strong.feedback.body.toLowerCase()).toMatch(/had a go before you looked/);
+    // And the family sheet must not prescribe handwriting either.
+    expect(spelling.family.tryAtHome.toLowerCase()).toMatch(/written, typed, said out loud/);
+    expect(spelling.family.tryAtHome.toLowerCase()).not.toMatch(/in their handwriting/);
   });
 });
 
