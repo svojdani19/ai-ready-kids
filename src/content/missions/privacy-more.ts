@@ -1148,9 +1148,11 @@ export const theSleepoverScreen: Mission = {
   estimatedMinutes: 8,
   teaser: "You are at Sam's house. The tablet there does not have the same rules.",
   summary:
-    "Students practise the hardest version of stopping and asking: doing it in someone else's home, where the rules are different, the grown-up is not yours, and speaking up feels rude.",
+    "Students practise the hardest version of stopping and asking: doing it in someone else's home, where the rules are different, the grown-up is not yours, and speaking up feels rude. They also practise the whole routine — stop the app, say what already went in, ask for it to be taken out, and get their own grown-up told.",
   learningGoals: [
     "Recognise that your rules travel with you",
+    "Stop an app rather than steering around its next question",
+    "Ask the grown-up there to check what it kept and take your part out",
     "Name a trusted grown-up in a house that is not yours",
     "Say something uncomfortable without accusing anybody",
   ],
@@ -1238,28 +1240,39 @@ export const theSleepoverScreen: Mission = {
       choices: [
         {
           id: "c1",
-          label: "“Do not put my school in. Put in a made-up one.”",
+          label: "“Can we close it? I do not want to put any more in.”",
           feedback: {
             tone: "strong",
-            headline: "Clear, quick, no argument",
-            body: "Sam types Banana Academy and thinks it is the funniest thing that has ever happened. You got what you needed and nobody felt told off.",
+            headline: "Stopping beats steering",
+            body: "You do not have to decide about this question, and then the next one, and the one after that. Closing it settles all of them at once, and Sam's enormous cat is far more interesting anyway.",
           },
           evidence: { skillId: "privacy.identity", result: "demonstrated" },
           next: "s5",
         },
         {
           id: "c2",
-          label: "“I would rather not do this one. Can we play something else?”",
+          label: "“Close it and let us go and show Bea. My name is already in it.”",
           feedback: {
             tone: "strong",
-            headline: "You can just leave the game",
-            body: "You do not have to negotiate every question. Changing the activity is allowed, and Sam's enormous cat is right there being far more interesting.",
+            headline: "Stop, then tell somebody",
+            body: "Closing it stops anything else going in. It does not do anything about your name, which is already in there, and that is a job for the grown-up in the house.",
           },
           evidence: { skillId: "privacy.escalate", result: "demonstrated" },
           next: "s5",
         },
         {
           id: "c3",
+          label: "“Do not put my school in. Put in a made-up one.”",
+          feedback: {
+            tone: "partial",
+            headline: "Keeps one thing out, and leaves the rest",
+            body: "Sam types Banana Academy and is delighted with himself. The app is still going and your real name is still in it. A made-up answer is something to agree with your own grown-up first, not a trick to work out on your own.",
+          },
+          evidence: { skillId: "privacy.identity", result: "developing" },
+          next: "s5",
+        },
+        {
+          id: "c4",
           label: "Let him type it and hope it does not matter",
           feedback: {
             tone: "rethink",
@@ -1283,28 +1296,39 @@ export const theSleepoverScreen: Mission = {
       choices: [
         {
           id: "c1",
-          label: "“The app keeps asking for our names and schools. Is that okay?”",
+          label: "“It asked for our names and schools. My name is in it. Can you take it out?”",
           feedback: {
             tone: "strong",
-            headline: "A question, not a complaint",
-            body: "Bea sits down and looks at it properly. She says she had no idea it did that and she is glad you said. Asking is much easier than accusing, and it works better.",
+            headline: "You said what went in and what you want done",
+            body: "That is the whole thing in one sentence. Bea cannot fix what she does not know about, and now she knows the app, the question and the bit that is already in there.",
           },
           evidence: { skillId: "privacy.escalate", result: "demonstrated" },
-          next: "s6",
+          next: "s5b",
         },
         {
           id: "c2",
+          label: "“The app keeps asking for our names and schools. Is that okay?”",
+          feedback: {
+            tone: "partial",
+            headline: "Good question, one step short",
+            body: "She has no way to know your name is already in there unless you tell her. She might look properly, or she might say it sounds fine and hand you the grapes. Say what went in.",
+          },
+          evidence: { skillId: "privacy.escalate", result: "developing" },
+          next: "s5b",
+        },
+        {
+          id: "c3",
           label: "Say nothing now, and tell your own grown-up when you get home",
           feedback: {
             tone: "partial",
             headline: "That is a real option and it counts",
-            body: "Telling later is much better than never. The only thing you lose is tonight: Sam keeps playing it after you have gone to sleep.",
+            body: "Telling later is much better than never. The only thing you lose is tonight: Sam keeps playing it after you have gone to sleep, with your name still in it.",
           },
           evidence: { skillId: "privacy.escalate", result: "developing" },
-          next: "s6",
+          next: "s5b",
         },
         {
-          id: "c3",
+          id: "c4",
           label: "Nothing at all. It is her house and her tablet.",
           feedback: {
             tone: "rethink",
@@ -1315,6 +1339,17 @@ export const theSleepoverScreen: Mission = {
           retry: true,
         },
       ],
+    },
+    {
+      id: "s5b",
+      kind: "story",
+      art: "kitchen",
+      narration: [
+        "Bea closes the app and puts the tablet on the shelf. She finds the cartoon person with your name on it and deletes it.",
+        "Then she says she cannot tell whether the app kept anything, so she is going to message your grown-up tonight and let them decide what to do.",
+        "Sam is mildly outraged about the tablet. The cat could not be more pleased.",
+      ],
+      next: "s6",
     },
     {
       id: "s6",
@@ -1328,11 +1363,11 @@ export const theSleepoverScreen: Mission = {
       choices: [
         {
           id: "c1",
-          label: "Then I still do not have to. I can say no and go home and tell mine.",
+          label: "Then I still do not have to. I can put it down and ask to ring my grown-up.",
           feedback: {
             tone: "strong",
             headline: "Exactly right, and worth saying out loud",
-            body: "Another family's yes is not your yes. You are allowed to be the only person in the room with that rule, and you are allowed to tell your own grown-up afterwards.",
+            body: "Another family's yes is not your yes. You can put the tablet down, go and be somewhere else in the house, and ask to phone your own grown-up. You never have to explain first.",
           },
           evidence: { skillId: "privacy.escalate", result: "demonstrated" },
           next: "s7",
@@ -1366,28 +1401,33 @@ export const theSleepoverScreen: Mission = {
       kind: "ending",
       art: "classroom",
       narration: [
-        "Bea texts your grown-up a photo of the cat asleep on Sam's tablet, which she says is the safest that tablet has been all year.",
+        "Bea's message reaches your grown-up before you are even asleep, and the two of them sort it out between them.",
+        "In the morning she sends a photo of the cat asleep on Sam's tablet, which she says is the safest that tablet has been all year.",
       ],
       wrapUp: [
         "Your rules travel with you. They do not stay at your house.",
         "Another family's yes is not your yes.",
-        "Asking a question is easier than making an accusation, and it works better.",
+        "Close it first. Then say what already went in and ask for it to be taken out.",
+        "You can always put the tablet down and ask to ring your own grown-up.",
       ],
     },
   ],
   guide: {
     setup:
-      "The hardest escalation is the one that risks seeming rude in somebody else's home. Bea is warm and reasonable throughout, on purpose: the difficulty is social, not scary. No adult in this mission is a threat.",
+      "The hardest escalation is the one that risks seeming rude in somebody else's home. Bea is warm and reasonable throughout, on purpose: the difficulty is social, not scary. No adult in this mission is a threat.\n\nThe second half is operational and is the part that is easy to skip. Speaking to a pleasant adult feels like the end of the job and is only the start of it. The routine is: close the app, add nothing more, say out loud what has already gone in, ask the adult there to take it out and to check what the app keeps, and get the child's own grown-up told when nobody can be sure. Note also that inventing a detail is deliberately not the full-credit answer. It is a reasonable strategy when a family has agreed it in advance, and a child improvising it alone is guessing while the app carries on running.",
     lookFor: [
       "Students who treat house rules as belonging to a building rather than to themselves",
       "Whether anyone can produce a sentence that is polite and still says no",
       "Students who defer entirely to another family's adult",
+      "Students who solve it by inventing a detail and carrying on playing",
+      "Whether anyone says out loud what has already gone in, rather than only that they are worried",
     ],
     questions: [
       "Whose rules were they, yours or your house's?",
       "What could you say that is polite and still says no?",
       "Sam's family lets him. Why does that not decide it for you?",
       "Who could you tell if the grown-up there said it was fine?",
+      "Your name was already in it. What needed to happen about that?",
     ],
     misconceptions: [
       {
@@ -1396,24 +1436,29 @@ export const theSleepoverScreen: Mission = {
           "Name the fear rather than arguing with it, then hand over the exact wording. A question — is that okay? — is not rude in any house, and children need the sentence more than the principle.",
       },
       {
+        student: "I put in a fake school, so it is sorted.",
+        response:
+          "This one feels like a win, which is why it needs answering. Inventing a detail keeps one more thing out, does nothing about what is already in, and leaves the app running. It also only works if a family has agreed it beforehand. Close it, then tell somebody.",
+      },
+      {
         student: "Their grown-up said yes, so it is allowed.",
         response:
           "Distinguish permission for their child from permission for yours. Then note that the child can ask the two adults to talk, which removes them from the middle.",
       },
     ],
     extension:
-      "Role-play in pairs, thirty seconds each: one is a guest, one is a host with a tablet. The guest has to decline without making it awkward. Swap. Collect the best sentences on a card for the wall.",
+      "Role-play in pairs, thirty seconds each: one is a guest, one is a host with a tablet. The guest has to decline without making it awkward. Swap. Then run the harder round: something of the guest's has already gone in, and they have to tell the host's grown-up what it was and ask for it to be taken out. Collect the best sentences from both rounds on a card for the wall.",
   },
   family: {
     summary:
-      "We practised keeping our own rules in somebody else's house, which is much harder than keeping them at home. Your child practised a polite sentence that still says no, and asking a question rather than making a complaint.",
+      "We practised keeping our own rules in somebody else's house, which is much harder than keeping them at home. Your child practised a polite sentence that still says no, and then the rest of the routine: close the app, say out loud what has already gone in, and ask the grown-up there to take it out and to let us know.",
     questions: [
       "If you are at a friend's house and they play something you are not allowed, what could you say?",
       "Whose rules are your rules — yours, or our house's?",
-      "Who could you tell if a grown-up somewhere else said something was fine?",
+      "If something of yours had already gone into an app at somebody else's house, what would you want to happen?",
     ],
     tryAtHome:
-      "Agree one sentence your child can use at any house, and practise it until it is boring. Something like: I am not allowed that one, can we do something else?",
+      "Agree one sentence your child can use at any house, and practise it until it is boring. Something like: I am not allowed that one, can we do something else? Then agree the other half — that they can ask to ring you from anywhere, at any time, without explaining why first.",
     familyRule: "Our rules come with us wherever we go.",
   },
 };

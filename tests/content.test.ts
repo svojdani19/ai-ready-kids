@@ -159,6 +159,11 @@ describe("mission content integrity", () => {
       "nobody can fake",
       "single most reliable",
       "the strongest thing in most rooms",
+      // Missing drafts and sudden improvement are not provenance, and an
+      // honest child cannot be relied on to perform a technique on request.
+      "real drawings leave a trail",
+      "real work leaves a trail",
+      "she will show you, happily",
     ]) {
       expect(studentCopy).not.toContain(overclaim);
     }
@@ -543,6 +548,123 @@ describe("no person and no familiarity settles whether something happened", () =
     const students = video.guide.misconceptions.map((m) => m.student.toLowerCase()).join(" ");
     expect(students).toMatch(/he said he did not do it/);
     expect(students).toMatch(/you can tell he would never do that/);
+  });
+});
+
+describe("provenance is asked of everybody, never inferred from a person", () => {
+  const drawing = MISSION_BY_SLUG["the-perfect-drawing"];
+  const studentCopy = drawing.scenes
+    .flatMap((scene) => [
+      ...scene.narration,
+      scene.prompt ?? "",
+      ...(scene.wrapUp ?? []),
+      ...(scene.choices ?? []).flatMap((c) => [c.label, c.feedback.headline, c.feedback.body]),
+    ])
+    .join(" ")
+    .toLowerCase();
+
+  it("establishes the universal process question before the surprising entry", () => {
+    // The form asks everybody from the opening scene. It is the starting norm,
+    // not a remedy invented after one child was scrutinised.
+    const opening = drawing.scenes.find((scene) => scene.id === drawing.openingSceneId)!;
+    expect(opening.narration.join(" ").toLowerCase()).toMatch(/how did you make this/);
+    expect(opening.narration.join(" ").toLowerCase()).toMatch(/everybody fills in/);
+  });
+
+  it("never awards mastery for judging what a classmate is capable of", () => {
+    const notice = drawing.scenes.find((scene) => scene.id === "s2")!;
+    const strong = notice.choices!.filter((c) => c.feedback.tone === "strong");
+    expect(strong).toHaveLength(1);
+    expect(strong[0].label.toLowerCase()).toMatch(/form asks everybody|nobody has to guess/);
+
+    // A jump is curiosity at most.
+    const surprise = notice.choices!.find((c) => /surprising/i.test(c.label))!;
+    expect(surprise.feedback.tone).toBe("partial");
+    expect(surprise.evidence?.result).toBe("developing");
+    expect(surprise.feedback.body.toLowerCase()).toMatch(/practise at home|get suddenly better/);
+
+    // Concluding she could not have drawn it is the retry.
+    const verdict = notice.choices!.find((c) => /could not have drawn/i.test(c.label))!;
+    expect(verdict.feedback.tone).toBe("rethink");
+    expect(verdict.retry).toBe(true);
+  });
+
+  it("drops drafts and on-demand demonstration as tests of authorship", () => {
+    expect(studentCopy).not.toMatch(/first tries|rough ones|earlier tries/);
+    expect(studentCopy).not.toMatch(/leave a trail/);
+    const wrapUp = drawing.scenes.find((s) => s.kind === "ending")!.wrapUp!.join(" ").toLowerCase();
+    expect(wrapUp).toMatch(/getting suddenly better is a thing people do/);
+    expect(wrapUp).toMatch(/nobody has to be guessed about/);
+    // Disclosed tool use stays acceptable.
+    expect(wrapUp).toMatch(/made by an app is fine/);
+  });
+
+  it("tells the teacher why sudden improvement is not evidence", () => {
+    const setup = drawing.guide.setup.toLowerCase();
+    expect(setup).toMatch(/appraise each other/);
+    expect(setup).toMatch(/still learning english|whose hands do not do what they are told/);
+    const students = drawing.guide.misconceptions.map((m) => m.student.toLowerCase()).join(" ");
+    expect(students).toMatch(/never drawn like that before/);
+    expect(drawing.guide.extension.toLowerCase()).toMatch(/ask every child/);
+    // The form was still blank, so nothing had been entered as her own.
+    expect(drawing.family.summary.toLowerCase()).not.toMatch(/entered a picture/);
+  });
+});
+
+describe("escalation completes operationally, not just socially", () => {
+  const sleepover = MISSION_BY_SLUG["the-sleepover-screen"];
+
+  it("makes stopping the app the full-credit move, not substituting a detail", () => {
+    const school = sleepover.scenes.find((scene) => scene.id === "s4")!;
+    const strong = school.choices!.filter((c) => c.feedback.tone === "strong");
+    expect(strong.map((c) => c.label.toLowerCase()).join(" ")).toMatch(/close it|can we close it/);
+
+    // Inventing a school keeps one thing out and leaves the app running with
+    // the child's real name already in it.
+    const madeUp = school.choices!.find((c) => /made-up one/i.test(c.label))!;
+    expect(madeUp.feedback.tone).toBe("partial");
+    expect(madeUp.evidence?.result).toBe("developing");
+    expect(madeUp.feedback.body.toLowerCase()).toMatch(/agree with your own grown-up/);
+  });
+
+  it("requires saying what already went in and asking for it to be removed", () => {
+    const tell = sleepover.scenes.find((scene) => scene.id === "s5")!;
+    const strong = tell.choices!.filter((c) => c.feedback.tone === "strong");
+    expect(strong).toHaveLength(1);
+    expect(strong[0].label.toLowerCase()).toMatch(/my name is in it/);
+    expect(strong[0].label.toLowerCase()).toMatch(/take it out/);
+
+    // Asking whether it is okay is a good question and stops one step short.
+    const vague = tell.choices!.find((c) => /is that okay/i.test(c.label))!;
+    expect(vague.feedback.tone).toBe("partial");
+    expect(vague.evidence?.result).toBe("developing");
+  });
+
+  it("shows the adult acting and the caregiver being told", () => {
+    const outcome = sleepover.scenes.find((scene) => scene.id === "s5b")!;
+    const copy = outcome.narration.join(" ").toLowerCase();
+    expect(copy).toMatch(/closes the app/);
+    expect(copy).toMatch(/deletes it/);
+    // Uncertainty about what was kept is named, and the caregiver decides.
+    expect(copy).toMatch(/cannot tell whether the app kept anything/);
+    expect(copy).toMatch(/message your grown-up/);
+  });
+
+  it("gives a seven-year-old an action they can actually start", () => {
+    const studentCopy = sleepover.scenes
+      .flatMap((scene) => [
+        ...scene.narration,
+        ...(scene.wrapUp ?? []),
+        ...(scene.choices ?? []).flatMap((c) => [c.label, c.feedback.body]),
+      ])
+      .join(" ")
+      .toLowerCase();
+    // "Go home" is not something a child can initiate at a sleepover.
+    expect(studentCopy).not.toMatch(/go home/);
+    expect(studentCopy).toMatch(/ask to ring my grown-up|ask to phone your own grown-up/);
+    const wrapUp = sleepover.scenes.find((s) => s.kind === "ending")!.wrapUp!.join(" ").toLowerCase();
+    expect(wrapUp).toMatch(/close it first/);
+    expect(wrapUp).toMatch(/put the tablet down and ask to ring your own grown-up/);
   });
 });
 

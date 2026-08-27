@@ -925,11 +925,12 @@ export const thePerfectDrawing: Mission = {
   estimatedMinutes: 8,
   teaser: "Nia's dragon is astonishing. Nia has never drawn a dragon before.",
   summary:
-    "A generated picture is entered in an art competition as hand-drawn. Students practise asking about process rather than appearance, and learn that the check for a picture is the same as for a fact: who made it, and how.",
+    "A generated picture nearly goes into an art competition without a label. Students learn that the check is a question every entrant answers about their own process, not a judgement about which classmate seems capable of what.",
   learningGoals: [
     "Ask how something was made rather than whether it looks real",
     "Recognise that process, not appearance, settles authorship",
-    "Raise a concern about a friend without accusing them",
+    "Ask everybody the same question instead of deciding who to suspect",
+    "Notice a surprise without turning it into a judgement about a person",
   ],
   badge: {
     id: "badge-verify-7",
@@ -944,8 +945,9 @@ export const thePerfectDrawing: Mission = {
       art: "classroom",
       narration: [
         "The school art competition is on Friday and the theme is dragons.",
+        "The entry form has one line on it that everybody fills in: HOW DID YOU MAKE THIS?",
+        "Ms. Okafor says every answer is a fine answer. Pencil, paint, an app, my uncle helped with the wings. The judges decide which pile it goes in, and that is their job.",
         "Nia brings hers in on Tuesday. It is extraordinary. Scales, smoke, a castle behind it going the right way into the distance.",
-        "Everybody crowds round. Somebody says it should be in a museum.",
       ],
       next: "s2",
     },
@@ -954,39 +956,43 @@ export const thePerfectDrawing: Mission = {
       kind: "decision",
       art: "classroom",
       narration: [
+        "Everybody crowds round. Somebody says it should be in a museum.",
         "You have sat next to Nia for two years. She draws horses, mostly, and they are good, and they do not look like this.",
+        "Behind you somebody says, not very quietly, “There is no way she drew that.”",
       ],
-      prompt: "What are you actually noticing?",
+      prompt: "What do you think about that?",
       choices: [
         {
           id: "c1",
-          label: "This does not match anything else she has made",
+          label: "Nobody has to guess. The form asks everybody how they made theirs.",
           feedback: {
             tone: "strong",
-            headline: "You noticed a jump, not a flaw",
-            body: "You are not saying it looks fake. You are saying it does not follow from anything, and people's drawing usually follows from what they drew last month.",
+            headline: "That is what the question is for",
+            body: "It goes to every single entry, so nobody gets picked out and nobody has to be guessed about. Nia will answer it the same as you will.",
           },
           evidence: { skillId: "verify.synthetic", result: "demonstrated" },
           next: "s3",
         },
         {
           id: "c2",
-          label: "The castle is drawn better than the dragon",
+          label: "It is surprising. That is all it is.",
           feedback: {
             tone: "partial",
-            headline: "That is looking at the picture",
-            body: "It might mean something and it might not. Some people are better at buildings. The stronger clue is about Nia, not about the paper.",
+            headline: "Being surprised is allowed",
+            body: "People do get suddenly better. They practise at home, or watch somebody, or find a pen that suits them. Surprising is a thing to be curious about, not a thing that tells you anything.",
           },
           evidence: { skillId: "verify.synthetic", result: "developing" },
           next: "s3",
         },
         {
           id: "c3",
-          label: "Nothing. She probably practised.",
+          label: "They are right. She could not have drawn that.",
           feedback: {
             tone: "rethink",
-            headline: "Maybe, and that is checkable",
-            body: "If she practised there will be earlier tries, because nobody arrives at this in one go. Have another think about what you noticed.",
+            headline: "That is a guess about a person",
+            body: "You have not watched Nia for the last month, and neither has whoever said it. Deciding what a classmate is capable of is not a check on a picture. Try again.",
+            coachNote:
+              "This is the failure this mission exists to prevent, and it is more likely than the one about the dragon. Do not let a class leave able to appraise each other.",
           },
           next: "s2",
           retry: true,
@@ -998,30 +1004,30 @@ export const thePerfectDrawing: Mission = {
       kind: "decision",
       art: "classroom",
       narration: [
-        "You could say nothing. She is your friend and Friday is three days away.",
+        "The crowd thins out. Nia is still standing next to her dragon and she has gone quiet.",
       ],
-      prompt: "If you say something, what do you ask?",
+      prompt: "What do you say to her?",
       choices: [
         {
           id: "c1",
-          label: "“How did you do the smoke? I want to learn it.”",
+          label: "“That is amazing. What did you make it with?”",
           feedback: {
             tone: "strong",
-            headline: "A question about process, and a kind one",
-            body: "If she drew it, she will show you, happily, for ten minutes. If she did not, the question lands somewhere else entirely. Either way you did not accuse anybody.",
+            headline: "The same thing you would ask anybody",
+            body: "It is the question on the form and it is what you would ask about any good picture. It is not a test, and she can answer it however she likes.",
           },
           evidence: { skillId: "verify.synthetic", result: "demonstrated" },
           next: "s4",
         },
         {
           id: "c2",
-          label: "“Do you have the first tries? I love seeing rough ones.”",
+          label: "Tell Ms. Okafor she should check whether Nia drew it",
           feedback: {
-            tone: "strong",
-            headline: "Asking for the working",
-            body: "Real drawings leave a trail: smudges, a bin full of dragons with wrong necks. A picture with no history behind it is worth a question.",
+            tone: "partial",
+            headline: "She does check, and she checks all of them",
+            body: "Asking her to look at one person's is a different thing from the form, and it is the thing that would follow Nia round for a year. The form gets there without that.",
           },
-          evidence: { skillId: "verify.synthetic", result: "demonstrated" },
+          evidence: { skillId: "verify.synthetic", result: "developing" },
           next: "s4",
         },
         {
@@ -1030,7 +1036,7 @@ export const thePerfectDrawing: Mission = {
           feedback: {
             tone: "rethink",
             headline: "That is an accusation with a question mark on it",
-            body: "She will say yes, because what else can she say in front of everybody. Ask about how it was made instead. Try again.",
+            body: "She will say yes, because what else can she say in front of everybody. Ask what it was made with instead, the way the form does. Try again.",
             coachNote:
               "The difference between asking about process and challenging honesty is the whole social skill here. Give students the wording.",
           },
@@ -1045,7 +1051,7 @@ export const thePerfectDrawing: Mission = {
       art: "classroom",
       narration: [
         "Nia goes red. She says she typed dragon with a castle into an app on her cousin's phone and printed it.",
-        "She says she was going to say. She says she did not know how to say it once everybody started crowding round.",
+        "She says she was going to write it on the form. She says she did not know how to say it out loud once everybody started crowding round.",
       ],
       next: "s5",
     },
@@ -1096,7 +1102,7 @@ export const thePerfectDrawing: Mission = {
       kind: "reflect",
       art: "classroom",
       narration: [
-        "Ms. Okafor adds one line to the entry form for everybody, not just Nia.",
+        "The forms go in on Friday. Every one of them has the same line at the bottom.",
         "HOW DID YOU MAKE THIS?",
       ],
       prompt: "Why is that a better question than asking if it is real?",
@@ -1107,7 +1113,7 @@ export const thePerfectDrawing: Mission = {
           feedback: {
             tone: "strong",
             headline: "Nobody has to be accused",
-            body: "Pencil, paint, an app, my dad helped with the wings. Every one of those is a fine answer. The question stops being a trap and starts being a label.",
+            body: "Pencil, paint, an app, my dad helped with the wings. Every one of those is a fine answer. And because everybody answers it, nobody has to be guessed about.",
           },
           evidence: { skillId: "own.honesty", result: "demonstrated" },
           next: "s7",
@@ -1146,21 +1152,23 @@ export const thePerfectDrawing: Mission = {
       ],
       wrapUp: [
         "Ask how something was made, not whether it looks real.",
-        "Real work leaves a trail of earlier tries.",
+        "Getting suddenly better is a thing people do. It is not evidence about anybody.",
+        "Everybody answers the same question, so nobody has to be guessed about.",
         "A picture made by an app is fine. Saying you drew it is not.",
       ],
     },
   ],
   guide: {
     setup:
-      "This mission sits across verification and honesty on purpose. Nia is sympathetic throughout and never punished; she gets caught by kindness rather than by a rule. The transferable artefact is the entry-form question, which many classes adopt for real.",
+      "This mission sits across verification and honesty on purpose. Nia is sympathetic throughout and never punished, and she is never actually caught: she answers the question everybody answers. The transferable artefact is the entry-form question, which many classes adopt for real.\n\nThe thing to guard is what the class does with a surprise. An unexpectedly good piece of work is not evidence of anything, and a mission that rewards spotting one teaches children to appraise each other. Children get suddenly better all the time. They practise privately, watch a video, switch to a medium that suits them, get legitimate help, or use a tool the school has given them. Work arrives with no rough copies behind it because it was done on a screen, or done once, or the rough copies went in the bin. And a child who is shy, who finds talking hard, who is still learning English, or whose hands do not do what they are told may be unable to demonstrate a technique on request even when the work is entirely their own. None of that is evidence. The question is asked of everybody, which is what makes it fair and what makes it work.",
     lookFor: [
-      "Students who inspect the image instead of asking about process",
+      "Students who decide from what they know about a classmate rather than from what the entrant said",
       "Whether anyone can phrase a question that is not an accusation",
       "Students who think using the app was the wrong part, rather than the label",
     ],
     questions: [
-      "What did you notice, and was it about the picture or about Nia?",
+      "Somebody said there was no way Nia drew it. What was wrong with saying that?",
+      "Can you think of a reason somebody's work might suddenly get much better?",
       "What is the difference between did you draw this and how did you do the smoke?",
       "Was using the app the problem, or was something else?",
       "Why does how did you make this work better than is it real?",
@@ -1174,17 +1182,22 @@ export const thePerfectDrawing: Mission = {
       {
         student: "You can always tell.",
         response:
-          "Disagree plainly and point at the direction of travel. The mission deliberately gives the strongest clue as knowledge of Nia, not inspection of the paper.",
+          "Disagree plainly and point at the direction of travel. Then be careful what replaces looking. The mission deliberately refuses to make knowing Nia the check, because that is guessing about a classmate. What replaces looking is the question everybody answers.",
+      },
+      {
+        student: "But she has never drawn like that before.",
+        response:
+          "Answer this one carefully, because a class that accepts it will spend the year appraising each other. Children do get suddenly better: practice at home, a video, a new pen, an older cousin who showed them, a tool the school provided. Missing rough copies mean nothing either — plenty of work is done on a screen, or done once, or binned. And a child who is shy, who finds talking hard, who is still learning English or whose hands are hard to control may not be able to show you how on request even when it is completely theirs. Send them back to the form.",
       },
     ],
     extension:
-      "Add how did you make this to a real piece of class work this term. Accept every honest answer without comment, including used an app, and let the class see that honest labelling costs nothing.",
+      "Add how did you make this to a real piece of class work this term. Ask every child, not the ones whose work surprised you — asking only the surprising ones is the whole problem in miniature. Accept every honest answer without comment, including used an app, and let the class see that honest labelling costs nothing.",
   },
   family: {
     summary:
-      "A friend entered a picture made by an app as her own drawing. We practised asking how something was made rather than whether it looks real, and learned that using a tool is fine as long as you say so.",
+      "A friend brought in a picture made by an app and had not said so yet. We practised asking how something was made rather than guessing who could have made it, and learned that using a tool is fine as long as you say so on the form.",
     questions: [
-      "How could you tell a picture was not drawn by hand?",
+      "Why is asking how something was made better than guessing who could have made it?",
       "What is a kind way to ask how somebody made something?",
       "Was using the app wrong, or was it something else?",
     ],

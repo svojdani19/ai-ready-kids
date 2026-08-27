@@ -119,6 +119,13 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       dismiss one private fact to elevate another, for a handful of examples
       described as proof, and for "always" and "never" and "nothing at all"
       where the honest word is "usually" or "not on its own".
+- [ ] **A check that runs through a person is checked for who it
+      disadvantages.** When the answer depends on knowing somebody, on how they
+      behave under scrutiny, or on what they can demonstrate on request, ask who
+      that fails. Shy children, children who find talking hard, children still
+      learning the language, disabled children and children with less at home
+      all lose on that kind of test, and never because they did anything wrong.
+      Prefer a question every person is asked the same way.
 - [ ] **Nobody is exonerated by category.** Check every place the content
       implies a person is safe, honest or in the clear because of who they are
       — a familiar adult, a teacher, a friend, a parent. Warmth in a mission
