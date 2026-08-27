@@ -95,7 +95,7 @@ export default async function AdminReport() {
           <h2 className="font-display text-xl text-ink">Competencies demonstrated</h2>
           <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
             Share of all possible skill demonstrations achieved. Each competency has three
-            named skills, and a skill counts once a student has demonstrated it in a mission.
+            named skills. A skill counts once a student has chosen it unaided; reaching the same answer after a Try again is recorded as developing instead.
           </p>
           <table className="mt-3 w-full border-collapse text-sm">
             <thead>

@@ -3,7 +3,7 @@ import type { Mission } from "../types";
 export const theVerySureAnswer: Mission = {
   id: "m-verify-1",
   slug: "the-very-sure-answer",
-  order: 10,
+  order: 2,
   title: "The Very Sure Answer",
   competency: "verification",
   primarySkillId: "verify.confidence",
@@ -295,7 +295,7 @@ export const theVerySureAnswer: Mission = {
 export const thePenguinOnThePlayground: Mission = {
   id: "m-verify-2",
   slug: "the-penguin-on-the-playground",
-  order: 13,
+  order: 5,
   title: "The Penguin on the Playground",
   competency: "verification",
   primarySkillId: "verify.synthetic",
@@ -576,7 +576,7 @@ export const thePenguinOnThePlayground: Mission = {
 export const twoAnswersOneTruth: Mission = {
   id: "m-verify-3",
   slug: "two-answers-one-truth",
-  order: 16,
+  order: 8,
   title: "Two Answers, One Truth",
   competency: "verification",
   primarySkillId: "verify.source",

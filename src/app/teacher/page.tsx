@@ -58,7 +58,7 @@ export default async function TeacherOverview() {
       <PageHeader
         eyebrow="Teacher"
         title={`Good to see you, ${user.name.split(" ")[0]}`}
-        description="Completion and demonstrated skills for your classes. Nothing here labels a child, and there is no risk score to look for."
+        description="Completion, and the skills your students have chosen unaided. Nothing here labels a child, and there is no risk score to look for."
         actions={
           <ButtonLink href="/teacher/missions" variant="secondary">
             Mission library

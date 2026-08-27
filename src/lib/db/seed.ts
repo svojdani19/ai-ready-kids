@@ -220,17 +220,24 @@ export function simulateAttempt(
             : pick(rng, scene.choices);
 
     // A retry choice loops back; children almost always land the strong
-    // option on the second read, which is what the retry design is for.
+    // option on the second read, which is what the retry design is for. The
+    // second answer is coached, so it records developing rather than
+    // demonstrated — the same rule the live player applies.
+    let afterCoaching = false;
     if (choice.retry) {
       path.push({ sceneId: scene.id, choiceId: choice.id });
       choice = strong.length ? pick(rng, strong) : scene.choices[0];
+      afterCoaching = true;
     }
 
     path.push({ sceneId: scene.id, choiceId: choice.id });
     if (choice.evidence) {
-      const existing = evidence[choice.evidence.skillId];
-      if (existing !== "demonstrated") {
-        evidence[choice.evidence.skillId] = choice.evidence.result;
+      const result =
+        afterCoaching && choice.evidence.result === "demonstrated"
+          ? "developing"
+          : choice.evidence.result;
+      if (evidence[choice.evidence.skillId] !== "demonstrated") {
+        evidence[choice.evidence.skillId] = result;
       }
     }
     sceneId = choice.next === scene.id ? scene.next : choice.next;

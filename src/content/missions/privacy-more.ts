@@ -16,7 +16,7 @@ import type { Mission } from "../types";
 export const theQuizThatKeptAsking: Mission = {
   id: "m-privacy-4",
   slug: "the-quiz-that-kept-asking",
-  order: 2,
+  order: 10,
   title: "The Quiz That Kept Asking",
   competency: "privacy",
   primarySkillId: "privacy.identity",
@@ -267,7 +267,7 @@ export const theQuizThatKeptAsking: Mission = {
 export const theStudyGroup: Mission = {
   id: "m-privacy-5",
   slug: "the-study-group",
-  order: 3,
+  order: 19,
   title: "The Study Group",
   competency: "privacy",
   primarySkillId: "privacy.identity",
@@ -551,7 +551,7 @@ export const theStudyGroup: Mission = {
 export const theClassPhoto: Mission = {
   id: "m-privacy-6",
   slug: "the-class-photo",
-  order: 5,
+  order: 13,
   title: "The Class Photo",
   competency: "privacy",
   primarySkillId: "privacy.media",
@@ -791,7 +791,7 @@ export const theClassPhoto: Mission = {
 export const whatTheCameraSees: Mission = {
   id: "m-privacy-7",
   slug: "what-the-camera-sees",
-  order: 6,
+  order: 22,
   title: "What the Camera Sees",
   competency: "privacy",
   primarySkillId: "privacy.media",
@@ -1029,7 +1029,7 @@ export const whatTheCameraSees: Mission = {
 export const theSleepoverScreen: Mission = {
   id: "m-privacy-8",
   slug: "the-sleepover-screen",
-  order: 8,
+  order: 16,
   title: "The Sleepover Screen",
   competency: "privacy",
   primarySkillId: "privacy.escalate",
@@ -1310,7 +1310,7 @@ export const theSleepoverScreen: Mission = {
 export const itHappenedToTheo: Mission = {
   id: "m-privacy-9",
   slug: "it-happened-to-theo",
-  order: 9,
+  order: 25,
   title: "It Happened to Theo",
   competency: "privacy",
   primarySkillId: "privacy.escalate",

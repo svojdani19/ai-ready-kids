@@ -7,61 +7,67 @@ likely to be.
 
 ---
 
-## Sprint 06 — provenance over pixel-hunting
+## Sprint 10 — evidence integrity and interleaved practice
 
-- **Status:** complete in the working tree; commit pending
-- **Full review:** [`2026-08-26-sprint-06.md`](2026-08-26-sprint-06.md)
-- **Independent review:**
-  [`2026-08-26-sprint-06-independent-review.md`](2026-08-26-sprint-06-independent-review.md)
-- **Files touched:** `src/content/missions/verification.ts`,
-  `src/content/missions/privacy.ts`, `src/content/competencies.ts`,
-  `src/lib/domain/missionPath.ts`, `tests/content.test.ts`, and the review
-  handoff files
+- **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-26-sprint-10.md`](2026-08-26-sprint-10.md)
+- **Review trail:** sprints 01–10 in this directory. Sprint 09 tripled the
+  curriculum to 27 missions; sprint 10 fixes two defects that review found in it.
 
 ### What changed
 
-1. **Visual artefacts are now partial evidence.** In the suspicious penguin
-   picture, a missing shadow and a reversed playground layout trigger a pause
-   and a source check; they no longer earn the same full evidence as the child
-   knowing first-hand that it did not snow.
-2. **The measured skill now matches the durable behaviour.** *Trail Checker*
-   and the shared competency label reward checking who made or witnessed media,
-   replacing the detector identity implied by *Sharp Eyes*.
-3. **The teacher extension practises provenance.** It no longer asks children
-   to classify unlabeled real and generated images by appearance.
-4. **A forced answer no longer inflates the report.** The voice-check scene has
-   only one safe exit, so it now teaches the action without awarding evidence.
-   The mission's result comes from earlier decisions with real alternatives.
-5. **The newest copy is easier and more accurate.** Student copy no longer uses
-   three editing terms, and the family note no longer claims the story proved
-   who made the untraceable photo.
+1. **Coached answers no longer report as independent.** `recordDecision` and
+   `simulateAttempt` both downgrade a `demonstrated` result to `developing`
+   when the child reaches it on a scene they had already answered — that is,
+   after the authored Try again explanation. `demonstrated` stays sticky once
+   earned unaided anywhere, so the record is still evidence of what a child can
+   do rather than an average.
+2. **Assignment order is interleaved, not blocked.** Missions were ordered in
+   skill triplets, so a class assigned the first nine got *only privacy*, and
+   the first eighteen covered 6 of 9 skills and 2 of 3 competencies. They now
+   run in three passes of nine, rotating through the competencies, so every
+   prefix a teacher might assign is balanced and the three encounters with a
+   skill sit nine missions apart.
+3. **Reporting language matches the rule** on the teacher class page, the
+   teacher overview and the school report. The student view now shows a second,
+   warmly framed list — *Things you are getting the hang of* — so needing the
+   explanation reads as partway there rather than as nothing.
 
 ### Already verified — please do not redo
 
-- Lint, typecheck and 154 tests pass. The default Turbopack build passes
-  repeatedly in Claude's local session; an independent webpack build also
-  produces all 28 routes.
-- Independent player at 768×1024: revised partial feedback and **Keep going**
-  are visible together; no horizontal overflow.
-- Classroom Mode at 1280×800: comparison controls, feedback and all teacher
-  controls fit in one viewport; no horizontal overflow.
-- No browser-console errors, data changes or new child input.
+- `npm run verify` green: typecheck, lint, **232 tests**, Turbopack build.
+- **New suite `tests/evidence-integrity.test.ts`** walks a retry-first path
+  through **all 27 missions** using the real `recordDecision`, and asserts that
+  no skill is reported demonstrated unless the stored path contains an unaided
+  strong choice for it. A first-try walk is asserted to still demonstrate.
+- Ordering asserted directly: every competency inside the first three missions,
+  all nine skills inside the first nine, encounters exactly nine apart, and
+  every assignable prefix balanced across competencies.
+- Reseeded. Among completers, primary-skill demonstration moved off 100% into
+  the mid-90s, with `developing` now present in all nine skills.
 
 ### Where this is most likely still wrong
 
-- **Source hierarchy in Mission 6.** The plaque is treated as the closest source
-  and then corroborated by office records. Review whether the wording still
-  overstates what a plaque alone proves for grades 2–4.
-- **Badge migration.** Seeded demo data stores the same badge ID, so the renamed
-  label renders correctly. A future external export contract should keep IDs,
-  not cache display names.
-- **Evidence aggregation remains permissive elsewhere.** Mission 5's forced
-  answer no longer records evidence, but Claude found the same pattern in eight
-  other missions. The next integrity sprint needs a product-wide rule for
-  first-choice versus coached evidence, plus seed and reporting verification.
+- **Stickiness is doing a lot of work.** With three missions per skill and
+  `demonstrated` sticky, one unaided success out of three encounters is enough.
+  That is the specified rule and it keeps aggregate rates high. Whether a
+  teacher reads 95% as "nearly all my class can do this unaided" is worth
+  challenging.
+- **The eight legacy forced-award scenes remain.** Sprint 09's new missions all
+  have two or more non-looping exits; the original nine do not. Those scenes
+  now interact with the coaching rule in a way nobody has traced.
+- **Interleaving was not checked against how teachers actually assign.** The
+  order assumes sequential assignment. A teacher who assigns by competency, or
+  cherry-picks, gets none of this benefit.
+- **The new student "getting the hang of" list is untested with children.** It
+  is intended to keep a downgrade encouraging. It could equally read as a
+  second-class list.
+- **Content, not mechanics.** Sprint 09 added eighteen missions in one pass.
+  Their scenarios, feedback wording and reading level have had one automated
+  check and no human read.
 
 ### Standing constraints
 
 No generative model in the request path. No free text from children. No new
 column on `students`. No behavioural telemetry or risk scoring. Administrators
-see aggregates only.
+see aggregates only. Codex reviews; Claude implements.

@@ -82,9 +82,20 @@ export function startAttempt(db: Db, studentId: string, missionId: string): Atte
 }
 
 /**
- * Append one decision. `demonstrated` is sticky: once a student has shown a
- * skill, a later `developing` answer on the same skill does not downgrade it.
- * Deliberate — this is evidence of what a child can do, not an average.
+ * Append one decision.
+ *
+ * Two rules, and they pull in opposite directions on purpose.
+ *
+ * **Coaching downgrades.** Reaching the safe answer only after the authored
+ * feedback has explained it is not the same as choosing it. A strong choice
+ * made on a scene the child has already answered records `developing`, because
+ * the correction is what got them there. Without this, a child could take
+ * every wrong turn in a mission, read every explanation, and still be reported
+ * as having independently demonstrated the skill.
+ *
+ * **`demonstrated` is sticky.** Once shown independently anywhere, a later
+ * `developing` on the same skill does not take it away. This is evidence of
+ * what a child can do, not an average of their attempts.
  */
 export function recordDecision(
   db: Db,
@@ -99,9 +110,17 @@ export function recordDecision(
   const attempt = startAttempt(db, input.studentId, input.missionId);
   const path = [...attempt.path, { sceneId: input.sceneId, choiceId: input.choiceId }];
   const evidence: EvidenceMap = { ...attempt.evidence };
+
   if (input.evidence) {
+    // Already answered here means the child was sent back by feedback.
+    const afterCoaching = attempt.path.some((step) => step.sceneId === input.sceneId);
+    const result =
+      afterCoaching && input.evidence.result === "demonstrated"
+        ? "developing"
+        : input.evidence.result;
+
     if (evidence[input.evidence.skillId] !== "demonstrated") {
-      evidence[input.evidence.skillId] = input.evidence.result;
+      evidence[input.evidence.skillId] = result;
     }
   }
   db.prepare("UPDATE attempts SET path_json = ?, evidence_json = ? WHERE id = ?").run(

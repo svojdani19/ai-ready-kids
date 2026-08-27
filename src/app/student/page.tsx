@@ -197,13 +197,17 @@ export default async function StudentHome() {
         </div>
       )}
 
-      {/* Kid-facing evidence. No score, no ranking, no risk label. */}
+      {/* Kid-facing evidence. No score, no ranking, no risk label.
+          Two lists, not one. A skill only reaches the first list if the child
+          chose it without needing the Try again explanation, which is what
+          makes it worth something. The second list exists so that needing the
+          explanation reads as being partway there rather than as nothing. */}
       <section aria-labelledby="can-do" className="mt-10 rounded-2xl border-2 border-sand-deep bg-surface p-5">
         <h2 id="can-do" className="font-display text-2xl text-ink">
           Things you have shown you can do
         </h2>
         <p className="mt-1 text-[0.95rem] text-ink-soft">
-          These come from the choices you made in your missions.
+          These are the ones you got on your own, first go.
         </p>
         {summary.skillsDemonstrated === 0 ? (
           <p className="mt-4 text-[0.95rem] text-ink-soft">
@@ -213,8 +217,7 @@ export default async function StudentHome() {
           <ul className="mt-4 grid gap-2 sm:grid-cols-2">
             {COMPETENCIES.flatMap((c) =>
               c.skills.map((skill) => {
-                const result = summary.evidence[skill.id];
-                if (result !== "demonstrated") return null;
+                if (summary.evidence[skill.id] !== "demonstrated") return null;
                 return (
                   <li
                     key={skill.id}
@@ -231,6 +234,40 @@ export default async function StudentHome() {
               }),
             )}
           </ul>
+        )}
+
+        {COMPETENCIES.some((c) =>
+          c.skills.some((skill) => summary.evidence[skill.id] === "developing"),
+        ) && (
+          <>
+            <h3 className="mt-7 font-display text-xl text-ink">
+              Things you are getting the hang of
+            </h3>
+            <p className="mt-1 text-[0.95rem] text-ink-soft">
+              You worked these out after a Try again. That still counts, and they move
+              up when you get one first go.
+            </p>
+            <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+              {COMPETENCIES.flatMap((c) =>
+                c.skills.map((skill) => {
+                  if (summary.evidence[skill.id] !== "developing") return null;
+                  return (
+                    <li
+                      key={skill.id}
+                      className="flex items-start gap-2.5 rounded-xl border-2 border-dashed border-sand-deep bg-paper px-3.5 py-2.5"
+                    >
+                      <span aria-hidden="true" className="mt-0.5 font-bold text-ink-soft">
+                        →
+                      </span>
+                      <span className="text-[0.95rem] font-semibold leading-snug text-ink-soft">
+                        {skill.kidLabel}
+                      </span>
+                    </li>
+                  );
+                }),
+              )}
+            </ul>
+          </>
         )}
       </section>
 

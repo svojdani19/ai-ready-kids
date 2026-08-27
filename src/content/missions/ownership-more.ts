@@ -10,7 +10,7 @@ import type { Mission } from "../types";
 export const theStoryThatWasNotMine: Mission = {
   id: "m-own-4",
   slug: "the-story-that-was-not-mine",
-  order: 20,
+  order: 12,
   title: "The Story That Was Not Mine",
   competency: "ownership",
   primarySkillId: "own.effort",
@@ -578,7 +578,7 @@ export const thePracticeThatGotSkipped: Mission = {
 export const theGroupProject: Mission = {
   id: "m-own-6",
   slug: "the-group-project",
-  order: 23,
+  order: 15,
   title: "The Group Project",
   competency: "ownership",
   primarySkillId: "own.toolchoice",
@@ -1177,7 +1177,7 @@ export const theQuestionWithNoAnswer: Mission = {
 export const theArtShowLabel: Mission = {
   id: "m-own-8",
   slug: "the-art-show-label",
-  order: 26,
+  order: 18,
   title: "The Art Show Label",
   competency: "ownership",
   primarySkillId: "own.honesty",

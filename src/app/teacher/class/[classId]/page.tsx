@@ -161,7 +161,7 @@ export default async function ClassPage({
       <div className="mt-6">
         <Panel
           title="Competency evidence"
-          description="How many students have shown each skill at least once, from the choices they made."
+          description="How many students have chosen a skillful response unaided at least once. Reaching the same answer after a Try again does not count here."
         >
           <PanelBody className="grid gap-4 sm:grid-cols-3">
             {COMPETENCIES.map((competency) => (
@@ -192,7 +192,7 @@ export default async function ClassPage({
       <div className="mt-6">
         <Panel
           title="Roster"
-          description="One row per student. Green means the skill has been demonstrated, amber means it is developing, grey means there is no evidence yet."
+          description="One row per student. Green means chosen unaided at least once. Amber means a partly-right choice, or the safe answer reached after a Try again. Grey means no evidence yet."
         >
           {students.length === 0 ? (
             <PanelBody>

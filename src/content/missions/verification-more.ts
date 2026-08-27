@@ -298,7 +298,7 @@ export const theBookThatWasNotThere: Mission = {
 export const theHelperAndTheTeacher: Mission = {
   id: "m-verify-5",
   slug: "the-helper-and-the-teacher",
-  order: 12,
+  order: 20,
   title: "The Helper and the Teacher",
   competency: "verification",
   primarySkillId: "verify.confidence",
@@ -859,7 +859,7 @@ export const theVideoOfMrRuiz: Mission = {
 export const thePerfectDrawing: Mission = {
   id: "m-verify-7",
   slug: "the-perfect-drawing",
-  order: 15,
+  order: 23,
   title: "The Perfect Drawing",
   competency: "verification",
   primarySkillId: "verify.synthetic",
@@ -1422,7 +1422,7 @@ export const theScienceFairFact: Mission = {
 export const theWeatherArgument: Mission = {
   id: "m-verify-9",
   slug: "the-weather-argument",
-  order: 18,
+  order: 26,
   title: "The Weather Argument",
   competency: "verification",
   primarySkillId: "verify.source",

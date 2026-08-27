@@ -8,9 +8,17 @@ import { ownershipMoreMissions } from "./ownership-more";
 
 /**
  * Twenty-seven missions: three competencies, three skills each, three missions
- * per skill. `order` runs in skill triplets, so missions 1 to 3 all build the
- * same skill in different situations rather than sweeping across a competency
- * once. A teacher assigning in order gets spaced practice for free.
+ * per skill.
+ *
+ * `order` runs in three interleaved passes of nine rather than in skill
+ * triplets. Each pass touches all nine skills once, rotating through the
+ * competencies, so the three encounters with a skill sit nine missions apart
+ * and any prefix a teacher assigns is balanced across all three competencies.
+ *
+ * The earlier triplet ordering was blocked practice wearing a spacing label: a
+ * class assigned the first nine missions received privacy and nothing else.
+ * `tests/evidence-integrity.test.ts` asserts the interleaving directly so it
+ * cannot quietly regress the next time missions are added.
  */
 export const MISSIONS: Mission[] = [
   ...privacyMissions,

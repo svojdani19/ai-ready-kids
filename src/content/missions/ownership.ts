@@ -3,7 +3,7 @@ import type { Mission } from "../types";
 export const theHomeworkThatDidItself: Mission = {
   id: "m-own-1",
   slug: "the-homework-that-did-itself",
-  order: 19,
+  order: 3,
   title: "The Homework That Did Itself",
   competency: "ownership",
   primarySkillId: "own.effort",
@@ -285,7 +285,7 @@ export const theHomeworkThatDidItself: Mission = {
 export const fourDoors: Mission = {
   id: "m-own-2",
   slug: "four-doors",
-  order: 22,
+  order: 6,
   title: "Four Doors",
   competency: "ownership",
   primarySkillId: "own.toolchoice",
@@ -601,7 +601,7 @@ export const fourDoors: Mission = {
 export const theSpellingTestSurprise: Mission = {
   id: "m-own-3",
   slug: "the-spelling-test-surprise",
-  order: 25,
+  order: 9,
   title: "The Spelling Test Surprise",
   competency: "ownership",
   primarySkillId: "own.honesty",
@@ -838,7 +838,7 @@ export const theSpellingTestSurprise: Mission = {
   ],
   guide: {
     setup:
-      "The consequence mission, and the one to schedule last. It shows a delayed cost, which is the hardest thing about over-reliance to teach, because the cost never arrives on the night the shortcut is taken. Keep the tone free of blame throughout: the teacher character is curious, never cross.",
+      "The consequence mission, and the one to schedule late in a pass rather than early. It shows a delayed cost, which is the hardest thing about over-reliance to teach, because the cost never arrives on the night the shortcut is taken. Keep the tone free of blame throughout: the teacher character is curious, never cross.",
     lookFor: [
       "Students who convert a strategy problem into a fixed belief about themselves",
       "Students who over-correct into refusing tools entirely",
