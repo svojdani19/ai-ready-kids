@@ -33,7 +33,7 @@ const ROLES = [
       "Every branch of every mission written out in one page, including coach notes students never see.",
       "Classroom Mode for the projector: teacher-paced, any branch revealable, hands-up tally, nothing recorded.",
       "Completion and demonstrated-skill evidence per student, framed as next teaching steps.",
-      "A printable discussion guide and a family take-home for each of the nine missions.",
+      "A printable discussion guide and a family take-home for every mission.",
       `A ${CERTIFICATION_MODULES.length}-module micro-certification, about ${CERTIFICATION_MINUTES} minutes, with a printable certificate.`,
     ],
   },

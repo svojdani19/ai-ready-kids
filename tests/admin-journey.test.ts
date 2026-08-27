@@ -25,6 +25,7 @@ import {
   listBenchmarksForClass,
 } from "@/lib/repo/progress";
 import { buildSchoolReport, MIN_REPORTABLE_GROUP, reportToCsv } from "@/lib/repo/report";
+import { MISSIONS } from "@/content/missions";
 import { summariseCohortBenchmark } from "@/lib/domain/benchmark";
 import { addMonths, formatDate, purgeDateFor, retentionRows } from "@/lib/domain/retention";
 
@@ -45,7 +46,7 @@ describe("school overview", () => {
     expect(report.totals.completionRate).toBeGreaterThan(0);
     expect(report.totals.completionRate).toBeLessThanOrEqual(1);
     expect(report.competencies).toHaveLength(3);
-    expect(report.missions).toHaveLength(9);
+    expect(report.missions).toHaveLength(MISSIONS.length);
     expect(report.byGrade.map((g) => g.grade)).toEqual([2, 3, 4]);
   });
 

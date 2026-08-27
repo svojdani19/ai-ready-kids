@@ -16,7 +16,7 @@ const PLANS = [
     unit: "per classroom, per year",
     seats: "Up to 30 students",
     features: [
-      "All nine missions and both check-in forms",
+      "All 27 missions and both check-in forms",
       "Teacher dashboard and discussion guides",
       "Classroom Mode for projector lessons",
       "Educator micro-certification",

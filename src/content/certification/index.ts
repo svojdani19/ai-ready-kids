@@ -129,7 +129,7 @@ export const CERTIFICATION_MODULES: CertificationModule[] = [
     check: {
       question: "A caregiver asks whether this program will keep their child safe from AI. What is the most honest answer?",
       options: [
-        { id: "a", label: "Yes, students who complete all nine missions are protected", correct: false },
+        { id: "a", label: "Yes, students who complete every mission are protected", correct: false },
         { id: "b", label: "No, and the school should not be responsible for this at all", correct: false },
         { id: "c", label: "No school can promise that, but your child has practised specific decisions and can tell you what they are", correct: true },
       ],

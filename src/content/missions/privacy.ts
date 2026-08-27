@@ -3,7 +3,7 @@ import type { Mission } from "../types";
 /**
  * Privacy missions.
  *
- * Recurring cast across all nine missions: the player is an unnamed student in
+ * Recurring cast across every mission: the player is an unnamed student in
  * Room 12 at Brightwood Elementary. Theo and Nia are classmates, Ms. Okafor
  * teaches the room, Mr. Ruiz runs the library. The in-story AI products
  * (Sprocket, Dazzle, AskMe, VoiceKit) are written as products, never as
@@ -313,7 +313,7 @@ export const sprocketWantsToKnow: Mission = {
 export const theFilterThatWantedMore: Mission = {
   id: "m-privacy-2",
   slug: "the-filter-that-wanted-more",
-  order: 2,
+  order: 4,
   title: "The Filter That Wanted More",
   competency: "privacy",
   primarySkillId: "privacy.media",
@@ -599,7 +599,7 @@ export const theFilterThatWantedMore: Mission = {
 export const theQuestionAtBedtime: Mission = {
   id: "m-privacy-3",
   slug: "the-question-at-bedtime",
-  order: 3,
+  order: 7,
   title: "The Question at Bedtime",
   competency: "privacy",
   primarySkillId: "privacy.escalate",

@@ -56,7 +56,7 @@ export default function DemoPage() {
         eyebrow="Demo"
         tone="marigold"
         title="Sit in any seat and look around."
-        lede="Brightwood Elementary is a fictional school with a full year of fictional data: four classes, 90 students, nine missions and both check-in windows. No real school, staff member or child appears anywhere in this product."
+        lede="Brightwood Elementary is a fictional school with a full year of fictional data: four classes, 90 students, a curriculum of 27 missions and both check-in windows. No real school, staff member or child appears anywhere in this product."
       />
 
       <Section tone="surface" title="Pick a seat">

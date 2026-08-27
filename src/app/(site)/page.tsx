@@ -84,7 +84,7 @@ export default function LandingPage() {
               href="/curriculum"
               className="text-[0.95rem] font-bold text-grape-deep underline underline-offset-4"
             >
-              See all nine missions →
+              See all 27 missions →
             </Link>
           </div>
           <div className="mt-7 grid gap-4 md:grid-cols-3">
@@ -118,12 +118,13 @@ export default function LandingPage() {
           <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div>
               <h2 className="font-display text-3xl text-ink">
-                What a school can honestly claim
+                What your school can show
               </h2>
               <p className="mt-3 max-w-xl text-[1.05rem] leading-relaxed text-ink-soft">
-                Not that your students are safe from AI — no school can promise that. That
-                they have practised specific decisions, can name them, and were measured
-                twice on situations the lessons never used.
+                That your students have practised specific decisions and can name them.
+                That they were measured in the fall and again in the spring, on situations
+                the lessons never used. That is a claim you can take to a board meeting
+                with a report behind it.
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <ButtonLink href="/approach" variant="secondary">
@@ -136,9 +137,18 @@ export default function LandingPage() {
             </div>
             <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
               {[
-                ["No accounts for children", "A class code and a first name. Nothing to steal."],
-                ["No behavioural tracking", "No timers, no keystrokes, no risk scores."],
-                ["No camera, mic or ads", "The product requests no device permission at all."],
+                [
+                  "A class code is all they need",
+                  "A first name and a last initial is the entire student record. Nothing to reset, nothing worth stealing.",
+                ],
+                [
+                  "Evidence, not surveillance",
+                  "You see which of nine named skills a child has shown. Never a timer, a keystroke or a risk score.",
+                ],
+                [
+                  "It never asks for a permission",
+                  "No camera, no microphone, no location, no ads and no trackers, anywhere in the product.",
+                ],
               ].map(([t, b]) => (
                 <li key={t} className="rounded-2xl border-2 border-ink bg-surface px-4 py-3">
                   <p className="font-display text-lg leading-snug text-ink">{t}</p>
@@ -155,7 +165,7 @@ export default function LandingPage() {
           <h2 className="font-display text-3xl text-ink">Sit in any seat and look around</h2>
           <p className="mx-auto mt-3 max-w-xl text-[1.05rem] leading-relaxed text-ink-soft">
             Brightwood Elementary is a fictional school with a full year of fictional data:
-            four classes, 90 students, nine missions and both check-in windows.
+            four classes, 90 students, 27 missions and both check-in windows.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <ButtonLink href="/demo" size="lg">

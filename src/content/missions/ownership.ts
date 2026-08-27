@@ -3,7 +3,7 @@ import type { Mission } from "../types";
 export const theHomeworkThatDidItself: Mission = {
   id: "m-own-1",
   slug: "the-homework-that-did-itself",
-  order: 7,
+  order: 19,
   title: "The Homework That Did Itself",
   competency: "ownership",
   primarySkillId: "own.effort",
@@ -285,7 +285,7 @@ export const theHomeworkThatDidItself: Mission = {
 export const fourDoors: Mission = {
   id: "m-own-2",
   slug: "four-doors",
-  order: 8,
+  order: 22,
   title: "Four Doors",
   competency: "ownership",
   primarySkillId: "own.toolchoice",
@@ -601,7 +601,7 @@ export const fourDoors: Mission = {
 export const theSpellingTestSurprise: Mission = {
   id: "m-own-3",
   slug: "the-spelling-test-surprise",
-  order: 9,
+  order: 25,
   title: "The Spelling Test Surprise",
   competency: "ownership",
   primarySkillId: "own.honesty",

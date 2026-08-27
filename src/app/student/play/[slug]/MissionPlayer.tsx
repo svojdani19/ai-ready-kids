@@ -261,7 +261,7 @@ export function MissionPlayer({
                   happening. */}
               <div className="flex items-center gap-3" aria-live="polite">
                 <BadgeSticker
-                  badgeId={mission.badge.id}
+                  skillId={mission.primarySkillId}
                   competency={mission.competency}
                   earned={finishState === "saved"}
                   size={56}

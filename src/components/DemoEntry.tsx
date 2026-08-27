@@ -1,5 +1,5 @@
 import { getDb } from "@/lib/db";
-import { getStudent, getClass, listStudents } from "@/lib/repo/classroom";
+import { getStudent, getClass, listAssignments, listStudents } from "@/lib/repo/classroom";
 import { getUserByEmail } from "@/lib/repo/school";
 import { listAttemptsForStudent } from "@/lib/repo/progress";
 import { summariseStudent } from "@/lib/domain/evidence";
@@ -22,9 +22,8 @@ export async function DemoEntry({ compact = false }: { compact?: boolean }) {
     : undefined;
 
   const teacher = getUserByEmail(db, DEMO.teacherEmail);
-  const teacherClass = teacher
-    ? listStudents(db, DEMO.classId).length
-    : 0;
+  const teacherClass = teacher ? listStudents(db, DEMO.classId).length : 0;
+  const teacherAssigned = teacher ? listAssignments(db, DEMO.classId).length : 0;
   const admin = getUserByEmail(db, DEMO.adminEmail);
 
   const cards = [
@@ -43,7 +42,7 @@ export async function DemoEntry({ compact = false }: { compact?: boolean }) {
       role: "teacher" as const,
       title: "Teacher",
       who: teacher ? `${teacher.name}, ${classroom?.name ?? "Room 12"}` : "Room 12 teacher",
-      blurb: `${teacherClass} students, all nine missions assigned, certification complete.`,
+      blurb: `${teacherClass} students, ${teacherAssigned} missions assigned, certification complete.`,
       accent: "border-pine bg-pine-wash",
     },
     {

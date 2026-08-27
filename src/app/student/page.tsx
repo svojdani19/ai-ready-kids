@@ -64,7 +64,7 @@ export default async function StudentHome() {
                 return (
                   <BadgeSticker
                     key={badgeId}
-                    badgeId={badgeId}
+                    skillId={mission.primarySkillId}
                     competency={mission.competency}
                     earned
                     size={34}
@@ -171,7 +171,7 @@ export default async function StudentHome() {
                               Mission {m.order}
                             </span>
                             <BadgeSticker
-                              badgeId={m.badge.id}
+                              skillId={m.primarySkillId}
                               competency={m.competency}
                               earned={isDone}
                               size={38}

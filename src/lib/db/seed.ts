@@ -72,7 +72,7 @@ interface SeedClass {
   joinCode: string;
   teacherId: string;
   size: number;
-  /** How many of the nine missions this class has been assigned. */
+  /** How many missions this class has been assigned so far this year. */
   assignedMissions: number;
   /** Roughly what share of assigned missions the class has completed. */
   completionRate: number;
@@ -134,7 +134,7 @@ const CLASSES: SeedClass[] = [
     joinCode: "MAPLE-317",
     teacherId: "usr_okafor",
     size: 23,
-    assignedMissions: 9,
+    assignedMissions: 18,
     completionRate: 0.88,
     postBenchmark: true,
     seed: 101,
@@ -146,7 +146,7 @@ const CLASSES: SeedClass[] = [
     joinCode: "ACORN-208",
     teacherId: "usr_whitfield",
     size: 21,
-    assignedMissions: 5,
+    assignedMissions: 9,
     completionRate: 0.63,
     postBenchmark: false,
     seed: 202,
@@ -158,7 +158,7 @@ const CLASSES: SeedClass[] = [
     joinCode: "HERON-455",
     teacherId: "usr_raman",
     size: 24,
-    assignedMissions: 9,
+    assignedMissions: 15,
     completionRate: 0.79,
     postBenchmark: true,
     seed: 303,
@@ -170,7 +170,7 @@ const CLASSES: SeedClass[] = [
     joinCode: "CEDAR-361",
     teacherId: "usr_brennan",
     size: 22,
-    assignedMissions: 6,
+    assignedMissions: 11,
     completionRate: 0.41,
     postBenchmark: false,
     seed: 404,

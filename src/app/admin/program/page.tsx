@@ -41,7 +41,7 @@ export default async function AdminProgram() {
       detail: `${bench.preCompleted} students completed`,
     },
     {
-      label: "All nine missions in use",
+      label: "Every mission in use",
       done: report.missions.every((m) => m.assignedTo > 0),
       detail: `${report.missions.filter((m) => m.assignedTo > 0).length} of ${MISSIONS.length} assigned somewhere`,
     },

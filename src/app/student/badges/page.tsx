@@ -48,7 +48,7 @@ export default async function BadgesPage() {
                       }`}
                     >
                       <BadgeSticker
-                        badgeId={m.badge.id}
+                        skillId={m.primarySkillId}
                         competency={m.competency}
                         earned={has}
                         size={78}

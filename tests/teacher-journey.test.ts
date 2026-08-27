@@ -104,7 +104,7 @@ describe("teacher sees completion and competency evidence", () => {
     });
 
     expect(cohort.studentCount).toBe(students.length);
-    expect(cohort.assignedMissionIds).toHaveLength(9);
+    expect(cohort.assignedMissionIds).toHaveLength(assignments.length);
     expect(cohort.completionRate).toBeGreaterThan(0.5);
     expect(cohort.completionRate).toBeLessThanOrEqual(1);
     expect(cohort.skills).toHaveLength(9);

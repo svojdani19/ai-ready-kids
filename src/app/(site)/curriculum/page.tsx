@@ -8,7 +8,7 @@ import { Tag } from "@/components/ui/Bits";
 export const metadata: Metadata = {
   title: "Curriculum",
   description:
-    "Nine authored story missions across three competencies: privacy, verification and learning ownership, for grades 2 to 4.",
+    "Twenty-seven authored story missions across three competencies: privacy, verification and learning ownership, for grades 2 to 4.",
 };
 
 const LANE: Record<string, { wrap: string; text: string; chip: "pine" | "marigold" | "denim" }> = {
@@ -23,8 +23,8 @@ export default function CurriculumPage() {
       <PageHero
         eyebrow="Curriculum"
         tone="marigold"
-        title="Three competencies. Nine missions. Nothing improvised."
-        lede="Each competency has three named skills and three missions. A mission takes seven to nine minutes, ends with a printable family take-home, and shares a cast and a setting with the other eight so a class builds continuity across the year."
+        title="Three competencies. Twenty-seven missions. Nothing improvised."
+        lede="Three competencies, three named skills each, three missions per skill. A mission takes seven to nine minutes, ends with a printable family take-home, and shares a cast and a setting with all the others, so a class builds continuity across a whole year."
       >
         <div className="flex flex-wrap gap-3">
           <ButtonLink href="/demo">Play one in the demo</ButtonLink>
@@ -65,7 +65,7 @@ export default function CurriculumPage() {
               </ul>
 
               <h3 className="mt-6 text-xs font-bold uppercase tracking-[0.14em] text-ink-faint">
-                The three missions
+                The missions
               </h3>
               <ul className="mt-2 grid gap-3 md:grid-cols-3">
                 {missions.map((m) => (

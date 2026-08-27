@@ -34,7 +34,7 @@ const GROUPS: NavGroup[] = [
     label: "The program",
     items: [
       { href: "/approach", label: "How it works", blurb: "Practice before exposure, and why it is not a chatbot" },
-      { href: "/curriculum", label: "Curriculum", blurb: "Nine missions across three competencies" },
+      { href: "/curriculum", label: "Curriculum", blurb: "Twenty-seven missions across three competencies" },
       { href: "/benchmark", label: "Annual check-ins", blurb: "Fall and spring, on unfamiliar situations" },
       { href: "/privacy", label: "Privacy and data", blurb: "Everything we hold, and what has no column" },
     ],
