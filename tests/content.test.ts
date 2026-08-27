@@ -829,12 +829,61 @@ describe("no scene reports mastery for the only way out of it", () => {
     }
     // The distinction is contextual: a fact plus a name, not a public/private
     // list with one obviously-private entry among two obviously-public ones.
-    expect(scene.prompt!.toLowerCase()).toMatch(/already knows your first name/);
     expect(scene.choices!.map((c) => c.label.toLowerCase()).join(" ")).not.toMatch(
       /favourite colour/,
     );
     // The downgrade for a coached retry is exercised for real against every
     // mission in tests/evidence-integrity.test.ts, through recordDecision.
+  });
+
+  /**
+   * Sprint 36. This scene used to open "Sprocket already knows your first
+   * name". It does not, on any route a child can take: the full-credit exit
+   * from s2 is "leave it blank and tap Start", and the only other non-retry
+   * exit is "ask Theo what he typed" — neither types a name. The scene then
+   * awarded privacy.identity on feedback reasoning from that premise, so the
+   * evidence rested on a fact the child's own path contradicted.
+   */
+  it("states its premise as a hypothetical, because no path establishes it", () => {
+    const mission = MISSION_BY_SLUG["sprocket-wants-to-know"];
+    const scene = mission.scenes.find((s) => s.id === "s6")!;
+    const opening = `${scene.narration.join(" ")} ${scene.prompt}`.toLowerCase();
+
+    // Explicitly hypothetical, and framed in the prompt itself rather than
+    // only in narration a class may skim past.
+    expect(scene.prompt!.toLowerCase()).toMatch(/imagine/);
+    expect(opening).toMatch(/pretend|imagine/);
+    // And it never asserts the app holds something the child withheld.
+    expect(opening).not.toMatch(/already knows your/);
+    expect(opening).not.toMatch(/you (gave|typed|told)/);
+  });
+
+  it("teaches that details stack, without claiming one child has been identified", () => {
+    const mission = MISSION_BY_SLUG["sprocket-wants-to-know"];
+    const scene = mission.scenes.find((s) => s.id === "s6")!;
+
+    // Sprint 17's safeguard: finishing is not mastery, so more than one exit.
+    const exits = scene.choices!.filter((c) => !c.retry);
+    expect(exits).toHaveLength(2);
+
+    const copy = scene
+      .choices!.map((c) => `${c.feedback.headline} ${c.feedback.body}`)
+      .join(" ")
+      .toLowerCase();
+
+    // The durable rule: a detail narrows the field. Not that it settles it.
+    expect(copy).toMatch(/smaller|narrows|short/);
+    // No claim of unique identification, and no claim of certainty.
+    expect(copy).not.toMatch(/one particular child/);
+    expect(copy).not.toMatch(/\bknows (where|who) (you|one|somebody|a kid)\b/);
+    expect(copy).not.toMatch(/nearly a doorstep|exactly where/);
+
+    // Dinosaurs stay a genuine public contrast: they add no place, so they do
+    // not narrow anything, which is why that option loops rather than exits.
+    const dinos = scene.choices!.find((c) => c.label.toLowerCase().includes("dinosaur"))!;
+    expect(dinos.retry).toBe(true);
+    expect(dinos.evidence).toBeUndefined();
+    expect(dinos.feedback.body.toLowerCase()).toMatch(/place/);
   });
 });
 

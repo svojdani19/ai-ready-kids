@@ -367,6 +367,12 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       that told somebody to work around its absence, and delete each one.
       Prose is not documentation of the code, it is part of the product, and it
       goes stale silently.
+- [ ] **A shared scene is checked against every path into it.** List the
+      predecessors, then read the scene once per predecessor. Any sentence
+      about what has already happened — what an app knows, what the child
+      said, what was agreed — has to be true on all of them, or be framed as a
+      hypothetical. This matters most where the scene records evidence, because
+      that turns a click into a claim about a child.
 - [ ] **No instruction routes a routine task through a destructive one.**
       Rotating a credential, correcting a name, reopening a form: these happen
       in ordinary weeks. If the answer the product gives is "delete it and make

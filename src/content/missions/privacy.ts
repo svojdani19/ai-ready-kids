@@ -205,41 +205,48 @@ export const sprocketWantsToKnow: Mission = {
       id: "s6",
       kind: "decision",
       art: "classroom",
+      // Deliberately a hypothetical, and deliberately about "a kid" rather
+      // than the player. Every route into this scene leaves Sprocket without
+      // the child's name: the full-credit exit from s2 is "leave it blank",
+      // and the other non-retry exit only asks Theo what he typed. The scene
+      // used to open "Sprocket already knows your first name", which was false
+      // on both, and then recorded privacy.identity off the back of it.
       narration: [
         "Ms. Okafor turns Sprocket off for the whole class while she looks into it.",
-        "Then she writes four things on the board and asks the room a question.",
+        "Then she writes four things on the board. “Let's pretend,” she says.",
+        "“Imagine some app already knows one thing about a kid: their first name.”",
       ],
-      prompt: "Sprocket already knows your first name. Which of these would you not add to it?",
+      prompt: "Imagine an app already knows a kid's first name. Which of these would you not add to it?",
       choices: [
         {
           id: "c1",
-          label: "Which school you go to",
+          label: "Which school they go to",
           feedback: {
             tone: "strong",
-            headline: "A name and a school is a building and a time",
-            body: "On its own a school is just a school. Put a first name next to it and somebody knows where one particular child is, five mornings a week.",
+            headline: "Details stack up",
+            body: "Plenty of kids share a first name. Add a school and now it is only the kids at that one school, on a weekday morning. The group got a lot smaller.",
           },
           evidence: { skillId: "privacy.identity", result: "demonstrated" },
           next: "s7",
         },
         {
           id: "c2",
-          label: "The street you live on",
+          label: "The street they live on",
           feedback: {
             tone: "strong",
-            headline: "A name and a street is nearly a doorstep",
-            body: "Anything that helps a stranger find you or pretend to be you stays private. Your address, your full name, your birthday, your school and your passwords.",
+            headline: "A street narrows it a lot further",
+            body: "Where somebody lives is one of the strongest details there is. Stack it on a first name and the list of kids it could be gets very short. That is why it stays private.",
           },
           evidence: { skillId: "privacy.identity", result: "demonstrated" },
           next: "s7",
         },
         {
           id: "c3",
-          label: "That you like dinosaurs",
+          label: "That they like dinosaurs",
           feedback: {
             tone: "rethink",
             headline: "Dinosaurs are fine to share",
-            body: "Add dinosaurs to your first name and nobody is any closer to finding you. Look for one that adds a place. There is more than one.",
+            body: "Lots of kids like dinosaurs. Adding that does not make the group any smaller, and it does not say where anybody is. Look for one that adds a place. There is more than one.",
           },
           next: "s6",
           retry: true,
