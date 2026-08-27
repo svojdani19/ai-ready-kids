@@ -849,10 +849,11 @@ export const whatTheCameraSees: Mission = {
   estimatedMinutes: 8,
   teaser: "A game wants to show your room to everyone playing. Your room says a lot.",
   summary:
-    "A game offers a live camera feature that puts a player's room on screen for other players. Students practise auditing what a space reveals and learn that live video cannot be checked before it is seen.",
+    "A game reuses a camera permission for a new live feature. Students practise auditing what a space reveals, learn to tell a preview from a live stream by what the screen says, and meet the rule that once a stream is live each new moment reaches viewers before it can be reviewed.",
   learningGoals: [
     "List what a bedroom or kitchen reveals about a family",
-    "Understand that live video cannot be reviewed first",
+    "Tell a preview apart from a live stream by reading what the screen says",
+    "Understand that once a stream is live, each new moment goes out before you can check it",
     "Turn a feature off rather than trying to manage it",
   ],
   badge: {
@@ -868,8 +869,9 @@ export const whatTheCameraSees: Mission = {
       art: "bedroom-night",
       narration: [
         "Saturday morning. The game is called Star Barn and you build things in it with people from anywhere.",
+        "You gave it the camera months ago, for taking a picture of your barn to put on your profile.",
         "There is an update. A banner says Show Your Space! Let your friends see where you build!",
-        "It turns on the camera and puts whatever it sees in a little window next to your barn.",
+        "It does not ask you anything. It already has the camera, so it just starts using it.",
       ],
       next: "s2",
     },
@@ -878,9 +880,10 @@ export const whatTheCameraSees: Mission = {
       kind: "decision",
       art: "bedroom-night",
       narration: [
-        "The preview is already running. You can see your room in the corner of the screen.",
+        "A window opens in the corner with your room in it. Underneath it says PREVIEW — ONLY YOU CAN SEE THIS.",
+        "Next to the window there is a button that says GO LIVE.",
       ],
-      prompt: "Look at what is in the picture. What is in there?",
+      prompt: "Before you touch anything, look at the picture. What is in there?",
       choices: [
         {
           id: "c1",
@@ -888,10 +891,10 @@ export const whatTheCameraSees: Mission = {
           feedback: {
             tone: "strong",
             headline: "You checked the edges",
-            body: "A window is the strongest thing in most rooms. A tree, a bit of fence, the house opposite. Somebody who knows the area only needs a little.",
+            body: "A window can show a tree, a bit of fence, the house opposite. Somebody who already knows the area could work out which street from very little.",
           },
           evidence: { skillId: "privacy.media", result: "demonstrated" },
-          next: "s3",
+          next: "s2b",
         },
         {
           id: "c2",
@@ -899,10 +902,10 @@ export const whatTheCameraSees: Mission = {
           feedback: {
             tone: "strong",
             headline: "That badge is a name and a town",
-            body: "School uniform in the background of a video is one of the fastest ways to tell a stranger where a child is every weekday.",
+            body: "A school badge tells somebody which school. Which school tells them which town, and where you are every weekday morning.",
           },
           evidence: { skillId: "privacy.media", result: "demonstrated" },
-          next: "s3",
+          next: "s2b",
         },
         {
           id: "c3",
@@ -920,11 +923,59 @@ export const whatTheCameraSees: Mission = {
       ],
     },
     {
+      id: "s2b",
+      kind: "decision",
+      art: "bedroom-night",
+      narration: [
+        "You point the tablet at a blank bit of wall instead. The little window follows.",
+        "Theo is playing too. He types: I cannot see your room. Have you not gone live yet?",
+      ],
+      prompt: "What does that tell you?",
+      choices: [
+        {
+          id: "c1",
+          label: "Nobody has seen it yet. The preview is only on my screen.",
+          feedback: {
+            tone: "strong",
+            headline: "That is worth being sure about",
+            body: "A picture of you on your own screen is not the same as a picture other people are getting. The tablet is showing you what it would send. It has not sent it.",
+          },
+          evidence: { skillId: "privacy.media", result: "demonstrated" },
+          next: "s3",
+        },
+        {
+          id: "c2",
+          label: "It has not started, so the choice is still mine",
+          feedback: {
+            tone: "partial",
+            headline: "And this is the moment it is cheapest",
+            body: "Right now deciding costs you nothing at all. Once that button is pressed, the deciding is over for every moment after it.",
+          },
+          evidence: { skillId: "privacy.media", result: "developing" },
+          next: "s3",
+        },
+        {
+          id: "c3",
+          label: "If I can see it, everybody can see it",
+          feedback: {
+            tone: "rethink",
+            headline: "Not yet, and it is worth being exact",
+            body: "Being nervous of every camera is not the same as knowing what one is doing. Read what it says under the window again. Try again.",
+            coachNote:
+              "Do not let this settle as every camera you can see yourself in is already public. A child who believes that has no way to tell a safe screen from a live one, and will guess.",
+          },
+          next: "s2b",
+          retry: true,
+        },
+      ],
+    },
+    {
       id: "s3",
       kind: "story",
       art: "bedroom-night",
       narration: [
-        "You move the tablet so it points at a blank bit of wall instead. That works, for about a minute.",
+        "You press GO LIVE to see what happens. PREVIEW changes to LIVE, and next to it: 8 PLAYERS CAN SEE THIS NOW.",
+        "Theo types: nice wall.",
         "Then your little brother comes in to ask something, walks right through the shot, and stops to wave at the camera.",
       ],
       next: "s4",
@@ -935,16 +986,17 @@ export const whatTheCameraSees: Mission = {
       art: "bedroom-night",
       narration: [
         "He is in it. He did not agree to anything. He does not even know the game exists.",
+        "By the time you spot him on your own screen, eight people have already got him on theirs.",
       ],
-      prompt: "What does that tell you about the feature?",
+      prompt: "What does that tell you about being live?",
       choices: [
         {
           id: "c1",
-          label: "Live video cannot be checked first. It is out before you see it.",
+          label: "Once it is live, each moment goes out before I can check it",
           feedback: {
             tone: "strong",
             headline: "That is the whole problem",
-            body: "A photo you can look at, think about, and delete. Live video has already gone by the time you notice what was in it. There is no draft.",
+            body: "A photo you can look at, think about and delete. A live window has already sent this second while you are still looking at it. There is no draft.",
           },
           evidence: { skillId: "privacy.media", result: "demonstrated" },
           next: "s5",
@@ -989,7 +1041,7 @@ export const whatTheCameraSees: Mission = {
           feedback: {
             tone: "strong",
             headline: "Off, and reported",
-            body: "It was added in an update, which means it appeared without anybody choosing it. That is worth a grown-up knowing, because it will have appeared for other children too.",
+            body: "You said yes to the camera once, for a photo of your barn. The update used that yes for something else without asking. A grown-up should know, because it will have done that to other children too.",
           },
           evidence: { skillId: "privacy.escalate", result: "demonstrated" },
           next: "s6",
@@ -1028,24 +1080,28 @@ export const whatTheCameraSees: Mission = {
       ],
       wrapUp: [
         "Rooms are full of things you stopped noticing.",
-        "Live video cannot be checked before other people see it.",
+        "A preview on your own screen is not the same as other people getting it. Read what the screen says.",
+        "Once it is live, each new moment reaches people before you can check it.",
         "If keeping a feature safe takes constant watching, turn it off instead.",
       ],
     },
   ],
   guide: {
     setup:
-      "The new idea here is that live video removes the pause. Children handle photographs reasonably well by this age because a photo can be looked at first. Streaming takes that away, and the mission is built so they discover it rather than being told.",
+      "The new idea here is that going live removes the pause. Children handle photographs reasonably well by this age because a photo can be looked at first; streaming takes that away, and the mission is built so they discover it rather than being told. Two things are worth being exact about, because the vague version of this lesson does harm. First, seeing yourself on a screen does not mean anybody else is getting it — the mission labels PREVIEW and LIVE so the class learns to look rather than to guess, and a child who believes every self-view is already public has no way to tell one from the other. Second, the game never asks for the camera in this story: it was given months earlier for photographs, and the update quietly reuses it. That reuse is worth naming out loud.",
     lookFor: [
       "Students who cannot see their own room, which is normal and not carelessness",
       "Whether anyone names the difference between a photo and a live feed",
       "Students who manage a risky feature instead of switching it off",
+      "Students who conclude that seeing themselves on screen means it has already gone out",
     ],
     questions: [
       "What is in your room that you have stopped seeing?",
       "What is the difference between a photo and a live camera?",
       "The little brother walked in. Whose fault was that, and what does it tell us?",
       "When is turning something off better than being careful with it?",
+      "How could you tell whether it had started sending or not?",
+      "Star Barn already had the camera. What had you actually said yes to?",
     ],
     misconceptions: [
       {
@@ -1054,20 +1110,25 @@ export const whatTheCameraSees: Mission = {
           "Take it seriously rather than dismissing it, then add time. Careful for five minutes is easy. Careful for an hour, while playing, is not, and the feature runs the whole time.",
       },
       {
+        student: "If I can see myself, everyone can see me.",
+        response:
+          "Correct this one carefully rather than letting it stand as a safe assumption. It is not true, and a child who believes it cannot tell a preview from a stream and will end up guessing. Send them back to the words on the screen: preview, live, how many people. Looking is the skill.",
+      },
+      {
         student: "Only my friends can see it.",
         response:
           "Ask who counts as a friend in a game with strangers in it, and who else is in the room at their end.",
       },
     ],
     extension:
-      "Stand at the back of your classroom and photograph it as if you were streaming. Project it and have the class list everything a stranger could learn. Then do it again after they tidy the walls, and compare.",
+      "Before school, photograph your empty classroom from where a tablet usually sits. Project that picture — never a live feed, and never a fresh photo with children in it — and have the class list everything a stranger could learn from it. Take a second empty-room picture after they tidy the walls and compare the lists. If your school has a prepared image for this, use that instead. Nothing in this activity turns a camera on in front of the class.",
   },
   family: {
     summary:
-      "We looked at a game feature that shows your room to other players. Your child practised reading a room the way a stranger would, and learned that live video cannot be checked before other people see it.",
+      "We looked at a game feature that shows your room to other players. Your child practised reading a room the way a stranger would, learned to check whether a camera window is a preview or already live, and learned that once it is live each new moment reaches people before you can check it.",
     questions: [
       "What could somebody learn from seeing your bedroom?",
-      "Why is a live camera harder to be careful with than a photo?",
+      "How can you tell whether a camera is only showing you, or sending to other people?",
       "Who else in our house might walk past a camera without knowing?",
     ],
     tryAtHome:

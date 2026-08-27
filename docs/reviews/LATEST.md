@@ -7,69 +7,74 @@ likely to be.
 
 ---
 
-## Sprint 13 — the reason that earns the credit
+## Sprint 14 — observable states, and nobody exonerated by category
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-27-sprint-13.md`](2026-08-27-sprint-13.md)
-- **Review trail:** sprints 01–13 in this directory. Sprint 09 tripled the
+- **Full review:** [`2026-08-27-sprint-14.md`](2026-08-27-sprint-14.md)
+- **Review trail:** sprints 01–14 in this directory. Sprint 09 tripled the
   curriculum to 27 missions. Sprint 10 fixed two mechanism defects found in it.
-  Sprints 11, 12 and 13 each fix content defects found by reading two more of
-  the missions — six read so far, six with findings.
+  Sprints 11 to 14 each fix content defects found by reading two more of the
+  missions — eight read so far, eight with findings.
 
 ### What changed
 
-Both defects this sprint were structural rather than phrasing: the wrong reason
-was wired into which choice scored `demonstrated`, so fixing it meant changing
-the decision tree.
+Sprint 14's second finding is the most serious defect found in this curriculum
+so far. It is a safeguarding problem, not only a verification one.
 
-1. **"The Class Photo" now grounds consent in permission, not deletability.**
-   It drew the line between a school page and a personal share technically —
-   the school "can take a page down", a sent picture cannot be recalled. A web
-   page can be saved and reshared, and removal collects nothing back. The line
-   is now consent, purpose, audience and accountable process: twenty-two people
-   said yes to a school page and nobody asked them about a cousin. A second
-   full-credit route escalates to Ms. Okafor. The wrap-up states the limit of
-   removal rather than relying on it.
-2. **And it no longer resolves by removing the objector.** Asking whether Ravi
-   is in the photo used to score full credit and ended with Theo sending the
-   Ravi-free version — teaching that removing the one objector manufactures
-   permission from the twenty-two never asked. That option is now `partial`,
-   and the ending resolves through the school: the photo is for the school
-   page, and the cousin can look at the page.
-3. **"The Book That Was Not There" no longer proves nonexistence from one
-   catalogue.** An empty district search scored full credit for "it was made
-   up". A real book that is new, digital, self-published or simply not stocked
-   locally returns the same empty result. "Cannot use it yet" and "we need
-   somewhere bigger to look" are now the strong answers; "it was made up" is a
-   retry. A new scene supplies the independent check — world libraries, then
-   publisher records, covering ebooks and audiobooks — before the mission
-   concludes nobody wrote it. Shelf rules became record rules, and the
-   extension now requires preverified catalogue titles.
+1. **"What the Camera Sees" now separates permission, preview and live.** The
+   mission had an update that "turns on the camera" and concluded that live
+   video cannot be checked first, without ever saying whether anything was being
+   sent. Permission is now established up front — given months earlier for
+   photographs, and silently reused by the update. Preview is labelled
+   `PREVIEW — ONLY YOU CAN SEE THIS`, live is labelled `LIVE` with
+   `8 PLAYERS CAN SEE THIS NOW`, and a new decision scene turns the difference
+   into the lesson. "If I can see it, everybody can see it" is a retry, because
+   a child who believes it cannot tell one state from the other. The rule is now
+   *once it is live, each new moment reaches people before you can check it*.
+   Its classroom activity uses an empty-room photograph or a prepared image and
+   never a live feed.
+2. **"The Video of Mr. Ruiz" no longer exonerates a familiar adult.** "Mr. Ruiz
+   would never do that" earned full credit; the ending called the person "the
+   one source nobody can fake" and "the single most reliable check"; the sign
+   read ASK THE PERSON. Familiar people act unexpectedly, deny true conduct and
+   can be impersonated — and a mission teaching children that an adult they like
+   is automatically in the clear may stop one speaking up about something real.
+   Out of character is now `partial`/`developing` and reads as a reason to go
+   looking. Provenance keeps full credit. The subject's account is context: he
+   takes it to the office himself, "because what a person says about himself is
+   not the same as somebody checking". The sign now reads FIND OUT WHERE IT CAME
+   FROM, the office traces the chat, and the wrap-up carries the safe action for
+   a harmful clip — stop passing it on, hand it to an adult who can check the
+   source, witnesses and context.
+3. **Caught in the browser:** the out-of-character option rendered as "SAFE
+   CHOICE — Records developing", because the tone was left `strong` while the
+   evidence was demoted. Tone and evidence render from different fields, so
+   nothing failed. Aligned, and the guard now asserts both.
 
 ### Already verified — please do not redo
 
-- `npm run verify` green: typecheck, lint, **249 tests**, Turbopack build.
-- Seven new guards in `tests/content.test.ts`, plus three phrases added to the
+- `npm run verify` green: typecheck, lint, **257 tests**, Turbopack build.
+- Nine new guards in `tests/content.test.ts`, plus four phrases added to the
   brittle-absolutes ban list, which applies to every mission's student copy:
-  `nobody can take back a picture`, `real books have shelves`,
-  `when nothing anywhere has heard of it`.
-- All guards from sprints 10, 11 and 12 unchanged and still passing, including
-  the retry-first walk across every mission and the interleaving properties.
-- Both missions checked in the browser at the teacher preview: the photo scene
-  now shows two Safe choices and one Partly there, and the book mission shows
-  the district scene with two Safe choices and "it was made up" looping back.
+  `live video cannot be checked`, `nobody can fake`, `single most reliable`,
+  `the strongest thing in most rooms`.
+- All guards from sprints 10 to 13 unchanged and still passing.
+- Both missions checked in the browser at the teacher preview, including the
+  new preview/live scene and the rewritten reflection scene.
 
 ### Where this is most likely still wrong
 
-- **Fourteen Sprint 09 missions have still had no human read.** Six read, six
-  with findings, and the rate has not moved after three sprints of fixes.
-- **Assume some remaining findings are structural.** Sprints 11 and 12 were
-  fixed by rewriting sentences; this sprint needed a retry promoted, a
-  full-credit answer demoted and a scene inserted. Do not estimate the backlog
-  as copy edits.
-- **Two shapes to hunt specifically:** a correct choice resting on a reason that
-  will not hold, and an ending whose story acts out the error the feedback just
-  warned against.
+- **Twelve Sprint 09 missions have still had no human read.** Eight read, eight
+  with findings. The rate has not moved across four sprints of fixes.
+- **Assume more than copy edits.** Sprints 13 and 14 needed choices promoted and
+  demoted, scenes inserted and endings rewritten.
+- **Four shapes to hunt specifically:** a correct choice resting on a reason
+  that will not hold; an ending whose story acts out the error the feedback
+  warned against; a state the child is asked to reason about that the mission
+  never made observable; and anyone — a familiar adult, a teacher, a friend —
+  treated as safe or honest because of who they are rather than what was
+  checked. The last one is the reason sprint 14 exists, and warmth in a mission
+  makes it easy to write and hard to see.
 - **No general guard against factual error exists or can.** The bans are
   literal phrases.
 - **The eight legacy forced-award scenes remain**, and their interaction with

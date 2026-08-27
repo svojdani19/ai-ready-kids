@@ -628,10 +628,11 @@ export const theVideoOfMrRuiz: Mission = {
   estimatedMinutes: 9,
   teaser: "A ten-second video of the librarian doing something he would never do.",
   summary:
-    "A short clip shows a familiar adult behaving out of character. Students practise following the trail to whoever made it, and meet the idea that a fake about a person is a thing done to that person.",
+    "A short clip shows a familiar adult behaving out of character. Students practise treating that as a reason to stop rather than a verdict, following the trail to whoever made it, handing anything harmful to an adult who can check it, and meeting the idea that a fake about a person is a thing done to that person.",
   learningGoals: [
     "Follow a shared clip back to whoever made it",
-    "Notice when something is out of character for somebody you know",
+    "Treat out of character as a reason to pause, never as proof either way",
+    "Hand anything that could hurt somebody to an adult who can check it properly",
     "Understand that passing on a fake about a person harms that person",
   ],
   badge: {
@@ -665,11 +666,11 @@ export const theVideoOfMrRuiz: Mission = {
           id: "c1",
           label: "Mr. Ruiz would never do that",
           feedback: {
-            tone: "strong",
-            headline: "You know him",
-            body: "He re-covers paperbacks with sticky-back plastic for fun. Knowing somebody well is a real check, and it is one no stranger who made this could have.",
+            tone: "partial",
+            headline: "Worth noticing, and it is not proof",
+            body: "It makes you stop, which is what it is for. People do surprise you, though, and how well you know somebody is not a thing you can check. Take it as a reason to go looking.",
           },
-          evidence: { skillId: "verify.synthetic", result: "demonstrated" },
+          evidence: { skillId: "verify.synthetic", result: "developing" },
           next: "s3",
         },
         {
@@ -677,8 +678,8 @@ export const theVideoOfMrRuiz: Mission = {
           label: "Where did this come from?",
           feedback: {
             tone: "strong",
-            headline: "Straight to the trail",
-            body: "You ask. It came from a fourth grader, who got it from her brother, who got it from a group chat. Nobody at the end of the chain knows who filmed it.",
+            headline: "Straight to the trail, which is the move",
+            body: "You ask. It came from a fourth grader, who got it from her brother, who got it from a group chat. Nobody at the end of the chain knows who filmed it, and that is the part you can actually chase.",
           },
           evidence: { skillId: "verify.synthetic", result: "demonstrated" },
           next: "s3",
@@ -703,7 +704,7 @@ export const theVideoOfMrRuiz: Mission = {
       narration: [
         "You take the tablet to the library and Mr. Ruiz watches it.",
         "He is quiet for a moment. Then he says, “That is my cardigan. That is not my bin, and I have never thrown away a book in my life.”",
-        "He does not laugh.",
+        "He does not laugh. He walks it straight down to the office, because what a person says about themselves is not the same as somebody checking.",
       ],
       next: "s4",
     },
@@ -718,11 +719,11 @@ export const theVideoOfMrRuiz: Mission = {
       choices: [
         {
           id: "c1",
-          label: "Telling the people who sent it to me that it is not real",
+          label: "Stopping my part, and telling the people who sent it to stop too",
           feedback: {
             tone: "strong",
             headline: "Go back up the chain",
-            body: "Every person you tell is a branch that stops. You cannot catch all of it and you can stop your part, which is the only part that was ever yours.",
+            body: "You cannot say yet who made it. You can say it is not checked and that the office has it. Every person you tell is a branch that stops.",
           },
           evidence: { skillId: "verify.source", result: "demonstrated" },
           next: "s5",
@@ -765,7 +766,7 @@ export const theVideoOfMrRuiz: Mission = {
           label: "“He is not laughing. That is how we know it is not only a joke.”",
           feedback: {
             tone: "strong",
-            headline: "The person in it decides",
+            headline: "The person in it decides whether it is a joke",
             body: "A joke about somebody is only a joke if they are in on it. Mr. Ruiz found out about himself from a stranger's tablet, which nobody would want.",
           },
           evidence: { skillId: "verify.synthetic", result: "demonstrated" },
@@ -803,28 +804,28 @@ export const theVideoOfMrRuiz: Mission = {
       art: "library",
       narration: [
         "Mr. Ruiz puts a new sign on the desk. It is his own handwriting and it is a bit wonky.",
-        "IF IT IS ABOUT A PERSON, ASK THE PERSON.",
+        "IF IT IS ABOUT A PERSON, FIND OUT WHERE IT CAME FROM.",
       ],
       prompt: "Why is that a good rule for videos?",
       choices: [
         {
           id: "c1",
-          label: "Because the person is the one source nobody can fake",
+          label: "Because where it came from is something you can actually check",
           feedback: {
             tone: "strong",
-            headline: "They were there and the video was not",
-            body: "You can copy a face, a voice, a cardigan. You cannot copy the actual person standing in front of you saying that never happened.",
+            headline: "It points at something outside the video",
+            body: "The clip cannot tell you who made it. The trail can. Either somebody filmed a thing that happened or somebody built it, and finding out which is the part that settles it.",
           },
           evidence: { skillId: "verify.synthetic", result: "demonstrated" },
           next: "s7",
         },
         {
           id: "c2",
-          label: "Because it is polite",
+          label: "Because the person in it can tell you what happened to them",
           feedback: {
             tone: "partial",
-            headline: "It is polite, and it is more than that",
-            body: "Being decent about it matters. It is also the single most reliable check available, which is why the rule is on a sign rather than in a manners lesson.",
+            headline: "Worth having, and not the end of it",
+            body: "What Mr. Ruiz says matters, and he was standing right there where you could ask him. It is one piece though. A message can be faked, and people are not always right about themselves either.",
           },
           evidence: { skillId: "verify.synthetic", result: "developing" },
           next: "s7",
@@ -834,8 +835,8 @@ export const theVideoOfMrRuiz: Mission = {
           label: "Because grown-ups always know",
           feedback: {
             tone: "rethink",
-            headline: "Not always, but about themselves, yes",
-            body: "He is not right because he is a grown-up. He is right because it was supposed to be him. Try again.",
+            headline: "That is not why, and it is not true",
+            body: "Being a grown-up is not a check at all. Look at what the sign actually tells you to go and do. Try again.",
           },
           next: "s6",
           retry: true,
@@ -847,35 +848,48 @@ export const theVideoOfMrRuiz: Mission = {
       kind: "ending",
       art: "library",
       narration: [
-        "The office sends a message to every family the same afternoon.",
+        "The office follows the chat back to where it started and finds the app it was made with. That is the bit that actually settled it.",
+        "They send a message to every family the same afternoon.",
         "Mr. Ruiz keeps the cardigan. He says he refuses to let a video ruin a perfectly good cardigan.",
       ],
       wrapUp: [
-        "Knowing somebody well is a real check.",
+        "Out of character is a reason to stop, not a reason to be sure.",
+        "If it is about a person, find out where it came from.",
         "Follow it back to whoever made it, and stop your part of the chain.",
-        "If it is about a person, ask the person.",
+        "Anything that could hurt somebody goes to a grown-up who can check it properly.",
       ],
     },
   ],
   guide: {
     setup:
-      "A fake about a familiar adult makes the harm concrete in a way an invented penguin cannot. Keep the register light: nothing frightening happens, and Mr. Ruiz is fine by the end. The it is only a joke exchange in scene five is the part worth rehearsing aloud.",
+      "A fake about a familiar adult makes the harm concrete in a way an invented penguin cannot. Keep the register light: nothing frightening happens, and Mr. Ruiz is fine by the end. The it is only a joke exchange in scene five is the part worth rehearsing aloud.\n\nOne line to hold throughout, and it is the reason this mission is written the way it is: never let it teach that a familiar adult is automatically in the clear. Out of character is a reason to pause and go looking; it is not a verdict, in either direction. A child who learns that people they like could not have done a thing has learned something that may stop them speaking up about something real later. That is why the clue is worth noticing but does not earn full credit, why Mr. Ruiz takes it to the office rather than his word closing it, and why the sign asks where it came from. The safe move for anything that could hurt somebody is the same every time: stop passing it on and hand it to an adult who can check the source, ask the people who were there, and see the whole context.",
     lookFor: [
       "Students who evaluate the clip rather than trace it",
-      "Whether anyone recognises out of character as evidence",
+      "Whether anyone treats out of character as settling it rather than as a reason to check",
       "Students who treat harm as beginning only if the target is upset in front of them",
     ],
     questions: [
-      "What did you know about Mr. Ruiz that the video did not?",
+      "The video looked out of character. What did that tell you to do next?",
       "Where did it come from? Could anyone say?",
       "Somebody said it was only a joke. What would you say back?",
       "What does the sign on the desk mean?",
+      "If a video could really hurt somebody, who should end up with it?",
     ],
     misconceptions: [
       {
         student: "Everyone knew it was fake.",
         response:
           "Ask how they knew, and then ask about the people three shares away who saw it without any of that context.",
+      },
+      {
+        student: "He said he did not do it, so that is that.",
+        response:
+          "Give his account its real weight and no more. He was there and the video was not, which makes what he says important. It is not the check, because in general people can be mistaken or untruthful about their own conduct, and a message from somebody can be faked. What settled it was tracing where the clip came from, which the office can do and a child cannot.",
+      },
+      {
+        student: "You can tell he would never do that.",
+        response:
+          "Handle this one deliberately. Agree that it is a good reason to stop and look, then decline the next step. Liking somebody is not evidence about what they did, and a class that learns otherwise has learned something worth unlearning later. Steer back to the sign: where did it come from.",
       },
       {
         student: "I did not make it, so it is not my problem.",
@@ -888,15 +902,15 @@ export const theVideoOfMrRuiz: Mission = {
   },
   family: {
     summary:
-      "A fake video of a teacher went round school. Your child practised tracing it back to whoever made it, using what they already knew about the person, and telling the people who sent it that it was not real.",
+      "A fake video of a teacher went round school. Your child practised stopping when something looked out of character rather than deciding on it, tracing the clip back towards whoever made it, handing it to an adult who could check properly, and telling the people who sent it to stop passing it on.",
     questions: [
-      "How could you tell a video of someone you know is not real?",
+      "A video looks wrong for somebody you know. What does that tell you to do?",
       "If someone says it is only a joke, what would you say?",
-      "What does asking the person actually mean?",
+      "If something could really hurt somebody, who should you give it to?",
     ],
     tryAtHome:
-      "If something arrives about somebody you know, ask them before passing it on. It takes a message and it settles it.",
-    familyRule: "If it is about a person, ask the person.",
+      "If something arrives about somebody you know, stop and ask where it came from before passing it on. If it could hurt them, hand it to an adult rather than trying to sort it out yourselves.",
+    familyRule: "If it is about a person, find out where it came from.",
   },
 };
 

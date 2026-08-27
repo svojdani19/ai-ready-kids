@@ -119,6 +119,13 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       dismiss one private fact to elevate another, for a handful of examples
       described as proof, and for "always" and "never" and "nothing at all"
       where the honest word is "usually" or "not on its own".
+- [ ] **Nobody is exonerated by category.** Check every place the content
+      implies a person is safe, honest or in the clear because of who they are
+      — a familiar adult, a teacher, a friend, a parent. Warmth in a mission
+      makes this easy to write and hard to see. A child who learns that people
+      they like could not have done a thing has learned something that may stop
+      them speaking up later, and that outweighs whatever the mission was
+      teaching.
 - [ ] **The reason that earns credit is the durable one.** It is not enough
       for the right choice to win; check *why* it wins. A correct answer
       resting on a wrong reason — a technical claim that will not hold, a

@@ -151,6 +151,14 @@ describe("mission content integrity", () => {
       // Absence of a local record is not evidence of global absence.
       "real books have shelves",
       "when nothing anywhere has heard of it",
+      // A self-view is not automatically a broadcast, and a child who believes
+      // it is has no way to tell a preview from a live stream.
+      "live video cannot be checked",
+      // No source is unfakeable, and a person's account of themselves is
+      // context rather than proof.
+      "nobody can fake",
+      "single most reliable",
+      "the strongest thing in most rooms",
     ]) {
       expect(studentCopy).not.toContain(overclaim);
     }
@@ -434,6 +442,107 @@ describe("absence of local evidence is not evidence of absence", () => {
     expect(extension).toMatch(/cannot use it, not that nobody wrote it/);
     // And the family sheet must not claim no library anywhere had it.
     expect(book.family.summary.toLowerCase()).not.toMatch(/no library anywhere/);
+  });
+});
+
+describe("a preview is not a broadcast", () => {
+  const camera = MISSION_BY_SLUG["what-the-camera-sees"];
+  const studentCopy = camera.scenes
+    .flatMap((scene) => [
+      ...scene.narration,
+      scene.prompt ?? "",
+      ...(scene.wrapUp ?? []),
+      ...(scene.choices ?? []).flatMap((c) => [c.label, c.feedback.headline, c.feedback.body]),
+    ])
+    .join(" ")
+    .toLowerCase();
+
+  it("shows permission, preview and live as three distinct states", () => {
+    // The camera permission already existed and was given for something else,
+    // which is the realistic case and a lesson in its own right.
+    expect(studentCopy).toMatch(/gave it the camera months ago/);
+    expect(studentCopy).toMatch(/it already has the camera/);
+    // Both states are labelled on screen, so the test is observable.
+    expect(studentCopy).toMatch(/preview — only you can see this/);
+    expect(studentCopy).toMatch(/8 players can see this now/);
+  });
+
+  it("teaches that seeing yourself is not proof anyone else is receiving it", () => {
+    const preview = camera.scenes.find((scene) => scene.id === "s2b")!;
+    const strong = preview.choices!.find((c) => c.feedback.tone === "strong")!;
+    expect(strong.label.toLowerCase()).toMatch(/only on my screen|nobody has seen it yet/);
+    // "If I can see it, everybody can see it" must loop back, not score.
+    const fear = preview.choices!.find((c) => /everybody can see it/i.test(c.label))!;
+    expect(fear.feedback.tone).toBe("rethink");
+    expect(fear.retry).toBe(true);
+  });
+
+  it("phrases the durable rule as each new live moment outrunning review", () => {
+    const wrapUp = camera.scenes.find((s) => s.kind === "ending")!.wrapUp!.join(" ").toLowerCase();
+    expect(wrapUp).toMatch(/once it is live, each new moment reaches people before you can check it/);
+    expect(wrapUp).toMatch(/read what the screen says/);
+  });
+
+  it("keeps the classroom activity offline", () => {
+    const extension = camera.guide.extension.toLowerCase();
+    expect(extension).toMatch(/never a live feed/);
+    expect(extension).toMatch(/empty classroom|prepared image/);
+    expect(extension).toMatch(/never a fresh photo with children in it/);
+  });
+});
+
+describe("no person and no familiarity settles whether something happened", () => {
+  const video = MISSION_BY_SLUG["the-video-of-mr-ruiz"];
+
+  it("makes out-of-character a pause, and provenance the strong first move", () => {
+    const first = video.scenes.find((scene) => scene.id === "s2")!;
+    const outOfCharacter = first.choices!.find((c) => /would never do that/i.test(c.label))!;
+    // Knowing somebody is a reason to stop and look. It is not a verdict, and
+    // teaching a child that an adult they like is exonerated is a safeguarding
+    // problem as well as a verification one.
+    expect(outOfCharacter.feedback.tone).toBe("partial");
+    expect(outOfCharacter.evidence?.result).toBe("developing");
+    expect(outOfCharacter.feedback.headline.toLowerCase()).toMatch(/not proof/);
+
+    const provenance = first.choices!.find((c) => /where did this come from/i.test(c.label))!;
+    expect(provenance.feedback.tone).toBe("strong");
+    expect(provenance.evidence?.result).toBe("demonstrated");
+  });
+
+  it("treats the subject's account as context, not as the check", () => {
+    const reflect = video.scenes.find((scene) => scene.id === "s6")!;
+    const strong = reflect.choices!.filter((c) => c.feedback.tone === "strong");
+    expect(strong).toHaveLength(1);
+    expect(strong[0].label.toLowerCase()).toMatch(/where it came from/);
+
+    const askThem = reflect.choices!.find((c) => /can tell you what happened to them/i.test(c.label))!;
+    expect(askThem.feedback.tone).toBe("partial");
+    expect(askThem.evidence?.result).toBe("developing");
+    expect(askThem.feedback.body.toLowerCase()).toMatch(/faked|not always right about themselves/);
+  });
+
+  it("aligns the sign, the wrap-up and the family rule on provenance", () => {
+    const studentCopy = video.scenes
+      .flatMap((scene) => [...scene.narration, ...(scene.wrapUp ?? [])])
+      .join(" ")
+      .toLowerCase();
+    expect(studentCopy).toMatch(/if it is about a person, find out where it came from/);
+    expect(studentCopy).not.toMatch(/if it is about a person, ask the person/);
+    expect(video.family.familyRule.toLowerCase()).toMatch(/where it came from/);
+
+    const wrapUp = video.scenes.find((s) => s.kind === "ending")!.wrapUp!.join(" ").toLowerCase();
+    expect(wrapUp).toMatch(/out of character is a reason to stop, not a reason to be sure/);
+    // A harmful clip goes to an adult who can check it properly.
+    expect(wrapUp).toMatch(/goes to a grown-up who can check it properly/);
+  });
+
+  it("warns the teacher against the safeguarding failure explicitly", () => {
+    const setup = video.guide.setup.toLowerCase();
+    expect(setup).toMatch(/never let it teach that a familiar adult is automatically in the clear/);
+    expect(setup).toMatch(/speaking up/);
+    const students = video.guide.misconceptions.map((m) => m.student.toLowerCase()).join(" ");
+    expect(students).toMatch(/he said he did not do it/);
+    expect(students).toMatch(/you can tell he would never do that/);
   });
 });
 
