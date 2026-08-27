@@ -6,34 +6,40 @@
    surfaces are flat, depth comes from solid offset shadows and rules.
    ------------------------------------------------------------------ */
 @theme {
-  --color-ink: #241f1a;
-  --color-ink-soft: #574e45;
-  /* Darkened from #857a6e, which measured 3.94:1 on paper. This token
-     carries eyebrow labels, hints and table metadata — the smallest text
-     in the product — so it has to clear 4.5:1 on paper, white and the
-     paper-deep wells alike. */
+  /* Warm, high-energy palette for seven to ten year olds.
+     Every `-deep` token is a text colour and clears WCAG AA on paper, white
+     and its own wash; every bright token is a fill that carries ink text at
+     4.5:1 or better. Checked as a pair matrix, not by eye. */
+  --color-ink: #231f1c;
+  --color-ink-soft: #544a41;
   --color-ink-faint: #6a5f53;
-  --color-paper: #fdf7ee;
-  --color-paper-deep: #f7ecdc;
+  --color-paper: #fffaf2;
+  --color-paper-deep: #fdefdb;
   --color-surface: #ffffff;
-  --color-sand: #efe3d1;
-  --color-sand-deep: #d9c4a5;
+  --color-sand: #f6e8d5;
+  --color-sand-deep: #e3cca9;
 
-  --color-marigold: #e08a1e;
-  --color-marigold-deep: #9c5605;
-  --color-marigold-wash: #fdefd6;
+  --color-marigold: #ffa726;
+  --color-marigold-deep: #a65a00;
+  --color-marigold-wash: #fff3dc;
 
-  --color-pine: #1c6b58;
-  --color-pine-deep: #12503f;
-  --color-pine-wash: #e2f0eb;
+  --color-pine: #2fa36a;
+  --color-pine-deep: #10633f;
+  --color-pine-wash: #e0f7ea;
 
-  --color-denim: #2b6193;
-  --color-denim-deep: #1d4770;
-  --color-denim-wash: #e5eef6;
+  --color-denim: #3d9ae8;
+  --color-denim-deep: #14538f;
+  --color-denim-wash: #e3f2fe;
 
-  --color-berry: #a8375a;
-  --color-berry-deep: #7f2340;
-  --color-berry-wash: #fbe6ec;
+  --color-berry: #ef5d92;
+  --color-berry-deep: #96274f;
+  --color-berry-wash: #ffe6ef;
+
+  /* Fourth hue, used for accents and the marketing site rather than for any
+     competency, so the three competency colours stay unambiguous. */
+  --color-grape: #9c6ef0;
+  --color-grape-deep: #5a2fa8;
+  --color-grape-wash: #f1e9ff;
 
   --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino,
     "Times New Roman", serif;

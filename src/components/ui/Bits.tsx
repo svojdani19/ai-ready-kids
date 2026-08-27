@@ -6,6 +6,7 @@ const TONES: Record<string, string> = {
   marigold: "bg-marigold-wash text-marigold-deep border-marigold",
   denim: "bg-denim-wash text-denim-deep border-denim",
   berry: "bg-berry-wash text-berry-deep border-berry",
+  grape: "bg-grape-wash text-grape-deep border-grape",
 };
 
 export function Tag({

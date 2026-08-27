@@ -13,25 +13,46 @@ export function SiteFooter() {
             something honest to report.
           </p>
         </div>
-        <nav aria-label="Footer" className="grid grid-cols-2 gap-x-10 gap-y-2 text-sm">
-          <Link href="/signin" className="text-ink-soft underline-offset-2 hover:text-ink hover:underline">
-            Educator sign in
-          </Link>
-          <Link href="/join" className="text-ink-soft underline-offset-2 hover:text-ink hover:underline">
-            Student class code
-          </Link>
-          <Link href="/privacy" className="text-ink-soft underline-offset-2 hover:text-ink hover:underline">
-            Privacy model
-          </Link>
-          <Link href="/#curriculum" className="text-ink-soft underline-offset-2 hover:text-ink hover:underline">
-            Curriculum
-          </Link>
-          <Link href="/#plans" className="text-ink-soft underline-offset-2 hover:text-ink hover:underline">
-            Plans
-          </Link>
-          <Link href="/#demo" className="text-ink-soft underline-offset-2 hover:text-ink hover:underline">
-            Demo access
-          </Link>
+        <nav aria-label="Footer" className="grid gap-x-10 gap-y-6 sm:grid-cols-2">
+          {[
+            {
+              heading: "The program",
+              links: [
+                ["/approach", "How it works"],
+                ["/curriculum", "Curriculum"],
+                ["/benchmark", "Annual check-ins"],
+                ["/privacy", "Privacy and data"],
+              ],
+            },
+            {
+              heading: "For your school",
+              links: [
+                ["/for-schools", "Students, teachers, families"],
+                ["/plans", "Plans"],
+                ["/demo", "Open the demo"],
+                ["/signin", "Educator sign in"],
+                ["/join", "Student class code"],
+              ],
+            },
+          ].map((group) => (
+            <div key={group.heading}>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-ink-faint">
+                {group.heading}
+              </p>
+              <ul className="mt-2 space-y-1.5">
+                {group.links.map(([href, label]) => (
+                  <li key={href}>
+                    <Link
+                      href={href}
+                      className="text-sm text-ink-soft underline-offset-2 hover:text-ink hover:underline"
+                    >
+                      {label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </nav>
       </div>
       <div className="border-t border-sand-deep px-5 py-4">

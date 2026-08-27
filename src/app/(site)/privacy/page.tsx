@@ -3,8 +3,6 @@ import Link from "next/link";
 import { MISSIONS } from "@/content/missions";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
 import { MIN_REPORTABLE_GROUP } from "@/lib/repo/report";
-import { Logo } from "@/components/Logo";
-import { SiteFooter } from "@/components/SiteFooter";
 import { ButtonLink } from "@/components/ui/Button";
 import { Note } from "@/components/ui/Bits";
 
@@ -97,31 +95,25 @@ const SECTIONS = [
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-dvh bg-paper">
-      <header className="border-b border-sand-deep bg-paper/90 px-5 py-3.5 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-3">
-          <Link href="/" aria-label="AI Ready Kids home">
-            <Logo />
-          </Link>
-          <ButtonLink href="/#demo" variant="secondary" size="sm">
-            Open the demo
-          </ButtonLink>
+    <>
+      <section className="border-b-2 border-ink bg-grape-wash">
+        <div className="mx-auto max-w-4xl px-5 py-12 sm:py-16">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-ink-faint">
+            Privacy and data model
+          </p>
+          <h1 className="mt-2 font-display text-4xl leading-[1.1] text-ink sm:text-5xl">
+            The best protection we can offer is not collecting it.
+          </h1>
+          <p className="mt-5 max-w-2xl text-lg leading-relaxed text-ink-soft">
+            This page is the whole story, not a summary of a longer document kept
+            elsewhere. It describes {MISSIONS.length} missions,{" "}
+            {BENCHMARK_FORMS.pre.items.length * 2} benchmark items and every record the
+            product creates about a seven year old.
+          </p>
         </div>
-      </header>
+      </section>
 
-      <main id="main" className="mx-auto max-w-4xl px-5 py-12">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
-          Privacy and data model
-        </p>
-        <h1 className="mt-2 font-display text-4xl leading-tight text-ink">
-          The best protection we can offer is not collecting it.
-        </h1>
-        <p className="mt-5 max-w-2xl text-lg leading-relaxed text-ink-soft">
-          This page is the whole story, not a summary of a longer document kept elsewhere.
-          It describes {MISSIONS.length} missions, {BENCHMARK_FORMS.pre.items.length * 2}{" "}
-          benchmark items and every record the product creates about a seven year old.
-        </p>
-
+      <div className="mx-auto max-w-4xl px-5 py-12">
         <nav aria-label="On this page" className="mt-8 rounded-xl border border-sand-deep bg-surface p-5">
           <ol className="grid gap-1.5 sm:grid-cols-2">
             {SECTIONS.map((s, i) => (
@@ -177,9 +169,7 @@ export default function PrivacyPage() {
             says so in the same words.
           </Note>
         </div>
-      </main>
-
-      <SiteFooter />
-    </div>
+      </div>
+    </>
   );
 }
