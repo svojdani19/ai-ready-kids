@@ -21,22 +21,22 @@ export default async function AdminStaff() {
   const certs = listCertifications(db, user.school_id);
   const certByUser = new Map(certs.map((c) => [c.user_id, c]));
   const teachers = staff.filter((s) => s.role === "teacher");
-  const certified = teachers.filter((t) => certByUser.get(t.id)?.completed_at).length;
+  const completed = teachers.filter((t) => certByUser.get(t.id)?.completed_at).length;
 
   return (
     <div>
       <PageHeader
         eyebrow="Administrator"
-        title="Staff and certification"
-        description="Who has access, what they own, and how far through the educator foundation programme they are."
+        title="Staff and orientation"
+        description="Who has access, what they own, and how far through the educator orientation they are. Finishing it records that the modules were read; the checks are not gated."
       />
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat label="Teachers" value={teachers.length} />
         <Stat label="Administrators" value={staff.length - teachers.length} />
         <Stat
-          label="Certified"
-          value={`${certified} of ${teachers.length}`}
+          label="Orientation completed"
+          value={`${completed} of ${teachers.length}`}
           hint={CERTIFICATION_TITLE}
         />
       </div>
@@ -53,7 +53,7 @@ export default async function AdminStaff() {
                   <th scope="col" className="px-3 py-2.5 font-semibold text-ink-soft">Email</th>
                   <th scope="col" className="px-3 py-2.5 font-semibold text-ink-soft">Classes</th>
                   <th scope="col" className="px-3 py-2.5 font-semibold text-ink-soft">
-                    Certification
+                    Orientation
                   </th>
                   <th scope="col" className="px-5 py-2.5 text-right font-semibold text-ink-soft">
                     <span className="sr-only">Actions</span>

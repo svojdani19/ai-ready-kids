@@ -19,7 +19,7 @@ const PLANS = [
       "All 27 missions and both check-in forms",
       "Teacher dashboard and discussion guides",
       "Classroom Mode for projector lessons",
-      "Educator micro-certification",
+      "Educator orientation, five modules",
       "Printable family take-homes",
     ],
   },

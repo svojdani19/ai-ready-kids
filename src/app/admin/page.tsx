@@ -51,9 +51,9 @@ export default async function AdminOverview() {
           hint={`${report.totals.missionsCompleted} missions finished`}
         />
         <Stat
-          label="Educators certified"
+          label="Educator orientation"
           value={`${report.certification.completed} of ${report.certification.total}`}
-          hint={`${report.certification.modules}-module foundation`}
+          hint={`${report.certification.modules} modules read and answered. Not a competence check.`}
         />
       </div>
 

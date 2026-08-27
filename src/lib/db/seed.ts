@@ -419,7 +419,7 @@ export function seed(db: Db): void {
     }
   }
 
-  // Educator micro-certification: one complete, one partway, two untouched.
+  // Educator orientation: one complete, one partway, two untouched.
   const insertCert = db.prepare(
     "INSERT INTO certifications (id, user_id, answers_json, completed_at) VALUES (?,?,?,?)",
   );

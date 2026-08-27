@@ -166,14 +166,14 @@ export async function completeCertificationAction(): Promise<void> {
   const db = getDb();
   const record = getCertification(db, user.id);
   const answered = CERTIFICATION_MODULES.every((m) => record?.answers[m.id]);
-  if (!answered) throw new Error("Finish every module before completing the certification.");
+  if (!answered) throw new Error("Read every module and answer its check before finishing the orientation.");
 
   completeCertification(db, user.id);
   recordAudit(db, {
     schoolId: user.school_id,
     actorLabel: user.name,
     action: "certification.completed",
-    detail: "AI Ready Educator: Foundations completed.",
+    detail: "AI Ready Educator: Foundations orientation completed. Modules read and checks answered; the checks are not gated.",
   });
   revalidatePath("/teacher/certification");
   revalidatePath("/admin/staff");

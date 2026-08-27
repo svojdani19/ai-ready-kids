@@ -152,6 +152,15 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       work out who. Check what the threshold is applied to, and deduplicate
       across groups before applying it. Suppress the raw counts beside the rate:
       "1 of 1" says exactly what the percentage would have.
+- [ ] **A structural change sweeps the documents that describe the structure.**
+      Tripling the curriculum and reordering it left the educator module still
+      telling teachers it was nine situations, for eleven sprints. When the
+      shape of the product changes, grep the guide, the orientation, the
+      marketing copy and the benchmark for the old shape.
+- [ ] **The metric matches what the system actually knows.** If a check is not
+      gated, completion is what happened and completion is what gets reported.
+      Naming it certification tells a principal their staff understood the
+      material, when the only fact held is that buttons were pressed.
 - [ ] **A fix in one place is swept everywhere that logic lives.** When a
       rationale is removed from a mission, search the benchmark, the
       certification modules and the marketing copy for it too. A belief scored

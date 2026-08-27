@@ -53,9 +53,14 @@ export default async function CertificatePage() {
         <div className="mx-auto mt-8 max-w-lg border-t border-sand pt-6 text-left">
           <p className="text-sm leading-relaxed text-ink-soft">
             Completed all {CERTIFICATION_MODULES.length} modules of the AI Ready Kids
-            educator foundation programme, approximately {CERTIFICATION_MINUTES} minutes of
+            educator orientation, approximately {CERTIFICATION_MINUTES} minutes of
             professional learning covering developmental readiness, student data practice,
             verification instruction, learning ownership and family communication.
+          </p>
+          <p className="mt-3 text-sm leading-relaxed text-ink-soft">
+            This records completion of the orientation. The check after each module is not
+            gated, so this is not an assessment of understanding and does not certify
+            competence in any of the areas listed.
           </p>
           <ul className="mt-4 space-y-1">
             {CERTIFICATION_MODULES.map((m) => (

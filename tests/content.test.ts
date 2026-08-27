@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MISSIONS, MISSION_BY_SLUG } from "@/content/missions";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
-import { CERTIFICATION_MODULES } from "@/content/certification";
+import { CERTIFICATION_MODULES, CERTIFICATION_TITLE } from "@/content/certification";
 import { ALL_SKILLS, COMPETENCIES, SKILL_BY_ID } from "@/content/competencies";
 import { simulateAttempt } from "@/lib/db/seed";
 import { validateMission } from "@/lib/domain/missionPath";
@@ -1416,7 +1416,61 @@ describe("the two check-in forms are matched, and say so honestly", () => {
   });
 });
 
-describe("educator certification", () => {
+describe("educator orientation", () => {
+  it("does not claim competence anywhere in its own content", () => {
+    // The checks are ungated on purpose: a teacher can answer every one of
+    // them wrong and still finish. That is a defensible design for adult
+    // professional learning, and it means the only fact the system holds is
+    // that five modules were read and five questions answered. Calling that
+    // "certified" tells a principal something the data cannot support, so the
+    // word does not appear in the offering's own copy.
+    const copy = CERTIFICATION_MODULES.flatMap((m) => [
+      m.title,
+      ...m.body,
+      ...m.keyPoints,
+      m.check.question,
+      m.check.explanation,
+      ...m.check.options.map((o) => o.label),
+    ])
+      .join(" ")
+      .toLowerCase();
+    for (const phrase of ["certified", "certification", "micro-certification"]) {
+      expect(copy).not.toContain(phrase);
+    }
+  });
+
+  it("is named an orientation everywhere the product describes it", () => {
+    // A sweep over the offering's own title and the shared constants, so the
+    // word cannot creep back into one surface while the checks stay ungated.
+    expect(CERTIFICATION_TITLE.toLowerCase()).not.toContain("certif");
+    expect(CERTIFICATION_MODULES.length).toBe(5);
+  });
+
+  it("describes the curriculum it actually ships", () => {
+    // It said "the curriculum is nine situations" while the product had 27
+    // missions, three per skill. A teacher planning from that would have
+    // prepared nine one-off stories and missed the repetition entirely.
+    const first = CERTIFICATION_MODULES.find((m) => m.order === 1)!;
+    const copy = [...first.body, ...first.keyPoints].join(" ").toLowerCase();
+    expect(copy).toContain("27 authored missions");
+    expect(copy).toMatch(/three for each of the nine skills/);
+    expect(copy).not.toMatch(/the curriculum is nine situations/);
+  });
+
+  it("frames concreteness as a teaching sequence, not a fact about children", () => {
+    const copy = CERTIFICATION_MODULES.flatMap((m) => [...m.body, ...m.keyPoints])
+      .join(" ")
+      .toLowerCase();
+    // Universal claims about what seven year olds are and causal claims about
+    // transfer are not things this program has evidence for.
+    expect(copy).not.toMatch(/children at this age are concrete thinkers/);
+    expect(copy).not.toMatch(/far better/);
+    expect(copy).not.toMatch(/transfer better than stated rules/);
+    // What replaced it says what to do, and says it is a sequence.
+    expect(copy).toMatch(/start concrete, name the rule out loud/);
+    expect(copy).toMatch(/not a claim about what a seven year old is capable of/);
+  });
+
   it("has five modules, each with one correct answer and an explanation", () => {
     expect(CERTIFICATION_MODULES).toHaveLength(5);
     for (const mod of CERTIFICATION_MODULES) {

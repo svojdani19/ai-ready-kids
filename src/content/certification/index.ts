@@ -2,9 +2,18 @@ import type { CertificationModule } from "../types";
 
 /**
  * "AI Ready Educator: Foundations" — a five module, roughly forty minute
- * micro-certification for classroom teachers. It is deliberately short,
- * text-only and printable, because the realistic slot for this is a staff
- * meeting or a prep period, not a summer institute.
+ * orientation for classroom teachers. It is deliberately short, text-only and
+ * printable, because the realistic slot for this is a staff meeting or a prep
+ * period, not a summer institute.
+ *
+ * Called an orientation rather than a certification, everywhere, on purpose.
+ * The checks after each module are not gated: a teacher can answer every one
+ * of them incorrectly and still finish. That is a reasonable design for adult
+ * professional learning in a low-stakes tool, and it means the only thing the
+ * system knows is that somebody read five modules and answered five questions.
+ * Reporting that as "certified" would tell a principal their staff understood
+ * the material, which is a claim the data cannot carry. The artefact is a
+ * certificate of completion and the metric is completion.
  */
 export const CERTIFICATION_MODULES: CertificationModule[] = [
   {
@@ -14,12 +23,14 @@ export const CERTIFICATION_MODULES: CertificationModule[] = [
     minutes: 7,
     body: [
       "Seven to ten year olds are not going to be taught their way out of encountering AI. They meet it in a sibling's phone, a game, a smart speaker in someone else's kitchen, and a search box that now answers in sentences. The question is not whether they will use it. It is whether the first time they meet a request for their address, or a confident wrong answer, is the first time they have thought about it.",
-      "That is the whole design brief for this program: practice before exposure. Children at this age are concrete thinkers, and they learn decision rules far better from specific situations than from principles. So the curriculum is nine situations, not nine rules.",
-      "What this age band can genuinely do is impressive. They can distinguish a fact about themselves from a fact that locates them. They can hold the idea that a confident voice proves nothing. They can tell you which of four kinds of help fits a problem. What they cannot yet do reliably is generalise from an abstract warning, which is why every mission is a story with a decision in it.",
+      "That is the whole design brief for this program: practice before exposure. The curriculum is 27 authored missions, three for each of the nine skills, so a child meets the same decision in three different situations rather than once.",
+      "The shape of each encounter is deliberate: a specific situation first, then the decision rule named out loud, then the same rule met again somewhere new. That is a sequence to teach with, not a claim about what a seven year old is capable of. Plenty of children this age reason perfectly well in the abstract, and the repetition is there so they get practice applying a rule rather than because they cannot hold one.",
+      "What this age band can genuinely do is impressive. They can distinguish a fact about themselves from a fact that locates them. They can hold the idea that a confident voice proves nothing. They can tell you which of four kinds of help fits a problem. An abstract warning on its own is thin material to work from at any age, and thinner still about a situation nobody has ever met, which is why every mission is a story with a decision in it.",
     ],
     keyPoints: [
       "Practice before exposure, not after an incident",
-      "Concrete situations transfer better than stated rules at this age",
+      "27 missions, three per skill: the same decision met in three different situations",
+      "Start concrete, name the rule out loud, then meet it again somewhere new",
       "The goal is a decision habit, not fear of technology",
     ],
     check: {

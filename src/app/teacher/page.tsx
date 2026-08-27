@@ -82,8 +82,8 @@ export default async function TeacherOverview() {
             tone="marigold"
             title={
               certAnswered === 0
-                ? "Your micro-certification is not started"
-                : `Your micro-certification is ${certAnswered} of ${CERTIFICATION_MODULES.length} modules in`
+                ? "Your educator orientation is not started"
+                : `Your educator orientation is ${certAnswered} of ${CERTIFICATION_MODULES.length} modules in`
             }
           >
             AI Ready Educator: Foundations takes about forty minutes and is designed to be

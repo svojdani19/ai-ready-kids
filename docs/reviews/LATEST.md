@@ -7,10 +7,10 @@ likely to be.
 
 ---
 
-## Sprint 24 — the benchmark was scoring a belief the missions removed
+## Sprint 25 — certifying five button clicks
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-27-sprint-24.md`](2026-08-27-sprint-24.md)
+- **Full review:** [`2026-08-27-sprint-25.md`](2026-08-27-sprint-25.md)
 - **Review trail:** sprints 01–16 in this directory. Sprint 09 tripled the
   curriculum to 27 missions. Sprint 10 fixed two mechanism defects found in it.
   Sprints 11 to 15 fixed content defects in ten of them, two per sprint.
@@ -18,76 +18,82 @@ likely to be.
   had findings. Sprint 17 closed the eight legacy forced-award scenes as a rule
   in `validateMission`. Sprints 18 to 21 worked through the original nine; every
   one of the 27 missions has now been read, and 26 had findings. Sprints 22-23
-  are the second pass over the reporting layer. **Sprint 24 is the assessment
-  layer, and it found the missions' own retired reasoning being scored as
-  correct.**
+  are the second pass over the reporting layer, sprint 24 the assessment layer.
+  **Sprint 25 read the educator orientation, the last body of authored content
+  that had never been reviewed. Every body of content has now been read once.**
 
 ### What changed
 
-1. **The plaque rationale came back as a scored item.** Sprint 18 removed *"the
-   plaque, because it was put there by the people who built it"* from Two
-   Answers, One Truth. Benchmark pre-6 was scoring the identical reasoning as
-   **correct**: *"The stone, because the people who built it put it there"*,
-   with the same ambiguous referent. That is worse than the mission version was
-   — a mission teaches and can be corrected; an item marks a child down for not
-   holding the belief and reports it as evidence. Pre-6 is replaced with a bus
-   timetable against a poster, mirroring post-6's reasoning and its exact
-   distractor kinds.
-2. **Two pairs asked for different things across windows.** Pre-4 asked a child
-   to rate their belief while post-4 asked for an action; pre-5 asked for the
-   best *question* while post-5 asked for the best *thing to do*. A difference
-   between the windows could therefore be a difference in task demand rather
-   than in the child. Both pre items now ask for actions, with distractors
-   mirroring their pairs.
-3. **The framing was not earned, and cannot be by writing.** The module claimed
-   the forms are "parallel by skill and difficulty" and measure "transfer".
-   Nothing has been piloted or equated, and **each skill carries one item**, so
-   one response moves a competency by 33.3 points. That needs several reviewed
-   items per skill and a pilot, which this sprint cannot produce — so the fix is
-   the narrow label, applied everywhere at once. `growthPoints` is renamed
-   **`pointsDifference`** on the domain object, every human-facing label follows
-   (dashboard, report, CSV column, class page, marketing), and the public
-   benchmark page states the limit outright.
-4. **The child was told an incomplete truth.** *"Your teacher only uses this"*
-   was not accurate — cohort results reach school leaders through reports, the
-   certification dashboard and the export. Both forms now say *"Nobody gets a
-   score, and nobody sees your answers"* followed by *"Adults at your school
-   only see results for whole groups"*, with the part that matters to a child
-   first.
+1. **The product certified five button clicks.** `completeCertificationAction`
+   checks only that every module has *some* saved answer, so a teacher can
+   answer all five checks wrongly and unlock the artefact. That is deliberate —
+   the teacher page says there is no pass mark — and the printed document was
+   careful too. Everything in between was not: the admin dashboard said
+   *"Educators certified"*, the staff page *"Certified"*, the plans page sold an
+   *"educator micro-certification"*. A principal reading "3 of 4 certified"
+   concludes their staff understood the material; the system knows five buttons
+   were clicked.
+2. **It is an orientation now, everywhere.** I took the rename rather than
+   gating the checks, because the non-gating is a deliberate product decision
+   with its rationale already written into the UI, and turning adult
+   professional learning into a quiz that withholds a certificate is a change to
+   what the product *is* — the school's call, not a review finding's. The metric
+   is "Orientation completed", the dashboard hint reads *"5 modules read and
+   answered. Not a competence check."*, and **the certificate itself** now
+   states that it is not an assessment of understanding and certifies no
+   competence.
+3. **Module 1 gave teachers a false inventory.** *"The curriculum is nine
+   situations"* — the product has 27 missions, three per skill. Sprint 09
+   tripled it and sprint 10 interleaved it, and neither touched the one document
+   that tells a teacher what they are teaching. A teacher would have planned
+   nine one-off stories and never learned that the repetition is the method.
+4. **And an overclaimed rationale.** *"Children at this age are concrete
+   thinkers"* and *"concrete situations transfer better than stated rules"* — a
+   universal about every seven-to-ten-year-old and a causal claim about
+   transfer, neither supported, and the fourth time some version of "children
+   of this age are X" has had to come out. Replaced with the method as a
+   sequence: concrete situation, rule named out loud, met again somewhere new —
+   *"a sequence to teach with, not a claim about what a seven year old is
+   capable of."*
 
 ### Already verified — please do not redo
 
-- `npm run verify` green: typecheck, lint, **348 tests**, Turbopack build.
-- **A benchmark-content sweep** now enforces the mission-side rule outside
-  missions: no item may treat an inscription, an object's age or apparent
-  officialness as source authority, and no correct option may rest on proximity.
-- **A pairing sweep**: every pre item's post pair must ask the same kind of
-  move, with the same option count and reading load within twelve words. That is
-  what would have caught pre-4 and pre-5.
-- One item per skill per form is asserted, so the constraint the honest labels
-  rest on lives in the tests rather than only in a comment.
-- Both intros must say nobody sees your answers and that adults see group
-  results, and must not say "your teacher only uses this".
-- The public benchmark page checked in the browser.
+- `npm run verify` green: typecheck, lint, **354 tests**, Turbopack build.
+- **A sweep** over the offering's own content and `CERTIFICATION_TITLE`: the
+  words certified and certification may not appear in either.
+- **A behavioural assertion that a teacher answering every check wrongly still
+  completes.** It asserts the design rather than complaining about it, and it is
+  what keeps the naming honest — if somebody later gates the checks, that test
+  fails and the naming decision gets revisited deliberately rather than sliding.
+- The completion record must carry no score, pass, correct, grade or result
+  field, so the word cannot change back on the strength of a field nobody
+  discussed.
+- Module 1 must state 27 missions and three per skill; no module may say
+  children of this age *are* concrete thinkers, use "far better", or claim
+  concrete situations transfer better than rules.
+- Admin dashboard and staff page checked in the browser.
 
 ### Where this is most likely still wrong
 
-- **The instrument still cannot support growth or transfer claims.** No amount
-  of copywriting changes that. It needs several independently reviewed items per
-  skill and a pilot that equates the forms. The labels are now honest; the
-  instrument is unchanged.
-- **The certification content has never been read against the checklist**, and
-  it is the last body of authored content that has not. Given sprint 24, assume
-  it repeats something the missions have already been corrected not to say.
-- **A content fix has to be swept everywhere that logic lives.** Sprint 18 fixed
-  a rationale in a mission and nobody checked whether it lived elsewhere. It did
-  — in the instrument that measures whether children learned the lesson.
-- **Three sprints running, the defect was outside the missions**, and all three
-  said something the missions had already been corrected not to say. The
-  missions got twenty-one sprints of attention; the things that report on and
-  assess them got none until somebody looked.
-- **Nothing verifies the privacy prose against the code that implements it**,
-  beyond specific assertions. Still open from sprint 23.
+- **The missions were reviewed to death and everything around them was not.**
+  Four sprints running, the defect was outside the missions: the roll-up that
+  reports on them (22, 23), the instrument that assesses them (24), the document
+  that explains them (25). Each carried something the missions had already been
+  corrected for. That is the pattern to carry into any further review.
+- **A structural change did not sweep the documents describing the structure.**
+  Sprint 09 tripled the curriculum, sprint 10 reordered it, and the educator
+  module still said "nine situations" eleven sprints later. Nothing in the
+  process looked.
+- **Nothing verifies marketing copy against product behaviour.** The plans,
+  approach and for-schools pages describe the product in prose no test reads.
+- **The orientation is ungated by design and stays that way.** If it should
+  certify competence, that is a deliberate decision: gate the checks, allow
+  unpenalised retries, give misconception-specific feedback, and validate
+  correctness in the completion action.
+- **The instrument still cannot support growth or transfer claims** — open from
+  sprint 24 and not fixable by writing.
+- **Nothing verifies the privacy prose against the code that implements it** —
+  open from sprint 23.
 - **Every mission has been read once. None has been read twice.**
 - **Nothing checks what a wrong answer costs a child** — open from sprint 20.
 - **Shared scenes remain untraced** in twenty-six of twenty-seven missions.

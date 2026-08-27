@@ -87,7 +87,7 @@ export default async function AdminReport() {
             missions their teachers assigned, across {report.totals.assignmentsMade}{" "}
             class-level assignments. {report.certification.completed} of{" "}
             {report.certification.total} teachers finished the{" "}
-            {report.certification.modules}-module educator foundation programme.
+            {report.certification.modules}-module educator orientation. Finishing it records that the modules were read and the checks answered; the checks are not gated, so it is not evidence of competence.
           </p>
         </section>
 

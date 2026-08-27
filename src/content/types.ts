@@ -180,7 +180,7 @@ export interface BenchmarkFormContent {
 }
 
 /* ---------------------------------------------------------------- *
- * Educator micro-certification
+ * Educator orientation
  * ---------------------------------------------------------------- */
 
 export interface CertificationModule {

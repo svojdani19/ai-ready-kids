@@ -27,7 +27,7 @@ export default async function CertificationPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Micro-certification"
+        eyebrow="Educator orientation"
         title={CERTIFICATION_TITLE}
         description={`Five modules, about ${CERTIFICATION_MINUTES} minutes in total, designed for two prep periods rather than a summer institute. Your answers save as you go.`}
         actions={
@@ -70,6 +70,9 @@ export default async function CertificationPage() {
       <Note tone="neutral" >
         The check after each module is not a gate and there is no pass mark. Pick an answer,
         read why, and move on. It is there so the ideas get used once rather than only read.
+        That is also why this is called an orientation rather than a certification: finishing
+        it records that you read the modules and answered the checks, and your school sees
+        exactly that. It does not claim you got them right, because nobody is checking.
       </Note>
 
       <div className="mt-6 space-y-5">

@@ -3,6 +3,7 @@ import type { Db } from "@/lib/db";
 import { createTestDb, DEMO_ADMIN, DEMO_CLASS, DEMO_SCHOOL, DEMO_TEACHER } from "./helpers";
 import { MISSIONS, getMission } from "@/content/missions";
 import { CERTIFICATION_MODULES } from "@/content/certification";
+import { createUser } from "@/lib/repo/school";
 import {
   assignMission,
   createClass,
@@ -410,5 +411,49 @@ describe("evidence roll-ups separate lifetime from opportunity", () => {
     // Student a is demonstrated for life despite the later coached result.
     expect(stat.demonstrated).toBe(1);
     expect(stat.developing).toBe(1);
+  });
+});
+
+describe("the orientation reports completion, not competence", () => {
+  /**
+   * `completeCertificationAction` checks only that every module has *some*
+   * saved answer, so all five can be wrong and the artefact still unlocks.
+   * That is the intended design — adult professional learning here is not
+   * gated — and it is exactly why the school-facing word had to change. This
+   * asserts the two halves stay consistent: as long as completion does not
+   * validate correctness, nothing may report it as certification.
+   */
+  it("lets a teacher finish with every check answered wrongly", () => {
+    const teacher = createUser(db, {
+      schoolId: DEMO_SCHOOL,
+      name: "Wrong Every Time",
+      title: "Grade 3 Teacher",
+      email: "wrong.everytime@brightwood.demo",
+      role: "teacher",
+    });
+    for (const mod of CERTIFICATION_MODULES) {
+      const wrong = mod.check.options.find((o) => !o.correct)!;
+      saveCertificationAnswer(db, teacher.id, mod.id, wrong.id);
+    }
+    completeCertification(db, teacher.id);
+
+    const record = getCertification(db, teacher.id)!;
+    expect(record.completed_at).toBeTruthy();
+    // Nothing anywhere derives correctness from this record, so nothing may
+    // present it as evidence of understanding.
+    expect(Object.keys(record.answers)).toHaveLength(CERTIFICATION_MODULES.length);
+    for (const mod of CERTIFICATION_MODULES) {
+      const chosen = mod.check.options.find((o) => o.id === record.answers[mod.id])!;
+      expect(chosen.correct).toBe(false);
+    }
+  });
+
+  it("keeps the completion record free of any correctness field", () => {
+    // If a scoring field ever appears here, the naming decision has to be
+    // revisited rather than the word quietly changing back.
+    const record = getCertification(db, DEMO_TEACHER);
+    for (const key of ["score", "passed", "correct", "grade", "result"]) {
+      expect(Object.keys(record ?? {})).not.toContain(key);
+    }
   });
 });

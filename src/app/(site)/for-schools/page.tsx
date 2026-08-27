@@ -34,7 +34,7 @@ const ROLES = [
       "Classroom Mode for the projector: teacher-paced, any branch revealable, hands-up tally, nothing recorded.",
       "Completion and demonstrated-skill evidence per student, framed as next teaching steps.",
       "A printable discussion guide and a family take-home for every mission.",
-      `A ${CERTIFICATION_MODULES.length}-module micro-certification, about ${CERTIFICATION_MINUTES} minutes, with a printable certificate.`,
+      `A ${CERTIFICATION_MODULES.length}-module educator orientation, about ${CERTIFICATION_MINUTES} minutes, with a printable certificate of completion.`,
     ],
   },
   {

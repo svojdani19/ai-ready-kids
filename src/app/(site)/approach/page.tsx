@@ -83,7 +83,7 @@ export default function ApproachPage() {
       <Section
         tone="pine"
         title="Teachers are prepared too"
-        lede={`A ${CERTIFICATION_MODULES.length}-module micro-certification, about ${CERTIFICATION_MINUTES} minutes in total, designed for two prep periods rather than a summer institute.`}
+        lede={`A ${CERTIFICATION_MODULES.length}-module orientation, about ${CERTIFICATION_MINUTES} minutes in total, designed for two prep periods rather than a summer institute. The checks after each module are not gated, so finishing it records completion rather than certifying competence.`}
       >
         <ul className="grid gap-2 sm:grid-cols-2">
           {CERTIFICATION_MODULES.map((m) => (

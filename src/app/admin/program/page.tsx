@@ -31,7 +31,7 @@ export default async function AdminProgram() {
       detail: `${report.totals.classes} classes, ${report.totals.students} students`,
     },
     {
-      label: "Educators certified",
+      label: "Educator orientation completed",
       done: report.certification.completed === report.certification.total && report.certification.total > 0,
       detail: `${report.certification.completed} of ${report.certification.total} teachers`,
     },
