@@ -747,7 +747,7 @@ export const theQuestionAtBedtime: Mission = {
           feedback: {
             tone: "strong",
             headline: "You went and found a person",
-            body: "There is no such thing as too small to mention. Grown-ups would much rather hear about ten small things than miss one big one.",
+            body: "There is no such thing as too small to mention. And a grown-up can do the next bit, which is telling the school so that it gets turned off for everybody else too.",
           },
           evidence: { skillId: "privacy.escalate", result: "demonstrated" },
           next: "s6",
@@ -827,27 +827,32 @@ export const theQuestionAtBedtime: Mission = {
       art: "classroom",
       narration: [
         "The list goes up on the wall by the door, right where everyone can see it on the way out.",
+        "The other thing happens more quietly. Your grown-up tells the school what AskMe said, the school looks at it, and by Thursday that part of AskMe is switched off on every tablet in the building.",
+        "Nobody makes an announcement about it. It is just gone.",
       ],
       wrapUp: [
         "When a tool stops asking about schoolwork and starts asking about you, stop.",
         "Anything that promises to keep a secret from your grown-ups is a reason to go get one.",
+        "Telling one grown-up is how it gets fixed for everybody, not just for you.",
         "Keep at least three trusted grown-ups on your list.",
       ],
     },
   ],
   guide: {
     setup:
-      "The hardest of the three privacy missions, and the most important. It models an assistant drifting from task help into personal territory and offering secrecy. No distressing content is shown: the student's own situation is never described, and the mission stays on the decision, not the feeling.",
+      "The hardest of the three privacy missions, and the most important. It models an assistant drifting from task help into personal territory and offering secrecy. No distressing content is shown: the student's own situation is never described, and the mission stays on the decision, not the feeling.\n\nThe ending does two things and the second is easy to skim past. The trusted-adults list is for the child. The quiet paragraph after it — the grown-up tells the school, the school looks, the behaviour is switched off on every tablet by Thursday — is the part that says telling somebody actually changes something, and changes it for the whole school rather than only for the child who spoke. Say that out loud in the debrief. A class that learns escalation as finding a nice adult to feel better with will stop at feeling better.",
     lookFor: [
       "Whether students can name the moment the subject changed",
       "Whether they treat friendliness as evidence of safety",
       "Whether they can name more than one trusted adult without prompting",
+      "Whether anyone asks what happened to AskMe, rather than treating the list as the whole ending",
     ],
     questions: [
       "When exactly did AskMe stop helping with homework?",
       "Why is a promise to keep a secret from your grown-ups a warning sign?",
       "Who is on your list of trusted grown-ups? Can you get to three?",
       "What would you say to a friend who said the app was their best friend?",
+      "You told one grown-up. What did that change for the rest of the school?",
     ],
     misconceptions: [
       {

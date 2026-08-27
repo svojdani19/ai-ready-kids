@@ -1640,7 +1640,8 @@ export const itHappenedToTheo: Mission = {
       narration: [
         "Ms. Okafor listens to the whole thing without interrupting once.",
         "Then she asks Theo to show her the app. She tells him he did exactly the right thing by telling somebody.",
-        "She says she will speak to his grown-up, so he does not have to do that part on his own.",
+        "She looks for where the address went and takes it out, and she writes down the bits she cannot be sure about.",
+        "She says she will speak to his grown-up tonight, so he does not have to do that part on his own, and so they can decide about the rest together.",
         "Theo looks about four kilograms lighter.",
       ],
       next: "s6",
@@ -1698,23 +1699,26 @@ export const itHappenedToTheo: Mission = {
       wrapUp: [
         "Start with: you are not in trouble.",
         "Go with your friend, not behind them.",
+        "Telling somebody is the start. Something has to be taken out or turned off as well.",
         "Some promises should not be kept, and you say so out loud first.",
       ],
     },
   ],
   guide: {
     setup:
-      "Every other privacy mission puts the child in the situation. This one puts them next to it, which is where they will most often actually be. The skill is social rather than technical, and it is the one most likely to matter this term.",
+      "Every other privacy mission puts the child in the situation. This one puts them next to it, which is where they will most often actually be. The skill is social rather than technical, and it is the one most likely to matter this term.\n\nScene five is doing more work than it looks like. Telling a warm adult feels like the end of the job and is the start of it: something has to actually change. Ms. Okafor takes the address out where she can, writes down what she cannot be sure about, and gets Theo's own grown-up told the same night. Model that sequence out loud when you debrief, because a class that learns escalation as speaking to somebody nice will stop at the speaking.",
     lookFor: [
       "Students whose first instinct is to tell a friend off",
       "Whether anyone distinguishes going with a friend from going behind them",
       "Students who would keep a harmful promise out of loyalty",
+      "Whether anyone asks what happens to the address, rather than treating the telling as the whole job",
     ],
     questions: [
       "Why did Theo wait until you were by the fence?",
       "What is the difference between telling on somebody and going with them?",
       "Which promises should not be kept?",
       "What would make you tell a friend something like this?",
+      "Theo told somebody. What still needed to happen after that?",
     ],
     misconceptions: [
       {
@@ -1733,7 +1737,7 @@ export const itHappenedToTheo: Mission = {
   },
   family: {
     summary:
-      "We practised what to do when a friend tells you something worrying and asks you not to tell. Your child practised starting with you are not in trouble, and going with a friend to a grown-up instead of behind their back.",
+      "We practised what to do when a friend tells you something worrying and asks you not to tell. Your child practised starting with you are not in trouble, going with a friend to a grown-up instead of behind their back, and remembering that telling somebody is the start: the thing that went in still has to come out.",
     questions: [
       "If a friend told you something worrying and said do not tell, what would you do?",
       "What is the difference between telling on someone and going with them?",

@@ -119,6 +119,18 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       dismiss one private fact to elevate another, for a handful of examples
       described as proof, and for "always" and "never" and "nothing at all"
       where the honest word is "usually" or "not on its own".
+- [ ] **Teacher guidance never corrects one child in public.** Read every
+      coach note and misconception response as instructions a real teacher will
+      follow literally. Advice to interrupt a belief publicly, or to respond to
+      one child's low number in front of the room, singles out a child for
+      something that usually tracks a learning difference or what is happening
+      at home. Say it privately, or normalise the range without naming anybody.
+- [ ] **No promised timelines.** "It stops being hard surprisingly quickly",
+      "the habit sets in within days", "practise four nights and you will know
+      them" — the content cannot keep these. For the child they fail, the
+      promise converts into evidence that something is wrong with them. Say
+      what practice does, then say that how much and how fast differ, and give
+      the child who is still stuck somewhere to go.
 - [ ] **A check that runs through a person is checked for who it
       disadvantages.** When the answer depends on knowing somebody, on how they
       behave under scrutiny, or on what they can demonstrate on request, ask who

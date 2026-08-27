@@ -164,6 +164,13 @@ describe("mission content integrity", () => {
       "real drawings leave a trail",
       "real work leaves a trail",
       "she will show you, happily",
+      // A fish has no eyelids, so looking does not settle whether it is asleep.
+      "he is always awake",
+      // Practice makes it better; how fast is not a promise the content can make.
+      "turns into one second",
+      "stops being worse surprisingly quickly",
+      // First-hand observation wins for a question about right now, not always.
+      "first-hand beats forecast, every time",
     ]) {
       expect(studentCopy).not.toContain(overclaim);
     }
@@ -665,6 +672,96 @@ describe("escalation completes operationally, not just socially", () => {
     const wrapUp = sleepover.scenes.find((s) => s.kind === "ending")!.wrapUp!.join(" ").toLowerCase();
     expect(wrapUp).toMatch(/close it first/);
     expect(wrapUp).toMatch(/put the tablet down and ask to ring your own grown-up/);
+  });
+});
+
+describe("teacher guidance never corrects a child in front of the class", () => {
+  // Two missions told teachers to interrupt a belief publicly, or to respond to
+  // one child's low reading number with curiosity in front of the room. Both
+  // single out a child for something that usually tracks a learning difference
+  // or what is happening at home, and neither is the teacher's to expose.
+  it("has no guidance to address an individual child's shortfall publicly", () => {
+    for (const mission of MISSIONS) {
+      const guidance = [
+        mission.guide.setup,
+        ...mission.guide.misconceptions.map((m) => m.response),
+        ...mission.scenes.flatMap((scene) =>
+          (scene.choices ?? []).map((c) => c.feedback.coachNote ?? ""),
+        ),
+      ]
+        .join(" ")
+        .toLowerCase();
+      for (const phrase of [
+        "interrupt it publicly",
+        "interrupt this every time",
+        "in front of the class, once",
+        "with curiosity in front of the class",
+      ]) {
+        expect(guidance, `${mission.slug} guidance`).not.toContain(phrase);
+      }
+    }
+  });
+
+  it("says out loud that the slow-recall mission is not about accommodations", () => {
+    const practice = MISSION_BY_SLUG["the-practice-that-got-skipped"];
+    const setup = practice.guide.setup.toLowerCase();
+    // Practice makes it better. The story is not a promise about how fast.
+    expect(setup).toMatch(/story rather than a promise/);
+    expect(setup).toMatch(/dyscalculia|working-memory/);
+    // Children with a tool by agreement must not read this as being about them.
+    expect(setup).toMatch(/accommodation/);
+    // And a child for whom practice is not working needs somewhere to go.
+    const wednesday = practice.scenes.find((scene) => scene.id === "s5")!;
+    const tellSomebody = wednesday.choices!.find((c) => /still really hard/i.test(c.label))!;
+    expect(tellSomebody.feedback.tone).toBe("strong");
+    const wrapUp = practice.scenes.find((s) => s.kind === "ending")!.wrapUp!.join(" ").toLowerCase();
+    expect(wrapUp).toMatch(/still hard, tell somebody/);
+  });
+
+  it("allocates group jobs rather than asking children to declare a talent", () => {
+    const group = MISSION_BY_SLUG["the-group-project"];
+    const extension = group.guide.extension.toLowerCase();
+    expect(extension).toMatch(/list the jobs the task needs/);
+    expect(extension).not.toMatch(/what each member is bringing/);
+    expect(group.guide.setup.toLowerCase()).toMatch(/nothing to bring|no obvious talent/);
+  });
+});
+
+describe("escalation changes something, everywhere it appears", () => {
+  // Sprint 15 found a mission where speaking to a pleasant adult was the whole
+  // safety action. This sweeps the missions whose primary skill is escalation:
+  // once something has gone in, the story must show it being dealt with.
+  const escalationMissions = MISSIONS.filter((m) => m.primarySkillId === "privacy.escalate");
+
+  it("covers more than one mission, so the sweep is meaningful", () => {
+    expect(escalationMissions.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it.each(escalationMissions.map((m) => [m.slug, m] as const))(
+    "%s shows something being stopped, removed or handed on",
+    (_slug, mission) => {
+      const story = mission.scenes
+        .flatMap((scene) => [...scene.narration, ...(scene.wrapUp ?? [])])
+        .join(" ")
+        .toLowerCase();
+      expect(story).toMatch(
+        /takes? (it|the address) out|deletes?|closes? the app|comes off|(turned|switched) off/,
+      );
+      // And somebody with standing outside the room is told.
+      expect(story).toMatch(/grown-up|ms\. okafor|the office|family|families/);
+    },
+  );
+
+  it("makes the incomplete version visible in the bystander mission", () => {
+    const theo = MISSION_BY_SLUG["it-happened-to-theo"];
+    const outcome = theo.scenes.find((scene) => scene.id === "s5")!;
+    const copy = outcome.narration.join(" ").toLowerCase();
+    expect(copy).toMatch(/takes it out/);
+    // Uncertainty is written down rather than glossed.
+    expect(copy).toMatch(/cannot be sure about/);
+    expect(copy).toMatch(/speak to his grown-up/);
+    const wrapUp = theo.scenes.find((s) => s.kind === "ending")!.wrapUp!.join(" ").toLowerCase();
+    expect(wrapUp).toMatch(/telling somebody is the start/);
   });
 });
 

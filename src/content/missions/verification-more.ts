@@ -1438,11 +1438,11 @@ export const theScienceFairFact: Mission = {
       kind: "ending",
       art: "classroom",
       narration: [
-        "Your poster does not win either. Dr. Adeyemi sends the class a photograph of a shark tumour in a jar, which Room 12 considers the greatest thing that has ever arrived by email.",
+        "Your poster does not win. Dr. Adeyemi sends the class a photograph of a shark tumour in a jar, which Room 12 considers the greatest thing that has ever arrived by email.",
       ],
       wrapUp: [
         "Three sources copying one thing is still one thing.",
-        "Ask each source where it got it. If none of them can say, you have nothing.",
+        "Ask each source where it got it. If none of them can say, you cannot use it yet.",
         "Checking has to be allowed to change something, even a finished poster.",
       ],
     },
@@ -1540,8 +1540,8 @@ export const theWeatherArgument: Mission = {
           label: "The window. You can see it happening.",
           feedback: {
             tone: "strong",
-            headline: "First-hand beats forecast, every time",
-            body: "The app is guessing about the afternoon. The window is showing you the actual afternoon. There is no contest and it is worth saying out loud.",
+            headline: "For right now, the window wins",
+            body: "The app is guessing about the afternoon. The window is showing you the actual afternoon. For a question about right now, that is no contest.",
           },
           evidence: { skillId: "verify.source", result: "demonstrated" },
           next: "s3",
@@ -1693,11 +1693,11 @@ export const theWeatherArgument: Mission = {
         },
         {
           id: "c3",
-          label: "Whether the class fish is awake",
+          label: "Whether the class fish is swimming or sitting on the gravel",
           feedback: {
             tone: "strong",
             headline: "Go and look at Captain",
-            body: "He is awake. He is always awake. The point stands: the answer is four metres away and no screen is faster than that.",
+            body: "He is on the gravel. Whether he is asleep is a much harder question, because fish have no eyelids to close. Where he is, though, is four metres away.",
           },
           evidence: { skillId: "verify.source", result: "demonstrated" },
           next: "s6",
@@ -1726,6 +1726,7 @@ export const theWeatherArgument: Mission = {
       "Students who defer to a screen over their own eyes",
       "Whether anyone jumps from one error to it is useless",
       "Students who can sort a question by whether it is checkable from here",
+      "Whether anyone notices that looking settles some questions about a thing and not others",
     ],
     questions: [
       "The app said sunny and it was raining. Which was right?",
@@ -1746,7 +1747,7 @@ export const theWeatherArgument: Mission = {
       },
     ],
     extension:
-      "Keep the two columns up for a week. Every time somebody reaches for a device, ask which column the question is in. The first-column reaches drop off within days.",
+      "Keep the two columns up for a week. Every time somebody reaches for a device, ask which column the question is in. Captain is a useful case to argue about: where the fish is sits in the first column, and whether the fish is asleep does not, which is a neat way to show that a question about the same thing can sit in either.",
   },
   family: {
     summary:

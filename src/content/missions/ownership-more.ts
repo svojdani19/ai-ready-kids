@@ -227,7 +227,7 @@ export const theStoryThatWasNotMine: Mission = {
           feedback: {
             tone: "strong",
             headline: "That is the harder half of it",
-            body: "Worse and yours is the deal. It stops being worse surprisingly quickly, and only if you keep taking it.",
+            body: "Worse and yours is the deal. It gets better the more of them you write, and it only gets better if you keep taking it.",
           },
           evidence: { skillId: "own.effort", result: "demonstrated" },
           next: "s7",
@@ -245,6 +245,7 @@ export const theStoryThatWasNotMine: Mission = {
       wrapUp: [
         "Notice when help has taken the interesting part.",
         "Ask for questions, words or an example. Not the finished thing.",
+        "Say what you asked for. Nobody minds, and then it is not a secret.",
         "Worse and yours beats better and somebody else's.",
       ],
     },
@@ -256,12 +257,14 @@ export const theStoryThatWasNotMine: Mission = {
       "Students who cannot articulate why a better story feels wrong",
       "Whether anyone invents make it sound like me as a compromise",
       "Students who need permission to prefer their own rougher work",
+      "Whether anyone says what they asked for, rather than only being careful about what they asked for",
     ],
     questions: [
       "The app's story was better. Why was that a problem?",
       "What is the difference between asking for questions and asking for answers?",
       "What did you find out by writing that you could not have been told?",
       "Is worse and yours always better? When is it not?",
+      "You asked it for three questions. Who should know that, and why is it fine that they do?",
     ],
     misconceptions: [
       {
@@ -396,7 +399,7 @@ export const thePracticeThatGotSkipped: Mission = {
           feedback: {
             tone: "strong",
             headline: "That is what practice is",
-            body: "Nobody starts fast. The nine seconds is the thing that turns into one second, and it only turns if you spend it.",
+            body: "Nobody starts fast. Spending the nine seconds is what makes it shorter. How much shorter, and how quickly, is different for everybody, and it does not move at all if you skip it.",
           },
           evidence: { skillId: "own.effort", result: "demonstrated" },
           next: "s5",
@@ -420,7 +423,7 @@ export const thePracticeThatGotSkipped: Mission = {
             headline: "By when, though?",
             body: "This is night one of five. Being slow on night one is not a problem, it is night one. Have another go.",
             coachNote:
-              "Watch for students who read slowness as evidence of a fixed limit. Interrupt it publicly; it is the belief that drives the shortcut.",
+              "Some students read their own slowness as a fixed limit, and that belief is what makes the calculator feel reasonable. Take it privately, never in front of the class, and take it seriously: a child who says it every week may be telling you something true about how they learn.",
           },
           next: "s4",
           retry: true,
@@ -457,6 +460,17 @@ export const thePracticeThatGotSkipped: Mission = {
             body: "The nights you do not feel like it are the ones that decide whether this works. It is not a heroic thing. It is twenty minutes.",
           },
           evidence: { skillId: "own.effort", result: "demonstrated" },
+          next: "s6",
+        },
+        {
+          id: "c4",
+          label: "Do them slowly, and tell Ms. Okafor they are still really hard",
+          feedback: {
+            tone: "strong",
+            headline: "That is the bit most people leave out",
+            body: "Practising and it still being hard is worth saying out loud. Some people need a lot more of it, or a different way in, and she cannot help with what she does not know about.",
+          },
+          evidence: { skillId: "own.honesty", result: "demonstrated" },
           next: "s6",
         },
         {
@@ -529,22 +543,25 @@ export const thePracticeThatGotSkipped: Mission = {
         "Ask what the work is for before you decide what help is allowed.",
         "Getting one wrong is how you find out which one you do not know.",
         "Ten done properly beats twenty that went through a calculator.",
+        "If you practise and it is still hard, tell somebody. That is not a reason to skip it.",
       ],
     },
   ],
   guide: {
     setup:
-      "There is no dramatic moment in this mission on purpose. Over-reliance at this age is usually a small shortcut taken quietly, five nights running, with nobody involved. The question what is this for is the artefact worth keeping.",
+      "There is no dramatic moment in this mission on purpose. Over-reliance at this age is usually a small shortcut taken quietly, five nights running, with nobody involved. The question what is this for is the artefact worth keeping.\n\nTwo cautions. First, the story shows one child for whom four nights was enough, and that is a story rather than a promise. Recall speed varies enormously, and a child with dyscalculia, a working-memory difference, ADHD or real anxiety about maths can practise properly for a fortnight and still be slow. If this mission leaves such a child believing that only people who skipped the practice stay slow, it has done them harm. Say out loud that practice makes it better, that how fast is different for everybody, and that still finding it hard after real practice is information for a teacher rather than a verdict. Second, some children have a calculator or another tool by agreement, as an accommodation. This mission is not about them, and it is worth saying so before you start rather than leaving them to work it out.",
     lookFor: [
       "Students who evaluate by whether they would be caught",
       "Whether anyone reads their own slowness as a fixed limit",
       "Students who can accept doing less rather than doing it faster",
+      "Students who practise properly and still find it hard, who need help rather than encouragement",
     ],
     questions: [
       "What was this homework for? How could you tell?",
       "Why is getting one wrong useful?",
       "Is ten done slowly better than twenty done fast? Why?",
       "What is the difference between a shortcut and skipping the point?",
+      "If you practise all week and it is still hard, what should you do?",
     ],
     misconceptions: [
       {
@@ -555,7 +572,7 @@ export const thePracticeThatGotSkipped: Mission = {
       {
         student: "I am just slow at times tables.",
         response:
-          "Interrupt this every time. Nine seconds on night one is not a limit, it is night one. The belief is what makes the calculator feel reasonable.",
+          "Answer it, and answer it privately rather than in front of the class. Nine seconds on night one is not a limit, it is night one, and the belief is what makes the calculator feel reasonable. But listen as well as correcting: a child who says this after genuinely practising may be right that something is harder for them than for the people around them, and that is a thing to look into rather than a thing to talk them out of.",
       },
     ],
     extension:
@@ -589,7 +606,7 @@ export const theGroupProject: Mission = {
     "Choosing how to get help becomes a group decision, where the fastest option is also the one that leaves three people with nothing to do. Students practise routing work to people first.",
   learningGoals: [
     "Consider what a tool takes away from other people, not just from you",
-    "Route a task to the person in the group who can do it",
+    "Find a job for everybody in the group, including yourself",
     "Disagree with a group plan without stalling it",
   ],
   badge: {
@@ -626,7 +643,7 @@ export const theGroupProject: Mission = {
           feedback: {
             tone: "strong",
             headline: "It empties the group",
-            body: "You would have a poster and four people with nothing to have done. The whole reason there are four of you is that you can do four different things.",
+            body: "You would have a poster and four people with nothing to have done. There are four of you so that four people end up having done something, and there is more than one job in a poster.",
           },
           evidence: { skillId: "own.toolchoice", result: "demonstrated" },
           next: "s3",
@@ -852,11 +869,12 @@ export const theGroupProject: Mission = {
   ],
   guide: {
     setup:
-      "This mission extends strategy selection into a social setting, where the efficient choice is also the one that hollows out the group. Theo is reasonable throughout: the point is not that he is wrong to suggest it, but that the group has better options sitting at its own table.",
+      "This mission extends strategy selection into a social setting, where the efficient choice is also the one that hollows out the group. Theo is reasonable throughout: the point is not that he is wrong to suggest it, but that the group has better options sitting at its own table.\n\nThe group in the story arrives with four neat talents, which is convenient for a story and rarely true of a table. Watch for the child who concludes they have nothing to bring. The move is to start from the jobs the work needs — reading it out, checking the spelling, timekeeping, deciding the order, holding the ruler — rather than from what anybody is known to be good at. Every one of those is a real job, and a group that allocates jobs finds one for everybody.",
     lookFor: [
       "Students who evaluate a tool only by what it costs them personally",
       "Whether anyone can redirect a group without turning it into a debate",
       "Students who route a social or explanatory task to a tool",
+      "Students who conclude they have nothing to contribute because they have no obvious talent",
     ],
     questions: [
       "What would the fast plan have cost the group?",
@@ -877,7 +895,7 @@ export const theGroupProject: Mission = {
       },
     ],
     extension:
-      "Before the next group task, have each group write down what each member is bringing. Then ask which parts a tool could do, and whether doing them would leave anybody with nothing.",
+      "Before the next group task, have each group list the jobs the task needs rather than what each person is good at, then decide together who takes which. Listing jobs first matters: asking children to declare what they bring leaves anyone who cannot name something sitting in front of a blank line. Then ask which jobs a tool could do, and whether doing them would leave anybody with nothing.",
   },
   family: {
     summary:
@@ -1755,7 +1773,7 @@ export const theReadingLog: Mission = {
       {
         student: "If I write four I will get in trouble.",
         response:
-          "This belief is the cause of every inflated log, and only repeated experience shifts it. Respond to a low number with curiosity in front of the class, once, and the logs change.",
+          "This belief is the cause of every inflated log, and only repeated experience shifts it. Respond to low numbers calmly and privately, when you hand logs back or one to one — never by drawing the class's attention to a particular child's four, however kindly it is meant. Reading minutes track what is happening at home more than they track effort, and a child whose week was hard for reasons they cannot say should not have it noticed out loud. Normalise the range in general terms instead: say that this week's logs have fours and forties in them and that both are useful.",
       },
     ],
     extension:
