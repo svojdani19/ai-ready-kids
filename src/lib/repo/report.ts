@@ -230,7 +230,7 @@ export function buildSchoolReport(db: Db, schoolId: string, now = new Date()): S
     privacy: [
       "This report contains no student names, initials, identifiers, dates of birth or free text written by a child.",
       `Every competency figure reads "too few to report" unless at least ${MIN_REPORTABLE_GROUP} distinct students contributed to that particular figure. Contributing means having completed a mission that offered the skill, which is usually fewer students than are enrolled.`,
-      `Check-in rates read "too few to report" unless at least ${MIN_BENCHMARK_GROUP} students completed that window. Growth is withheld unless at least ${MIN_BENCHMARK_GROUP} students completed both windows, and the same threshold applies to every per-competency growth figure.`,
+      `Check-in rates read "too few to report" unless at least ${MIN_BENCHMARK_GROUP} students completed that window. The fall-to-spring change is withheld unless at least ${MIN_BENCHMARK_GROUP} students completed both windows, and the same threshold applies to every per-competency figure.`,
       "Completion rates are the one figure calculated over everybody assigned, because there the contributing group is the whole class by definition. They are suppressed on class size.",
       "Figures describe demonstrated competencies from authored choices. They are not risk scores, behavioural predictions or psychological assessments.",
       "Check-in results are reported only in aggregate. No individual student's answers appear anywhere in this export.",
@@ -287,10 +287,10 @@ export function reportToCsv(report: SchoolReport): string {
   push("Spring check-ins completed", report.benchmark.postCompleted);
   push("Matched students", report.benchmark.matched);
   push(
-    "Matched growth (percentage points)",
-    report.benchmark.growthPoints === null
+    "Change between check-ins in percentage points (matched students)",
+    report.benchmark.pointsDifference === null
       ? null
-      : Math.round(report.benchmark.growthPoints * 10) / 10,
+      : Math.round(report.benchmark.pointsDifference * 10) / 10,
   );
   push();
 

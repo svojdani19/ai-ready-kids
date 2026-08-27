@@ -32,7 +32,7 @@ export function RetentionForm({ current }: { current: number }) {
                   <span className="block text-sm font-semibold text-ink">{option.label}</span>
                   {"recommended" in option && option.recommended && (
                     <span className="block text-xs text-ink-soft">
-                      Recommended: long enough for a growth comparison, short enough that
+                      Recommended: long enough to compare two check-ins, short enough that
                       nothing lingers.
                     </span>
                   )}

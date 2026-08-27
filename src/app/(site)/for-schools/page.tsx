@@ -44,7 +44,7 @@ const ROLES = [
     lede: "School-level trends, an annual report, and real control over what is kept.",
     points: [
       "Aggregate figures only. There is no route in the product that shows you a named student's answers.",
-      "Fall-to-spring benchmark growth, calculated on matched students.",
+      "The fall-to-spring difference between two authored check-ins, on matched students.",
       "Groups smaller than five are reported as too few to report, in the product and in every export.",
       "A retention window you set, with the resulting deletion date shown per class before anything is clicked.",
       "An annual report to print, plus CSV and JSON export, and an audit log of every configuration change.",

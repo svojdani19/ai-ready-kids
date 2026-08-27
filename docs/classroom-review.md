@@ -152,6 +152,20 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       work out who. Check what the threshold is applied to, and deduplicate
       across groups before applying it. Suppress the raw counts beside the rate:
       "1 of 1" says exactly what the percentage would have.
+- [ ] **A fix in one place is swept everywhere that logic lives.** When a
+      rationale is removed from a mission, search the benchmark, the
+      certification modules and the marketing copy for it too. A belief scored
+      as correct in an assessment is worse than one taught in a mission: the
+      mission can be corrected, while the item marks a child down for not
+      holding it and then reports that as evidence.
+- [ ] **The instrument's claims match what it can support.** One item per
+      skill, forms nobody piloted, and no equating means the output is the
+      difference between two authored check-ins — not growth, not transfer.
+      Name the fields for what they are, because a field called `growthPoints`
+      reintroduces the overclaim in the next surface somebody writes.
+- [ ] **A privacy statement addressed to a child is still a privacy
+      statement.** "Your teacher only uses this" has to be true of every adult
+      who can reach the result, including through reports and exports.
 - [ ] **A promise in the prose is a test case.** Where the product tells a
       school what it will not show, assert that against the code that decides.
       A sentence in an export is a commitment, and it is the kind that goes

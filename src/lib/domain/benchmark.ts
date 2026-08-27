@@ -51,17 +51,26 @@ export const MIN_BENCHMARK_GROUP = 5;
 export interface CohortBenchmark {
   preCompleted: number;
   postCompleted: number;
-  /** Students with both windows finished — the only fair growth denominator. */
+  /** Students with both windows finished — the only fair denominator. */
   matched: number;
   preRate: number | null;
   postRate: number | null;
-  /** Percentage points, matched students only. Null until both windows close. */
-  growthPoints: number | null;
+  /**
+   * Percentage points between the two windows, matched students only. Null
+   * until both windows close or the matched group is too small.
+   *
+   * Deliberately not called growth. The two forms have never been piloted or
+   * equated, and each skill carries a single item, so a difference here is the
+   * difference between two authored check-ins and nothing stronger. Naming the
+   * field for the statistic it is not is how the overclaim gets back in.
+   */
+  pointsDifference: number | null;
   byCompetency: {
     competency: CompetencyId;
     preRate: number | null;
     postRate: number | null;
-    growthPoints: number | null;
+    /** As above: a difference between two authored forms, not growth. */
+    pointsDifference: number | null;
   }[];
 }
 
@@ -122,20 +131,20 @@ export function summariseCohortBenchmark(records: BenchmarkRecord[]): CohortBenc
     matched: matchedStudents,
     preRate: preOk ? rate(pre, "pre") : null,
     postRate: postOk ? rate(post, "post") : null,
-    growthPoints:
+    pointsDifference:
       matchedPreRate !== null && matchedPostRate !== null
         ? (matchedPostRate - matchedPreRate) * 100
         : null,
     byCompetency: COMPETENCY_IDS.map((competency) => {
-      // Growth per competency uses the same matched threshold as the headline,
-      // so a cell can never be more revealing than the figure above it.
+      // The per-competency difference uses the same matched threshold as the
+      // headline, so a cell is never more revealing than the figure above it.
       const p = matchedOk ? competencyRate(matchedPre, "pre", competency) : null;
       const q = matchedOk ? competencyRate(matchedPost, "post", competency) : null;
       return {
         competency,
         preRate: preOk ? competencyRate(pre, "pre", competency) : null,
         postRate: postOk ? competencyRate(post, "post", competency) : null,
-        growthPoints: p !== null && q !== null ? (q - p) * 100 : null,
+        pointsDifference: p !== null && q !== null ? (q - p) * 100 : null,
       };
     }),
   };

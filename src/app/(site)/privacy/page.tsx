@@ -67,7 +67,7 @@ const SECTIONS = [
     body: [
       "A teacher sees their own roster with which skills each student has demonstrated. They need it to teach.",
       "An administrator sees aggregate figures only. There is no route in the product that shows an administrator a named student's answers.",
-      `A figure is shown as "too few to report" unless at least ${MIN_REPORTABLE_GROUP} distinct students contributed to that particular figure, in the product and in every export. Contributing means having actually done the thing being measured, which is usually fewer students than are enrolled: a competency rate counts the children who completed a mission offering the skill, and check-in growth counts the children who completed both windows.`,
+      `A figure is shown as "too few to report" unless at least ${MIN_REPORTABLE_GROUP} distinct students contributed to that particular figure, in the product and in every export. Contributing means having actually done the thing being measured, which is usually fewer students than are enrolled: a competency rate counts the children who completed a mission offering the skill, and the check-in change counts the children who completed both windows.`,
       "Individual check-in answers are never displayed to anyone. The check-in produces a cohort measurement, not a record about a child.",
       "Nothing in the product produces a label, a band or an inference about a child's character or judgement.",
     ],

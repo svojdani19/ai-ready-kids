@@ -122,18 +122,18 @@ export default async function AdminOverview() {
               </div>
               <div className="rounded-lg border-2 border-pine bg-pine-wash px-3 py-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.1em] text-pine-deep">
-                  Growth
+                  Change
                 </p>
                 <p className="ark-tabular mt-1 font-display text-2xl text-ink">
-                  {report.benchmark.growthPoints === null
+                  {report.benchmark.pointsDifference === null
                     ? "—"
-                    : `${report.benchmark.growthPoints > 0 ? "+" : ""}${Math.round(report.benchmark.growthPoints)}`}
+                    : `${report.benchmark.pointsDifference > 0 ? "+" : ""}${Math.round(report.benchmark.pointsDifference)}`}
                 </p>
                 <p className="text-xs text-ink-soft">{report.benchmark.matched} matched</p>
               </div>
             </div>
             <p className="mt-3 text-xs leading-relaxed text-ink-faint">
-              Growth uses only students who finished both windows, which is the only fair
+              The change uses only students who finished both windows, which is the only fair
               denominator. Percentage points, not a grade.
             </p>
           </PanelBody>

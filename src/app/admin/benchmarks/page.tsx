@@ -47,11 +47,11 @@ export default async function AdminBenchmarks() {
         <Stat label="Spring completed" value={school.postCompleted} />
         <Stat label="Matched pairs" value={school.matched} hint="Finished both windows" />
         <Stat
-          label="Matched growth"
+          label="Change, matched students"
           value={
-            school.growthPoints === null
+            school.pointsDifference === null
               ? "—"
-              : `${school.growthPoints > 0 ? "+" : ""}${Math.round(school.growthPoints)} pts`
+              : `${school.pointsDifference > 0 ? "+" : ""}${Math.round(school.pointsDifference)} pts`
           }
           tone="pine"
         />
@@ -59,7 +59,7 @@ export default async function AdminBenchmarks() {
 
       <div className="mt-6">
         <Panel
-          title="Growth by competency"
+          title="Change by competency"
           description="Matched students only. Percentage points, fall to spring."
         >
           <PanelBody className="space-y-5">
@@ -82,10 +82,10 @@ export default async function AdminBenchmarks() {
                   />
                 </div>
                 <div className="flex items-center">
-                  <Tag tone={c.growthPoints && c.growthPoints > 0 ? "pine" : "neutral"}>
-                    {c.growthPoints === null
+                  <Tag tone={c.pointsDifference && c.pointsDifference > 0 ? "pine" : "neutral"}>
+                    {c.pointsDifference === null
                       ? "Awaiting spring"
-                      : `${c.growthPoints > 0 ? "+" : ""}${Math.round(c.growthPoints)} points`}
+                      : `${c.pointsDifference > 0 ? "+" : ""}${Math.round(c.pointsDifference)} points`}
                   </Tag>
                 </div>
               </div>
@@ -98,7 +98,7 @@ export default async function AdminBenchmarks() {
         <Panel title="By class">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[40rem] border-collapse text-sm">
-              <caption className="sr-only">Benchmark completion and growth by class</caption>
+              <caption className="sr-only">Benchmark completion and change by class</caption>
               <thead>
                 <tr className="border-b border-sand text-left">
                   <th scope="col" className="px-5 py-2.5 font-semibold text-ink-soft">Class</th>
@@ -107,7 +107,7 @@ export default async function AdminBenchmarks() {
                   <th scope="col" className="px-3 py-2.5 font-semibold text-ink-soft">Spring done</th>
                   <th scope="col" className="px-3 py-2.5 font-semibold text-ink-soft">Fall rate</th>
                   <th scope="col" className="px-3 py-2.5 font-semibold text-ink-soft">Spring rate</th>
-                  <th scope="col" className="px-3 py-2.5 font-semibold text-ink-soft">Growth</th>
+                  <th scope="col" className="px-3 py-2.5 font-semibold text-ink-soft">Change</th>
                 </tr>
               </thead>
               <tbody>
@@ -131,9 +131,9 @@ export default async function AdminBenchmarks() {
                     <td className="ark-tabular px-3 py-2.5 text-ink-soft">{pct(bench.preRate)}</td>
                     <td className="ark-tabular px-3 py-2.5 text-ink-soft">{pct(bench.postRate)}</td>
                     <td className="ark-tabular px-3 py-2.5 font-semibold text-ink">
-                      {bench.growthPoints === null
+                      {bench.pointsDifference === null
                         ? "—"
-                        : `${bench.growthPoints > 0 ? "+" : ""}${Math.round(bench.growthPoints)}`}
+                        : `${bench.pointsDifference > 0 ? "+" : ""}${Math.round(bench.pointsDifference)}`}
                     </td>
                   </tr>
                 ))}

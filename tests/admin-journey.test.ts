@@ -57,21 +57,21 @@ describe("school overview", () => {
     expect(report.byGrade.map((g) => g.grade)).toEqual([2, 3, 4]);
   });
 
-  it("reports pre and post benchmark growth from matched students only", () => {
+  it("reports the fall-to-spring difference from matched students only", () => {
     const bench = summariseCohortBenchmark(listBenchmarksForSchool(db, DEMO_SCHOOL));
     expect(bench.preCompleted).toBe(90);
     expect(bench.postCompleted).toBeGreaterThan(0);
     expect(bench.matched).toBe(bench.postCompleted);
-    expect(bench.growthPoints).not.toBeNull();
+    expect(bench.pointsDifference).not.toBeNull();
     // The seed models instruction working, so spring should beat fall.
-    expect(bench.growthPoints!).toBeGreaterThan(0);
+    expect(bench.pointsDifference!).toBeGreaterThan(0);
   });
 
-  it("returns null growth, not a fake zero, before the spring window runs", () => {
+  it("returns null, not a fake zero, before the spring window runs", () => {
     const room4 = listClasses(db, DEMO_SCHOOL).find((c) => c.name === "Room 4")!;
     const bench = summariseCohortBenchmark(listBenchmarksForClass(db, room4.id));
     expect(bench.postCompleted).toBe(0);
-    expect(bench.growthPoints).toBeNull();
+    expect(bench.pointsDifference).toBeNull();
     expect(bench.postRate).toBeNull();
     expect(bench.preRate).not.toBeNull();
   });
@@ -392,7 +392,7 @@ describe("benchmark suppression happens on the object, not in one view", () => {
     completeBenchmark(db3, studentId, form);
   }
 
-  it("withholds every rate and growth cell for a single matched student", () => {
+  it("withholds every rate and change cell for a single matched student", () => {
     const classId = createClass(db3, {
       schoolId: DEMO_SCHOOL,
       teacherId: DEMO_TEACHER,
@@ -412,11 +412,11 @@ describe("benchmark suppression happens on the object, not in one view", () => {
     expect(bench.matched).toBe(1);
     expect(bench.preRate).toBeNull();
     expect(bench.postRate).toBeNull();
-    expect(bench.growthPoints).toBeNull();
+    expect(bench.pointsDifference).toBeNull();
     for (const c of bench.byCompetency) {
       expect(c.preRate).toBeNull();
       expect(c.postRate).toBeNull();
-      expect(c.growthPoints).toBeNull();
+      expect(c.pointsDifference).toBeNull();
     }
 
     // And it must be withheld in the export, not merely hidden in a page. The
@@ -424,9 +424,9 @@ describe("benchmark suppression happens on the object, not in one view", () => {
     // the export path against a report whose benchmark is the suppressed one.
     const report = { ...buildSchoolReport(db3, DEMO_SCHOOL), benchmark: bench };
     const csv = reportToCsv(report);
-    const growthRow = csv.split("\n").find((r) => r.startsWith("Matched growth"))!;
-    expect(growthRow).toContain("too few to report");
-    expect(growthRow).not.toMatch(/-?\d+(\.\d+)?"?$/);
+    const changeRow = csv.split("\n").find((r) => r.startsWith("Change between check-ins"))!;
+    expect(changeRow).toContain("too few to report");
+    expect(changeRow).not.toMatch(/-?\d+(\.\d+)?"?$/);
     // The participation count is not itself a result and stays visible.
     expect(csv.split("\n").find((r) => r.startsWith("Matched students"))).toContain("1");
   });
@@ -450,7 +450,7 @@ describe("benchmark suppression happens on the object, not in one view", () => {
     const bench = summariseCohortBenchmark(listBenchmarksForClass(db3, classId));
     expect(bench.matched).toBe(MIN_BENCHMARK_GROUP);
     expect(bench.preRate).not.toBeNull();
-    expect(bench.growthPoints).not.toBeNull();
+    expect(bench.pointsDifference).not.toBeNull();
   });
 });
 

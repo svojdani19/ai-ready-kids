@@ -17,7 +17,7 @@ const COLLECTED = [
   ["A first name and last initial per student", "So a child can find their own row on a screen of twenty-three."],
   ["An assigned animal avatar", "So a pre-reader can find themselves faster. Chosen by us, never uploaded."],
   ["Which authored choices a student tapped", "This is the competency evidence teachers act on."],
-  ["Which check-in options a student selected", "Aggregated for growth. Never shown per student to anyone."],
+  ["Which check-in options a student selected", "Aggregated into a group difference. Never shown per student to anyone."],
   ["Staff name, school email and role", "So staff can sign in and own a class."],
 ];
 

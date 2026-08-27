@@ -1275,7 +1275,7 @@ describe("benchmark forms", () => {
     }
   });
 
-  it("pairs the forms skill for skill so growth compares like with like", () => {
+  it("pairs the forms skill for skill so the two windows compare like with like", () => {
     const pre = BENCHMARK_FORMS.pre.items.map((i) => i.skillId).sort();
     const post = BENCHMARK_FORMS.post.items.map((i) => i.skillId).sort();
     expect(pre).toEqual(post);
@@ -1318,6 +1318,100 @@ describe("benchmark forms", () => {
     for (const form of Object.values(BENCHMARK_FORMS)) {
       const intro = form.intro.join(" ").toLowerCase();
       expect(intro).toMatch(/no score|nobody gets a score/);
+    }
+  });
+});
+
+describe("the benchmark does not repeat a rationale the missions removed", () => {
+  const items = Object.values(BENCHMARK_FORMS).flatMap((f) => f.items);
+  const copy = items
+    .flatMap((i) => [i.scenario, i.question, ...i.options.map((o) => o.label)])
+    .join(" ")
+    .toLowerCase();
+
+  it("never treats an inscription or an object's age as source authority", () => {
+    // Sprint 18 removed this from Two Answers, One Truth: a plaque may have
+    // been installed later, by somebody who was not there, and it answers
+    // whatever narrow question was engraved. The benchmark was still scoring
+    // it as the correct answer, which is worse — a mission teaches, and an
+    // item like this rewards the belief and then reports it as evidence.
+    for (const phrase of [
+      "the people who built it put it there",
+      "because it was there",
+      "because it is older",
+      "because it is carved",
+      "because it is official",
+    ]) {
+      expect(copy).not.toContain(phrase);
+    }
+    // Nor may a correct option rest on proximity or apparent authority.
+    for (const item of items) {
+      const right = item.options.find((o) => o.correct)!;
+      expect(right.label.toLowerCase(), `${item.id}`).not.toMatch(
+        /because it is right there|because it is on the (wall|door|building)/,
+      );
+    }
+  });
+
+  it("makes the responsible source the correct answer where sources conflict", () => {
+    // Both source items now turn on who is answerable for the fact.
+    const sourceItems = items.filter((i) => i.skillId === "verify.source");
+    expect(sourceItems.length).toBeGreaterThanOrEqual(2);
+    for (const item of sourceItems) {
+      const right = item.options.find((o) => o.correct)!;
+      expect(right.label.toLowerCase(), `${item.id}`).toMatch(
+        /because they (run|keep)|records/,
+      );
+    }
+  });
+});
+
+describe("the two check-in forms are matched, and say so honestly", () => {
+  const pre = BENCHMARK_FORMS.pre.items;
+  const post = BENCHMARK_FORMS.post.items;
+
+  it("asks the same kind of question of each paired skill", () => {
+    // Not equated — nobody has piloted these — but at least the pair must ask
+    // for the same move. Pre-4 used to ask a child to rate their belief while
+    // post-4 asked them to choose an action, so a difference between the
+    // windows could be a difference in task demand rather than in the child.
+    for (const item of pre) {
+      const pair = post.find((p) => p.skillId === item.skillId)!;
+      expect(pair, `${item.id} has no post pair`).toBeDefined();
+      expect(item.options).toHaveLength(pair.options.length);
+
+      // Same stem shape: both ask what to do, or neither does.
+      const actionStem = (q: string) => /what (should you do|is the best thing to do|is the best move)/i.test(q);
+      expect(actionStem(item.question), `${item.id} vs ${pair.id} stem`).toBe(
+        actionStem(pair.question),
+      );
+
+      // Comparable reading load rather than identical.
+      const words = (t: string) => t.split(/\s+/).length;
+      expect(
+        Math.abs(words(item.scenario) - words(pair.scenario)),
+        `${item.id} vs ${pair.id} scenario length`,
+      ).toBeLessThanOrEqual(12);
+    }
+  });
+
+  it("states in the content module what the instrument cannot support", () => {
+    // One item per skill means a single response moves a competency by a third.
+    for (const form of Object.values(BENCHMARK_FORMS)) {
+      for (const skill of ALL_SKILLS) {
+        expect(form.items.filter((i) => i.skillId === skill.id)).toHaveLength(1);
+      }
+    }
+  });
+
+  it("tells a child who sees the results, not only that there is no score", () => {
+    // "Your teacher only uses this" was incomplete: cohort figures reach
+    // school leaders through reports, dashboards and exports.
+    for (const form of Object.values(BENCHMARK_FORMS)) {
+      const intro = form.intro.join(" ").toLowerCase();
+      expect(intro, `${form.form} intro`).toMatch(/nobody sees your answers/);
+      expect(intro).toMatch(/adults at your school only see results for whole groups/);
+      expect(intro).not.toMatch(/your teacher only uses this/);
     }
   });
 });

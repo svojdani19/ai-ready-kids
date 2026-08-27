@@ -309,10 +309,10 @@ export default async function ClassPage({
         <Note tone="denim" title="Check-in windows">
           {bench.postCompleted === 0
             ? `${bench.preCompleted} students finished the fall check-in. The spring window has not been run for this class yet.`
-            : `${bench.matched} students finished both windows. Matched growth is ${
-                bench.growthPoints === null
+            : `${bench.matched} students finished both windows. The change between them is ${
+                bench.pointsDifference === null
                   ? "not available"
-                  : `${bench.growthPoints > 0 ? "+" : ""}${Math.round(bench.growthPoints)} points`
+                  : `${bench.pointsDifference > 0 ? "+" : ""}${Math.round(bench.pointsDifference)} points`
               }. Aggregate figures only — individual check-in answers are not shown to anyone.`}
         </Note>
       </div>

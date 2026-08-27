@@ -4,14 +4,35 @@ import type { BenchmarkForm, BenchmarkFormContent } from "../types";
  * Annual pre and post benchmark.
  *
  * Design constraints, all deliberate:
- *  - Every scenario is set somewhere no mission goes. Nothing here is a
- *    recall check; each item is a transfer item.
- *  - Form A and Form B are parallel by skill and difficulty but share no
- *    context, so the post window measures transfer rather than memory of
- *    the pre items.
+ *  - Every scenario is set somewhere no mission goes, so nothing here is a
+ *    recall check.
+ *  - The two forms share no context, and each pre item is paired with a post
+ *    item on the same skill, matched for reading load, option structure and
+ *    the kind of reasoning being asked for — same question stem shape, same
+ *    kinds of distractor, correct answer resting on the same move.
  *  - Students get no per-item feedback and never see a score. The result is
  *    an aggregate instructional signal for adults, not a label for a child.
  *  - The words test, score, grade and wrong appear nowhere in student copy.
+ *
+ * What this instrument is NOT, and the copy everywhere must respect it:
+ *
+ *  - It is not equated. The forms have not been piloted, and no statistical
+ *    work has been done to establish that Form B is as hard as Form A. Items
+ *    are matched by authorship and review, which is the weakest kind of
+ *    parallelism there is.
+ *  - It carries one item per skill. A single response therefore moves a whole
+ *    competency by a third, which is why nothing anywhere reports a benchmark
+ *    result at skill granularity, and why the competency figures are read as
+ *    rough and directional rather than as measurements.
+ *  - The difference between the two windows is therefore **the difference
+ *    between two authored check-ins**, not measured program growth and not
+ *    demonstrated transfer. Every label a human reads says that. Calling it
+ *    growth would be claiming a property of the instrument that nobody has
+ *    established.
+ *
+ * To earn the stronger words, this needs several independently reviewed items
+ * per skill and a pilot that equates the forms. Until then the narrow label is
+ * the honest one.
  */
 
 const preForm: BenchmarkFormContent = {
@@ -20,7 +41,8 @@ const preForm: BenchmarkFormContent = {
   intro: [
     "This is a check-in, not a test.",
     "You will read nine short stories. For each one, pick what you would do.",
-    "Nobody gets a score. Your teacher only uses this to decide what the class should practise.",
+    "Nobody gets a score, and nobody sees your answers.",
+    "Adults at your school only see results for whole groups, to help them decide what a class should practise next.",
   ],
   outro: [
     "That is all nine. Thank you for thinking hard about them.",
@@ -71,12 +93,12 @@ const preForm: BenchmarkFormContent = {
       competency: "verification",
       skillId: "verify.confidence",
       scenario:
-        "A homework app tells you, “The moon is made of ice. This is definitely true and everyone agrees.”",
-      question: "How much should that sentence make you believe it?",
+        "A homework app tells you the moon is made of ice. It says this is definitely true and everyone agrees, and it does not say who found that out.",
+      question: "What should you do next?",
       options: [
-        { id: "a", label: "A lot. It said definitely and everyone agrees.", correct: false },
-        { id: "b", label: "Not at all. Sounding sure is not the same as being right.", correct: true },
-        { id: "c", label: "A little, because apps are usually right", correct: false },
+        { id: "a", label: "Write it down. It said definitely and everyone agrees.", correct: false },
+        { id: "b", label: "Look for a source that says who found that out", correct: true },
+        { id: "c", label: "Ask the app again and see if it says the same thing", correct: false },
       ],
     },
     {
@@ -85,11 +107,11 @@ const preForm: BenchmarkFormContent = {
       skillId: "verify.synthetic",
       scenario:
         "Somebody shares a video of a soccer player scoring a goal from the other end of the field. Nobody knows who posted it. It has no team logo and no date.",
-      question: "What is the best question to ask?",
+      question: "What is the best thing to do?",
       options: [
-        { id: "a", label: "What kind of shoes is the player wearing?", correct: false },
-        { id: "b", label: "How many people have watched it?", correct: false },
-        { id: "c", label: "Who filmed this, and was anybody actually there?", correct: true },
+        { id: "a", label: "Look closely at the player's shoes to see if it is real", correct: false },
+        { id: "b", label: "Ask where it came from before sending it on", correct: true },
+        { id: "c", label: "Send it to your team so they can see it too", correct: false },
       ],
     },
     {
@@ -97,12 +119,12 @@ const preForm: BenchmarkFormContent = {
       competency: "verification",
       skillId: "verify.source",
       scenario:
-        "You want to know what year the town library opened. An app says 1994. The stone above the library door says 1972.",
-      question: "Which do you believe, and why?",
+        "You want to know when the last Sunday bus leaves. A poster on the shelter says 6:40. The bus company's own timetable says 7:10.",
+      question: "Which is the better source, and why?",
       options: [
-        { id: "a", label: "The app, because it knows about lots of libraries", correct: false },
-        { id: "b", label: "The stone, because the people who built it put it there", correct: true },
-        { id: "c", label: "Whichever one sounds more likely", correct: false },
+        { id: "a", label: "The poster, because it is about this exact stop", correct: false },
+        { id: "b", label: "The bus company's timetable, because they run the buses", correct: true },
+        { id: "c", label: "Neither, you can never really be sure", correct: false },
       ],
     },
     {
@@ -153,11 +175,12 @@ const postForm: BenchmarkFormContent = {
   intro: [
     "This is your end of year check-in.",
     "Nine new stories, none of them from the missions you played.",
-    "There is no score. Pick what you would really do.",
+    "There is no score, and nobody sees your answers.",
+    "Adults at your school only see results for whole groups, to help them decide what a class should practise next.",
   ],
   outro: [
     "That is all nine. Nice work this year.",
-    "Your teacher will look at what the whole class got good at, not at any one person.",
+    "Adults will look at what whole groups got good at, never at any one person.",
   ],
   items: [
     {

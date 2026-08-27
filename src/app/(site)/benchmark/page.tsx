@@ -7,7 +7,7 @@ import { ButtonLink } from "@/components/ui/Button";
 export const metadata: Metadata = {
   title: "Annual check-ins",
   description:
-    "Fall and spring benchmarking on transfer scenarios no mission uses, reported as cohort growth and never as a score for a child.",
+    "Fall and spring check-ins on scenarios no mission uses, reported as a group difference between two authored forms and never as a score for a child.",
 };
 
 export default function BenchmarkPage() {
@@ -30,7 +30,7 @@ export default function BenchmarkPage() {
           {[
             ["Nine items per form", "Three per competency, balanced across the same nine skills in both windows."],
             ["No shared scenarios", "Forms A and B have no setting in common, so spring measures transfer rather than memory."],
-            ["No score for a child", "Students see no feedback and no result. Adults see cohort growth on matched students."],
+            ["No score for a child", "Students see no feedback and no result. Adults see a group difference across matched students."],
           ].map(([t, b]) => (
             <div key={t} className="rounded-2xl border-2 border-pine bg-pine-wash p-5">
               <h3 className="font-display text-lg leading-snug text-ink">{t}</h3>
@@ -76,8 +76,18 @@ export default function BenchmarkPage() {
           These items are multiple choice, and a child can pick a good answer without
           acting on it. What this measures is whether students can identify the safer move
           in an unfamiliar situation. That is a real and useful thing to know, and it is
-          not the same as measuring behaviour. Growth is calculated only across students
+          not the same as measuring behaviour. The difference is calculated only across students
           who completed both windows, which is the only fair denominator.
+        </p>
+        <p className="mt-4 max-w-3xl text-[1.05rem] leading-relaxed text-ink">
+          One more limit, stated plainly because it is the kind schools are usually not
+          told. The two forms have not been piloted or statistically equated, and each
+          skill carries a single item. They are matched by authorship and review — same
+          skill, same question shape, same kinds of wrong answer, comparable reading load
+          — which is the weakest kind of parallelism there is. So the number is the
+          difference between two authored check-ins. It is worth having and worth talking
+          about, and it is not a measurement of program growth. We would rather say that
+          than sell you a word the instrument has not earned.
         </p>
       </Section>
     </>

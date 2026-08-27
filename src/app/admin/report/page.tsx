@@ -129,7 +129,7 @@ export default async function AdminReport() {
           <h2 className="font-display text-xl text-ink">Annual benchmark</h2>
           <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
             Nine transfer items in the fall and nine different ones in the spring, set in
-            situations none of the missions use. Growth is calculated only across students
+            situations none of the missions use. The change is calculated only across students
             who completed both windows.
           </p>
           <table className="mt-3 w-full border-collapse text-sm">
@@ -141,10 +141,10 @@ export default async function AdminReport() {
                 ["Spring correct rate", pct(report.benchmark.postRate)],
                 ["Matched students", report.benchmark.matched],
                 [
-                  "Matched growth",
-                  report.benchmark.growthPoints === null
+                  "Change, matched students",
+                  report.benchmark.pointsDifference === null
                     ? "not available"
-                    : `${report.benchmark.growthPoints > 0 ? "+" : ""}${Math.round(report.benchmark.growthPoints)} percentage points`,
+                    : `${report.benchmark.pointsDifference > 0 ? "+" : ""}${Math.round(report.benchmark.pointsDifference)} percentage points`,
                 ],
               ].map(([label, value]) => (
                 <tr key={String(label)} className="border-b border-sand last:border-0">
@@ -158,9 +158,9 @@ export default async function AdminReport() {
             {report.benchmark.byCompetency.map((c) => (
               <li key={c.competency} className="text-sm text-ink-soft">
                 {COMPETENCY_BY_ID[c.competency].formalName}:{" "}
-                {c.growthPoints === null
+                {c.pointsDifference === null
                   ? "awaiting the spring window"
-                  : `${c.growthPoints > 0 ? "+" : ""}${Math.round(c.growthPoints)} points`}
+                  : `${c.pointsDifference > 0 ? "+" : ""}${Math.round(c.pointsDifference)} points`}
               </li>
             ))}
           </ul>
