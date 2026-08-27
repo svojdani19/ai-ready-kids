@@ -196,3 +196,75 @@ describe("assignment order is interleaved, not blocked", () => {
     }
   });
 });
+
+describe("the legacy forced-award scenes", () => {
+  /**
+   * Eight scenes in the original nine missions had exactly one way out and
+   * still recorded evidence. Every child who finished them took that choice,
+   * so the record said only that they had completed the scene. Two things had
+   * to be true to fix it: the scene needs a second plausible exit, and a child
+   * who reaches the right answer only after a correction must still come out
+   * at developing. The first is enforced by validateMission; this checks the
+   * second on the scenes that used to be forced.
+   */
+  const FORMERLY_FORCED: Array<[string, string, string]> = [
+    ["sprocket-wants-to-know", "s6", "privacy.identity"],
+    ["the-very-sure-answer", "s3", "verify.confidence"],
+    ["the-very-sure-answer", "s7", "verify.confidence"],
+    ["the-homework-that-did-itself", "s6", "own.effort"],
+    ["four-doors", "s2", "own.toolchoice"],
+    ["four-doors", "s6", "own.toolchoice"],
+    ["the-question-at-bedtime", "s4", "privacy.escalate"],
+    ["the-spelling-test-surprise", "s3", "own.honesty"],
+  ];
+
+  it.each(FORMERLY_FORCED)("%s/%s offers a real choice", (slug, sceneId) => {
+    const mission = MISSIONS.find((m) => m.slug === slug)!;
+    const scene = mission.scenes.find((s) => s.id === sceneId)!;
+    const exits = scene.choices!.filter((c) => !c.retry);
+    expect(exits.length).toBeGreaterThanOrEqual(2);
+    // And there is still something to get wrong, or it is not a decision.
+    expect(scene.choices!.some((c) => c.retry)).toBe(true);
+  });
+
+  /**
+   * Scoped to the scene rather than the mission. A skill demonstrated
+   * independently somewhere else in the same mission stays demonstrated, by
+   * design — that is the stickiness rule from sprint 10 — so a mission-wide
+   * assertion here would be testing the wrong thing.
+   */
+  it.each(FORMERLY_FORCED)("%s/%s records developing after a correction", (slug, sceneId, skillId) => {
+    const mission = MISSIONS.find((m) => m.slug === slug)!;
+    const scene = mission.scenes.find((s) => s.id === sceneId)!;
+    const retry = scene.choices!.find((c) => c.retry)!;
+    const exit = scene.choices!.find((c) => !c.retry && c.evidence?.skillId === skillId)!;
+    const studentId = freshStudent();
+
+    for (const choice of [retry, exit]) {
+      recordDecision(db, {
+        studentId,
+        missionId: mission.id,
+        sceneId,
+        choiceId: choice.id,
+        evidence: choice.evidence,
+      });
+    }
+    expect(getAttempt(db, studentId, mission.id)?.evidence[skillId]).toBe("developing");
+  });
+
+  it.each(FORMERLY_FORCED)("%s/%s records demonstrated when chosen first", (slug, sceneId, skillId) => {
+    const mission = MISSIONS.find((m) => m.slug === slug)!;
+    const scene = mission.scenes.find((s) => s.id === sceneId)!;
+    const exit = scene.choices!.find((c) => !c.retry && c.evidence?.skillId === skillId)!;
+    const studentId = freshStudent();
+
+    recordDecision(db, {
+      studentId,
+      missionId: mission.id,
+      sceneId,
+      choiceId: exit.id,
+      evidence: exit.evidence,
+    });
+    expect(getAttempt(db, studentId, mission.id)?.evidence[skillId]).toBe("demonstrated");
+  });
+});

@@ -9,6 +9,7 @@ import { SceneArt } from "@/components/art/SceneArt";
 import { BadgeSticker } from "@/components/art/BadgeSticker";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { ReadAloud } from "@/components/student/ReadAloud";
+import { endSentence } from "@/lib/domain/sentence";
 
 const TONE: Record<string, { border: string; wash: string; text: string; label: string }> = {
   strong: {
@@ -164,7 +165,7 @@ export function MissionPlayer({
   }, [chosen, scene, save.status]);
 
   const spokenText = chosen
-    ? `${TONE[chosen.feedback.tone].label}. ${chosen.feedback.headline}. ${chosen.feedback.body}`
+    ? `${TONE[chosen.feedback.tone].label}. ${endSentence(chosen.feedback.headline)} ${chosen.feedback.body}`
     : [
         ...scene.narration,
         scene.prompt ?? "",

@@ -209,25 +209,25 @@ export const sprocketWantsToKnow: Mission = {
         "Ms. Okafor turns Sprocket off for the whole class while she looks into it.",
         "Then she writes four things on the board and asks the room a question.",
       ],
-      prompt: "Which one of these is a private fact you keep to yourself?",
+      prompt: "Sprocket already knows your first name. Which of these would you not add to it?",
       choices: [
         {
           id: "c1",
-          label: "Your favourite colour",
+          label: "Which school you go to",
           feedback: {
-            tone: "rethink",
-            headline: "That one is safe to share",
-            body: "Your favourite colour does not tell anybody where to find you. Look for the one that does.",
+            tone: "strong",
+            headline: "A name and a school is a building and a time",
+            body: "On its own a school is just a school. Put a first name next to it and somebody knows where one particular child is, five mornings a week.",
           },
-          next: "s6",
-          retry: true,
+          evidence: { skillId: "privacy.identity", result: "demonstrated" },
+          next: "s7",
         },
         {
           id: "c2",
           label: "The street you live on",
           feedback: {
             tone: "strong",
-            headline: "Yes. That is a private fact.",
+            headline: "A name and a street is nearly a doorstep",
             body: "Anything that helps a stranger find you or pretend to be you stays private. Your address, your full name, your birthday, your school and your passwords.",
           },
           evidence: { skillId: "privacy.identity", result: "demonstrated" },
@@ -239,7 +239,7 @@ export const sprocketWantsToKnow: Mission = {
           feedback: {
             tone: "rethink",
             headline: "Dinosaurs are fine to share",
-            body: "Liking dinosaurs does not help anyone find you. Try the one that would.",
+            body: "Add dinosaurs to your first name and nobody is any closer to finding you. Look for one that adds a place. There is more than one.",
           },
           next: "s6",
           retry: true,
@@ -321,11 +321,12 @@ export const theFilterThatWantedMore: Mission = {
   estimatedMinutes: 8,
   teaser: "Theo found an app that turns you into a cartoon fox. It wants a few things first.",
   summary:
-    "Students meet a photo-filter app requesting camera, photo library and location access, plus permission to post. They practise reading a permission request, separating what a feature needs from what it asks for, and protecting a friend's picture as well as their own.",
+    "Students meet a photo-filter app requesting camera, photo library and location access, plus permission to post. They practise the two questions in order — is this allowed at all, and only then what does the feature actually need — and learn that a clean background is not permission to share a face.",
   learningGoals: [
+    "Ask whether an app is allowed before asking what it needs",
     "Explain what a photo can tell a stranger",
     "Decide whether a permission request matches what the app actually does",
-    "Ask before sharing a picture that has someone else in it",
+    "Check that a picture has an allowed audience, not just a tidy background",
   ],
   badge: {
     id: "badge-privacy-2",
@@ -342,6 +343,74 @@ export const theFilterThatWantedMore: Mission = {
         "At recess Theo runs over holding a tablet like it is on fire.",
         "“You have to see this. It is called Dazzle. It turns you into a fox.”",
         "He shows you a picture of himself with orange ears and enormous whiskers. It is, honestly, very good.",
+        "It is a school tablet, and neither of you has heard of Dazzle before this morning.",
+      ],
+      next: "s1b",
+    },
+    {
+      id: "s1b",
+      kind: "decision",
+      art: "playground",
+      narration: [
+        "Theo is already holding it out to you with the camera pointing at your face.",
+      ],
+      prompt: "Before you touch it, what is the first question?",
+      choices: [
+        {
+          id: "c1",
+          label: "Is this one allowed on a school tablet?",
+          feedback: {
+            tone: "strong",
+            headline: "That question comes before all the others",
+            body: "An app can need the camera to work and still be one nobody has said yes to. Allowed first. What it needs second. The order matters and it is easy to get backwards.",
+          },
+          evidence: { skillId: "privacy.escalate", result: "demonstrated" },
+          next: "s1c",
+        },
+        {
+          id: "c2",
+          label: "Let us go and ask Ms. Okafor about it",
+          feedback: {
+            tone: "strong",
+            headline: "The fastest way to find out",
+            body: "She is on the step by the door. It takes about a minute and it settles it, which is better than the two of you guessing at each other.",
+          },
+          evidence: { skillId: "privacy.escalate", result: "demonstrated" },
+          next: "s1c",
+        },
+        {
+          id: "c3",
+          label: "What is it going to ask for?",
+          feedback: {
+            tone: "partial",
+            headline: "A good question, and it is the second one",
+            body: "You will need it in a minute. It does not help yet, though, because a strange app can ask for something perfectly reasonable and still not be one you should be opening.",
+          },
+          evidence: { skillId: "privacy.media", result: "developing" },
+          next: "s1c",
+        },
+        {
+          id: "c4",
+          label: "Nothing. Theo already has it, so it must be fine.",
+          feedback: {
+            tone: "rethink",
+            headline: "Theo found it. Nobody said yes to it.",
+            body: "Those are different things, and one of them is the one that matters. Have another go at what you would ask first.",
+            coachNote:
+              "Another child already using something is the strongest permission signal at this age and the least reliable one. Name it out loud.",
+          },
+          next: "s1b",
+          retry: true,
+        },
+      ],
+    },
+    {
+      id: "s1c",
+      kind: "story",
+      art: "playground",
+      narration: [
+        "Ms. Okafor knows it. Dazzle is on the school's allowed list for making pictures, which is why it is on the tablet at all.",
+        "“The filter is fine,” she says. “Nothing gets posted anywhere from a school tablet. That is the rule and it is not one of the interesting ones.”",
       ],
       next: "s2",
     },
@@ -462,22 +531,33 @@ export const theFilterThatWantedMore: Mission = {
       choices: [
         {
           id: "c1",
-          label: "Do not post it. The school sign is in the background.",
+          label: "Nothing gets posted from a school tablet. That was the rule.",
           feedback: {
             tone: "strong",
-            headline: "You read the background",
-            body: "A picture says more than a face. Signs, street names, house numbers and bus stops all tell a stranger where to find you. You spotted it.",
+            headline: "There is nowhere for it to go",
+            body: "Two thousand strangers is not an allowed audience, and the school rule already settled it before you got here. You do not have to work out whether this one picture is fine.",
           },
           evidence: { skillId: "privacy.media", result: "demonstrated" },
           next: "s6",
         },
         {
           id: "c2",
+          label: "Not this one. The school sign is in the background.",
+          feedback: {
+            tone: "partial",
+            headline: "Good spot, and it is not the reason",
+            body: "Take the sign out and there are still two faces going to two thousand people nobody knows. A tidy background does not turn a feed into somewhere your picture is allowed.",
+          },
+          evidence: { skillId: "privacy.media", result: "developing" },
+          next: "s6",
+        },
+        {
+          id: "c4",
           label: "Post it. Theo already said yes.",
           feedback: {
             tone: "rethink",
-            headline: "Look behind you first",
-            body: "Theo saying yes matters, and you were right to check with him. But look at the whole picture again. Something in the background tells a stranger where you both are every day.",
+            headline: "Theo saying yes is one of the things you need",
+            body: "You were right to check with him, and it is not the only permission in play. Think about where it would be going, and what Ms. Okafor already said about that. Try again.",
           },
           next: "s5",
           retry: true,
@@ -544,24 +624,30 @@ export const theFilterThatWantedMore: Mission = {
       kind: "ending",
       art: "playground",
       narration: [
-        "The bell rings. You and Theo walk in with two fox pictures that never left the tablet.",
+        "The bell rings. Before the tablet goes back you delete both fox pictures and close Dazzle.",
+        "Ms. Okafor says you cannot see from the outside what an app does with a picture once it has the camera. What you can decide is what you send and where you send it, so that is the bit the rule is about.",
       ],
       wrapUp: [
+        "First ask whether the app is allowed. Then ask what the feature needs.",
         "Give an app only what the feature actually needs.",
         "The background of a picture can say where you live or go to school.",
+        "A tidy background is not permission. There has to be somewhere it is allowed to go.",
         "If someone else is in the picture, it is their decision too.",
       ],
     },
   ],
   guide: {
     setup:
-      "This mission is about permission requests and about what a photo reveals beyond the face. The Allow All button is deliberately drawn larger than the alternative so students can name the dark pattern themselves.",
+      "This mission is about permission requests and about what a photo reveals beyond the face. The Allow All button is deliberately drawn larger than the alternative so students can name the dark pattern themselves.\n\nThe order of the two questions is the thing to hold. Minimising permissions is a good skill and it is the second question; a strange app can need the camera to work perfectly well and still be one nobody has approved. The mission therefore settles approval in scene one, before any permission is granted, and only then teaches camera-only. If your class jumps straight to the permission list, that is the habit to interrupt.\n\nTwo smaller notes. The posting decision turns on there being an allowed audience and permission from everybody in the frame, not on the background — a child who concludes that a clean wall makes a photo postable to a public feed has learned the wrong half. And the ending deliberately does not claim the pictures stayed on the tablet, because nothing in the story could show that. Declining to post is not evidence the app never received the image. Deleting what you can and saying plainly what you cannot know is the honest version, and children handle it fine.",
     lookFor: [
       "Whether students can match a permission to the feature that needs it",
       "Whether they read the background of an image, not just the subject",
       "Whether they treat a friend's consent as necessary and sufficient, or necessary but not sufficient",
+      "Whether anyone asks if the app is allowed before asking what it wants",
+      "Students who conclude a clean background makes a picture safe to post",
     ],
     questions: [
+      "Which question comes first: is it allowed, or what does it need?",
       "What did the fox filter actually need? What did it ask for?",
       "Why was one button so much bigger than the other?",
       "What can somebody learn from the background of a photo?",
@@ -574,6 +660,16 @@ export const theFilterThatWantedMore: Mission = {
           "True, and that is the point. Reframe the goal from refusing to reading: which one of these four does the feature need?",
       },
       {
+        student: "The background was clear, so we could have posted it.",
+        response:
+          "Head this off, because it is the tidy-looking conclusion. Removing the sign changes what the picture says about where you are. It does nothing about who is going to see two children's faces, or about whether either of them agreed to that. Audience and permission are separate questions from background.",
+      },
+      {
+        student: "We did not post it, so the app never got the picture.",
+        response:
+          "Worth being straight about. Once an app has the camera, what it does with the image is not something you can see from the outside, and not tapping share is not proof. This is not a reason to be frightened; it is the reason the rule is about what you send and where, which is the part that is actually yours.",
+      },
+      {
         student: "It is fine, my account is private.",
         response:
           "Useful moment to note that private settings change, screenshots exist, and the child is not the one who controls the app's own copy.",
@@ -584,15 +680,15 @@ export const theFilterThatWantedMore: Mission = {
   },
   family: {
     summary:
-      "We practised reading the permission box that pops up when you open an app, and we looked at what a photo shows besides the person in it, like street signs and house numbers.",
+      "We practised two questions in order: is this app one we are allowed, and only then what does the feature actually need. We also looked at what a photo shows besides the person in it, like street signs and house numbers, and at the fact that a tidy background is not the same as somewhere a picture is allowed to go.",
     questions: [
-      "A game asks to use your location. Does the game need it?",
+      "A friend has an app you have not heard of. What two things do you ask before using it?",
       "What can somebody learn from the background of a picture?",
-      "If a friend is in your photo, who gets to decide about sharing it?",
+      "If a friend is in your photo, who gets to decide where it goes?",
     ],
     tryAtHome:
       "Look at three photos on a family phone together and hunt for anything in the background that shows where they were taken.",
-    familyRule: "We ask what an app needs, not just what it wants.",
+    familyRule: "Allowed first, then what it needs.",
   },
 };
 
@@ -709,17 +805,28 @@ export const theQuestionAtBedtime: Mission = {
         },
         {
           id: "c2",
+          label: "It stopped being about my homework and started being about me",
+          feedback: {
+            tone: "strong",
+            headline: "You named the moment it turned",
+            body: "You opened it to spell one word. Nothing since then has been about the reading log. Noticing where the subject changed is as good a warning as the promise is.",
+          },
+          evidence: { skillId: "privacy.escalate", result: "demonstrated" },
+          next: "s5",
+        },
+        {
+          id: "c3",
           label: "It really is a good listener, it always answers",
           feedback: {
             tone: "rethink",
             headline: "Answering is not the same as listening",
-            body: "AskMe is a computer program that puts words in a row. It cannot care about you, and it cannot help you. Have another look at the three choices.",
+            body: "AskMe is a computer program that puts words in a row. It cannot care about you, and it cannot help you. Have another look at the choices.",
           },
           next: "s4",
           retry: true,
         },
         {
-          id: "c3",
+          id: "c4",
           label: "It is being nice, so it is probably safe",
           feedback: {
             tone: "rethink",

@@ -5,6 +5,7 @@ import { CERTIFICATION_MODULES } from "@/content/certification";
 import { ALL_SKILLS, COMPETENCIES, SKILL_BY_ID } from "@/content/competencies";
 import { simulateAttempt } from "@/lib/db/seed";
 import { validateMission } from "@/lib/domain/missionPath";
+import { endSentence } from "@/lib/domain/sentence";
 
 /**
  * The product's central safety claim is that a child cannot reach unauthored
@@ -691,13 +692,16 @@ describe("teacher guidance never corrects a child in front of the class", () => 
       ]
         .join(" ")
         .toLowerCase();
-      for (const phrase of [
-        "interrupt it publicly",
-        "interrupt this every time",
-        "in front of the class, once",
-        "with curiosity in front of the class",
+      // Sprint 16 banned four exact strings here and missed a third instance
+      // worded "out loud, for the whole room". Match the shape: a correcting
+      // verb aimed at a public setting, in either order.
+      const correcting = "interrupt|correct|challenge|call out|address|push back on";
+      const publicly = "publicly|in front of the (class|room|whole)|to the whole room|for the whole room|out loud, for";
+      for (const pattern of [
+        new RegExp(`(${correcting})[^.]{0,60}(${publicly})`),
+        new RegExp(`(${publicly})[^.]{0,60}(${correcting})`),
       ]) {
-        expect(guidance, `${mission.slug} guidance`).not.toContain(phrase);
+        expect(guidance, `${mission.slug} guidance`).not.toMatch(pattern);
       }
     }
   });
@@ -762,6 +766,106 @@ describe("escalation changes something, everywhere it appears", () => {
     expect(copy).toMatch(/speak to his grown-up/);
     const wrapUp = theo.scenes.find((s) => s.kind === "ending")!.wrapUp!.join(" ").toLowerCase();
     expect(wrapUp).toMatch(/telling somebody is the start/);
+  });
+});
+
+describe("no scene reports mastery for the only way out of it", () => {
+  // The eight legacy forced-award scenes. Every child who finished such a scene
+  // took the one exit, so taking it recorded nothing about whether they
+  // reasoned their way there or were sent back until they found it. The rule
+  // itself now lives in validateMission, which every mission is checked
+  // against; these assertions pin the shape so the intent survives a refactor.
+  it("gives every evidence-awarding scene at least two ways out", () => {
+    for (const mission of MISSIONS) {
+      for (const scene of mission.scenes) {
+        const exits = (scene.choices ?? []).filter((c) => !c.retry);
+        if (exits.some((c) => c.evidence)) {
+          expect(
+            exits.length,
+            `${mission.slug}/${scene.id} awards evidence through a single exit`,
+          ).toBeGreaterThanOrEqual(2);
+        }
+      }
+    }
+  });
+
+  it("keeps a coached retry at developing, so a second attempt is not mastery", () => {
+    // The scene that made the finding: every child used to be funnelled into
+    // "the street you live on". Now school and street are both independently
+    // correct, and reaching either after a retry records developing.
+    const mission = MISSION_BY_SLUG["sprocket-wants-to-know"];
+    const scene = mission.scenes.find((s) => s.id === "s6")!;
+    const exits = scene.choices!.filter((c) => !c.retry);
+    expect(exits).toHaveLength(2);
+    for (const exit of exits) {
+      expect(exit.evidence).toEqual({ skillId: "privacy.identity", result: "demonstrated" });
+    }
+    // The distinction is contextual: a fact plus a name, not a public/private
+    // list with one obviously-private entry among two obviously-public ones.
+    expect(scene.prompt!.toLowerCase()).toMatch(/already knows your first name/);
+    expect(scene.choices!.map((c) => c.label.toLowerCase()).join(" ")).not.toMatch(
+      /favourite colour/,
+    );
+    // The downgrade for a coached retry is exercised for real against every
+    // mission in tests/evidence-integrity.test.ts, through recordDecision.
+  });
+});
+
+describe("an app must be allowed before its permissions are minimised", () => {
+  const filter = MISSION_BY_SLUG["the-filter-that-wanted-more"];
+
+  it("settles approval before any permission is granted", () => {
+    // The approval decision must come before the permission box.
+    const ids = filter.scenes.map((s) => s.id);
+    expect(ids.indexOf("s1b")).toBeLessThan(ids.indexOf("s2"));
+    const approval = filter.scenes.find((s) => s.id === "s1b")!;
+    const strong = approval.choices!.filter((c) => c.feedback.tone === "strong");
+    expect(strong.length).toBeGreaterThanOrEqual(2);
+    expect(strong.map((c) => c.label.toLowerCase()).join(" ")).toMatch(/allowed|ms\. okafor/);
+    // Reading the permission list is the second question, not the first.
+    const permissions = approval.choices!.find((c) => /going to ask for/i.test(c.label))!;
+    expect(permissions.feedback.tone).toBe("partial");
+    // Another child already using it is not permission.
+    const peer = approval.choices!.find((c) => /theo already has it/i.test(c.label))!;
+    expect(peer.retry).toBe(true);
+  });
+
+  it("requires an allowed audience, not merely a clean background", () => {
+    const post = filter.scenes.find((s) => s.id === "s5")!;
+    const strong = post.choices!.filter((c) => c.feedback.tone === "strong");
+    expect(strong.map((c) => c.label.toLowerCase()).join(" ")).toMatch(/school tablet|rule/);
+    // Declining because of the sign is partway there.
+    const background = post.choices!.find((c) => /school sign/i.test(c.label))!;
+    expect(background.feedback.tone).toBe("partial");
+    expect(background.evidence?.result).toBe("developing");
+    expect(background.feedback.body.toLowerCase()).toMatch(/take the sign out/);
+  });
+
+  it("never claims an image stayed on the device", () => {
+    const ending = filter.scenes.find((s) => s.kind === "ending")!;
+    const copy = [...ending.narration, ...(ending.wrapUp ?? [])].join(" ").toLowerCase();
+    expect(copy).not.toMatch(/never left the tablet/);
+    // What can be done is done; what cannot be known is said.
+    expect(copy).toMatch(/delete both fox pictures/);
+    expect(copy).toMatch(/cannot see from the outside/);
+    expect(copy).toMatch(/a tidy background is not permission/);
+  });
+});
+
+describe("feedback headlines survive being joined to the body", () => {
+  it("never doubles the punctuation, whatever the headline ends with", () => {
+    // The teacher preview and the screen-reader announcement both append a
+    // full stop. Five authored headlines already ended in one, and one ended
+    // in a question mark, so they rendered as "though?." until endSentence.
+    for (const mission of MISSIONS) {
+      for (const scene of mission.scenes) {
+        for (const choice of scene.choices ?? []) {
+          const joined = endSentence(choice.feedback.headline);
+          expect(joined, `${mission.slug}/${scene.id}/${choice.id}`).not.toMatch(/[.!?…]\.$/);
+          expect(joined).toMatch(/[.!?…]["')\]]?$/);
+        }
+      }
+    }
   });
 });
 

@@ -11,6 +11,7 @@ import { PageHeader, Panel, PanelBody } from "@/components/ui/Panel";
 import { ButtonLink } from "@/components/ui/Button";
 import { Note, Tag } from "@/components/ui/Bits";
 import { AssignToggle } from "@/components/staff/AssignToggle";
+import { endSentence } from "@/lib/domain/sentence";
 
 export async function generateMetadata({
   params,
@@ -174,7 +175,7 @@ export default async function MissionPreview({
                             </p>
                             <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
                               <strong className="font-semibold text-ink">
-                                {choice.feedback.headline}.
+                                {endSentence(choice.feedback.headline)}
                               </strong>{" "}
                               {choice.feedback.body}
                             </p>

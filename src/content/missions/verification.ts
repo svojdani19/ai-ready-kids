@@ -67,6 +67,17 @@ export const theVerySureAnswer: Mission = {
         },
         {
           id: "c2",
+          label: "Not by itself, but it did say researchers confirmed it",
+          feedback: {
+            tone: "partial",
+            headline: "You went looking for a reason, which is the right instinct",
+            body: "Naming researchers is a better sign than sounding sure, so you were reaching for the correct thing. It is still the answer talking about itself. Anybody can type the word researchers.",
+          },
+          evidence: { skillId: "verify.confidence", result: "developing" },
+          next: "s4",
+        },
+        {
+          id: "c2b",
           label: "Yes. It said researchers confirmed it.",
           feedback: {
             tone: "rethink",
@@ -197,15 +208,26 @@ export const theVerySureAnswer: Mission = {
         "Ms. Okafor writes a sentence on the board and leaves a blank in the middle.",
         "“Sounding sure is not the same as ________.”",
       ],
-      prompt: "What word goes in the blank?",
+      prompt: "What could go in the blank? More than one thing fits.",
       choices: [
         {
           id: "c1",
           label: "being right",
           feedback: {
             tone: "strong",
-            headline: "That is the one",
+            headline: "That is the shortest one",
             body: "Say it any time a screen tells you something in a very confident voice. Sounding sure is not the same as being right.",
+          },
+          evidence: { skillId: "verify.confidence", result: "demonstrated" },
+          next: "s8",
+        },
+        {
+          id: "c1b",
+          label: "having checked",
+          feedback: {
+            tone: "strong",
+            headline: "That one says how it went wrong",
+            body: "Nothing had been looked up. A very sure voice came out of an app that had not been anywhere, and that is the part you can go and do something about.",
           },
           evidence: { skillId: "verify.confidence", result: "demonstrated" },
           next: "s8",

@@ -202,6 +202,17 @@ export const theHomeworkThatDidItself: Mission = {
         },
         {
           id: "c2",
+          label: "Good help leaves me able to do the next one on my own",
+          feedback: {
+            tone: "strong",
+            headline: "That is the same test, pointed forwards",
+            body: "It is the one you can check tomorrow. If the next one is just as hard as the last, whatever happened was not help, however finished the page looked.",
+          },
+          evidence: { skillId: "own.effort", result: "demonstrated" },
+          next: "s7",
+        },
+        {
+          id: "c2b",
           label: "Good help gets the page done fastest",
           feedback: {
             tone: "rethink",
@@ -352,12 +363,12 @@ export const fourDoors: Mission = {
           id: "c3",
           label: "Ask a person",
           feedback: {
-            tone: "rethink",
+            tone: "partial",
             headline: "A person would just wait for you",
-            body: "Ms. Okafor would smile and say try it. Which is a hint that this one is yours. Pick again.",
+            body: "Ms. Okafor would smile and say try it, which is a hint that this one is yours. Asking is never a bad thing to do. It is just the long way round for something already in your head.",
           },
-          next: "s2",
-          retry: true,
+          evidence: { skillId: "own.toolchoice", result: "developing" },
+          next: "s3",
         },
       ],
     },
@@ -529,6 +540,17 @@ export const fourDoors: Mission = {
         },
         {
           id: "c3",
+          label: "No. And the same problem can need a different door next week.",
+          feedback: {
+            tone: "strong",
+            headline: "That is the part people forget",
+            body: "Seven plus eight is a think-it-out for you now and was an ask-a-person in year one. The door moves as you do, which is why you pick it each time.",
+          },
+          evidence: { skillId: "own.toolchoice", result: "demonstrated" },
+          next: "s7",
+        },
+        {
+          id: "c4",
           label: "Yes, asking a person is always best",
           feedback: {
             tone: "rethink",
@@ -670,13 +692,24 @@ export const theSpellingTestSurprise: Mission = {
             headline: "That is not what happened",
             body: "You did not get a chance to be good or bad at it. You never actually practised. There is a real difference, and it matters. Try again.",
             coachNote:
-              "Students commonly convert a strategy problem into a fixed self-belief. Interrupt that here, out loud, for the whole room.",
+              "Students commonly convert a strategy problem into a fixed self-belief, and this is the moment it happens. Correct it as a general point to the room — what went wrong here was a plan, not a person — without turning towards whoever chose it. A child who says they are bad at spelling may also be telling you something true, and that conversation belongs one to one.",
           },
           next: "s3",
           retry: true,
         },
         {
           id: "c3",
+          label: "The tablet did the spelling, so my hand never learned it",
+          feedback: {
+            tone: "strong",
+            headline: "Same answer, and you can feel where it went",
+            body: "The letters went from the app to the page without ever going through you. That is why the paper is blank now: nothing was ever put anywhere it could be got back from.",
+          },
+          evidence: { skillId: "own.honesty", result: "demonstrated" },
+          next: "s4",
+        },
+        {
+          id: "c4",
           label: "The test is unfair because you cannot use the tablet",
           feedback: {
             tone: "rethink",
@@ -859,7 +892,7 @@ export const theSpellingTestSurprise: Mission = {
       {
         student: "I am just bad at spelling.",
         response:
-          "Interrupt immediately and publicly. The student has no evidence either way, because the practice never happened.",
+          "Answer it quickly, and answer it to the room as a general point rather than to whoever said it. Nobody in this story found out whether they were good or bad at spelling, because the practice never happened, so there is no evidence either way. If a child keeps saying it about themselves, that is a separate conversation and it belongs one to one.",
       },
     ],
     extension:

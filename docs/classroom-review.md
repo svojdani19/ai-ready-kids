@@ -119,6 +119,14 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       dismiss one private fact to elevate another, for a handful of examples
       described as proof, and for "always" and "never" and "nothing at all"
       where the honest word is "usually" or "not on its own".
+- [ ] **Every evidence-awarding scene has at least two ways out.** If a scene
+      has one exit, every child who finishes takes it, so taking it records
+      completion rather than skill. Enforced by `validateMission`, but check the
+      spirit too: the second exit has to be genuinely defensible, not a decoy.
+- [ ] **A guard for a shape is written as a shape.** Banning the four exact
+      phrases you found pins those four. If the finding is a pattern — a public
+      correction, an unearned conclusion, an escalation that stops — express it
+      over `MISSIONS` so it can catch the instance you have not read yet.
 - [ ] **Teacher guidance never corrects one child in public.** Read every
       coach note and misconception response as instructions a real teacher will
       follow literally. Advice to interrupt a belief publicly, or to respond to

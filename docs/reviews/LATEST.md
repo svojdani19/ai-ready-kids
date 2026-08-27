@@ -7,96 +7,85 @@ likely to be.
 
 ---
 
-## Sprint 16 — the last eight, and the first guard that found something
+## Sprint 17 — the forced-award scenes, closed as a rule
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-27-sprint-16.md`](2026-08-27-sprint-16.md)
+- **Full review:** [`2026-08-27-sprint-17.md`](2026-08-27-sprint-17.md)
 - **Review trail:** sprints 01–16 in this directory. Sprint 09 tripled the
   curriculum to 27 missions. Sprint 10 fixed two mechanism defects found in it.
   Sprints 11 to 15 fixed content defects in ten of them, two per sprint.
-  **Sprint 16 read the remaining eight. All eighteen have now been read, and
-  seventeen had findings.** Sprint 15's handoff said ten remained; it was
-  eight — a subtraction error, corrected here.
+  Sprint 16 read the remaining eight; all eighteen have been read and seventeen
+  had findings. **Sprint 17 closes the eight legacy forced-award scenes, open
+  since sprint 06, as a rule in `validateMission` rather than as eight edits.**
 
 ### What changed
 
-Two findings were systemic — each appeared in more than one mission, and
-neither was visible one mission at a time.
-
-1. **Teacher guidance told teachers to correct a child publicly.** The Practice
-   That Got Skipped said to "interrupt it publicly" when a child calls
-   themselves slow at times tables; The Reading Log said to respond to a low
-   number "with curiosity in front of the class". Both single out one child for
-   something that usually tracks a learning difference or what is happening at
-   home. Both now say to do it privately, and the reading log offers the
-   alternative: normalise the range without naming anybody.
-2. **The slow-recall mission promised an outcome it cannot deliver.** Practise
-   four nights and recall becomes automatic; the nine seconds "turns into one
-   second"; any child claiming to be slow gets interrupted. For a child with
-   dyscalculia, a working-memory difference or maths anxiety, that converts a
-   fortnight of real practice into evidence something is wrong with them.
-   Practice now makes it shorter, "how much shorter, and how quickly, is
-   different for everybody", and a fourth full-credit choice was added: **do
-   them slowly, and tell Ms. Okafor they are still really hard.** The setup
-   names the conditions and says out loud that children with a calculator by
-   agreement are not who this mission is about.
-3. **Six further mission fixes.** The Group Project's extension asked children
-   to declare what they bring, exposing anyone who cannot name a talent — it now
-   allocates the jobs the task needs. It Happened to Theo told an adult and
-   never dealt with the address already typed in. The Weather Argument asserted
-   that the class fish "is always awake", which is false and, on the mission's
-   own terms, in the wrong column. The Science Fair Fact's "you have nothing"
-   became "you cannot use it yet", matching sprint 13. The Story That Was Not
-   Mine promised your own work "stops being worse surprisingly quickly", and
-   never taught saying what you asked for. The Art Show Label had no findings.
-4. **A sweep found a ninth mission.** The escalation finding was written as a
-   guard over every mission whose primary skill is `privacy.escalate`, and it
-   failed on **The Question at Bedtime** — one of the original nine, and the one
-   its own guide calls the most important. An assistant offers a child secrecy
-   from their parents; the child tells a grown-up; the mission ends with a
-   poster and **nothing happens to the app**. Its own misconception response
-   already said "reporting protects the next child" — the story never delivered
-   it. It now does: the school looks, and by Thursday that part of AskMe is
-   switched off on every tablet in the building.
+1. **No scene may award evidence through its only exit.** Eight scenes in the
+   original nine missions had one non-retry way out and still recorded
+   `demonstrated`. Every child who finished took that choice, so the record said
+   they had completed the scene, not that they could do the thing — and the
+   teacher dashboard could not tell the difference. **The remedy is a rule in
+   `validateMission`**, the mirror of one already there: a sole exit was allowed
+   to omit evidence precisely because it cannot distinguish reasoning from
+   compliance; the missing half said it must. Adding it turned six missions red.
+   Each scene then got a second genuinely correct exit, preferring a contextual
+   distinction — Sprocket's now asks which fact you would not add to a first
+   name the tool already has, and both *school* and *street* are independently
+   right. Sixteen assertions check demonstrated-when-first and
+   developing-after-correction per scene, through the real `recordDecision`.
+2. **The Filter That Wanted More now establishes approval before minimisation.**
+   It went straight to the permission box on an unknown app on a school tablet,
+   and awarded mastery for "a fox filter only needs the camera". A strange app
+   can need the camera and still be one nobody approved. Approval is now its own
+   scene, first; reading the permission list is the `partial`; "Theo already has
+   it" is the retry. The posting decision no longer turns on the background — a
+   clean wall does not make two children's faces safe for an open feed — and the
+   ending no longer claims the pictures "never left the tablet", which nothing
+   in the story could show. They are deleted, the app is closed, and what cannot
+   be known is said out loud.
+3. **A fourth public-correction instance, and why the guard missed it.** Sprint
+   16 banned four exact strings. This sprint found "Interrupt immediately and
+   publicly" and "out loud, for the whole room" in a mission I had not read. The
+   guard now matches the shape — a correcting verb near a public setting — and
+   found it immediately.
+4. **A rendering defect.** The teacher preview and the screen-reader string both
+   join headline to body with a full stop, and six authored headlines already
+   ended in punctuation, rendering as "yes to it.." and "though?.". Fixed in the
+   renderer via `endSentence`, not in the content.
 
 ### Already verified — please do not redo
 
-- `npm run verify` green: typecheck, lint, **273 tests**, Turbopack build.
-- Eight new guards, two of which are **curriculum-wide sweeps** rather than
-  mission-specific pins — the first content guards here that generalise:
-  no mission's teacher guidance may address one child's shortfall publicly, and
-  every escalation mission must show something stopped, removed or handed on
-  plus somebody outside the room told. The second one is what found The
-  Question at Bedtime.
-- Five phrases added to the brittle-absolutes ban list: `he is always awake`,
-  `turns into one second`, `stops being worse surprisingly quickly`,
-  `first-hand beats forecast, every time`.
-- All guards from sprints 10 to 15 unchanged and still passing.
-- Checked in the browser: the new fourth choice in the practice mission, and
-  the rewritten ending of The Question at Bedtime.
+- `npm run verify` green: typecheck, lint, **303 tests**, Turbopack build.
+- The forced-award rule is enforced by `validateMission`, which
+  `tests/content.test.ts` runs against every mission — so it applies to missions
+  written from now on, not only to the eight that existed.
+- Sixteen per-scene assertions in `tests/evidence-integrity.test.ts` cover both
+  halves of the coaching rule for every formerly-forced scene.
+- The public-correction sweep now matches a pattern rather than four literals.
+- Every choice headline is checked to survive being joined to its body.
+- All guards from sprints 10 to 16 unchanged and still passing.
+- Checked in the browser: the new approval scene, the rewritten posting scene
+  and ending, and the headline join.
 
 ### Where this is most likely still wrong
 
-- **The original nine missions have never had a systematic read.** This is now
-  the largest gap. Sprint 16 touched one of them only because a sweep tripped
-  over it, and one accidental hit is not coverage. Eighteen of eighteen Sprint
-  09 missions have been read; zero of nine legacy missions have.
-- **The eight legacy forced-award scenes**, and their untraced interaction with
-  the coaching rule. Oldest open item in the repository, and it lives in those
-  same nine missions.
-- **Write findings as sweeps where they generalise.** Sprint 16's escalation
-  guard discovered a mission nobody was looking at. Most guards here pin a known
-  defect; a sweep can find an unknown one. When a finding is about a shape
-  rather than a sentence, try to express it over `MISSIONS`.
+- **Seven of the original nine missions still have no systematic read.** Sprint
+  17 read two of them properly and touched five more only where a forced-award
+  scene happened to live. That is not coverage. This is now the largest gap, and
+  the eighteen Sprint 09 missions averaged a finding each.
+- **Guards that pin strings pin only what you were looking at.** Sprint 16's
+  public-correction guard was one sprint old and already too literal to catch a
+  fourth instance. Where a finding is a shape, express it over `MISSIONS`.
+- **Sweeps have now found two defects nobody was looking for** — the escalation
+  sweep in sprint 16, the forced-award rule here. Prefer them to pins.
 - **Teacher-facing copy promises timelines it cannot support** — "the habit sets
   in about two rounds faster than expected", "the first-column reaches drop off
-  within days", "see what changes within a fortnight". Harmless to children,
-  mildly dishonest to teachers, deliberately not fixed this sprint.
+  within days". Harmless to children, mildly dishonest to teachers.
 - **Six shapes to hunt:** a correct choice resting on a reason that will not
   hold; an ending that acts out the error the feedback warned against; a state
-  the child reasons about that was never made observable; anyone treated as
-  safe because of who they are; a check that runs through a person; and
-  escalation that ends at telling somebody.
+  the child reasons about that was never made observable; anyone treated as safe
+  because of who they are; a check that runs through a person; and escalation
+  that ends at telling somebody.
 - **No general guard against factual error exists or can.**
 - **Stickiness keeps aggregate demonstration rates near 95%.**
 - **The student "getting the hang of" list is untested with children.**

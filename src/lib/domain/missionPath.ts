@@ -131,6 +131,19 @@ export function validateMission(mission: Mission): ContentIssue[] {
         ) {
           add(scene.id, `Strong choice ${choice.id} records no evidence`);
         }
+
+        // The other half of that rule, and the one that matters for reporting.
+        // If a scene has exactly one way out, every child who finishes it takes
+        // that choice, so taking it says nothing about whether they reasoned
+        // their way there or were sent back until they found it. Evidence from
+        // such a scene is a record of compliance, not of a demonstrated skill.
+        // Either give the scene a second plausible exit or award nothing.
+        if (choice.evidence && nonRetryChoices.length === 1) {
+          add(
+            scene.id,
+            `Choice ${choice.id} is the only way out of this scene and still records evidence`,
+          );
+        }
       }
       if (!scene.choices.some((c) => c.feedback.tone === "strong")) {
         add(scene.id, "Choice scene offers no safe option");
