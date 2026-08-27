@@ -71,10 +71,10 @@ export async function clearSession(): Promise<void> {
 }
 
 /** Record that this browser entered the correct code for one class. */
-export async function writeJoinGrant(classId: string): Promise<void> {
+export async function writeJoinGrant(classId: string, code: string): Promise<void> {
   const store = await cookies();
   const exp = Math.floor(Date.now() / 1000) + JOIN_MAX_AGE_SECONDS;
-  store.set(JOIN_COOKIE, encodeJoinGrant(signingKey(), { kind: "join", classId, exp }), {
+  store.set(JOIN_COOKIE, encodeJoinGrant(signingKey(), { kind: "join", classId, code, exp }), {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
@@ -82,15 +82,15 @@ export async function writeJoinGrant(classId: string): Promise<void> {
   });
 }
 
-/** The class this browser proved a code for, or null. */
-export async function readJoinGrant(): Promise<string | null> {
+/** The class and code this browser proved, or null. */
+export async function readJoinGrant(): Promise<{ classId: string; code: string } | null> {
   const store = await cookies();
   const grant = decodeJoinGrant(
     signingKey(),
     store.get(JOIN_COOKIE)?.value,
     Math.floor(Date.now() / 1000),
   );
-  return grant?.classId ?? null;
+  return grant ? { classId: grant.classId, code: grant.code } : null;
 }
 
 export async function clearJoinGrant(): Promise<void> {

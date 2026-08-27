@@ -2,7 +2,15 @@
 
 import { redirect } from "next/navigation";
 import { getDb } from "@/lib/db";
-import { getClass, getClassByJoinCode, getStudent, listStudents } from "@/lib/repo/classroom";
+import { headers } from "next/headers";
+import {
+  getClass,
+  getClassByJoinCode,
+  getStudent,
+  listStudents,
+  normaliseJoinCode,
+} from "@/lib/repo/classroom";
+import { checkAttempt, clearAttempts, recordFailure } from "@/lib/auth/throttle";
 import { getUserByEmail } from "@/lib/repo/school";
 import {
   clearJoinGrant,
@@ -60,15 +68,44 @@ export async function findClassByCode(_prev: JoinState, formData: FormData): Pro
   const code = String(formData.get("code") ?? "").trim();
   if (!code) return { error: "Type the class code your teacher gave you." };
 
+  // Guessing is throttled with progressive backoff. Nothing about the caller
+  // is stored: see src/lib/auth/throttle.ts for what this is and is not.
+  const bucket = await throttleKey();
+  const gate = checkAttempt(bucket);
+  if (!gate.allowed) {
+    const wait = gate.retryAfterSeconds;
+    return {
+      error: `That is a lot of tries. Wait ${wait} second${wait === 1 ? "" : "s"} and ask your teacher to read the code out again.`,
+      code,
+    };
+  }
+
   const classroom = getClassByJoinCode(getDb(), code);
   if (!classroom || classroom.archived_at) {
+    // One message for "no such code" and for "archived", so a wrong guess
+    // never tells the guesser which kind of wrong it was.
+    recordFailure(bucket);
     return { error: "That code did not match a class. Check the letters and try again.", code };
   }
+  clearAttempts(bucket);
+
   // Entering the code is the whole credential, so it has to leave something
-  // behind. Without this the next page and the next action were open to
-  // anybody holding a class id.
-  await writeJoinGrant(classroom.id);
+  // behind. The code travels with the grant so that rotating it invalidates
+  // anything already issued.
+  await writeJoinGrant(classroom.id, normaliseJoinCode(classroom.join_code));
   redirect(`/join/${classroom.id}`);
+}
+
+/**
+ * A coarse bucket for backoff. Uses the forwarded address where a proxy
+ * supplies one and falls back to a single shared bucket, which is the safe
+ * direction: without an address every caller shares one allowance rather than
+ * every caller getting their own.
+ */
+async function throttleKey(): Promise<string> {
+  const h = await headers();
+  const forwarded = h.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return forwarded || h.get("x-real-ip") || "shared";
 }
 
 /**
@@ -79,17 +116,20 @@ export async function findClassByCode(_prev: JoinState, formData: FormData): Pro
  * who could guess an id.
  */
 export async function chooseStudent(studentId: string): Promise<void> {
-  const grantedClassId = await readJoinGrant();
-  if (!grantedClassId) redirect("/join");
+  const grant = await readJoinGrant();
+  if (!grant) redirect("/join");
 
   const db = getDb();
   const student = getStudent(db, studentId);
   // The student must belong to the class whose code was entered. A grant for
   // one class is not a grant for the child sitting in another.
-  if (!student || student.class_id !== grantedClassId) redirect("/join");
+  if (!student || student.class_id !== grant.classId) redirect("/join");
 
-  const classroom = getClass(db, grantedClassId);
+  const classroom = getClass(db, grant.classId);
   if (!classroom || classroom.archived_at) redirect("/join");
+  // And the code must still be the one that was entered, so a rotated code
+  // cannot be finished with.
+  if (normaliseJoinCode(classroom.join_code) !== grant.code) redirect("/join");
 
   await clearJoinGrant();
   await writeSession({ kind: "student", studentId: student.id });

@@ -49,7 +49,7 @@ describe("teacher manages a class", () => {
       schoolYear: "2025-2026",
     });
     classId = created.id;
-    expect(created.join_code).toMatch(/^[A-Z]+-\d{3}$/);
+    expect(created.join_code).toMatch(/^[A-Z]+-[A-Z]+-\d{3}$/);
     expect(listClassesForTeacher(db, DEMO_TEACHER, DEMO_SCHOOL).some((c) => c.id === classId)).toBe(true);
   });
 

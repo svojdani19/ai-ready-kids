@@ -45,7 +45,7 @@ const HIGHLIGHTS: { href: string; label: string; blurb: string }[] = [
   {
     href: "/join",
     label: "The real student route",
-    blurb: "Class code MAPLE-317, then tap a name. This is how a child actually gets in.",
+    blurb: "Class code MAPLE-HERON-317, then tap a name. This is how a child actually gets in.",
   },
 ];
 
@@ -64,9 +64,9 @@ export default function DemoPage() {
         <p className="mt-5 text-[0.95rem] text-ink-soft">
           Prefer the route a child actually takes?{" "}
           <Link href="/join" className="font-bold text-grape-deep underline underline-offset-4">
-            Join with class code MAPLE-317
+            Join with class code MAPLE-HERON-317
           </Link>
-          . Other codes: ACORN-208 (Grade 2), HERON-455 (Grade 4), CEDAR-361 (Grade 3).
+          . Other codes: ACORN-BADGER-208 (Grade 2), HERON-TULIP-455 (Grade 4), CEDAR-ROBIN-361 (Grade 3).
         </p>
       </Section>
 

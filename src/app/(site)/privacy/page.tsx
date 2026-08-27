@@ -77,6 +77,7 @@ const SECTIONS = [
     title: "Deletion is a date, not a policy paragraph",
     body: [
       "An administrator sets a retention window and the product shows the resulting deletion date for every class before anything is clicked.",
+      "The date is when a class becomes due. A retention job deletes everything past its date, writes an audit entry, and is safe to run repeatedly; a deployment schedules it, and this demonstration build ships the job without a timer in front of it. An administrator can also delete any class immediately without waiting.",
       "Deleting a class removes its roster, every mission attempt and both check-ins in the same operation. Rows are removed, not flagged.",
       "Every configuration change and every deletion writes an audit entry naming who did it and when.",
       "A school can delete everything at any time without contacting us, because the data is theirs.",

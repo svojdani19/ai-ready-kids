@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { canAdministerClass, canTeachClass } from "@/lib/auth/access";
@@ -24,10 +24,19 @@ import {
   createClass,
   createStudent,
   deleteStudentFromClass,
+  generateJoinCode,
   getClass,
   listClassesForTeacher,
   listStudents,
+  normaliseJoinCode,
+  rotateJoinCode,
 } from "@/lib/repo/classroom";
+import {
+  checkAttempt,
+  clearAttempts,
+  recordFailure,
+  resetThrottle,
+} from "@/lib/auth/throttle";
 import { getAttempt, recordDecision } from "@/lib/repo/progress";
 import { createUser } from "@/lib/repo/school";
 
@@ -290,28 +299,28 @@ describe("a class code is worth something", () => {
   const now = 1_760_000_000;
 
   it("round-trips a grant for one class", () => {
-    const token = encodeJoinGrant(key, { kind: "join", classId: "cls_a", exp: now + 600 });
+    const token = encodeJoinGrant(key, { kind: "join", classId: "cls_a", code: "MAPLE-HERON-317", exp: now + 600 });
     expect(decodeJoinGrant(key, token, now)?.classId).toBe("cls_a");
   });
 
   it("refuses a grant signed with a different key", () => {
-    const token = encodeJoinGrant(randomBytes(32), { kind: "join", classId: "cls_a", exp: now + 600 });
+    const token = encodeJoinGrant(randomBytes(32), { kind: "join", classId: "cls_a", code: "MAPLE-HERON-317", exp: now + 600 });
     expect(decodeJoinGrant(key, token, now)).toBeNull();
   });
 
   it("refuses a grant whose class was swapped after signing", () => {
     // A grant for class A must not become a grant for class B.
-    const token = encodeJoinGrant(key, { kind: "join", classId: "cls_a", exp: now + 600 });
+    const token = encodeJoinGrant(key, { kind: "join", classId: "cls_a", code: "MAPLE-HERON-317", exp: now + 600 });
     const [, signature] = token.split(".");
     const forged = Buffer.from(
-      JSON.stringify({ kind: "join", classId: "cls_b", exp: now + 600 }),
+      JSON.stringify({ kind: "join", classId: "cls_b", code: "MAPLE-HERON-317", exp: now + 600 }),
       "utf8",
     ).toString("base64url");
     expect(decodeJoinGrant(key, `${forged}.${signature}`, now)).toBeNull();
   });
 
   it("expires rather than lasting as long as a session", () => {
-    const token = encodeJoinGrant(key, { kind: "join", classId: "cls_a", exp: now + 60 });
+    const token = encodeJoinGrant(key, { kind: "join", classId: "cls_a", code: "MAPLE-HERON-317", exp: now + 60 });
     expect(decodeJoinGrant(key, token, now + 59)).not.toBeNull();
     expect(decodeJoinGrant(key, token, now + 61)).toBeNull();
   });
@@ -319,7 +328,7 @@ describe("a class code is worth something", () => {
   it("refuses a session token presented as a grant, and the reverse", () => {
     const session = encodeSession(key, { kind: "student", studentId: "stu_1" });
     expect(decodeJoinGrant(key, session, now)).toBeNull();
-    const grant = encodeJoinGrant(key, { kind: "join", classId: "cls_a", exp: now + 600 });
+    const grant = encodeJoinGrant(key, { kind: "join", classId: "cls_a", code: "MAPLE-HERON-317", exp: now + 600 });
     expect(decodeSession(key, grant)).toBeNull();
   });
 
@@ -336,7 +345,9 @@ describe("the join surfaces check the grant themselves", () => {
   it("refuses a roster URL without a grant for that exact class", () => {
     const page = src("src/app/join/[classId]/page.tsx");
     expect(page).toContain("readJoinGrant()");
-    expect(page).toContain("granted !== classId");
+    expect(page).toContain("grant?.classId !== classId");
+    // And a rotated code invalidates a grant issued against the old one.
+    expect(page).toContain("normaliseJoinCode(classroom.join_code) !== grant.code");
   });
 
   it("verifies the grant in the action rather than trusting the page", () => {
@@ -345,7 +356,8 @@ describe("the join surfaces check the grant themselves", () => {
     const start = actions.indexOf("export async function chooseStudent");
     const body = actions.slice(start);
     expect(body).toContain("readJoinGrant()");
-    expect(body).toContain("student.class_id !== grantedClassId");
+    expect(body).toContain("student.class_id !== grant.classId");
+    expect(body).toContain("normaliseJoinCode(classroom.join_code) !== grant.code");
     expect(body).toContain("classroom.archived_at");
     // And the grant is spent, not left lying around.
     expect(body).toContain("clearJoinGrant()");
@@ -600,5 +612,156 @@ describe("a finished mission stays finished", () => {
     expect(after.completed_at).toBe(finished.completed_at);
     expect(after.path).toEqual(finished.path);
     expect(after.evidence).toEqual(finished.evidence);
+  });
+});
+
+describe("a class code is a credential, not a friendly identifier", () => {
+  /**
+   * It used to be one word from a list of fifteen plus three digits: 13,500
+   * codes in total, from `Math.random`, checked by a public unthrottled action
+   * that searched every active class. One hit hands over a roster and then any
+   * child's session, so at school scale a live code fell out in far fewer than
+   * 13,500 guesses. Widening the space is half of it; the other half is that
+   * guessing costs something.
+   */
+  let db3: Db;
+  let cleanup3: () => void;
+  beforeAll(() => {
+    ({ db: db3, cleanup: cleanup3 } = createTestDb());
+  });
+  afterAll(() => cleanup3());
+
+  it("draws from a space of millions, not thousands", () => {
+    // Two distinct words and three digits. The words list is the entropy, so
+    // it is asserted rather than left to drift back down.
+    const codes = new Set<string>();
+    for (let i = 0; i < 200; i += 1) codes.add(generateJoinCode(db3));
+    for (const code of codes) expect(code).toMatch(/^[A-Z]+-[A-Z]+-\d{3}$/);
+    // 200 draws from a space this size should essentially never repeat.
+    expect(codes.size).toBeGreaterThan(195);
+
+    const words = new Set([...codes].flatMap((c) => c.split("-").slice(0, 2)));
+    expect(words.size).toBeGreaterThan(30);
+  });
+
+  it("never puts the same word twice in one code", () => {
+    for (let i = 0; i < 100; i += 1) {
+      const [a, b] = generateJoinCode(db3).split("-");
+      expect(a).not.toBe(b);
+    }
+  });
+
+  it("stays typeable by a seven-year-old", () => {
+    // Three chunks, letters and digits only, nothing case-sensitive to get
+    // wrong, and short enough to read off a board.
+    const code = generateJoinCode(db3);
+    expect(code.split("-")).toHaveLength(3);
+    expect(code.length).toBeLessThanOrEqual(24);
+    expect(normaliseJoinCode(code.toLowerCase().replace(/-/g, " "))).toBe(
+      normaliseJoinCode(code),
+    );
+  });
+});
+
+describe("guessing a class code costs something", () => {
+  beforeEach(() => resetThrottle());
+
+  it("allows a child a handful of typos", () => {
+    for (let i = 0; i < 5; i += 1) {
+      expect(checkAttempt("bucket").allowed).toBe(true);
+      recordFailure("bucket");
+    }
+  });
+
+  it("backs off progressively once the allowance is gone", () => {
+    const now = 1_760_000_000_000;
+    for (let i = 0; i < 8; i += 1) recordFailure("bucket", now);
+    const first = checkAttempt("bucket", now);
+    expect(first.allowed).toBe(false);
+    expect(first.retryAfterSeconds).toBeGreaterThan(0);
+
+    // Longer after each further failure, up to the ceiling.
+    for (let i = 0; i < 6; i += 1) recordFailure("bucket", now);
+    const later = checkAttempt("bucket", now);
+    expect(later.retryAfterSeconds).toBeGreaterThanOrEqual(first.retryAfterSeconds);
+    expect(later.retryAfterSeconds).toBeLessThanOrEqual(60);
+  });
+
+  it("lets a blocked bucket back in once the wait has passed", () => {
+    const now = 1_760_000_000_000;
+    for (let i = 0; i < 8; i += 1) recordFailure("bucket", now);
+    expect(checkAttempt("bucket", now).allowed).toBe(false);
+    expect(checkAttempt("bucket", now + 120_000).allowed).toBe(true);
+  });
+
+  it("forgives a child who gets in", () => {
+    for (let i = 0; i < 8; i += 1) recordFailure("bucket");
+    expect(checkAttempt("bucket").allowed).toBe(false);
+    clearAttempts("bucket");
+    expect(checkAttempt("bucket").allowed).toBe(true);
+  });
+
+  it("keeps buckets apart, and stores nothing about anybody", () => {
+    for (let i = 0; i < 8; i += 1) recordFailure("one");
+    expect(checkAttempt("one").allowed).toBe(false);
+    expect(checkAttempt("two").allowed).toBe(true);
+    // Nothing persistent: a restart forgets everything.
+    resetThrottle();
+    expect(checkAttempt("one").allowed).toBe(true);
+  });
+
+  it("answers a wrong code and an archived class identically", () => {
+    const src = readFileSync(join(process.cwd(), "src/app/actions/auth.ts"), "utf8");
+    const start = src.indexOf("export async function findClassByCode");
+    const body = src.slice(start, src.indexOf("export async function", start + 10));
+    // One branch, one message: a guess never learns which kind of wrong it was.
+    expect(body.match(/That code did not match a class/g)).toHaveLength(1);
+    // And the throttle message is separate, so a wrong guess and a rate limit
+    // are distinguishable to a child but a wrong guess is never distinguishable
+    // from a wrong guess at an archived class.
+    expect(body).toContain("That is a lot of tries");
+    expect(body).toContain("classroom.archived_at");
+    expect(body).toContain("recordFailure(bucket)");
+    expect(body).toContain("clearAttempts(bucket)");
+  });
+});
+
+describe("rotating a class code invalidates what it granted", () => {
+  let db4: Db;
+  let cleanup4: () => void;
+  beforeAll(() => {
+    ({ db: db4, cleanup: cleanup4 } = createTestDb());
+  });
+  afterAll(() => cleanup4());
+
+  it("changes the code without touching the class or its roster", () => {
+    const before = getClass(db4, DEMO_CLASS)!;
+    const students = listStudents(db4, DEMO_CLASS).length;
+    const rotated = rotateJoinCode(db4, DEMO_CLASS);
+
+    expect(rotated).toBeDefined();
+    expect(normaliseJoinCode(rotated!)).not.toBe(normaliseJoinCode(before.join_code));
+    // The class survives, which is the point — the old way was delete and rebuild.
+    expect(getClass(db4, DEMO_CLASS)!.id).toBe(before.id);
+    expect(listStudents(db4, DEMO_CLASS)).toHaveLength(students);
+  });
+
+  it("leaves a grant issued against the old code unusable", () => {
+    const key = randomBytes(32);
+    const now = 1_760_000_000;
+    const stale = encodeJoinGrant(key, {
+      kind: "join",
+      classId: DEMO_CLASS,
+      code: "MAPLE-HERON-317",
+      exp: now + 600,
+    });
+    const decoded = decodeJoinGrant(key, stale, now)!;
+    // The grant itself is still valid; what fails is the code comparison the
+    // page and the action both make against the class's current code.
+    expect(decoded.code).not.toBe(normaliseJoinCode(getClass(db4, DEMO_CLASS)!.join_code));
+  });
+
+  it("refuses to rotate a class that does not exist", () => {
+    expect(rotateJoinCode(db4, "cls_nope")).toBeUndefined();
   });
 });

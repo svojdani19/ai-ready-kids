@@ -1,4 +1,5 @@
 import "server-only";
+import { randomInt } from "node:crypto";
 import { type Db, newId, nowIso, row, rows } from "@/lib/db";
 import type { Assignment, Classroom, Student } from "@/lib/types";
 
@@ -45,11 +46,35 @@ export function getClassByJoinCode(db: Db, code: string): Classroom | undefined 
   return all.find((c) => normaliseJoinCode(c.join_code) === target);
 }
 
+/**
+ * Words a seven-year-old can read, say aloud and type. Distinct on sight and
+ * on the ear: no near-homophones, no plurals of each other, nothing that turns
+ * into another entry with one letter changed.
+ */
 const CODE_WORDS = [
   "MAPLE", "ACORN", "HERON", "CEDAR", "OTTER", "WILLOW", "FINCH", "BIRCH",
-  "CORAL", "MEADOW", "ASPEN", "ROBIN", "JUNIPER", "LARK", "PEBBLE",
+  "CORAL", "MEADOW", "ASPEN", "ROBIN", "JUNIPER", "LARK", "PEBBLE", "BADGER",
+  "COMET", "DAISY", "EAGLE", "FERRY", "GARDEN", "HARBOUR", "IGLOO", "JELLY",
+  "KETTLE", "LANTERN", "MARBLE", "NUTMEG", "ORCHARD", "PUMPKIN", "QUILT",
+  "RIVER", "SADDLE", "TULIP", "UMBRELLA", "VIOLET", "WALNUT", "YELLOW",
+  "ANCHOR", "BUTTON", "CACTUS", "DOLPHIN", "ELBOW", "FEATHER", "GINGER",
+  "HAMMER", "ISLAND", "JACKET", "KITTEN", "LADDER", "MITTEN", "NOODLE",
+  "OCTOPUS", "PENGUIN", "RAINBOW", "SANDAL", "TEAPOT", "VELVET", "WAGON",
+  "ZEBRA", "BUCKET", "CANDLE", "DRAGON", "ENGINE",
 ];
 
+/**
+ * A class code is a credential, so it is generated like one.
+ *
+ * Until sprint 30 it was one word from a list of fifteen plus three digits:
+ * **13,500 possible codes in total**, drawn from `Math.random`. `findClassByCode`
+ * is a public, unthrottled action that searches every active class, so at
+ * school scale a live code falls out in far fewer than 13,500 guesses, and one
+ * hit hands over a roster and then any child's session. Two words and three
+ * digits from this list is a little over four million, from `randomInt`, which
+ * is a different kind of number — and it is still three chunks a child can read
+ * off a board.
+ */
 export function generateJoinCode(db: Db): string {
   const taken = new Set(
     rows<{ join_code: string }>(db.prepare("SELECT join_code FROM classes").all()).map(
@@ -57,12 +82,29 @@ export function generateJoinCode(db: Db): string {
     ),
   );
   for (let i = 0; i < 500; i += 1) {
-    const word = CODE_WORDS[Math.floor(Math.random() * CODE_WORDS.length)];
-    const digits = String(100 + Math.floor(Math.random() * 900));
-    const code = `${word}-${digits}`;
+    const first = CODE_WORDS[randomInt(CODE_WORDS.length)];
+    let second = CODE_WORDS[randomInt(CODE_WORDS.length)];
+    // Two of the same word reads as a typo and costs a word of entropy.
+    while (second === first) second = CODE_WORDS[randomInt(CODE_WORDS.length)];
+    const code = `${first}-${second}-${String(randomInt(900) + 100)}`;
     if (!taken.has(normaliseJoinCode(code))) return code;
   }
   throw new Error("Could not generate a unique class code");
+}
+
+/**
+ * Rotate a class's code without touching anything else in it.
+ *
+ * A code that has been photographed, posted in a group chat or shouted down a
+ * corridor used to be valid until somebody deleted the class and rebuilt it,
+ * taking every roster and record with it. Rotating invalidates outstanding join
+ * grants too, because a grant carries the code it was issued against.
+ */
+export function rotateJoinCode(db: Db, classId: string): string | undefined {
+  if (!getClass(db, classId)) return undefined;
+  const code = generateJoinCode(db);
+  db.prepare("UPDATE classes SET join_code = ? WHERE id = ?").run(code, classId);
+  return code;
 }
 
 /**

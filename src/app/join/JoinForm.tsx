@@ -16,7 +16,7 @@ export function JoinForm() {
         Type your class code
       </label>
       <p id="code-hint" className="mt-1.5 text-[0.95rem] text-ink-soft">
-        Your teacher will show you the code. It looks like MAPLE-317.
+        Your teacher will show you the code. It looks like MAPLE-HERON-317.
       </p>
       <input
         id="code"
@@ -26,7 +26,7 @@ export function JoinForm() {
         autoCapitalize="characters"
         spellCheck={false}
         required
-        placeholder="MAPLE-317"
+        placeholder="MAPLE-HERON-317"
         aria-describedby={state.error ? "code-error" : "code-hint"}
         aria-invalid={state.error ? true : undefined}
         className="mt-4 w-full rounded-2xl border-4 border-ink bg-surface px-5 py-4 text-center font-display text-3xl uppercase tracking-[0.18em] text-ink placeholder:text-sand-deep focus:border-marigold-deep focus:outline-none"

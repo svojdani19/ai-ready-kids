@@ -51,14 +51,14 @@ export default async function AdminData() {
       <PageHeader
         eyebrow="Administrator"
         title="Data and retention"
-        description="What this product holds about your students, when it disappears, and how to make it disappear sooner."
+        description="What this product holds about your students, when it becomes due for deletion, and how to delete it sooner."
       />
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat label="Student records" value={totalStudents} hint="Display name and avatar only" />
         <Stat label="Retention window" value={`${school.retention_months} months`} hint="After the school year ends" />
         <Stat
-          label="Scheduled purge"
+          label="Deletion due"
           value={formatDate(purgeDateFor(school))}
           hint={eligible.length ? `${eligible.length} classes eligible now` : "Nothing eligible yet"}
           tone={eligible.length ? "berry" : "neutral"}
@@ -116,7 +116,7 @@ export default async function AdminData() {
                 <tr className="border-b border-sand text-left">
                   <th scope="col" className="px-5 py-2.5 font-semibold text-ink-soft">Class</th>
                   <th scope="col" className="px-3 py-2.5 font-semibold text-ink-soft">Students</th>
-                  <th scope="col" className="px-3 py-2.5 font-semibold text-ink-soft">Deletes on</th>
+                  <th scope="col" className="px-3 py-2.5 font-semibold text-ink-soft">Due on</th>
                   <th scope="col" className="px-5 py-2.5 text-right font-semibold text-ink-soft">
                     <span className="sr-only">Actions</span>
                   </th>
@@ -210,6 +210,15 @@ export default async function AdminData() {
           Deletion is immediate and real: the rows are removed from the database, not
           flagged. There is no soft-delete table and no backup restore path in a local MVP,
           so treat these buttons as final.
+        </Note>
+        <Note tone="neutral" title="What runs the purge">
+          The date above is when a class becomes <strong>due</strong> for deletion, and the
+          purge that acts on it is a job — <code>npm run purge</code> — which deletes every
+          class past its date along with each roster, attempt and check-in, and writes an
+          audit entry. It is idempotent, so running it twice is safe. Nothing in this build
+          runs it on a timer: a deployment schedules it, and until it runs, records past
+          the date are still here. That is why this page says due rather than deleted. You
+          can also delete any class immediately with the buttons above.
         </Note>
       </div>
     </div>

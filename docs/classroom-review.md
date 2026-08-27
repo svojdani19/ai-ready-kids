@@ -180,6 +180,16 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       administrators see aggregates only — with no code behind it at all. When
       a page makes several claims, enumerate them and check each one, because
       the one you are looking at is the one least likely to be wrong.
+- [ ] **A secret's size is part of its security.** Enforcing a credential
+      correctly and the credential being worth anything are separate questions,
+      and fixing one reads as having fixed both. When a sprint hardens the path
+      to a secret, ask in the same breath how many values it has and what one
+      guess costs. Sprint 27 made the class code enforceable while it was still
+      13,500 values wide.
+- [ ] **A date the product shows has a job behind it.** Do not call something
+      scheduled, or say data disappears on a date, unless something runs. If
+      the mechanism exists but nothing triggers it in this build, say that in
+      the product, in the words a school will read.
 - [ ] **An exported server action is a route.** Read every one against what
       the product claims, including the ones nothing calls. Unreferenced makes
       a mutation more suspicious, not less: nothing exercises it, no test

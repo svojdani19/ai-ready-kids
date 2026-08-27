@@ -1,0 +1,86 @@
+import { type Db, newId, nowIso, rows } from "@/lib/db";
+import type { Classroom, School } from "@/lib/types";
+import { retentionRows } from "./retention";
+
+/**
+ * The retention purge.
+ *
+ * The product showed a date, labelled it a scheduled purge, and told families
+ * that "deletion is a date". Until sprint 30 the only thing that deleted
+ * anything was an administrator clicking Delete now, so records could sit
+ * indefinitely past the date the page displayed — `eligibleNow` changed a label
+ * and nothing else. That is a privacy promise with no mechanism behind it.
+ *
+ * This is the mechanism. It is idempotent: running it twice deletes nothing the
+ * second time, because the first run removed the rows. And it compares dates
+ * rather than instants, so a class becomes eligible at the start of its purge
+ * day in UTC and not at an hour that depends on where the job happened to run.
+ *
+ * It is deliberately not a scheduler. Nothing in this build runs it on a timer,
+ * a deployment owns that, and `npm run purge` is the entry point. The copy now
+ * says that rather than implying a cron nobody wrote.
+ *
+ * Written against SQL rather than the repository layer for the same reason the
+ * seed is: this runs from a script, outside the request lifecycle, where the
+ * `server-only` guard on the repositories does not apply and should not be
+ * worked around.
+ */
+export interface PurgeResult {
+  classesDeleted: number;
+  studentsDeleted: number;
+  /** Class names removed, for the audit line and for the caller to print. */
+  classNames: string[];
+}
+
+/** Midnight UTC on the given date, so eligibility is a day and not an instant. */
+function startOfUtcDay(date: Date): number {
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
+
+/**
+ * Delete every class whose purge date has arrived, across every school.
+ * Returns what went, and writes one audit entry per school that lost anything.
+ */
+export function runScheduledPurge(db: Db, now = new Date()): PurgeResult {
+  const result: PurgeResult = { classesDeleted: 0, studentsDeleted: 0, classNames: [] };
+  const schools = rows<School>(db.prepare("SELECT * FROM schools ORDER BY name").all());
+
+  for (const school of schools) {
+    const classes = rows<Classroom>(
+      db.prepare("SELECT * FROM classes WHERE school_id = ? ORDER BY grade, name").all(school.id),
+    ).map((c) => ({
+      ...c,
+      studentCount: rows<{ id: string }>(
+        db.prepare("SELECT id FROM students WHERE class_id = ?").all(c.id),
+      ).length,
+    }));
+
+    const due = retentionRows(school, classes, now).filter(
+      (row) => startOfUtcDay(row.purgeOn) <= startOfUtcDay(now),
+    );
+    if (due.length === 0) continue;
+
+    for (const row of due) {
+      // The cascade takes the roster, every attempt and both check-ins.
+      db.prepare("DELETE FROM classes WHERE id = ?").run(row.classId);
+      result.classesDeleted += 1;
+      result.studentsDeleted += row.studentCount;
+      result.classNames.push(row.className);
+    }
+
+    db.prepare(
+      "INSERT INTO audit_log (id, school_id, actor_label, action, detail, created_at) VALUES (?,?,?,?,?,?)",
+    ).run(
+      newId("aud"),
+      school.id,
+      "Retention job",
+      "retention.purged",
+      `${due.length} class${due.length === 1 ? "" : "es"} past the retention date deleted with every roster, attempt and check-in: ${due
+        .map((d) => d.className)
+        .join(", ")}.`,
+      nowIso(),
+    );
+  }
+
+  return result;
+}

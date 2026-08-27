@@ -46,7 +46,7 @@ const ROLES = [
       "Aggregate figures only. There is no route in the product that shows you a named student's answers.",
       "The fall-to-spring difference between two authored check-ins, on matched students.",
       "Groups smaller than five are reported as too few to report, in the product and in every export.",
-      "A retention window you set, with the resulting deletion date shown per class before anything is clicked.",
+      "A retention window you set, with the resulting due date shown per class before anything is clicked, and a purge job that acts on it. Delete anything sooner at any time.",
       "An annual report to print, plus CSV and JSON export, and an audit log of every configuration change.",
     ],
   },

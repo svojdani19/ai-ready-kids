@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDb } from "@/lib/db";
+import { ConfirmAction } from "@/components/staff/ConfirmAction";
+import { rotateJoinCodeAction } from "@/app/actions/teacher";
 import { requireTeacher } from "@/lib/auth/session";
 import { canTeachClass } from "@/lib/auth/access";
 import { getClass, listAssignments, listStudents } from "@/lib/repo/classroom";
@@ -92,6 +94,15 @@ export default async function ClassPage({
             <p className="font-display text-xl tracking-[0.1em] text-ink">
               {classroom.join_code}
             </p>
+            <div className="mt-1.5">
+              <ConfirmAction
+                tone="quiet"
+                label="New code"
+                confirmLabel="Change it"
+                question="Everybody will need the new code, including anybody halfway through joining. Change it?"
+                action={rotateJoinCodeAction.bind(null, classroom.id)}
+              />
+            </div>
           </div>
         }
       />

@@ -22,6 +22,12 @@ export type SessionValue =
 export interface JoinGrant {
   kind: "join";
   classId: string;
+  /**
+   * The code that was actually entered, normalised. Carried so that rotating a
+   * class code invalidates grants already issued against the old one — without
+   * it, a code that leaked stayed usable for anybody mid-flow.
+   */
+  code: string;
   /** Unix seconds. Short, because it is only meant to survive one page. */
   exp: number;
 }
@@ -53,11 +59,16 @@ export function decodeJoinGrant(
     const parsed: unknown = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
     if (!parsed || typeof parsed !== "object") return null;
     const c = parsed as Record<string, unknown>;
-    if (c.kind !== "join" || typeof c.classId !== "string" || typeof c.exp !== "number") {
+    if (
+      c.kind !== "join" ||
+      typeof c.classId !== "string" ||
+      typeof c.code !== "string" ||
+      typeof c.exp !== "number"
+    ) {
       return null;
     }
     if (c.exp <= now) return null;
-    return { kind: "join", classId: c.classId, exp: c.exp };
+    return { kind: "join", classId: c.classId, code: c.code, exp: c.exp };
   } catch {
     return null;
   }

@@ -36,6 +36,7 @@ export function updateSchoolProfile(
 export function setRetentionMonths(db: Db, id: string, months: number): void {
   db.prepare("UPDATE schools SET retention_months = ? WHERE id = ?").run(months, id);
 }
+
 /**
  * Open or close a check-in window. Deliberately one at a time and deliberately
  * explicit: the spring form does not become available because the fall one was
@@ -44,7 +45,6 @@ export function setRetentionMonths(db: Db, id: string, months: number): void {
 export function setBenchmarkWindow(db: Db, id: string, window: BenchmarkWindow): void {
   db.prepare("UPDATE schools SET benchmark_window = ? WHERE id = ?").run(window, id);
 }
-
 
 export function listUsers(db: Db, schoolId: string, role?: Role): User[] {
   return role

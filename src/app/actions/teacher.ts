@@ -9,6 +9,7 @@ import { CERTIFICATION_MODULES } from "@/content/certification";
 import {
   assignMission,
   createClass,
+  rotateJoinCode,
   createStudent,
   deleteStudentFromClass,
   getClass,
@@ -146,6 +147,28 @@ export async function removeStudentAction(classId: string, studentId: string): P
     actorLabel: user.name,
     action: "roster.removed",
     detail: `One student and all of their records removed from ${classroom.name}.`,
+  });
+  revalidatePath(`/teacher/class/${classId}`);
+}
+
+/**
+ * Rotate a class code without deleting the class.
+ *
+ * A code that has been photographed or passed around used to be valid for the
+ * rest of the year, because the only way to change it was to delete the class
+ * and rebuild it — taking every roster and record with it. Rotating also
+ * invalidates join grants already issued, since a grant carries the code it
+ * was granted against.
+ */
+export async function rotateJoinCodeAction(classId: string): Promise<void> {
+  const { db, user, classroom } = await requireOwnClass(classId);
+  const code = rotateJoinCode(db, classroom.id);
+  if (!code) throw new Error("That class no longer exists.");
+  recordAudit(db, {
+    schoolId: user.school_id,
+    actorLabel: user.name,
+    action: "class.code_rotated",
+    detail: `${classroom.name} has a new class code. The old one stopped working immediately.`,
   });
   revalidatePath(`/teacher/class/${classId}`);
 }

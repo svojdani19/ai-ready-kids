@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { readJoinGrant } from "@/lib/auth/session";
 import { getDb } from "@/lib/db";
-import { getClass, listStudents } from "@/lib/repo/classroom";
+import { getClass, listStudents, normaliseJoinCode } from "@/lib/repo/classroom";
 import { getUser } from "@/lib/repo/school";
 import { chooseStudent } from "@/app/actions/auth";
 import { Avatar, avatarLabel } from "@/components/art/Avatar";
@@ -22,12 +22,14 @@ export default async function ChooseStudentPage({
   // This page lists every child in a class by name. Rendering it requires
   // proof that whoever asked entered this class's code — not merely that they
   // know a class id, which is what it used to accept.
-  const granted = await readJoinGrant();
-  if (granted !== classId) redirect("/join");
+  const grant = await readJoinGrant();
+  if (grant?.classId !== classId) redirect("/join");
 
   const db = getDb();
   const classroom = getClass(db, classId);
   if (!classroom || classroom.archived_at) redirect("/join");
+  // A rotated code invalidates a grant issued against the old one.
+  if (normaliseJoinCode(classroom.join_code) !== grant.code) redirect("/join");
 
   const teacher = getUser(db, classroom.teacher_id);
   const students = listStudents(db, classId);

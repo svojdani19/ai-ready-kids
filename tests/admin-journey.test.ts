@@ -39,6 +39,9 @@ import { MISSIONS } from "@/content/missions";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
 import { MIN_BENCHMARK_GROUP, summariseCohortBenchmark } from "@/lib/domain/benchmark";
 import { addMonths, formatDate, purgeDateFor, retentionRows } from "@/lib/domain/retention";
+import { runScheduledPurge } from "@/lib/domain/purge";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 let db: Db;
 let cleanup: () => void;
@@ -478,5 +481,78 @@ describe("the export never contradicts its own privacy note", () => {
     expect(notes).toMatch(/usually fewer students than are enrolled/);
     // Completion rate is the documented exception rather than a quiet one.
     expect(notes).toMatch(/Completion rates are the one figure calculated over everybody assigned/);
+  });
+});
+
+describe("the retention date has a job behind it", () => {
+  /**
+   * The page said "Scheduled purge" and "Deletes on", the privacy page said
+   * "deletion is a date", and the only thing that ever deleted anything was an
+   * administrator clicking a button. `eligibleNow` changed a label. Records
+   * could sit indefinitely past the date families had been shown.
+   */
+  let db5: Db;
+  let cleanup5: () => void;
+  beforeAll(() => {
+    ({ db: db5, cleanup: cleanup5 } = createTestDb());
+  });
+  afterAll(() => cleanup5());
+
+  const school = () => getPrimarySchool(db5);
+
+  it("deletes nothing before the date", () => {
+    const due = purgeDateFor(school());
+    const dayBefore = new Date(due.getTime() - 24 * 60 * 60 * 1000);
+    const before = listClasses(db5, DEMO_SCHOOL, true).length;
+
+    const result = runScheduledPurge(db5, dayBefore);
+    expect(result.classesDeleted).toBe(0);
+    expect(listClasses(db5, DEMO_SCHOOL, true)).toHaveLength(before);
+  });
+
+  it("deletes on the day itself, whatever hour the job runs", () => {
+    const due = purgeDateFor(school());
+    // Eligibility is a day in UTC, not an instant, so the small hours count.
+    const earlyOnTheDay = new Date(
+      Date.UTC(due.getUTCFullYear(), due.getUTCMonth(), due.getUTCDate(), 0, 1),
+    );
+    const classes = listClasses(db5, DEMO_SCHOOL, true);
+    expect(classes.length).toBeGreaterThan(0);
+
+    const result = runScheduledPurge(db5, earlyOnTheDay);
+    expect(result.classesDeleted).toBe(classes.length);
+    expect(result.studentsDeleted).toBeGreaterThan(0);
+    expect(listClasses(db5, DEMO_SCHOOL, true)).toHaveLength(0);
+  });
+
+  it("takes the roster, the attempts and the check-ins with it", () => {
+    expect(listAttemptsForSchool(db5, DEMO_SCHOOL)).toHaveLength(0);
+    expect(listBenchmarksForSchool(db5, DEMO_SCHOOL)).toHaveLength(0);
+  });
+
+  it("writes an audit entry naming what went", () => {
+    const entry = listAudit(db5, DEMO_SCHOOL).find((a) => a.action === "retention.purged");
+    expect(entry).toBeDefined();
+    expect(entry!.actor_label).toBe("Retention job");
+    expect(entry!.detail).toMatch(/roster, attempt and check-in/);
+  });
+
+  it("is idempotent: a second run deletes nothing and adds no audit noise", () => {
+    const audits = listAudit(db5, DEMO_SCHOOL).filter((a) => a.action === "retention.purged").length;
+    const result = runScheduledPurge(db5, new Date("2030-01-01T00:00:00.000Z"));
+    expect(result.classesDeleted).toBe(0);
+    expect(
+      listAudit(db5, DEMO_SCHOOL).filter((a) => a.action === "retention.purged"),
+    ).toHaveLength(audits);
+  });
+
+  it("says due rather than claiming an automatic deletion", () => {
+    const page = readFileSync(join(process.cwd(), "src/app/admin/data/page.tsx"), "utf8");
+    // The build ships the job without a timer in front of it, and says so.
+    expect(page).toContain("Deletion due");
+    expect(page).not.toContain("Scheduled purge");
+    expect(page).not.toContain("when it disappears");
+    expect(page).toContain("npm run purge");
+    expect(page).toContain("Nothing in this build");
   });
 });

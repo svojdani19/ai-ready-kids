@@ -46,7 +46,7 @@ repository.
 | Role | How to get in | What you land in |
 | --- | --- | --- |
 | **Student** | Landing page → *Open the student demo* | Amina A., Grade 3: 7 of 9 missions finished, 7 badges, 8 of 9 skills demonstrated |
-| **Student (real route)** | `/join` → class code **`MAPLE-317`** → tap a name | The flow a child actually uses. Codes are case- and punctuation-insensitive: `maple 317` works |
+| **Student (real route)** | `/join` → class code **`MAPLE-HERON-317`** → tap a name | The flow a child actually uses. Codes are case- and punctuation-insensitive: `maple heron 317` works |
 | **Teacher** | Landing page → *Open the teacher demo* | Amara Okafor, Room 12: 23 students, nine missions assigned, certification complete |
 | **Administrator** | Landing page → *Open the administrator demo* | Rosa Delgado, Instructional Technology: 4 classes, 90 students, a full year of data, renewal due |
 | **Family** | `/family/four-doors` | Printable take-home. No account, nothing to sign into |
@@ -374,7 +374,15 @@ administrator surfaces, with every student-facing control measured against the
   renewal is due and the annual report is ready to export.
 - **Class codes are the whole student security model.** Proportionate to what
   sits behind them — a child's own progress list. Single sign-on would replace
-  them in production and is not built here.
+  them in production and is not built here. The code is generated with
+  `randomInt` from two distinct words plus three digits — a little over three
+  and a half million combinations, up from 13,500 — and entry is rate limited
+  with progressive backoff. **That limiter is per process and in memory**: it
+  holds a counter and a timestamp, keyed by forwarded address, stores nothing
+  about anybody, and forgets everything on restart. A real deployment does this
+  at the edge; a single Node process behind one load balancer is not a rate
+  limit. A teacher can rotate a code from the class page, which invalidates
+  outstanding join grants immediately.
 - **A class belongs to its teacher.** `canTeachClass` in
   `src/lib/auth/access.ts` is the only rule that grants access to a roster or
   to individual evidence, and it requires the requesting user to be the teacher
@@ -384,6 +392,12 @@ administrator surfaces, with every student-facing control measured against the
   retention — is class identity and lives in `canAdministerClass`.
 - **Read-aloud uses the browser's voice.** Quality varies by platform. Recorded
   narration per mission is the right answer and is a content job.
+- **Retention deletes when the job runs, not when the date arrives.** The
+  product shows when a class becomes *due*, and `npm run purge` deletes
+  everything past its date with each roster, attempt and check-in, writing an
+  audit entry. It is idempotent and compares dates in UTC. Nothing in this build
+  runs it on a timer — a deployment schedules it — and the administrator page
+  says so rather than implying a cron nobody wrote.
 - **Prices on the landing page are illustrative**, and the District card
   separates what the build does from what a district deployment would need.
   Roster sync, single sign-on and multi-school rollup appear there under "Not

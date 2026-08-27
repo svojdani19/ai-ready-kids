@@ -31,7 +31,13 @@ afterAll(() => cleanup());
 
 describe("student joins a class", () => {
   it("matches a join code regardless of case, spaces or dashes", () => {
-    for (const typed of ["MAPLE-317", "maple-317", "maple 317", " Maple317 ", "MAPLE—317"]) {
+    for (const typed of [
+      "MAPLE-HERON-317",
+      "maple-heron-317",
+      "maple heron 317",
+      " MapleHeron317 ",
+      "MAPLE—HERON—317",
+    ]) {
       const found = getClassByJoinCode(db, typed);
       expect(found?.id, typed).toBe(DEMO_CLASS);
     }
