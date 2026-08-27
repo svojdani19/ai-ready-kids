@@ -12,7 +12,6 @@ import {
   getAttempt,
   listBenchmarksForStudent,
   recordDecision,
-  resetAttempt,
   saveBenchmarkResponse,
   startAttempt,
 } from "@/lib/repo/progress";
@@ -104,11 +103,24 @@ export async function finishMission(slug: string): Promise<void> {
   revalidatePath("/student/badges");
 }
 
-export async function replayMission(slug: string): Promise<void> {
-  const { mission, student, db } = await requirePlayableMission(slug);
-  resetAttempt(db, student.id, mission.id);
-  revalidatePath(`/student/play/${slug}`);
-}
+/*
+ * `replayMission` used to live here and is gone on purpose.
+ *
+ * The player, the README and several review records all promise that replaying
+ * a finished mission is read-only: "your badge stays, and nothing you tap now
+ * gets recorded". This action did the opposite. It was not wired to any button,
+ * but it was exported, and an exported server action is a callable endpoint —
+ * a completed mission is deliberately eligible under the replay rule, so a
+ * direct call passed the access check and then deleted the whole attempt:
+ * completion, path, evidence and the badge with it. If the assignment had since
+ * been withdrawn the child also lost access to the mission entirely.
+ *
+ * Replay now means what the copy says: the completed attempt is loaded and
+ * every write refuses. `resetAttempt` survives in the repository for tests and
+ * for any future support tool, which would need to be an authorised adult
+ * operation with confirmation and an audit entry — not something a child's
+ * browser can invoke.
+ */
 
 export async function submitCheckInAnswer(input: {
   form: string;

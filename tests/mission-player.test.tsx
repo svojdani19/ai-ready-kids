@@ -11,7 +11,6 @@ vi.mock("@/app/actions/student", () => ({
   submitDecision: (...args: unknown[]) => submitDecision(...(args as [])),
   finishMission: (...args: unknown[]) => finishMission(...(args as [])),
   beginMission: vi.fn(),
-  replayMission: vi.fn(),
   submitCheckInAnswer: vi.fn(),
   finishCheckIn: vi.fn(),
 }));

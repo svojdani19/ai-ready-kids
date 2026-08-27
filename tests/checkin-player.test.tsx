@@ -14,7 +14,6 @@ vi.mock("@/app/actions/student", () => ({
   submitDecision: vi.fn(),
   finishMission: vi.fn(),
   beginMission: vi.fn(),
-  replayMission: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));

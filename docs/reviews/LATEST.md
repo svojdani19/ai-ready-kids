@@ -7,10 +7,10 @@ likely to be.
 
 ---
 
-## Sprint 28 — the authored graph was enforced by the browser
+## Sprint 29 — an action nobody called deleted a child's badge
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-27-sprint-28.md`](2026-08-27-sprint-28.md)
+- **Full review:** [`2026-08-27-sprint-29.md`](2026-08-27-sprint-29.md)
 - **Review trail:** sprints 01–16 in this directory. Sprint 09 tripled the
   curriculum to 27 missions. Sprint 10 fixed two mechanism defects found in it.
   Sprints 11 to 15 fixed content defects in ten of them, two per sprint.
@@ -20,73 +20,73 @@ likely to be.
   one of the 27 missions has now been read, and 26 had findings. Sprints 22-23
   are the second pass over the reporting layer, sprint 24 the assessment layer.
   sprint 25 the educator orientation. Every body of authored content has been
-  read once. **Sprints 26-28 audit what the product *permits*: a staff-side
-  hole, student impersonation, and now the authored graph itself — which was
-  being enforced by a React component.**
+  read once. **Sprints 26-29 audit what the product *permits*: a staff-side
+  hole, student impersonation, the authored graph, and now the exported actions
+  themselves. The inventory has found something every time it has been run.**
 
 ### What changed
 
-1. **The authored graph was enforced by the browser.** The server checked that a
-   submitted scene and choice existed *somewhere in the mission* and appended
-   whatever it was handed; nothing compared the scene against the one the stored
-   path leads to. `completeAttempt` took the caller's word that a mission was
-   finished. So a direct caller could post the strongest option at every
-   decision in any order — skipping every story beat and every authored
-   correction — collect a full set of `demonstrated` evidence, mark it complete
-   and take the badge. Teacher evidence and the annual report would describe a
-   mission nobody played. This is the premise of every content sprint and the
-   first line of the product description, and nothing checked it.
-2. **The check-in had the same terminal defect.** `completeBenchmark` marked a
-   form finished with **zero responses** — counting that child into the cohort
-   and scoring every unanswered item incorrect — and a completed form could
-   still be written to afterwards.
-3. **The invariants now live in the repository, not the action.** Two pure
-   functions — `expectedDecisionSceneId` and `hasReachedEnding` — and
-   `recordDecision` refuses a scene that is not the expected one or any write to
-   a completed attempt; `completeAttempt` refuses unless the path reaches an
-   ending; `saveBenchmarkResponse` refuses a finished form; `completeBenchmark`
-   requires one valid answer for every authored item.
-4. **`removeStudentAction` authorised the class and deleted the student.** The
-   two ids were never checked against each other, so a teacher could pass their
-   own class id with any student id they knew and permanently delete that child
-   — from a colleague's class or another school — while the audit named the
-   wrong class. `deleteStudentFromClass` is scoped by both ids and returns
-   whether a row went; the action refuses a mismatch **before** the audit.
+1. **An exported action nobody called deleted a child's work.** The player, the
+   README and several review records promise that replaying a finished mission
+   records nothing — *"your badge stays, and nothing you tap now gets
+   recorded"*. `replayMission` called `requirePlayableMission`, which a
+   completed mission passes **by design** (sprint 27 made replay a deliberate
+   exception), then `resetAttempt`, which drops the whole row: completion, path,
+   evidence and the badge. If the assignment had since been withdrawn the child
+   lost access to the mission too. No button called it; it was exported from a
+   `"use server"` module, which makes it a public endpoint anyway. **Deleted**,
+   with `resetAttempt` left in the repository for tests and for any future
+   support tool — which would have to be an authorised adult operation with
+   confirmation and audit.
+2. **The class owner was taken on trust.** `createClassAction` read `teacherId`
+   from the form and passed it through; the foreign key proves a row exists and
+   nothing more. An administrator could create a class in their school owned by
+   a user from **another school**, and `listClassesForTeacher` then handed that
+   outsider the class on their overview — name, join code, counts, aggregate
+   evidence — while `canTeachClass` denied them the class page. Contradictory
+   half-access nobody would go looking for. The action was also reachable by any
+   teacher, which sprint 26 half-fixed by restricting *who they could name*
+   rather than *whether they could call it*.
+3. **Fixed in three places**: the action is behind `requireAdmin` and resolves
+   the owner (exists, `role === "teacher"`, same school); **`createClass`
+   enforces the same rule** so no other caller can create a cross-school owner;
+   and `listClassesForTeacher` is scoped by school as well as teacher.
+4. **Found while verifying:** the admin nav still had a "→ Teacher view" link,
+   which has bounced administrators straight back since sprint 26 made those
+   pages teachers-only. A permission change left dead navigation behind and no
+   test noticed, because no test reads navigation.
 
 ### Already verified — please do not redo
 
-- `npm run verify` green: typecheck, lint, **393 tests**, Turbopack build.
-- Twelve new tests assert the attack rather than its absence: posting every
-  strong choice in reverse accepts at most one and then refuses to complete;
-  finishing from the opening scene is refused; empty and partial check-ins are
-  refused; a completed check-in locks against revision.
-- Delete tests: same-class succeeds, a colleague's student is refused with
-  nothing changed, an unknown id reports failure, and the action's body must
-  check `removed` before `recordAudit`.
-- **Six existing tests failed when the invariants landed and were rewritten to
-  walk the mission, not loosened.** There are `playTo` and `playToEnd` helpers
-  now. One — "keeps demonstrated sticky once earned unaided elsewhere" — had
-  been posting the same choice at the same scene twice, so the claim in its name
-  is tested for the first time.
+- `npm run verify` green: typecheck, lint, **401 tests**, Turbopack build.
+- No student action may reference `resetAttempt` at all, and a completed mission
+  survives a full replay and a direct write attempt with identical
+  `completed_at`, path and evidence.
+- Ownership covered end to end: same-school teacher succeeds; an administrator
+  as owner is refused; a user from another school is refused (with a real second
+  school inserted, because the foreign key was the only thing checking anything
+  here); a nonexistent id is refused; a cross-school listing returns nothing.
+- A wiring assertion that the action uses `requireAdmin`, not `requireStaff`,
+  and validates both role and school.
+- Class creation checked end to end in the browser.
 
 ### Where this is most likely still wrong
 
-- **A test that constructs an impossible state proves nothing.** Six here had
-  been green for twenty-eight sprints while fabricating attempts no child could
-  make. The fabrication *was* the missing rule, written down and passing. When
-  an invariant lands and tests go red, ask first whether they described
-  something a user could actually do.
-- **Existence is not sequence**, the sibling of sprint 27's *existence is not
-  entitlement*. Every check asked whether a thing was real; none asked whether
-  it was next.
-- **No route audit is complete.** Three sprints have each found what they were
-  pointed at. **Nobody has enumerated every route and action and asked, for
-  each, what it checks and what it acts on.** That enumeration is the obvious
-  next piece of work and it has not been done.
-- **`simulateAttempt` in the seed still writes paths directly**, bypassing
-  `recordDecision`. Demo data only, and it means seeded paths are not themselves
-  proof of anything.
-- **`enterDemo("student")` still writes a student session directly** — sprint 27.
+- **The inventory is still not complete.** It has now found something twice
+  running. It is done when somebody has read every exported action and every
+  route against what the product claims — not when the last finding is fixed.
+- **An exported server action is a route**, and being unreferenced makes a
+  mutation *more* suspicious, not less: nothing exercises it, no test covers it,
+  and no browser check can see it. `replayMission` was invisible to every method
+  used in this repository so far, and its own access check passed correctly.
+- **A foreign key is not an authorization check.** Third instance of the same
+  shape: sprint 26 trusted `school_id` alone, sprint 28 trusted that a student
+  id and a class id belonged together, sprint 29 trusted that a user id was a
+  teacher here.
+- **A permission change can leave dead navigation behind**, and nothing here
+  reads navigation.
+- **`simulateAttempt` writes seed paths directly**, and **`enterDemo("student")`
+  writes a student session directly**.
 - **The instrument is still unequated with one item per skill** — sprint 24.
 - **Marketing prose is still mostly untested** — sprint 26.
 - **Every mission has been read once. None has been read twice.**

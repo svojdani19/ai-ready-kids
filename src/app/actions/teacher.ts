@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getDb } from "@/lib/db";
-import { requireStaff } from "@/lib/auth/session";
+import { requireAdmin, requireStaff } from "@/lib/auth/session";
 import { canTeachClass } from "@/lib/auth/access";
 import { MISSION_BY_ID } from "@/content/missions";
 import { CERTIFICATION_MODULES } from "@/content/certification";
@@ -15,7 +15,7 @@ import {
   listStudents,
   unassignMission,
 } from "@/lib/repo/classroom";
-import { recordAudit } from "@/lib/repo/school";
+import { getUser, recordAudit } from "@/lib/repo/school";
 import {
   completeCertification,
   getCertification,
@@ -46,11 +46,19 @@ async function requireOwnClass(classId: string) {
   return { user, db, classroom: classroom! };
 }
 
+/**
+ * Creating a class is an administrator operation, and it is the only place in
+ * the product that offers it. It used to accept any staff member, so an
+ * ordinary teacher could create classes for themselves through a direct call
+ * even though no authorised screen offers that — a hidden entitlement is still
+ * an entitlement. And the requested owner was trusted: the foreign key proves
+ * a user row exists, not that they teach here.
+ */
 export async function createClassAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const { user } = await requireStaff();
+  const { user } = await requireAdmin();
   const name = String(formData.get("name") ?? "").trim();
   const grade = Number(formData.get("grade"));
 
@@ -58,13 +66,15 @@ export async function createClassAction(
   if (![2, 3, 4].includes(grade)) return { error: "Choose grade 2, 3 or 4." };
 
   const db = getDb();
-  // A teacher may only create a class for themselves. An administrator may
-  // name any teacher, which is class identity rather than access to a roster.
-  const requestedTeacher = String(formData.get("teacherId") ?? user.id);
-  const teacherId = user.role === "admin" ? requestedTeacher : user.id;
+  const teacherId = String(formData.get("teacherId") ?? "");
+  const owner = teacherId ? getUser(db, teacherId) : undefined;
+  if (!owner || owner.role !== "teacher" || owner.school_id !== user.school_id) {
+    return { error: "Choose a teacher at this school to own the class." };
+  }
+
   const created = createClass(db, {
     schoolId: user.school_id,
-    teacherId,
+    teacherId: owner.id,
     name,
     grade,
     schoolYear: String(formData.get("schoolYear") ?? "2025-2026"),

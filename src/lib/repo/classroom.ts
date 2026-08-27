@@ -9,13 +9,21 @@ export function listClasses(db: Db, schoolId: string, includeArchived = false): 
   return rows<Classroom>(db.prepare(sql).all(schoolId));
 }
 
-export function listClassesForTeacher(db: Db, teacherId: string): Classroom[] {
+/**
+ * Scoped by school as well as by teacher. Defence in depth: a class whose
+ * owner sits in another school should never have been created, and if one ever
+ * is, it must not surface on that person's overview with its name, join code
+ * and aggregate evidence on it.
+ */
+export function listClassesForTeacher(db: Db, teacherId: string, schoolId: string): Classroom[] {
   return rows<Classroom>(
     db
       .prepare(
-        "SELECT * FROM classes WHERE teacher_id = ? AND archived_at IS NULL ORDER BY grade, name",
+        `SELECT * FROM classes
+         WHERE teacher_id = ? AND school_id = ? AND archived_at IS NULL
+         ORDER BY grade, name`,
       )
-      .all(teacherId),
+      .all(teacherId, schoolId),
   );
 }
 
@@ -57,10 +65,27 @@ export function generateJoinCode(db: Db): string {
   throw new Error("Could not generate a unique class code");
 }
 
+/**
+ * The owner must be a teacher at this school.
+ *
+ * The foreign key only proves the user row exists, so before sprint 29 an
+ * administrator could create a class in their school owned by a user id from
+ * another one. `listClassesForTeacher` then handed that outsider the class on
+ * their overview — name, join code, counts, aggregate evidence — while
+ * `canTeachClass` denied them the class page, which is a contradictory state
+ * nobody would think to look for. The rule lives here as well as in the action
+ * so no other caller can create one.
+ */
 export function createClass(
   db: Db,
   input: { schoolId: string; teacherId: string; name: string; grade: number; schoolYear: string },
 ): Classroom {
+  const owner = row<{ role: string; school_id: string }>(
+    db.prepare("SELECT role, school_id FROM users WHERE id = ?").get(input.teacherId),
+  );
+  if (!owner || owner.role !== "teacher" || owner.school_id !== input.schoolId) {
+    throw new Error("A class must be owned by a teacher at the same school.");
+  }
   const id = newId("cls");
   db.prepare(
     `INSERT INTO classes (id, school_id, teacher_id, name, grade, join_code, school_year, created_at, archived_at)

@@ -180,6 +180,15 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       administrators see aggregates only — with no code behind it at all. When
       a page makes several claims, enumerate them and check each one, because
       the one you are looking at is the one least likely to be wrong.
+- [ ] **An exported server action is a route.** Read every one against what
+      the product claims, including the ones nothing calls. Unreferenced makes
+      a mutation more suspicious, not less: nothing exercises it, no test
+      covers it, and no browser check can see it. `replayMission` was wired to
+      no button and deleted a child's badge and evidence.
+- [ ] **A foreign key is not an authorization check.** It proves a row exists.
+      It does not prove the user is a teacher, that the student is on this
+      roster, or that either belongs to this school. Where an id arrives from a
+      form, resolve it and check what it is.
 - [ ] **Existence is not sequence.** Checking that a scene, a choice, an item
       or a form is real is not checking that it is *next*. Where the product
       claims an authored order — and this one's entire safety case rests on

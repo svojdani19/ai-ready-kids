@@ -40,7 +40,7 @@ export default async function MissionPreview({
   const { user } = await requireStaff();
   const db = getDb();
   const classes =
-    user.role === "admin" ? listClasses(db, user.school_id) : listClassesForTeacher(db, user.id);
+    user.role === "admin" ? listClasses(db, user.school_id) : listClassesForTeacher(db, user.id, user.school_id);
   const assignedByClass = new Map(
     classes.map((c) => [c.id, new Set(listAssignments(db, c.id).map((a) => a.mission_id))]),
   );

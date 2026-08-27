@@ -7,7 +7,15 @@ import { decodeJoinGrant, encodeJoinGrant } from "@/lib/auth/token";
 import { canTakeBenchmark, missionAccessFor, nextBenchmarkFor } from "@/lib/domain/eligibility";
 import type { BenchmarkRecord } from "@/lib/types";
 import type { Db } from "@/lib/db";
-import { createTestDb, DEMO_CLASS, DEMO_SCHOOL, DEMO_STUDENT, DEMO_TEACHER } from "./helpers";
+import {
+  createTestDb,
+  DEMO_ADMIN as DEMO_ADMIN_ID,
+  DEMO_CLASS,
+  DEMO_SCHOOL,
+  DEMO_STUDENT,
+  DEMO_TEACHER,
+  playToEnd,
+} from "./helpers";
 import { decodeSession, encodeSession } from "@/lib/auth/token";
 import { getMission, MISSIONS } from "@/content/missions";
 import { getBenchmarkForm } from "@/content/benchmark";
@@ -17,8 +25,10 @@ import {
   createStudent,
   deleteStudentFromClass,
   getClass,
+  listClassesForTeacher,
   listStudents,
 } from "@/lib/repo/classroom";
+import { getAttempt, recordDecision } from "@/lib/repo/progress";
 import { createUser } from "@/lib/repo/school";
 
 let db: Db;
@@ -396,7 +406,7 @@ describe("what a student may open is a rule, not a rendered card", () => {
     // Both helpers exist and every mutation goes through one of them.
     expect(actions).toContain("requirePlayableMission");
     expect(actions).toContain("requireOpenCheckIn");
-    for (const action of ["beginMission", "submitDecision", "finishMission", "replayMission"]) {
+    for (const action of ["beginMission", "submitDecision", "finishMission"]) {
       const start = actions.indexOf(`export async function ${action}`);
       const body = actions.slice(start, actions.indexOf("export async function", start + 10));
       expect(body, action).toContain("requirePlayableMission");
@@ -465,5 +475,130 @@ describe("deleting a child is scoped to the class that authorised it", () => {
     expect(body).toContain("deleteStudentFromClass(db, studentId, classroom.id)");
     expect(body.indexOf("if (!removed)")).toBeLessThan(body.indexOf("recordAudit"));
     expect(body).not.toContain("deleteStudent(db, studentId)");
+  });
+});
+
+describe("a class is owned by a teacher at the same school", () => {
+  /**
+   * `createClassAction` trusted the submitted `teacherId`. The foreign key
+   * proves a user row exists, not that the user teaches here, so an
+   * administrator could create a class in school A owned by somebody from
+   * school B. `listClassesForTeacher` then handed that outsider the class on
+   * their overview — name, join code, counts, aggregate evidence — while
+   * `canTeachClass` denied them the class page. Contradictory access nobody
+   * would think to look for.
+   */
+  let db2: Db;
+  let cleanup2: () => void;
+  beforeAll(() => {
+    ({ db: db2, cleanup: cleanup2 } = createTestDb());
+  });
+  afterAll(() => cleanup2());
+
+  const base = { name: "Owned", grade: 3, schoolYear: "2025-2026" };
+
+  it("creates a class for a teacher at this school", () => {
+    const created = createClass(db2, { ...base, schoolId: DEMO_SCHOOL, teacherId: DEMO_TEACHER });
+    expect(created.teacher_id).toBe(DEMO_TEACHER);
+  });
+
+  it("refuses an administrator as the owner", () => {
+    expect(() =>
+      createClass(db2, { ...base, schoolId: DEMO_SCHOOL, teacherId: DEMO_ADMIN_ID }),
+    ).toThrow(/teacher at the same school/i);
+  });
+
+  it("refuses a user from another school", () => {
+    // A real second school, because the foreign key is the only thing that was
+    // ever checking anything here and it must stay satisfied.
+    db2.prepare(
+      `INSERT INTO schools (id, name, slug, district, city, state, monogram,
+        term_starts_on, term_renews_on, contact_name, contact_email, created_at)
+       VALUES ('sch_elsewhere','Elsewhere Elementary','elsewhere','Other District',
+        'Elsewhere','ST','EE','2025-08-01','2026-09-01','Head','head@elsewhere.demo',
+        '2025-08-01T00:00:00.000Z')`,
+    ).run();
+    const outsider = createUser(db2, {
+      schoolId: "sch_elsewhere",
+      name: "Far Teacher",
+      title: "Grade 3 Teacher",
+      email: "far.teacher@elsewhere.demo",
+      role: "teacher",
+    });
+    expect(() =>
+      createClass(db2, { ...base, schoolId: DEMO_SCHOOL, teacherId: outsider.id }),
+    ).toThrow(/teacher at the same school/i);
+    // And nothing was written, so the outsider's overview stays empty.
+    expect(listClassesForTeacher(db2, outsider.id, "sch_elsewhere")).toHaveLength(0);
+  });
+
+  it("refuses a teacher id that does not exist", () => {
+    expect(() =>
+      createClass(db2, { ...base, schoolId: DEMO_SCHOOL, teacherId: "usr_nobody" }),
+    ).toThrow(/teacher at the same school/i);
+  });
+
+  it("never lists a class from another school on a teacher's overview", () => {
+    // Defence in depth: even if a cross-school class existed, it must not
+    // surface here with its join code and evidence attached.
+    const mine = listClassesForTeacher(db2, DEMO_TEACHER, DEMO_SCHOOL);
+    expect(listClassesForTeacher(db2, DEMO_TEACHER, "sch_elsewhere")).toHaveLength(0);
+    expect(mine.length).toBeGreaterThan(0);
+  });
+
+  it("puts class creation behind requireAdmin and validates the owner there too", () => {
+    const src = readFileSync(join(process.cwd(), "src/app/actions/teacher.ts"), "utf8");
+    const start = src.indexOf("export async function createClassAction");
+    const body = src.slice(start, src.indexOf("export async function", start + 10));
+    // Not requireStaff: an ordinary teacher calling this directly is a hidden
+    // entitlement no screen offers.
+    expect(body).toContain("requireAdmin()");
+    expect(body).not.toContain("requireStaff()");
+    expect(body).toContain('owner.role !== "teacher"');
+    expect(body).toContain("owner.school_id !== user.school_id");
+  });
+});
+
+describe("a finished mission stays finished", () => {
+  /**
+   * The player, the README and several review records promise that replaying a
+   * completed mission records nothing: "your badge stays, and nothing you tap
+   * now gets recorded". `replayMission` was an exported server action, wired to
+   * no button, that called `resetAttempt` — and a completed mission is
+   * deliberately eligible under the replay rule, so a direct call passed the
+   * access check and deleted the attempt, badge and evidence with it.
+   */
+  it("exports no student action that resets an attempt", () => {
+    const src = readFileSync(join(process.cwd(), "src/app/actions/student.ts"), "utf8");
+    expect(src).not.toMatch(/^export async function replayMission/m);
+    // Not merely unexported — not called at all from any student action.
+    expect(src).not.toMatch(/resetAttempt\(/);
+  });
+
+  it("survives a full replay and a direct mutation attempt unchanged", () => {
+    const studentId = createStudent(db, { classId: DEMO_CLASS, displayName: "Replay R." }).id;
+    const mission = MISSIONS[0];
+    playToEnd(db, studentId, mission);
+
+    const finished = getAttempt(db, studentId, mission.id)!;
+    expect(finished.completed_at).toBeTruthy();
+
+    // Every write a replaying browser could attempt, refused.
+    const scene = mission.scenes.find((s) => s.choices?.length)!;
+    const choice = scene.choices!.find((c) => !c.retry)!;
+    expect(() =>
+      recordDecision(db, {
+        studentId,
+        missionId: mission.id,
+        sceneId: scene.id,
+        choiceId: choice.id,
+        evidence: choice.evidence,
+      }),
+    ).toThrow(/already finished/i);
+
+    const after = getAttempt(db, studentId, mission.id)!;
+    expect(after.completed_at).toBe(finished.completed_at);
+    expect(after.path).toEqual(finished.path);
+    expect(after.evidence).toEqual(finished.evidence);
   });
 });

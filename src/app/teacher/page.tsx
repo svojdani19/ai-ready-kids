@@ -28,7 +28,7 @@ export default async function TeacherOverview() {
   // Only classes this teacher is the teacher of record for. This used to hand
   // an administrator every class in the school, with a button through to each
   // roster — the second way into the same disclosure.
-  const classes = listClassesForTeacher(db, user.id);
+  const classes = listClassesForTeacher(db, user.id, user.school_id);
 
   const cards = classes.map((classroom) => {
     const students = listStudents(db, classroom.id);

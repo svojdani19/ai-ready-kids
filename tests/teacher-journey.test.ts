@@ -50,7 +50,7 @@ describe("teacher manages a class", () => {
     });
     classId = created.id;
     expect(created.join_code).toMatch(/^[A-Z]+-\d{3}$/);
-    expect(listClassesForTeacher(db, DEMO_TEACHER).some((c) => c.id === classId)).toBe(true);
+    expect(listClassesForTeacher(db, DEMO_TEACHER, DEMO_SCHOOL).some((c) => c.id === classId)).toBe(true);
   });
 
   it("never issues a duplicate join code", () => {
@@ -58,7 +58,7 @@ describe("teacher manages a class", () => {
     for (let i = 0; i < 40; i += 1) codes.add(generateJoinCode(db));
     expect(codes.size).toBeGreaterThan(1);
     const existing = new Set(
-      listClassesForTeacher(db, DEMO_TEACHER).map((c) => c.join_code),
+      listClassesForTeacher(db, DEMO_TEACHER, DEMO_SCHOOL).map((c) => c.join_code),
     );
     for (const code of codes) expect(existing.has(code)).toBe(false);
   });

@@ -11,7 +11,10 @@ const NAV: NavItem[] = [
   { href: "/admin/program", label: "Program & plan" },
   { href: "/admin/data", label: "Data & retention" },
   { href: "/admin/report", label: "School report" },
-  { href: "/teacher", label: "→ Teacher view" },
+  // No "Teacher view" link. Sprint 26 made the roster-bearing teacher pages
+  // teachers-only, because they render named children beside their individual
+  // evidence and this product tells administrators they see aggregates. The
+  // link had been bouncing straight back here ever since.
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
