@@ -119,6 +119,14 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       dismiss one private fact to elevate another, for a handful of examples
       described as proof, and for "always" and "never" and "nothing at all"
       where the honest word is "usually" or "not on its own".
+- [ ] **The reason that earns credit is the durable one.** It is not enough
+      for the right choice to win; check *why* it wins. A correct answer
+      resting on a wrong reason — a technical claim that will not hold, a
+      conclusion the evidence does not reach — teaches the reason, not the
+      answer. Ask what happens to the child's rule when the reason fails.
+- [ ] **The ending does not act out the error.** Read the resolution as a
+      story. A mission can teach one thing in its feedback and the opposite in
+      what the characters go on to do.
 - [ ] **The activity does not contain the hazard.** Read every extension and
       family prompt as a seven year old would follow it literally. An exercise
       about personal information must never ask a child to supply their own,

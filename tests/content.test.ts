@@ -145,6 +145,12 @@ describe("mission content integrity", () => {
       "lead nowhere",
       // Certainty is insufficient evidence, not meaningless evidence.
       "tells you nothing at all",
+      // Taking a page down does not recall the copies already made, so the
+      // difference between publishing and sharing is never technical recall.
+      "nobody can take back a picture",
+      // Absence of a local record is not evidence of global absence.
+      "real books have shelves",
+      "when nothing anywhere has heard of it",
     ]) {
       expect(studentCopy).not.toContain(overclaim);
     }
@@ -335,6 +341,99 @@ describe("verification is evidence-shaped, not brittle", () => {
     expect(guide).not.toMatch(/only one of them can show its working/);
     // An AI explanation is a further claim to check, not proof and not absent.
     expect(guide).toMatch(/claim to check|claim, not a proof/);
+  });
+});
+
+describe("permission is scoped, not recalled", () => {
+  const photo = MISSION_BY_SLUG["the-class-photo"];
+
+  it("distinguishes school publication from personal sharing by consent, not by deletability", () => {
+    const decision = photo.scenes.find((scene) => scene.id === "s5")!;
+    const strong = decision.choices!.filter((c) => c.feedback.tone === "strong");
+    const strongCopy = strong
+      .map((c) => `${c.label} ${c.feedback.headline} ${c.feedback.body}`)
+      .join(" ")
+      .toLowerCase();
+
+    // The reason must be who agreed to what, for which audience, through whom.
+    expect(strongCopy).toMatch(/agreed|permission|yes to/);
+    expect(strongCopy).toMatch(/audience|cousin/);
+    // One full-credit route is escalation: the teacher owns the decision.
+    expect(strong.some((c) => c.evidence?.skillId === "privacy.escalate")).toBe(true);
+    // And never the technical claim that a school page can simply be recalled.
+    expect(strongCopy).not.toMatch(/take a page down|can take it down/);
+  });
+
+  it("does not let removing the one objector stand in for the other consents", () => {
+    const decision = photo.scenes.find((scene) => scene.id === "s5")!;
+    const checkRavi = decision.choices!.find((c) => /ravi/i.test(c.label))!;
+    // Asking whether Ravi is in it is a good instinct and an incomplete answer:
+    // the other twenty-two agreed to a school page and nothing else.
+    expect(checkRavi.feedback.tone).toBe("partial");
+    expect(checkRavi.evidence?.result).toBe("developing");
+    expect(checkRavi.feedback.body.toLowerCase()).toMatch(/twenty-two|never asked/);
+
+    const guide = photo.guide.misconceptions.map((m) => m.student.toLowerCase()).join(" ");
+    expect(guide).toMatch(/ravi is not in this one/);
+  });
+
+  it("states the limit of taking a page down in the wrap-up", () => {
+    const wrapUp = photo.scenes.find((s) => s.kind === "ending")!.wrapUp!.join(" ").toLowerCase();
+    expect(wrapUp).toMatch(/saying yes to one place is not saying yes to everywhere/);
+    expect(wrapUp).toMatch(/cannot gather up copies/);
+  });
+});
+
+describe("absence of local evidence is not evidence of absence", () => {
+  const book = MISSION_BY_SLUG["the-book-that-was-not-there"];
+
+  it("concludes cannot use it yet from one catalogue, not it does not exist", () => {
+    const decision = book.scenes.find((scene) => scene.id === "s3")!;
+    const strong = decision.choices!.filter((c) => c.feedback.tone === "strong");
+    const strongCopy = strong.map((c) => c.label).join(" ").toLowerCase();
+    expect(strongCopy).toMatch(/cannot use it yet/);
+    expect(strongCopy).toMatch(/somewhere bigger|one library district/);
+
+    // Declaring it invented on a single district's holdings is the error the
+    // mission exists to prevent, so it is a retry here, not full credit.
+    const invented = decision.choices!.find((c) => /does not exist|made up/i.test(c.label))!;
+    expect(invented.feedback.tone).toBe("rethink");
+    expect(invented.retry).toBe(true);
+  });
+
+  it("adds an independent wider check before calling the book invented", () => {
+    const wider = book.scenes.find((scene) => scene.id === "s3b")!;
+    const copy = wider.narration.join(" ").toLowerCase();
+    expect(copy).toMatch(/libraries all over the world/);
+    expect(copy).toMatch(/publisher records/);
+    // Digital formats are named, because "not on a shelf" is not a test.
+    expect(copy).toMatch(/ebook/);
+    expect(copy).toMatch(/audiobook/);
+    expect(copy).toMatch(/nobody wrote this book/);
+  });
+
+  it("gives a record rule rather than a shelf rule", () => {
+    const studentCopy = book.scenes
+      .flatMap((scene) => [
+        ...scene.narration,
+        scene.prompt ?? "",
+        ...(scene.wrapUp ?? []),
+        ...(scene.choices ?? []).flatMap((c) => [c.label, c.feedback.headline, c.feedback.body]),
+      ])
+      .join(" ")
+      .toLowerCase();
+    expect(studentCopy).toMatch(/leaves a record somewhere/);
+    expect(studentCopy).not.toMatch(/if a book is real, you can hold it/);
+    const wrapUp = book.scenes.find((s) => s.kind === "ending")!.wrapUp!.join(" ").toLowerCase();
+    expect(wrapUp).toMatch(/cannot use it yet, not that it is invented/);
+  });
+
+  it("constrains the extension to preverified titles and says what a miss proves", () => {
+    const extension = book.guide.extension.toLowerCase();
+    expect(extension).toMatch(/confirmed are in your catalogue|already looked up/);
+    expect(extension).toMatch(/cannot use it, not that nobody wrote it/);
+    // And the family sheet must not claim no library anywhere had it.
+    expect(book.family.summary.toLowerCase()).not.toMatch(/no library anywhere/);
   });
 });
 

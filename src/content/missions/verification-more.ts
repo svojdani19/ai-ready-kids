@@ -19,16 +19,17 @@ export const theBookThatWasNotThere: Mission = {
   estimatedMinutes: 8,
   teaser: "AskMe recommends the perfect book for your report. The library has never heard of it.",
   summary:
-    "A tool invents a book title, an author and a page count, all delivered with complete confidence. Students learn that detail is not evidence, and that the easiest check is often a person standing ten metres away.",
+    "A tool invents a book title, an author and a page count, all delivered with complete confidence. Students learn that detail is not evidence, that a search finding nothing means they cannot use it yet rather than that it does not exist, and that calling something invented takes a second, wider check.",
   learningGoals: [
     "Understand that made-up answers come with convincing details",
     "Check a claim in the cheapest place available",
+    "Tell the difference between cannot find it and does not exist",
     "Say that something turned out not to exist, without embarrassment",
   ],
   badge: {
     id: "badge-verify-4",
-    name: "Shelf Checker",
-    blurb: "You went and looked instead of believing.",
+    name: "Record Checker",
+    blurb: "You looked for the record instead of believing.",
   },
   openingSceneId: "s1",
   scenes: [
@@ -62,32 +63,45 @@ export const theBookThatWasNotThere: Mission = {
         "Mr. Ruiz types the title into the library computer. Nothing.",
         "He tries the author. Nothing. He tries the whole district catalogue, which has about four hundred thousand books in it. Nothing.",
       ],
-      prompt: "What has happened here?",
+      prompt: "What do you know so far?",
       choices: [
         {
           id: "c1",
-          label: "The book does not exist. It was made up.",
+          label: "I cannot find it, so I cannot use it yet",
           feedback: {
             tone: "strong",
-            headline: "That is the answer, and it is a strange one",
-            body: "It did not find a wrong book. It produced a title, an author, a page count and a year for a book nobody has ever written. All of it sounded exactly like a real book.",
+            headline: "That is exactly how much you know",
+            body: "Not found is not the same as not real. It is enough to stop you putting it in your report, which is what you needed to decide right now.",
           },
           evidence: { skillId: "verify.confidence", result: "demonstrated" },
-          next: "s4",
+          next: "s3b",
         },
         {
           id: "c2",
-          label: "Maybe the library just does not have it",
+          label: "This is one library district. We need somewhere bigger to look.",
           feedback: {
-            tone: "partial",
-            headline: "A fair first thought",
-            body: "That is a sensible guess and worth ruling out, which Mr. Ruiz just did with four hundred thousand books. When nothing anywhere has heard of it, the guess runs out.",
+            tone: "strong",
+            headline: "Straight to the next check",
+            body: "Four hundred thousand books is a lot and it is still one place. A brand new book, an ebook or an old one nobody around here bought would all come back empty too.",
           },
-          evidence: { skillId: "verify.confidence", result: "developing" },
-          next: "s4",
+          evidence: { skillId: "verify.source", result: "demonstrated" },
+          next: "s3b",
         },
         {
           id: "c3",
+          label: "The book does not exist. It was made up.",
+          feedback: {
+            tone: "rethink",
+            headline: "That might turn out to be true",
+            body: "You cannot know it from this, though. All you have looked in is one district. Say what you actually know so far, and then go and find out the rest.",
+            coachNote:
+              "This is the productive wrong answer and most classes will pick it, because it is where the mission is going. The point is that it is a conclusion they have not earned yet.",
+          },
+          next: "s3",
+          retry: true,
+        },
+        {
+          id: "c4",
           label: "Mr. Ruiz must have spelled it wrong",
           feedback: {
             tone: "rethink",
@@ -98,6 +112,17 @@ export const theBookThatWasNotThere: Mission = {
           retry: true,
         },
       ],
+    },
+    {
+      id: "s3b",
+      kind: "story",
+      art: "library",
+      narration: [
+        "Mr. Ruiz agrees that one district is not enough to decide it on.",
+        "He opens a search that covers libraries all over the world, then checks the publisher records, where every book gets its own number when it is printed.",
+        "Nothing on paper. Nothing as an ebook. Nothing as an audiobook. Nobody wrote this book.",
+      ],
+      next: "s4",
     },
     {
       id: "s4",
@@ -202,11 +227,11 @@ export const theBookThatWasNotThere: Mission = {
       choices: [
         {
           id: "c1",
-          label: "If a book is real, you can hold it. Go and check.",
+          label: "A real book leaves a record somewhere I can go and check",
           feedback: {
             tone: "strong",
             headline: "Short enough to remember",
-            body: "Real books have shelves. Real facts have somebody who checked them. The check is the part that makes it yours to use.",
+            body: "Not every real book is on your library shelf. Some are new, some are ebooks, some are audiobooks. Every one of them leaves a record somewhere, and finding that record is the part that makes it yours to use.",
           },
           evidence: { skillId: "verify.confidence", result: "demonstrated" },
           next: "s7",
@@ -230,7 +255,7 @@ export const theBookThatWasNotThere: Mission = {
           feedback: {
             tone: "partial",
             headline: "You do not have to give it up",
-            body: "It is fine for getting ideas about what to look for. It is not fine as the last step. The last step is the shelf.",
+            body: "It is fine for getting ideas about what to look for. It is not fine as the last step. The last step is the record.",
           },
           evidence: { skillId: "verify.confidence", result: "developing" },
           next: "s7",
@@ -243,28 +268,33 @@ export const theBookThatWasNotThere: Mission = {
       art: "library",
       narration: [
         "Your report has a real book in it, with a real author, and a barcode you scanned yourself.",
-        "Mr. Ruiz puts a sign on the library desk that says: if it is a real book, we can find it.",
+        "Mr. Ruiz puts a sign on the library desk that says: if it is a real book, somebody somewhere has a record of it.",
       ],
       wrapUp: [
         "Made-up answers come with convincing details.",
         "The more specific something sounds, the more worth checking it is.",
+        "Not finding it in one place means you cannot use it yet, not that it is invented.",
+        "A real book leaves a record somewhere, even if it is an ebook nobody near you owns.",
         "The cheapest check is often a person standing nearby.",
       ],
     },
   ],
   guide: {
     setup:
-      "Invented citations are the clearest possible demonstration that fluency is not knowledge, and a library makes the check physical: the book is either on a shelf or it is not. Keep the tone curious rather than alarmed. Nobody is fooled because they were careless.",
+      "Invented citations are the clearest possible demonstration that fluency is not knowledge, and a library makes the check concrete. Watch the step in the middle, because it is the one most classes want to skip: an empty local search means the book cannot be used, not that it does not exist. Real books go missing from local catalogues all the time — new, self-published, digital, out of print, or simply never bought here. Calling something invented takes a second, wider check, which is what Mr. Ruiz does next. Keep the tone curious rather than alarmed. Nobody is fooled because they were careless.",
     lookFor: [
       "Students who read specificity as credibility",
       "Whether anyone tries a second query instead of a different kind of source",
       "Students sliding into never trust computers, which is the wrong lesson",
+      "Students who jump from the catalogue finding nothing straight to it does not exist",
     ],
     questions: [
       "What made the book sound real?",
       "Why did the page count make it more convincing rather than less?",
       "What was the fastest way to check?",
       "Is the rule do not trust computers? Why not?",
+      "The library search found nothing. What did that tell us, and what did it not tell us?",
+      "What would we have to check before we could say nobody wrote it?",
     ],
     misconceptions: [
       {
@@ -273,21 +303,26 @@ export const theBookThatWasNotThere: Mission = {
           "Gently correct the mental model. It was not reaching for a book and missing. It produced something book-shaped, which is a different failure and needs a different guard.",
       },
       {
+        student: "If the library does not have it, it is not real.",
+        response:
+          "The most important correction in this mission, and the one most likely to be said out loud. Ask the class for a real book their library does not stock; somebody will name one in seconds. Then separate the two claims: we cannot use it is what one search buys you, nobody wrote it needs a wider record.",
+      },
+      {
         student: "So we should not use it for schoolwork.",
         response:
           "Too broad. It is useful for ideas and search terms. The rule is about what counts as the last step.",
       },
     ],
     extension:
-      "Give pairs three book titles, two real and one you invented with a plausible author and page count. Have them check the catalogue rather than guess. Time it: the check takes under a minute.",
+      "Give pairs three book titles: two you have already looked up and confirmed are in your catalogue, and one you invented with a plausible author and page count. Confirming the two beforehand matters, because a real book your library happens not to stock would look exactly like the invented one. Have them check rather than guess, and time it — under a minute each. Then ask what an empty result proved: that they cannot use it, not that nobody wrote it.",
   },
   family: {
     summary:
-      "We saw a tool invent a book, complete with an author, a page count and a year, then discovered no library anywhere had it. We practised checking in the cheapest place available.",
+      "We saw a tool invent a book, complete with an author, a page count and a year. The school library could not find it, which meant it could not be used — and then a wider search of publisher records showed nobody had written it at all. We practised the difference between those two things.",
     questions: [
       "How could something made up sound so real?",
       "Why did the page count make it more believable?",
-      "Where is the quickest place to check whether a book exists?",
+      "If a shop does not have something, does that mean it was never made?",
     ],
     tryAtHome:
       "Next time a screen recommends something specific — a book, a film, a fact — spend thirty seconds checking it exists before acting on it.",

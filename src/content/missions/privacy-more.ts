@@ -586,11 +586,12 @@ export const theClassPhoto: Mission = {
   estimatedMinutes: 8,
   teaser: "Room 12 is going on the school website. Ravi does not want to be in it.",
   summary:
-    "A class photo is about to be published. Students practise reading a picture for what it reveals, and meet the harder idea that one person can decline something the group wants without being difficult.",
+    "A class photo is about to be published. Students practise reading a picture for what it reveals, meet the harder idea that one person can decline something the group wants, and learn that agreeing to one audience is not agreeing to every audience.",
   learningGoals: [
     "Read a photo for what it shows besides faces",
     "Understand that being in a picture is a choice each person makes",
     "Support somebody who says no, even when the group is keen",
+    "Know that permission is for one place and one audience, and does not travel",
   ],
   badge: {
     id: "badge-privacy-6",
@@ -724,36 +725,49 @@ export const theClassPhoto: Mission = {
       choices: [
         {
           id: "c1",
-          label: "No. The website is one place the school controls. Sending it is not.",
+          label: "No. Everybody agreed to the school page, not to his cousin.",
           feedback: {
             tone: "strong",
-            headline: "You spotted the difference",
-            body: "The school can take a page down. Nobody can take back a picture that has been sent to a cousin, who sends it to a friend, who saves it.",
+            headline: "Permission was for one thing",
+            body: "Twenty-two people said yes to a page on the school website. Nobody asked them about a cousin. A yes is for a particular place and a particular audience, and it does not stretch to cover the next one.",
           },
           evidence: { skillId: "privacy.media", result: "demonstrated" },
           next: "s6",
         },
         {
           id: "c2",
+          label: "Tell him to ask Ms. Okafor before he sends either photo",
+          feedback: {
+            tone: "strong",
+            headline: "That is who the question belongs to",
+            body: "She is the one who asked everybody in the first place, and she is answerable for where it goes. Neither photo leaves the school without her, and that is not you being difficult.",
+          },
+          evidence: { skillId: "privacy.escalate", result: "demonstrated" },
+          next: "s6",
+        },
+        {
+          id: "c3",
+          label: "Check whether Ravi is in the one he is sending",
+          feedback: {
+            tone: "partial",
+            headline: "Worth asking, and not the whole answer",
+            body: "Ravi is not the only one who agreed to a school page and nothing else. Take him out and there are still twenty-two people who were never asked about a cousin.",
+          },
+          evidence: { skillId: "privacy.media", result: "developing" },
+          next: "s6",
+        },
+        {
+          id: "c4",
           label: "It is only his cousin, so it is probably fine",
           feedback: {
             tone: "rethink",
             headline: "It starts with one cousin",
-            body: "Every picture that goes a long way started with somebody sending it to one person they trusted. Think about who decides where it stops. Try again.",
+            body: "Every picture that goes a long way started with somebody sending it to one person they trusted. Think about who agreed to what. Try again.",
+            coachNote:
+              "Watch for students who solve this by removing Ravi. That reasoning turns one person's objection into the only thing standing in the way, when in fact nobody in the photo agreed to this.",
           },
           next: "s5",
           retry: true,
-        },
-        {
-          id: "c3",
-          label: "Ask Theo whether Ravi is in the one he is sending",
-          feedback: {
-            tone: "strong",
-            headline: "Straight to the point",
-            body: "He is, because Theo has the first version. Theo deletes it, grumbling, and asks Ms. Okafor for the second one instead.",
-          },
-          evidence: { skillId: "privacy.media", result: "demonstrated" },
-          next: "s6",
         },
       ],
     },
@@ -764,27 +778,31 @@ export const theClassPhoto: Mission = {
       narration: [
         "The photo that goes up has twenty-two children, one poster, a blank wall, and a slightly blurry thumb in the corner that is Ravi's.",
         "He says the thumb is the best part.",
+        "Theo asks Ms. Okafor about his cousin anyway. She says the photo is for the school page, and that his cousin is welcome to look at the page like anybody else.",
       ],
       wrapUp: [
         "A photo shows the room as well as the faces.",
         "Everybody in a picture gets to decide, and nobody has to give a reason.",
-        "Sending a picture on is different from the school putting one up.",
+        "Saying yes to one place is not saying yes to everywhere.",
+        "A school can take its own page down. It cannot gather up copies people already saved.",
       ],
     },
   ],
   guide: {
     setup:
-      "Two ideas run together here: what a photograph reveals, and whose permission it needs. The second is harder, because it asks a class to give up something they want for one person who will not explain. Ravi's reason is deliberately never given.",
+      "Two ideas run together here: what a photograph reveals, and whose permission it needs. The second is harder, because it asks a class to give up something they want for one person who will not explain. Ravi's reason is deliberately never given. Keep the last decision on permission rather than on technology. A school page can be downloaded, screenshotted and passed on like anything else, and taking the page down does not undo those copies; what makes the page different is that the class agreed to it, for that audience, through somebody answerable for it.",
     lookFor: [
       "Students who check faces but not the room",
       "Whether anyone asks Ravi to justify himself",
       "Students who treat a school publication and a personal share as the same act",
+      "Students who solve it by removing Ravi, as though he were the only one who had to agree",
     ],
     questions: [
       "What was in the room that should not have been in the photo?",
       "Ravi did not say why. Did he need to?",
       "Twenty-two people said yes. Why was that not enough?",
       "What is different about the school putting a photo up and Theo sending one?",
+      "Twenty-two people said yes to the website. What exactly did they say yes to?",
     ],
     misconceptions: [
       {
@@ -795,7 +813,12 @@ export const theClassPhoto: Mission = {
       {
         student: "It is already going online, so sending it changes nothing.",
         response:
-          "Separate control from exposure. The school can remove a page. Nobody can recall a message.",
+          "Do not settle this with technology, because the technology does not settle it. A web page can be saved, screenshotted and passed on, and taking the page down does not collect those copies back. What changes is permission: the class agreed to a school page, for that audience, through a teacher who is answerable for it. Nobody agreed to a cousin's phone.",
+      },
+      {
+        student: "Ravi is not in this one, so I can send it.",
+        response:
+          "Catch this one, because it sounds like the lesson and is the opposite of it. Ravi's no was his own. The other twenty-two agreed to a school page and were never asked about anything else. Removing the person who objected does not create permission from the people who did not.",
       },
     ],
     extension:
@@ -803,11 +826,11 @@ export const theClassPhoto: Mission = {
   },
   family: {
     summary:
-      "We looked at a class photo before it was published and practised two things: reading the background for private information, and remembering that every person in a picture gets to decide about their own face.",
+      "We looked at a class photo before it was published and practised three things: reading the background for private information, remembering that every person in a picture gets to decide about their own face, and noticing that agreeing to one place is not agreeing to everywhere. A photo cleared for a school page has not been cleared for a group chat.",
     questions: [
       "What can somebody learn from the background of a photo?",
       "If one person in a picture says no, what should happen?",
-      "Does somebody have to explain why they do not want to be photographed?",
+      "A photo was fine for one place. Does that make it fine everywhere?",
     ],
     tryAtHome:
       "Before the next family photo goes anywhere, ask everyone in it. Let the youngest person's no count exactly as much as anyone else's.",
