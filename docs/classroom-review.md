@@ -361,6 +361,17 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
 - [ ] **Teacher workload.** Count the clicks from "I want to teach this" to
       "it is on the board". If a step exists only to satisfy the software, cut
       it.
+- [ ] **The instructions are re-read when the capability changes.** Adding a
+      safe way to do something does not remove the old advice about doing it
+      the unsafe way. When a sprint adds a capability, grep for every sentence
+      that told somebody to work around its absence, and delete each one.
+      Prose is not documentation of the code, it is part of the product, and it
+      goes stale silently.
+- [ ] **No instruction routes a routine task through a destructive one.**
+      Rotating a credential, correcting a name, reopening a form: these happen
+      in ordinary weeks. If the answer the product gives is "delete it and make
+      a new one", that is a data-loss defect wearing the costume of a help
+      note — doubly so when the delete button is on the same screen.
 
 ## Recording a review
 
