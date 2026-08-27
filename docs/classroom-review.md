@@ -180,6 +180,20 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       administrators see aggregates only — with no code behind it at all. When
       a page makes several claims, enumerate them and check each one, because
       the one you are looking at is the one least likely to be wrong.
+- [ ] **Existence is not entitlement.** Nearly every check in this product
+      asked whether a record exists — a real class, a real student, a shipped
+      mission, a valid form — and none asked whether the caller was entitled to
+      it. That reads like authorization until somebody types a URL. For each
+      check, say out loud which one it is.
+- [ ] **A credential has to leave something behind.** If the product tells
+      families that a code protects something, entering it must produce a
+      signed, scoped, expiring grant that the next page and the next action
+      each verify for themselves. A code checked and discarded protects
+      nothing, and the page rendering the buttons is not the endpoint.
+- [ ] **Commercial framing needs state behind it.** "Fall and spring windows"
+      is what makes an annual subscription coherent, and there was no field, no
+      date and no rule anywhere behind it. Where a word is load-bearing,
+      either build what it names or stop using it.
 - [ ] **Ask what a role may do, not what a record belongs to.** Access control
       here was tested as "same school" throughout, which is a fact about the
       schema. Authorization is a fact about people: which role, acting on whose

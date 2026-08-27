@@ -2,6 +2,8 @@ import type { CompetencyId } from "@/content/types";
 
 export type Role = "teacher" | "admin";
 
+export type BenchmarkWindow = "closed" | "pre" | "post";
+
 export interface School {
   id: string;
   name: string;
@@ -18,6 +20,8 @@ export interface School {
   contact_name: string;
   contact_email: string;
   retention_months: number;
+  /** 'closed' | 'pre' | 'post' — which check-in window is open, if any. */
+  benchmark_window: BenchmarkWindow;
   created_at: string;
 }
 

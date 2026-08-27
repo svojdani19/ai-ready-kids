@@ -17,7 +17,8 @@ import {
   startAttempt,
 } from "@/lib/repo/progress";
 import { summariseStudent } from "@/lib/domain/evidence";
-import { nextBenchmarkFor, scoreForm } from "@/lib/domain/benchmark";
+import { scoreForm } from "@/lib/domain/benchmark";
+import { canTakeBenchmark, nextBenchmarkFor } from "@/lib/domain/eligibility";
 import { findScene, nextSceneAfter, resumeSceneId } from "@/lib/domain/missionPath";
 
 let db: Db;
@@ -176,8 +177,14 @@ describe("student check-in", () => {
     studentId = createStudent(db, { classId: DEMO_CLASS, displayName: "Bench N." }).id;
   });
 
-  it("offers the fall check-in first", () => {
-    expect(nextBenchmarkFor(listBenchmarksForStudent(db, studentId))).toEqual({
+  it("offers nothing at all while both windows are closed", () => {
+    // The default. Previously there was no window state, so the fall form was
+    // permanently on offer to everybody.
+    expect(nextBenchmarkFor(listBenchmarksForStudent(db, studentId), "closed")).toBeNull();
+  });
+
+  it("offers the fall check-in when the fall window is open", () => {
+    expect(nextBenchmarkFor(listBenchmarksForStudent(db, studentId), "pre")).toEqual({
       form: "pre",
       resuming: false,
     });
@@ -191,7 +198,7 @@ describe("student check-in", () => {
       itemId: form.items[0].id,
       optionId: form.items[0].options[0].id,
     });
-    expect(nextBenchmarkFor(listBenchmarksForStudent(db, studentId))).toEqual({
+    expect(nextBenchmarkFor(listBenchmarksForStudent(db, studentId), "pre")).toEqual({
       form: "pre",
       resuming: true,
     });
@@ -207,8 +214,18 @@ describe("student check-in", () => {
     completeBenchmark(db, studentId, "pre");
   });
 
-  it("moves on to the spring form once the fall one is finished", () => {
-    expect(nextBenchmarkFor(listBenchmarksForStudent(db, studentId))).toEqual({
+  it("does not offer the spring form just because the fall one is finished", () => {
+    // The defect this replaces: a child could finish fall and start spring in
+    // the same minute, and the report presented the difference as a year.
+    const records = listBenchmarksForStudent(db, studentId);
+    expect(nextBenchmarkFor(records, "pre")).toBeNull();
+    expect(nextBenchmarkFor(records, "closed")).toBeNull();
+    expect(canTakeBenchmark({ window: "pre", form: "post", records })).toBe(false);
+    expect(canTakeBenchmark({ window: "closed", form: "post", records })).toBe(false);
+  });
+
+  it("offers the spring form once somebody opens the spring window", () => {
+    expect(nextBenchmarkFor(listBenchmarksForStudent(db, studentId), "post")).toEqual({
       form: "post",
       resuming: false,
     });
@@ -255,7 +272,10 @@ describe("student check-in", () => {
       });
     }
     completeBenchmark(db, studentId, "post");
-    expect(nextBenchmarkFor(listBenchmarksForStudent(db, studentId))).toBeNull();
+    const done = listBenchmarksForStudent(db, studentId);
+    expect(nextBenchmarkFor(done, "post")).toBeNull();
+    // A finished form cannot be reopened while its window is still open.
+    expect(canTakeBenchmark({ window: "post", form: "post", records: done })).toBe(false);
   });
 });
 

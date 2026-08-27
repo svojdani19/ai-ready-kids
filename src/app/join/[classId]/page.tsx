@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
+import { readJoinGrant } from "@/lib/auth/session";
 import { getDb } from "@/lib/db";
 import { getClass, listStudents } from "@/lib/repo/classroom";
 import { getUser } from "@/lib/repo/school";
@@ -17,9 +18,16 @@ export default async function ChooseStudentPage({
   params: Promise<{ classId: string }>;
 }) {
   const { classId } = await params;
+
+  // This page lists every child in a class by name. Rendering it requires
+  // proof that whoever asked entered this class's code — not merely that they
+  // know a class id, which is what it used to accept.
+  const granted = await readJoinGrant();
+  if (granted !== classId) redirect("/join");
+
   const db = getDb();
   const classroom = getClass(db, classId);
-  if (!classroom || classroom.archived_at) notFound();
+  if (!classroom || classroom.archived_at) redirect("/join");
 
   const teacher = getUser(db, classroom.teacher_id);
   const students = listStudents(db, classId);

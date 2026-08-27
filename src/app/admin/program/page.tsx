@@ -12,6 +12,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Note, Stat, Tag } from "@/components/ui/Bits";
 import { SchoolForm } from "./SchoolForm";
 import { PlanForm } from "./PlanForm";
+import { WindowForm } from "./WindowForm";
 
 export const metadata: Metadata = { title: "Program and plan" };
 
@@ -111,6 +112,15 @@ export default async function AdminProgram() {
                 </li>
               ))}
             </ul>
+          </PanelBody>
+        </Panel>
+
+        <Panel
+          title="Check-in windows"
+          description="Which annual check-in, if any, students can take right now."
+        >
+          <PanelBody>
+            <WindowForm current={school.benchmark_window} />
           </PanelBody>
         </Panel>
 

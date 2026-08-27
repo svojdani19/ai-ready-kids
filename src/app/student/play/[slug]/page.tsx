@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { listAssignments } from "@/lib/repo/classroom";
+import { missionAccessFor } from "@/lib/domain/eligibility";
 import { getDb } from "@/lib/db";
 import { getMission } from "@/content/missions";
 import { requireStudent } from "@/lib/auth/session";
-import { startAttempt } from "@/lib/repo/progress";
+import { getAttempt, startAttempt } from "@/lib/repo/progress";
 import { resumeSceneId } from "@/lib/domain/missionPath";
 import { MissionPlayer } from "./MissionPlayer";
 
@@ -26,9 +28,21 @@ export default async function PlayMissionPage({
   if (!mission) notFound();
 
   const { student } = await requireStudent();
+  const db = getDb();
+
+  // Being a shipped mission is not the same as being open to this child. The
+  // page used to accept any slug, so an unassigned mission could be played and
+  // its evidence recorded by typing a URL.
+  const access = missionAccessFor({
+    missionId: mission.id,
+    assignedMissionIds: listAssignments(db, student.class_id).map((a) => a.mission_id),
+    hasCompleted: Boolean(getAttempt(db, student.id, mission.id)?.completed_at),
+  });
+  if (access === "denied") redirect("/student");
+
   // Opening a mission creates or resumes its attempt, so a child who closes
   // the tab mid-story comes back to the same scene.
-  const attempt = startAttempt(getDb(), student.id, mission.id);
+  const attempt = startAttempt(db, student.id, mission.id);
   const finished = Boolean(attempt.completed_at);
 
   // A finished mission replays from the beginning and records nothing new:

@@ -7,10 +7,10 @@ likely to be.
 
 ---
 
-## Sprint 26 — the privacy promise had no code behind it
+## Sprint 27 — the class code protected nothing
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-27-sprint-26.md`](2026-08-27-sprint-26.md)
+- **Full review:** [`2026-08-27-sprint-27.md`](2026-08-27-sprint-27.md)
 - **Review trail:** sprints 01–16 in this directory. Sprint 09 tripled the
   curriculum to 27 missions. Sprint 10 fixed two mechanism defects found in it.
   Sprints 11 to 15 fixed content defects in ten of them, two per sprint.
@@ -20,79 +20,78 @@ likely to be.
   one of the 27 missions has now been read, and 26 had findings. Sprints 22-23
   are the second pass over the reporting layer, sprint 24 the assessment layer.
   sprint 25 the educator orientation. Every body of authored content has been
-  read once. **Sprint 26 is the first pass over what the product *permits*, and
-  it found a live authorization hole.**
+  read once. **Sprints 26 and 27 audit what the product *permits*. Sprint 26
+  found a staff-side hole; sprint 27 found student impersonation, which is
+  worse.**
 
 ### What changed
 
-Not a copy defect. A live authorization hole, and the most serious thing found
-in this repository.
-
-1. **Two routes took an administrator to a named roster.** The product says an
-   administrator sees aggregate figures only and that a teacher sees their own
-   roster. Neither was enforced: `requireStaff` accepts both roles, and every
-   teacher page and action checked only `school_id`. The class name on
-   `/admin/classes` linked into `/teacher/class/[classId]`, and the teacher
-   overview had an explicit branch handing an administrator **every class in
-   the school** with an Open class button. That page renders each child's name
-   beside their individual per-skill evidence.
-2. **Any teacher with another class's id could read and mutate it.**
-   `requireOwnClass` — the guard on adding students, removing students and
-   changing assignments — allowed any staff member in the school. A guessable
-   URL and three callable server actions. This is the worse half: a link is not
-   a permission model.
-3. **The rule is now a pure function**, `canTeachClass` in
-   `src/lib/auth/access.ts`: same school, role teacher, teacher of record.
-   Administrators are excluded **explicitly rather than by not being linked** —
-   a role check in one page loader is not a promise. `requireTeacher` redirects
-   administrators off both roster-bearing pages, the teacher overview lists only
-   own classes, the admin link is gone, and `createClassAction` no longer lets a
-   teacher create a class assigned to a colleague. What an administrator may do
-   with a class lives in a separate `canAdministerClass` that cannot express
-   access to a roster or to evidence.
-4. **The District plan sold three things that do not exist.** Roster sync via
-   Clever or ClassLink, district rollup reporting and single sign-on are all
-   deliberately deferred per the README. They moved out of the feature list into
-   a dashed "Not in this build" block, the plan selector says *"Choosing
-   District does not enable anything"*, and two more future-tense claims — class
-   codes "replaced by roster sync and SSO in a district deployment", on the
-   class page and the privacy page — now say neither is built.
+1. **The class code protected nothing.** `findClassByCode` validated the code
+   and threw it away. `/join/[classId]` rendered every child's name and avatar
+   to anyone holding a class id, and **`chooseStudent` took any student id in
+   the database and wrote that child's session** — no grant, and no check that
+   the student was even in the class whose roster had been shown. A direct URL
+   listed a school's children; a direct action call logged in as any of them.
+2. **Entering the code now writes a signed, expiring, class-bound grant**,
+   reusing the session HMAC. Ten minutes, `httpOnly`, its own cookie.
+   `/join/[classId]` refuses unless the grant names that exact class.
+   `chooseStudent` verifies the grant itself rather than trusting the page that
+   rendered the buttons — grant present, student in that class, class not
+   archived — and **spends the grant** before writing the session.
+3. **Mission and check-in availability were UI, not rules.** The play page and
+   all four mission actions accepted any shipped slug, so an unassigned mission
+   could be opened by URL and real evidence recorded into it. Worse:
+   `nextBenchmarkFor` offered the spring form **the moment the fall one was
+   completed**, with no window state and no date anywhere, while the admin
+   pages, plans page and report all called them fall and spring windows. A
+   child could take both back to back and the report presented the difference
+   as a year's change.
+4. **Both are rules now**, in `src/lib/domain/eligibility.ts`, shared by page
+   loaders and actions. `missionAccessFor` returns assigned / replay / denied,
+   with replay a **documented exception** so withdrawing an assignment does not
+   delete access to completed work. `canTakeBenchmark` opens a form only when
+   the school's window names it and it is unfinished. **The window is real
+   state**: `schools.benchmark_window` is `closed | pre | post`, default closed,
+   with an administrator control and an audit entry. The old window-blind
+   `nextBenchmarkFor` is deleted, not deprecated.
 
 ### Already verified — please do not redo
 
-- `npm run verify` green: typecheck, lint, **364 tests**, Turbopack build.
-- Seven assertions on the rule itself, as a pure function: owner in, colleague
-  out, **administrator out**, other school out, missing class refused, no role
-  both administers and teaches.
-- Three that guard the wiring, because the rule existing is not the same as
-  every path using it: `/admin/classes` must not contain `/teacher/class/`;
-  both roster pages must call `requireTeacher()` and not `requireStaff()`; each
-  mutating action must go through `requireOwnClass`, whose check must be
-  `canTeachClass` and must not be the old `school_id` comparison.
-- Verified in the running app: as administrator, `/teacher/class/cls_room12`
-  redirects to the school overview. As Ms. Okafor, a colleague's `cls_room4`
-  returns 404 and her own class renders normally.
-- No student fields added.
+- `npm run verify` green: typecheck, lint, **381 tests**, Turbopack build.
+- The grant is asserted at the token layer beside the session tamper cases:
+  round-trip, wrong key, **class swapped after signing**, expiry at the boundary
+  both ways, session-token-as-grant and the reverse, malformed input.
+- The eligibility rules are asserted directly, including the one that was the
+  whole defect: `canTakeBenchmark({ window: "pre", form: "post" })` is false and
+  `nextBenchmarkFor(finishedPre, "pre")` is null.
+- Wiring assertions: both join surfaces read the grant, `chooseStudent` checks
+  `class_id` and spends it, both student pages call the rules, and **each of the
+  six student actions goes through `requirePlayableMission` or
+  `requireOpenCheckIn`**.
+- Verified in the app: `/join/cls_room12` with no grant redirects; a Room 12
+  grant does not open Room 4; as the demo student, `/student/checkin/post` and
+  an unassigned mission URL both redirect to `/student`.
+- No new student fields. No passwords. No telemetry.
 
 ### Where this is most likely still wrong
 
-- **Only the class-scoped surfaces were audited.** Classroom Mode, the mission
-  library and the orientation are staff-level by design and show no student
-  data, but nobody has walked every route asking who may reach it. Twenty-five
-  sprints looked at what the product says and teaches; this was the first to
-  look at what it permits, and it stopped at the routes the finding named.
-- **Applying "a promise is a test case" to one promise is not applying it to
-  the promises.** Sprint 23 asserted the suppression thresholds and left the
-  sentence beside them — administrators see aggregates only — with nothing
-  behind it. When a page makes several claims, enumerate them.
-- **Access control had been tested as "same school" throughout**, which is a
-  fact about the schema. Nothing asked what a *role* may do, because roles had
-  never been the unit of the question.
-- **Marketing prose is still mostly untested.** Three claims now have tests.
-  A claim without a test is a claim nobody has checked.
-- **The instrument still cannot support growth or transfer claims** — sprint 24.
-- **The orientation is ungated by design** — sprint 25, and reopening it
-  reopens the naming.
+- **Existence is not entitlement, and that was the shape of every check here.**
+  Does this class exist, is it in my school, is this a real student, a shipped
+  mission, a valid form. Not one asked whether the caller was entitled to it.
+  Two sprints have each found what they were pointed at; **nobody has enumerated
+  every route and asked who may reach it.**
+- **`enterDemo("student")` still writes a student session directly**, bypassing
+  the grant. It is an explicit demo button and the mechanism the whole demo
+  rests on, but it is there.
+- **Commercial framing was load-bearing on state that did not exist.** "Fall and
+  spring windows" is what makes an annual subscription and an annual report
+  coherent, and nothing was behind it. Same class of defect as sprint 25's
+  "certified" — a word doing work the system could not support. That one was
+  fixed by changing the word; this one was worth keeping, so the state got built.
+- **The instrument is still unequated with one item per skill** — sprint 24.
+  Real windows make the time separation true; they do not make the forms
+  parallel.
+- **Marketing prose is still mostly untested** — sprint 26.
 - **Every mission has been read once. None has been read twice.**
 - **Nothing checks what a wrong answer costs a child** — sprint 20.
 - **Shared scenes remain untraced** in twenty-six of twenty-seven missions.

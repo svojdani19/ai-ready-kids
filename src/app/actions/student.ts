@@ -9,23 +9,64 @@ import { requireStudent } from "@/lib/auth/session";
 import {
   completeAttempt,
   completeBenchmark,
+  getAttempt,
+  listBenchmarksForStudent,
   recordDecision,
   resetAttempt,
   saveBenchmarkResponse,
   startAttempt,
 } from "@/lib/repo/progress";
+import { getClass, listAssignments } from "@/lib/repo/classroom";
+import { getSchool } from "@/lib/repo/school";
+import { canTakeBenchmark, missionAccessFor } from "@/lib/domain/eligibility";
 
 /**
  * Every mutation re-validates the submitted ids against the shipped content
  * before writing. The browser can only ever ask to record a decision that
  * actually exists in the authored graph.
+ *
+ * And, since sprint 27, against what this student is actually allowed to open.
+ * Validating that a mission exists is not the same as validating that it was
+ * assigned, and these are public endpoints: which card the home page renders
+ * has never been a permission.
  */
 
-export async function beginMission(slug: string): Promise<void> {
+/** Resolve a check-in the student may take right now, or throw. */
+async function requireOpenCheckIn(form: string) {
+  const content = getBenchmarkForm(form);
+  if (!content) throw new Error(`Unknown check-in: ${form}`);
+  const { student } = await requireStudent();
+  const db = getDb();
+  const classroom = getClass(db, student.class_id);
+  const school = classroom ? getSchool(db, classroom.school_id) : undefined;
+  if (!school) throw new Error("That check-in is not open.");
+  const open = canTakeBenchmark({
+    window: school.benchmark_window,
+    form: content.form,
+    records: listBenchmarksForStudent(db, student.id),
+  });
+  if (!open) throw new Error("That check-in is not open.");
+  return { content, student, db };
+}
+
+/** Resolve a mission the student may play, or throw. */
+async function requirePlayableMission(slug: string) {
   const mission = getMission(slug);
   if (!mission) throw new Error(`Unknown mission: ${slug}`);
   const { student } = await requireStudent();
-  startAttempt(getDb(), student.id, mission.id);
+  const db = getDb();
+  const access = missionAccessFor({
+    missionId: mission.id,
+    assignedMissionIds: listAssignments(db, student.class_id).map((a) => a.mission_id),
+    hasCompleted: Boolean(getAttempt(db, student.id, mission.id)?.completed_at),
+  });
+  if (access === "denied") throw new Error("That mission is not open for your class.");
+  return { mission, student, db };
+}
+
+export async function beginMission(slug: string): Promise<void> {
+  const { mission, student, db } = await requirePlayableMission(slug);
+  startAttempt(db, student.id, mission.id);
 }
 
 export async function submitDecision(input: {
@@ -40,8 +81,13 @@ export async function submitDecision(input: {
   const choice = findChoice(mission, input.sceneId, input.choiceId);
   if (!scene || !choice) return { ok: false, error: "That choice is not part of this mission." };
 
-  const { student } = await requireStudent();
-  recordDecision(getDb(), {
+  let student, db;
+  try {
+    ({ student, db } = await requirePlayableMission(input.slug));
+  } catch {
+    return { ok: false, error: "That mission is not open for your class." };
+  }
+  recordDecision(db, {
     studentId: student.id,
     missionId: mission.id,
     sceneId: scene.id,
@@ -52,19 +98,15 @@ export async function submitDecision(input: {
 }
 
 export async function finishMission(slug: string): Promise<void> {
-  const mission = getMission(slug);
-  if (!mission) throw new Error(`Unknown mission: ${slug}`);
-  const { student } = await requireStudent();
-  completeAttempt(getDb(), student.id, mission.id);
+  const { mission, student, db } = await requirePlayableMission(slug);
+  completeAttempt(db, student.id, mission.id);
   revalidatePath("/student");
   revalidatePath("/student/badges");
 }
 
 export async function replayMission(slug: string): Promise<void> {
-  const mission = getMission(slug);
-  if (!mission) throw new Error(`Unknown mission: ${slug}`);
-  const { student } = await requireStudent();
-  resetAttempt(getDb(), student.id, mission.id);
+  const { mission, student, db } = await requirePlayableMission(slug);
+  resetAttempt(db, student.id, mission.id);
   revalidatePath(`/student/play/${slug}`);
 }
 
@@ -81,8 +123,13 @@ export async function submitCheckInAnswer(input: {
     return { ok: false, error: "That answer is not part of this check-in." };
   }
 
-  const { student } = await requireStudent();
-  saveBenchmarkResponse(getDb(), {
+  let student, db;
+  try {
+    ({ student, db } = await requireOpenCheckIn(input.form));
+  } catch {
+    return { ok: false, error: "That check-in is not open." };
+  }
+  saveBenchmarkResponse(db, {
     studentId: student.id,
     form: content.form,
     itemId: item.id,
@@ -92,9 +139,7 @@ export async function submitCheckInAnswer(input: {
 }
 
 export async function finishCheckIn(form: string): Promise<void> {
-  const content = getBenchmarkForm(form);
-  if (!content) throw new Error(`Unknown check-in: ${form}`);
-  const { student } = await requireStudent();
-  completeBenchmark(getDb(), student.id, content.form);
+  const { content, student, db } = await requireOpenCheckIn(form);
+  completeBenchmark(db, student.id, content.form);
   revalidatePath("/student");
 }

@@ -1,6 +1,6 @@
 import "server-only";
 import { type Db, newId, nowIso, row, rows } from "@/lib/db";
-import type { AuditEntry, Role, School, User } from "@/lib/types";
+import type { AuditEntry, BenchmarkWindow, Role, School, User } from "@/lib/types";
 
 export function getSchool(db: Db, id: string): School | undefined {
   return row<School>(db.prepare("SELECT * FROM schools WHERE id = ?").get(id));
@@ -36,6 +36,15 @@ export function updateSchoolProfile(
 export function setRetentionMonths(db: Db, id: string, months: number): void {
   db.prepare("UPDATE schools SET retention_months = ? WHERE id = ?").run(months, id);
 }
+/**
+ * Open or close a check-in window. Deliberately one at a time and deliberately
+ * explicit: the spring form does not become available because the fall one was
+ * finished, it becomes available because somebody opened spring.
+ */
+export function setBenchmarkWindow(db: Db, id: string, window: BenchmarkWindow): void {
+  db.prepare("UPDATE schools SET benchmark_window = ? WHERE id = ?").run(window, id);
+}
+
 
 export function listUsers(db: Db, schoolId: string, role?: Role): User[] {
   return role

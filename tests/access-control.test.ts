@@ -3,6 +3,9 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { canAdministerClass, canTeachClass } from "@/lib/auth/access";
+import { decodeJoinGrant, encodeJoinGrant } from "@/lib/auth/token";
+import { canTakeBenchmark, missionAccessFor, nextBenchmarkFor } from "@/lib/domain/eligibility";
+import type { BenchmarkRecord } from "@/lib/types";
 import type { Db } from "@/lib/db";
 import { createTestDb, DEMO_CLASS, DEMO_SCHOOL, DEMO_STUDENT } from "./helpers";
 import { decodeSession, encodeSession } from "@/lib/auth/token";
@@ -252,5 +255,150 @@ describe("no surface routes an administrator to a named roster", () => {
     // And the check itself must be ownership, not school membership.
     expect(actions).toContain("canTeachClass(user, classroom)");
     expect(actions).not.toContain("classroom.school_id !== user.school_id");
+  });
+});
+
+describe("a class code is worth something", () => {
+  /**
+   * Before sprint 27 it was worth nothing. `findClassByCode` validated the
+   * code and then discarded it: `/join/[classId]` rendered every child's name
+   * to anyone holding a class id, and `chooseStudent` issued a session for any
+   * student id it was handed, without checking the child was even in the class
+   * whose roster had been shown. The class code is the only credential the
+   * privacy page claims, and it protected neither the roster nor the account.
+   *
+   * The grant is asserted here at the token layer, where the tamper cases for
+   * the session cookie already live, because that is the layer that decides.
+   */
+  const key = randomBytes(32);
+  const now = 1_760_000_000;
+
+  it("round-trips a grant for one class", () => {
+    const token = encodeJoinGrant(key, { kind: "join", classId: "cls_a", exp: now + 600 });
+    expect(decodeJoinGrant(key, token, now)?.classId).toBe("cls_a");
+  });
+
+  it("refuses a grant signed with a different key", () => {
+    const token = encodeJoinGrant(randomBytes(32), { kind: "join", classId: "cls_a", exp: now + 600 });
+    expect(decodeJoinGrant(key, token, now)).toBeNull();
+  });
+
+  it("refuses a grant whose class was swapped after signing", () => {
+    // A grant for class A must not become a grant for class B.
+    const token = encodeJoinGrant(key, { kind: "join", classId: "cls_a", exp: now + 600 });
+    const [, signature] = token.split(".");
+    const forged = Buffer.from(
+      JSON.stringify({ kind: "join", classId: "cls_b", exp: now + 600 }),
+      "utf8",
+    ).toString("base64url");
+    expect(decodeJoinGrant(key, `${forged}.${signature}`, now)).toBeNull();
+  });
+
+  it("expires rather than lasting as long as a session", () => {
+    const token = encodeJoinGrant(key, { kind: "join", classId: "cls_a", exp: now + 60 });
+    expect(decodeJoinGrant(key, token, now + 59)).not.toBeNull();
+    expect(decodeJoinGrant(key, token, now + 61)).toBeNull();
+  });
+
+  it("refuses a session token presented as a grant, and the reverse", () => {
+    const session = encodeSession(key, { kind: "student", studentId: "stu_1" });
+    expect(decodeJoinGrant(key, session, now)).toBeNull();
+    const grant = encodeJoinGrant(key, { kind: "join", classId: "cls_a", exp: now + 600 });
+    expect(decodeSession(key, grant)).toBeNull();
+  });
+
+  it("refuses missing and malformed tokens", () => {
+    for (const bad of [undefined, "", "no-dot", "a.b", ".."]) {
+      expect(decodeJoinGrant(key, bad, now)).toBeNull();
+    }
+  });
+});
+
+describe("the join surfaces check the grant themselves", () => {
+  const src = (p: string) => readFileSync(join(process.cwd(), p), "utf8");
+
+  it("refuses a roster URL without a grant for that exact class", () => {
+    const page = src("src/app/join/[classId]/page.tsx");
+    expect(page).toContain("readJoinGrant()");
+    expect(page).toContain("granted !== classId");
+  });
+
+  it("verifies the grant in the action rather than trusting the page", () => {
+    // The page renders the buttons; the action is the endpoint.
+    const actions = src("src/app/actions/auth.ts");
+    const start = actions.indexOf("export async function chooseStudent");
+    const body = actions.slice(start);
+    expect(body).toContain("readJoinGrant()");
+    expect(body).toContain("student.class_id !== grantedClassId");
+    expect(body).toContain("classroom.archived_at");
+    // And the grant is spent, not left lying around.
+    expect(body).toContain("clearJoinGrant()");
+  });
+
+  it("does not hand out a grant for an archived class", () => {
+    const actions = src("src/app/actions/auth.ts");
+    const start = actions.indexOf("export async function findClassByCode");
+    const body = actions.slice(start, actions.indexOf("export async function", start + 10));
+    expect(body).toContain("classroom.archived_at");
+    expect(body).toContain("writeJoinGrant");
+  });
+});
+
+describe("what a student may open is a rule, not a rendered card", () => {
+  it("denies a mission the class was never assigned", () => {
+    expect(
+      missionAccessFor({ missionId: "m-1", assignedMissionIds: ["m-2"], hasCompleted: false }),
+    ).toBe("denied");
+  });
+
+  it("allows an assigned mission, and a replay of one already finished", () => {
+    expect(
+      missionAccessFor({ missionId: "m-1", assignedMissionIds: ["m-1"], hasCompleted: false }),
+    ).toBe("assigned");
+    // Withdrawing an assignment must not delete access to completed work.
+    expect(
+      missionAccessFor({ missionId: "m-1", assignedMissionIds: [], hasCompleted: true }),
+    ).toBe("replay");
+  });
+
+  it("keeps both check-ins shut while the school has no window open", () => {
+    for (const form of ["pre", "post"] as const) {
+      expect(canTakeBenchmark({ window: "closed", form, records: [] })).toBe(false);
+    }
+  });
+
+  it("does not open spring because fall is finished", () => {
+    // The whole of the old rule: `nextBenchmarkFor` offered post the moment
+    // pre was completed, with no window state anywhere in the product.
+    const done = [{ form: "pre", completed_at: "2026-01-10" }] as unknown as BenchmarkRecord[];
+    expect(canTakeBenchmark({ window: "pre", form: "post", records: done })).toBe(false);
+    expect(nextBenchmarkFor(done, "pre")).toBeNull();
+    expect(nextBenchmarkFor(done, "post")).toEqual({ form: "post", resuming: false });
+  });
+
+  it("refuses to reopen a form that is already finished", () => {
+    const done = [{ form: "post", completed_at: "2026-05-10" }] as unknown as BenchmarkRecord[];
+    expect(canTakeBenchmark({ window: "post", form: "post", records: done })).toBe(false);
+  });
+
+  it("gates the student pages and every student action on those rules", () => {
+    const src = (p: string) => readFileSync(join(process.cwd(), p), "utf8");
+    expect(src("src/app/student/play/[slug]/page.tsx")).toContain("missionAccessFor");
+    expect(src("src/app/student/checkin/[form]/page.tsx")).toContain("canTakeBenchmark");
+
+    const actions = src("src/app/actions/student.ts");
+    // Both helpers exist and every mutation goes through one of them.
+    expect(actions).toContain("requirePlayableMission");
+    expect(actions).toContain("requireOpenCheckIn");
+    for (const action of ["beginMission", "submitDecision", "finishMission", "replayMission"]) {
+      const start = actions.indexOf(`export async function ${action}`);
+      const body = actions.slice(start, actions.indexOf("export async function", start + 10));
+      expect(body, action).toContain("requirePlayableMission");
+    }
+    for (const action of ["submitCheckInAnswer", "finishCheckIn"]) {
+      const start = actions.indexOf(`export async function ${action}`);
+      const body = actions.slice(start, actions.indexOf("export async function", start + 10) + 1 || undefined);
+      expect(body, action).toContain("requireOpenCheckIn");
+    }
   });
 });

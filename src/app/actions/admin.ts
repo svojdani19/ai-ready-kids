@@ -18,6 +18,7 @@ import {
   getUserByEmail,
   listUsers,
   recordAudit,
+  setBenchmarkWindow,
   setRetentionMonths,
   updateSchoolProfile,
 } from "@/lib/repo/school";
@@ -130,6 +131,41 @@ export async function setRetentionAction(
   });
   revalidatePath("/admin/data");
   return { ok: `Retention set to ${months} months after the school year ends.` };
+}
+
+/**
+ * Open or close a check-in window. An administrator's decision, recorded in the
+ * audit log, because "fall" and "spring" are claims about when something
+ * happened and the product had nothing behind them.
+ */
+export async function setBenchmarkWindowAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const { user } = await requireAdmin();
+  const window = String(formData.get("window") ?? "");
+  if (window !== "closed" && window !== "pre" && window !== "post") {
+    return { error: "Choose closed, fall or spring." };
+  }
+
+  const db = getDb();
+  setBenchmarkWindow(db, user.school_id, window);
+  const label =
+    window === "closed" ? "closed" : window === "pre" ? "the fall window" : "the spring window";
+  recordAudit(db, {
+    schoolId: user.school_id,
+    actorLabel: user.name,
+    action: "benchmark.window",
+    detail: `Check-ins set to ${label}.`,
+  });
+  revalidatePath("/admin/program");
+  revalidatePath("/student");
+  return {
+    ok:
+      window === "closed"
+        ? "Check-ins are closed. No student can start or resume either form."
+        : `Open: students are now offered ${label === "the fall window" ? "the fall" : "the spring"} check-in.`,
+  };
 }
 
 export async function addTeacherAction(

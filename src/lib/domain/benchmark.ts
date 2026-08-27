@@ -150,13 +150,9 @@ export function summariseCohortBenchmark(records: BenchmarkRecord[]): CohortBenc
   };
 }
 
-/** Which check-in a student should be offered next, if any. */
-export function nextBenchmarkFor(
-  records: BenchmarkRecord[],
-): { form: BenchmarkForm; resuming: boolean } | null {
-  const pre = records.find((r) => r.form === "pre");
-  const post = records.find((r) => r.form === "post");
-  if (!pre || !pre.completed_at) return { form: "pre", resuming: Boolean(pre) };
-  if (!post || !post.completed_at) return { form: "post", resuming: Boolean(post) };
-  return null;
-}
+/**
+ * `nextBenchmarkFor` used to live here and offered the spring form the moment
+ * the fall one was completed, with no window state anywhere. It now takes the
+ * school's open window and lives in `@/lib/domain/eligibility` beside the rule
+ * the page loader and the server action both enforce.
+ */

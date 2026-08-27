@@ -3,7 +3,13 @@ import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getDb, row } from "@/lib/db";
-import { decodeSession, encodeSession, type SessionValue } from "./token";
+import {
+  decodeJoinGrant,
+  decodeSession,
+  encodeJoinGrant,
+  encodeSession,
+  type SessionValue,
+} from "./token";
 import { getStudent, getClass } from "@/lib/repo/classroom";
 import { getUser } from "@/lib/repo/school";
 import type { Classroom, Student, User } from "@/lib/types";
@@ -24,6 +30,10 @@ import type { Classroom, Student, User } from "@/lib/types";
 
 const COOKIE = "airk_session";
 const MAX_AGE_SECONDS = 60 * 60 * 12;
+
+/** The join grant cookie, and how long proving a class code stays proved. */
+const JOIN_COOKIE = "airk_join";
+const JOIN_MAX_AGE_SECONDS = 60 * 10;
 
 export type { SessionValue };
 
@@ -58,6 +68,34 @@ export async function writeSession(value: SessionValue): Promise<void> {
 export async function clearSession(): Promise<void> {
   const store = await cookies();
   store.delete(COOKIE);
+}
+
+/** Record that this browser entered the correct code for one class. */
+export async function writeJoinGrant(classId: string): Promise<void> {
+  const store = await cookies();
+  const exp = Math.floor(Date.now() / 1000) + JOIN_MAX_AGE_SECONDS;
+  store.set(JOIN_COOKIE, encodeJoinGrant(signingKey(), { kind: "join", classId, exp }), {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: JOIN_MAX_AGE_SECONDS,
+  });
+}
+
+/** The class this browser proved a code for, or null. */
+export async function readJoinGrant(): Promise<string | null> {
+  const store = await cookies();
+  const grant = decodeJoinGrant(
+    signingKey(),
+    store.get(JOIN_COOKIE)?.value,
+    Math.floor(Date.now() / 1000),
+  );
+  return grant?.classId ?? null;
+}
+
+export async function clearJoinGrant(): Promise<void> {
+  const store = await cookies();
+  store.delete(JOIN_COOKIE);
 }
 
 export interface StaffContext {

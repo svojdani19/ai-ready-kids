@@ -5,7 +5,8 @@ import { requireStudent } from "@/lib/auth/session";
 import { listAssignments } from "@/lib/repo/classroom";
 import { listAttemptsForStudent, listBenchmarksForStudent } from "@/lib/repo/progress";
 import { summariseStudent } from "@/lib/domain/evidence";
-import { nextBenchmarkFor } from "@/lib/domain/benchmark";
+import { nextBenchmarkFor } from "@/lib/domain/eligibility";
+import { getSchool } from "@/lib/repo/school";
 import { COMPETENCIES } from "@/content/competencies";
 import { MISSION_BY_ID, MISSIONS } from "@/content/missions";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
@@ -33,7 +34,9 @@ export default async function StudentHome() {
   const completed = new Set(summary.completedMissionIds);
 
   const benchmarks = listBenchmarksForStudent(db, student.id);
-  const nextCheckIn = nextBenchmarkFor(benchmarks);
+  // The window the school has open, not "whichever one is unfinished".
+  const school = getSchool(db, classroom.school_id);
+  const nextCheckIn = nextBenchmarkFor(benchmarks, school?.benchmark_window ?? "closed");
 
   const assignedMissions = MISSIONS.filter((m) => assignedIds.has(m.id));
   const upNext =

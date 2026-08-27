@@ -40,6 +40,12 @@ CREATE TABLE IF NOT EXISTS schools (
   contact_email     TEXT NOT NULL,
   -- How long completed student records are kept before the annual purge.
   retention_months  INTEGER NOT NULL DEFAULT 12,
+  -- Which check-in window, if any, is open. The product sells a fall and a
+  -- spring benchmark; until sprint 27 nothing anywhere held that state, so a
+  -- child could finish the fall form and start the spring one the same
+  -- minute, and the report would present the difference as a year's change.
+  benchmark_window  TEXT NOT NULL DEFAULT 'closed'
+                    CHECK (benchmark_window IN ('closed', 'pre', 'post')),
   created_at        TEXT NOT NULL
 );
 
