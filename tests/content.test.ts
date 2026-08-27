@@ -1172,6 +1172,90 @@ describe("execution is not verification", () => {
   });
 });
 
+describe("classroom activities do not log children", () => {
+  /**
+   * The product keeps no behavioural telemetry — tests/access-control.test.ts
+   * asserts that at the schema level. A paper tally of which children got stuck
+   * and what they reached for is the same thing with a different storage
+   * medium, and it makes asking for help into something that gets watched.
+   * Written as a sweep because an extension is easy to add and easy to skim.
+   */
+  it("has no activity that records per-child help-seeking over time", () => {
+    for (const mission of MISSIONS) {
+      const activity = mission.guide.extension.toLowerCase();
+      // Noticing something in the moment is fine and is what lookFor is for.
+      // What is banned is accumulating it against individual children.
+      for (const pattern of [
+        /(keep|run|start) (a|an) [^.]{0,30}(tally|log|chart|record|register)/,
+        /each time (a|the) (student|child|they)[^.]{0,40}(mark|record|write down|tick)/,
+        /(record|track|note down) (which|who|how often) (student|child|children|they)/,
+      ]) {
+        expect(activity, `${mission.slug} extension`).not.toMatch(pattern);
+      }
+    }
+  });
+
+  it("says out loud in Four Doors why the tally was dropped", () => {
+    const doors = MISSION_BY_SLUG["four-doors"];
+    const activity = doors.guide.extension.toLowerCase();
+    expect(activity).toMatch(/nothing gets written down/);
+    expect(activity).toMatch(/not better for being on paper/);
+    // And the replacement is anonymous, teacher-authored and low-preparation.
+    expect(activity).toMatch(/same six for the whole class/);
+    expect(activity).toMatch(/show of hands|walking to a corner/);
+  });
+});
+
+describe("the four doors are distinguishable and combinable", () => {
+  const doors = MISSION_BY_SLUG["four-doors"];
+
+  it("names the fourth route precisely, and says tools help at all of them", () => {
+    const opening = doors.scenes.find((s) => s.id === doors.openingSceneId)!;
+    const copy = opening.narration.join(" ").toLowerCase();
+    // "Use a tool" overlapped every other door: a book is a tool, so is a
+    // calculator, so is the software that reads a page aloud.
+    expect(copy).toMatch(/door four: ask an ai tool/);
+    expect(copy).not.toMatch(/door four: use a tool/);
+    expect(copy).toMatch(/the ai tools this school lets us use/);
+    expect(copy).toMatch(/a book is a tool/);
+    expect(copy).toMatch(/where the answer comes from, not about what you are holding/);
+  });
+
+  it("teaches two doors in a row rather than four exclusive kinds", () => {
+    const tree = doors.scenes.find((s) => s.id === "s3")!;
+    const aiChoice = tree.choices!.find((c) => /ask an ai tool/i.test(c.label))!;
+    expect(aiChoice.feedback.body.toLowerCase()).toMatch(/two doors in a row/);
+    expect(aiChoice.feedback.body.toLowerCase()).toMatch(/go and read that yourself/);
+    const wrapUp = doors.scenes.find((s) => s.kind === "ending")!.wrapUp!.join(" ").toLowerCase();
+    expect(wrapUp).toMatch(/doors can go in a row/);
+    expect(wrapUp).toMatch(/a tool can help you at any door/);
+  });
+
+  it("states the learner's situation before scoring the strategy", () => {
+    // Without a stated state, "you already know this one" is an assertion about
+    // the child's arithmetic, and children for whom it is false get marked
+    // below mastery for answering honestly.
+    const first = doors.scenes.find((s) => s.id === "s2")!;
+    expect(first.narration.join(" ").toLowerCase()).toMatch(/worked this one out yesterday/);
+    expect(first.narration.join(" ").toLowerCase()).toMatch(/nearly back/);
+    const think = first.choices!.find((c) => /think it out/i.test(c.label))!;
+    expect(think.feedback.body.toLowerCase()).not.toMatch(/you already know this one/);
+    expect(think.feedback.body.toLowerCase()).not.toMatch(/you can do seven plus eight/);
+  });
+
+  it("makes a hint and an agreed accommodation full-credit answers", () => {
+    const first = doors.scenes.find((s) => s.id === "s2")!;
+    const agreed = first.choices!.find((c) => /agreed with ms\. okafor/i.test(c.label))!;
+    expect(agreed.feedback.tone).toBe("strong");
+    expect(agreed.evidence?.result).toBe("demonstrated");
+    expect(agreed.feedback.body.toLowerCase()).toMatch(/your arrangement, not a shortcut/);
+    // And the teacher is told, plainly, not to make it a public matter.
+    const setup = doors.guide.setup.toLowerCase();
+    expect(setup).toMatch(/an agreed accommodation is not the shortcut this mission is about/);
+    expect(setup).toMatch(/never discuss a particular child's speed/);
+  });
+});
+
 describe("benchmark forms", () => {
   it("has exactly one correct option per item", () => {
     for (const form of Object.values(BENCHMARK_FORMS)) {

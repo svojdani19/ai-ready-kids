@@ -371,12 +371,13 @@ export const fourDoors: Mission = {
   primarySkillId: "own.toolchoice",
   gradeBand: "2-4",
   estimatedMinutes: 9,
-  teaser: "Four problems, four doors. Think it out, look it up, ask a person, or use AI.",
+  teaser: "Four problems, four doors. Think it out, look it up, ask a person, or ask an AI tool.",
   summary:
-    "A deliberate strategy-selection mission. Students face four different problems and choose among thinking, looking it up, asking a person and using an AI tool, learning that each door is right for a different job.",
+    "A deliberate strategy-selection mission. Students face four different problems and choose among thinking, looking it up, asking a person and asking an approved AI tool, learning that each door suits a different job, that the doors can be used in a row, and that a tool of some kind can help at any of them.",
   learningGoals: [
     "Name four different ways to get unstuck",
-    "Match a problem to the kind of help it needs",
+    "Match the help to the situation you are actually in",
+    "Use two doors in a row when one leaves you something to check",
     "Recognise problems where only a person will do",
   ],
   badge: {
@@ -392,8 +393,10 @@ export const fourDoors: Mission = {
       art: "four-doors",
       narration: [
         "Ms. Okafor tapes four paper doors to the front board.",
-        "Door one: THINK IT OUT. Door two: LOOK IT UP. Door three: ASK A PERSON. Door four: USE A TOOL.",
-        "“Every time you get stuck this year,” she says, “you are picking one of these. Today we practise picking on purpose.”",
+        "Door one: THINK IT OUT. Door two: LOOK IT UP. Door three: ASK A PERSON. Door four: ASK AN AI TOOL.",
+        "“Two things first,” she says. “Door four means the AI tools this school lets us use. Not any old one.”",
+        "“And a tool can help you at any of these doors. A book is a tool. So is a calculator, and so is the thing that reads to you. The doors are about where the answer comes from, not about what you are holding.”",
+        "“Every time you get stuck this year, you are picking one of these. Today we practise picking on purpose.”",
       ],
       next: "s2",
     },
@@ -403,6 +406,7 @@ export const fourDoors: Mission = {
       art: "four-doors",
       narration: [
         "First problem, on a card: seven plus eight.",
+        "You worked this one out yesterday, on paper, and got there. Today it is sitting right on the edge of your head, nearly back.",
       ],
       prompt: "Which door?",
       choices: [
@@ -411,22 +415,22 @@ export const fourDoors: Mission = {
           label: "Think it out",
           feedback: {
             tone: "strong",
-            headline: "Right door",
-            body: "You already know this one, or you nearly do. Reaching for a tool here would cost you the fact you were about to remember.",
+            headline: "Right door for where you are today",
+            body: "It is nearly back, so give it four seconds. That is the whole reason this door exists: reaching past a fact that is on its way would stop it arriving.",
           },
           evidence: { skillId: "own.toolchoice", result: "demonstrated" },
           next: "s3",
         },
         {
           id: "c2",
-          label: "Use a tool",
+          label: "Ask for a hint, or use whatever I have agreed with Ms. Okafor",
           feedback: {
-            tone: "rethink",
-            headline: "Save the tool for harder things",
-            body: "You can do seven plus eight. Every time you look up something you nearly know, it gets a little harder to remember next time. Try again.",
+            tone: "strong",
+            headline: "Also right, and it stays right",
+            body: "A hint gets you the last step without handing you the answer. And if you and Ms. Okafor have agreed you use something for number facts, that is your arrangement, not a shortcut, and today does not change it.",
           },
-          next: "s2",
-          retry: true,
+          evidence: { skillId: "own.toolchoice", result: "demonstrated" },
+          next: "s3",
         },
         {
           id: "c3",
@@ -434,10 +438,21 @@ export const fourDoors: Mission = {
           feedback: {
             tone: "partial",
             headline: "A person would just wait for you",
-            body: "Ms. Okafor would smile and say try it, which is a hint that this one is yours. Asking is never a bad thing to do. It is just the long way round for something already in your head.",
+            body: "Ms. Okafor would smile and say try it, which is a hint that this one is yours today. Asking is never a bad thing to do. It is the long way round for something already on its way back.",
           },
           evidence: { skillId: "own.toolchoice", result: "developing" },
           next: "s3",
+        },
+        {
+          id: "c4",
+          label: "Ask an AI tool",
+          feedback: {
+            tone: "rethink",
+            headline: "Good tool, wrong second",
+            body: "The fact was on its way back and asking would have stopped it arriving. That is about this card today, not about what you can do. Try again.",
+          },
+          next: "s2",
+          retry: true,
         },
       ],
     },
@@ -474,11 +489,11 @@ export const fourDoors: Mission = {
         },
         {
           id: "c3",
-          label: "Use a tool",
+          label: "Ask an AI tool",
           feedback: {
             tone: "partial",
             headline: "It would give you a number",
-            body: "An AI tool can give you a number, but a number without a source is hard to check. For plain facts, choose a source that shows who measured it.",
+            body: "A number on its own is hard to check. If it says where it got it, go and read that yourself. Then you have used two doors in a row, which is allowed and often the quickest way there.",
           },
           evidence: { skillId: "own.toolchoice", result: "developing" },
           next: "s4",
@@ -507,7 +522,7 @@ export const fourDoors: Mission = {
         },
         {
           id: "c2",
-          label: "Use a tool",
+          label: "Ask an AI tool",
           feedback: {
             tone: "rethink",
             headline: "It would write you something",
@@ -542,7 +557,7 @@ export const fourDoors: Mission = {
       choices: [
         {
           id: "c1",
-          label: "Use a tool, and ask it what is unclear rather than to rewrite it",
+          label: "Ask an approved AI tool what is unclear, rather than to rewrite it",
           feedback: {
             tone: "strong",
             headline: "The right job for this door",
@@ -564,7 +579,7 @@ export const fourDoors: Mission = {
         },
         {
           id: "c3",
-          label: "Use a tool and let it write a better beginning",
+          label: "Ask an AI tool to write a better beginning",
           feedback: {
             tone: "rethink",
             headline: "Then it is not your report",
@@ -642,20 +657,24 @@ export const fourDoors: Mission = {
         "Think it out for things you nearly know.",
         "Look it up for plain facts, from a source that names who checked.",
         "Ask a person for anything about people.",
-        "Use a tool for feedback, not for replacement.",
+        "Ask an approved AI tool for feedback, not for replacement.",
+        "Doors can go in a row: try, then ask, then check what it told you.",
+        "A tool can help you at any door. A book is a tool too.",
       ],
     },
   ],
   guide: {
     setup:
-      "The strategy-selection mission. Rather than teaching students to avoid AI, it teaches them to route deliberately. The card about the friend who is ignoring them is the item worth watching most closely.",
+      "The strategy-selection mission. Rather than teaching students to avoid AI, it teaches them to route deliberately. The card about the friend who is ignoring them is the item worth watching most closely.\n\nTwo things the opening scene is doing on purpose. The fourth door is named ASK AN AI TOOL rather than USE A TOOL, because the old label overlapped everything else: looking something up uses a tool, a calculator is a tool, a book is a tool, and so is the software that reads a page aloud. Overlapping labels turn this into a vocabulary quiz. The doors are about where an answer comes from. And the doors are not exclusive — asking a tool that names a source and then going to read that source is two doors in a row, which the tree card now says out loud.\n\nThe first card is about matching help to a stated situation, not about arithmetic. The story says the child worked seven plus eight out yesterday and it is nearly back today, and that is what makes thinking it out the right move — not an assumption about what a second grader knows. Asking for a hint is equally full credit, and so is using whatever a child has agreed with you. Say that out loud before you start: an agreed accommodation is not the shortcut this mission is about, it is somebody's arrangement, and it does not stop being right because the class is doing a lesson on choosing. Never discuss a particular child's speed, or what support they use, in front of the room.",
     lookFor: [
       "Students who route every problem to the same door",
+      "Students who read the first card as a test of whether they know seven plus eight",
       "Students who send a social problem to a tool",
       "Students who can distinguish feedback from replacement in the writing item",
     ],
     questions: [
       "Which door do you reach for first, without thinking?",
+      "When would you use two doors in a row?",
       "Why can a tool not help with the friend who is ignoring you?",
       "What is the difference between asking for feedback and asking for a rewrite?",
       "Can you think of a problem for each of the four doors from this week?",
@@ -667,21 +686,26 @@ export const fourDoors: Mission = {
           "Push back. Blanket avoidance is not the goal and does not survive contact with the world. Route deliberately instead.",
       },
       {
-        student: "Looking it up and using a tool are the same thing.",
+        student: "Looking it up and asking an AI tool are the same thing.",
         response:
-          "Anchor on checkability. A look-it-up source lets the student see who measured or published the fact. If a tool names a source, follow it and check that source before using the answer.",
+          "Anchor on checkability rather than on the object. A look-it-up source lets the student see who measured or published the fact; an AI answer usually does not, unless it says where it got it. If it does, that is the moment to walk through the second door and read the source, which is the sequence the tree card teaches.",
+      },
+      {
+        student: "I use a calculator for number facts, so I always pick door four.",
+        response:
+          "Separate an agreed arrangement from a choice made in the moment. A calculator a child uses by agreement is not the AI door and is not what this mission is weighing up. Say so plainly and generally, to the room, and never in a way that identifies whose arrangement it is.",
       },
     ],
     extension:
-      "Keep a door tally for a week. Each time a student gets stuck they mark which door they used. Review the pattern together on Friday.",
+      "Write six short situations yourself — the same six for the whole class — and read them out one at a time. The class votes on the door with a show of hands, or by walking to a corner of the room. Spend the time arguing about the ones that split, because those are the interesting cards. Nothing gets written down and nobody's own week comes into it. Do not run this as a tally of who got stuck and what they reached for: a record of which children need help, how often, and what kind is precisely what this product does not keep, and it is not better for being on paper. It also turns asking for help into something that gets watched, which is the opposite of what the mission wants.",
   },
   family: {
     summary:
-      "We practised choosing between four ways of getting unstuck: think it out, look it up, ask a person, and use a tool. Each one is right for a different kind of problem.",
+      "We practised choosing between four ways of getting unstuck: think it out, look it up, ask a person, and ask an AI tool the school allows. Each suits a different kind of problem, they can be used one after another, and a tool of some kind can help at any of them.",
     questions: [
       "What are the four doors? Can you remember all of them?",
       "Which door is right for a problem about a friend?",
-      "Which door do you reach for first without thinking?",
+      "When would you use two doors, one after the other?",
     ],
     tryAtHome:
       "Next time anybody in the house gets stuck on something, say the four doors out loud and pick one on purpose.",

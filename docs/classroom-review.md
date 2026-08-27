@@ -146,6 +146,17 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       learning the language, disabled children and children with less at home
       all lose on that kind of test, and never because they did anything wrong.
       Prefer a question every person is asked the same way.
+- [ ] **No activity accumulates a record of children.** Read every extension
+      as a thing a teacher will actually run for a week. A tally of who got
+      stuck, how often, and what they reached for is behavioural tracking, and
+      paper does not make it something else. Noticing in the moment is fine;
+      keeping a register is not. Prefer anonymous, teacher-authored sorts and
+      votes where nothing is written down.
+- [ ] **A category the child must pick from means one thing.** Overlapping
+      labels turn a decision routine into a vocabulary test — if a book, a
+      calculator and an AI system are all "a tool", the choice is not about
+      strategy any more. Name the route precisely, say what can be used at all
+      of them, and say whether they can be combined in sequence.
 - [ ] **Every child can give the full-credit answer.** Read the strong choices
       and ask who cannot honestly pick one. A child in foster care, an unstable
       home, or a household where an adult is the problem must not be recorded
