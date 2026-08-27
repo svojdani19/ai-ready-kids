@@ -7,10 +7,10 @@ likely to be.
 
 ---
 
-## Sprint 33 — P0: the upgrade destroyed the data it was upgrading
+## Sprint 34 — P0 follow-up: the schema gate
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-27-sprint-33.md`](2026-08-27-sprint-33.md)
+- **Full review:** [`2026-08-27-sprint-34.md`](2026-08-27-sprint-34.md)
 - **Review trail:** sprints 01–16 in this directory. Sprint 09 tripled the
   curriculum to 27 missions. Sprint 10 fixed two mechanism defects found in it.
   Sprints 11 to 15 fixed content defects in ten of them, two per sprint.
@@ -21,70 +21,70 @@ likely to be.
   are the second pass over the reporting layer, sprint 24 the assessment layer.
   sprint 25 the educator orientation. Every body of authored content has been
   read once. Sprints 26-30 audit what the product permits and promises, 31-32
-  walk ordinary school workflows. **Sprint 33 is a P0 fix for a defect sprint 32
-  created: it added four required columns with no migration, so an existing
-  database failed on first use and the README said to delete it.**
+  walk ordinary school workflows. Sprint 33 added the migration path sprint 32
+  needed. **Sprint 34 fixes the gate in front of it: sprint 33 could not tell an
+  existing unversioned database from a brand-new file, which is exactly what the
+  old `db:reset` produced.**
 
 ### What changed
 
-1. **Sprint 32 added four columns and nothing migrated them.** `openDatabase`
-   ran `CREATE TABLE IF NOT EXISTS` — which creates missing tables and does
-   nothing about missing columns — then wrote `schema_version = 1`
-   **unconditionally, without ever reading it**. An existing database claimed to
-   be current and failed on the first query touching a new column. The README
-   said to delete `data/airk.db`: every roster, attempt, skill record, badge and
-   check-in, and a direct contradiction of the retention story on the privacy
-   page.
-2. **There is a migration path now.** `src/lib/db/migrations.ts` holds an
-   ordered list. The opener **reads** the stored version first, stamps a
-   brand-new file at the latest version so nothing migrates a current schema,
-   and runs each pending migration **in its own transaction with the version row
-   written inside it** — so a failure rolls the columns and the version back
-   together and stops. Idempotent by construction.
-3. **`db:reset` preserves `schema_version`.** It had been deleting it, harmless
-   only while the opener rewrote the version regardless; with real migrations
-   that would make the next open mistake an old database for a new one. The
-   README now says reset is demo data and not an upgrade path.
-4. **The backfill records nothing, deliberately.** Nothing in the old schema
-   says when a school year ended, and `school_year` is a label, not a date. The
-   renewal date is available and is exactly the wrong answer — sprint 32 existed
-   to stop it being used for this. Guessing early deletes a child's records
-   before the school's window elapsed; guessing late holds them past the policy.
-   So the migration carries the **year label** forward and leaves every date
-   empty, and **retention treats empty as blocked, not due**: null due date,
-   never eligible, purge skips it. An administrator supplies the real dates on
-   Program & plan, which backfills that year's cohorts.
+1. **`storedVersion` returned `null` for two different states.** No `meta`
+   table, meaning a new file — and `meta` present with no `schema_version` row.
+   **The pre-sprint-33 `db:reset` produced the second**: it ran `DELETE FROM meta
+   WHERE key <> 'session_key'`, so a database reset with it holds every table
+   and every row and no recorded version. Sprint 33 read that as new, applied
+   `CREATE TABLE IF NOT EXISTS` (no columns), stamped version 2, and returned a
+   database that claimed to be current and failed on the first sprint-32 column.
+   A second route reaches the same state: a **sprint 32** database had the v2
+   shape while `SCHEMA_VERSION` still said `"1"`, so a reset in that window left
+   a v2 file with no version either.
+2. **`classifySchema` inspects `sqlite_master` and the actual columns before the
+   schema is applied**, returning `empty`, `versioned`, `unversioned` or
+   `unrecognised`. Recognition is positive rather than by elimination: v1
+   requires `schools.benchmark_window` **and** the absence of the sprint-32
+   columns; v2 requires all four of them. A `versioned` result also validates
+   that the claimed version matches the shape present.
+3. **An `unversioned` database is assigned the version its shape actually has**
+   and migrated forward like any other.
+4. **Everything else fails closed.** The file is untouched, the handle closed,
+   and the error names what was found and what to do — take a copy first since
+   it is one file, run the newer build rather than downgrading, otherwise
+   restore a backup or reset if it is demo data. Refusing to open leaves the
+   data where it is; stamping leaves something that claims to be fine and is not.
 
 ### Already verified — please do not redo
 
-- `npm run verify` green: typecheck, lint, **448 tests**, Turbopack build.
-- New `tests/migration.test.ts` built on `tests/fixtures/v1-schema.sql` — the
-  **literal** pre-sprint-32 schema extracted from the commit before it, so the
-  test cannot drift into asserting the current shape. The fixture holds one of
-  everything, linked, and is opened through the ordinary `openDatabase` path.
-- Covered: columns added and version advanced; **every record and link survives**
-  including `path_json` and `evidence_json`; the year label carried forward with
-  dates empty and `year_ends_on !== term_renews_on`; retention blocked with the
-  purge deleting nothing in 2099; re-running a no-op; **a forced failure rolling
-  back with the version still 1 and the column gone**; a fresh database stamped
-  without migrating; a demo reset keeping the version.
-- Outside the suite: a hand-built v1 database opened through
-  `openSeededDatabase` came up at version 2 with data intact, and the running
-  app showed "Not set — Nothing is deleted until you do" and backfilled four
-  classes when the dates were supplied.
+- `npm run verify` green: typecheck, lint, **456 tests**, Turbopack build.
+- The fixture builder now takes the version to write, and **`null` reproduces
+  the old reset state** — complete v1 data, `session_key` retained exactly as
+  that command left it, no `schema_version`.
+- Covered: that state classified as `{ unversioned, version: 1 }` by its shape
+  and migrated with every record intact and **a query on a new column working**;
+  a sprint-32-shaped database with the version deleted recognised as version 2;
+  an empty file still stamped latest; a partial schema refused; malformed
+  versions refused rather than coerced (`two`, `2.5`, `-1`, `" "`, `0`, `2abc`);
+  a version above `LATEST_VERSION` refused with newer-build guidance; and a
+  database claiming version 2 with version 1 columns refused **with the file
+  checked afterwards to confirm nothing was written on the way out**.
+- The conservative retention backfill and every student and privacy constraint
+  are unchanged.
+- Outside the suite: the old reset state built by hand and opened through
+  `openDatabase` came up at version 2 with the session key, roster and evidence
+  intact; a malformed file produced the refusal and was left alone.
 
 ### Where this is most likely still wrong
 
-- **A version that is stamped rather than checked is worse than none.**
-  `schema_version` existed the whole time and was written without ever being
-  read, which is what let an out-of-date database claim to be current.
-- **Every test builds its database from the current schema**, so none of them
-  had ever seen an old one. That is sprint 32's blind spot one layer down: that
-  sprint asked "is this correct the second time" about the calendar; this asks
-  it about the schema. Any future schema change needs a migration *and* a test
-  starting from the previous shape.
-- **No down-migrations.** Forward only; a rollback means restoring the file,
-  which is why the README says to back it up.
+- **A sentinel answering two questions is how this happened.** `null` meant both
+  "absent" and "nothing there". Sprint 33 correctly replaced an unconditional
+  write with a read, then implemented the read as a function that could not tell
+  two states apart — and the state it missed was described in that sprint's own
+  review text while its test inserted `'1'` every time.
+- **Only one previous shape is recognised**, the v1 fixture. Anything older
+  fails closed, which is correct — this build has no evidence about those files
+  — but there is no upgrade path from before it.
+- **No down-migrations.** Forward only; a rollback means restoring the file.
+- **Every other test still builds its database from the current schema.** Only
+  `tests/migration.test.ts` starts from an older shape.
 - **Rollover is one school at a time**, and bulk reassignment does not exist.
 - **The route and action inventory is still not complete.**
 - **`enterDemo("student")` writes a student session directly**, and

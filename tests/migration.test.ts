@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { openDatabase, row, rows } from "@/lib/db";
-import { LATEST_VERSION, MIGRATIONS } from "@/lib/db/migrations";
+import { classifySchema, LATEST_VERSION, MIGRATIONS } from "@/lib/db/migrations";
 import { resetDatabase } from "@/lib/db/reset";
 import { retentionRows, purgeDateForClass } from "@/lib/domain/retention";
 import { runScheduledPurge } from "@/lib/domain/purge";
@@ -32,14 +32,27 @@ afterEach(() => {
   for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
-/** A version-1 database holding one of everything, linked together. */
-function makeLegacyDatabase(): string {
+/**
+ * A version-1 database holding one of everything, linked together.
+ *
+ * `version` is what goes in the `meta` row. Passing `null` reproduces the state
+ * the **pre-sprint-33 `db:reset`** left behind: it deleted every meta row
+ * except `session_key`, so a complete v1 database could exist with no recorded
+ * version at all. Sprint 33's opener read that as a brand-new file.
+ */
+function makeLegacyDatabase(version: string | null = "1"): string {
   const dir = mkdtempSync(join(tmpdir(), "airk-migrate-"));
   dirs.push(dir);
   const path = join(dir, "legacy.db");
   const db = new DatabaseSync(path);
   db.exec(V1_SQL);
-  db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', '1')").run();
+  if (version !== null) {
+    db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', ?)").run(
+      version,
+    );
+  }
+  // The old reset kept this row, so the fixture does too.
+  db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES ('session_key', 'abc123')").run();
 
   db.prepare(
     `INSERT INTO schools (id, name, slug, district, city, state, monogram, plan,
@@ -268,4 +281,168 @@ describe("upgrading a version 1 database", () => {
     db.close();
   });
 
+});
+
+describe("an existing database with no recorded version", () => {
+  /**
+   * The exact state the pre-sprint-33 `db:reset` produced: it opened a v1
+   * database and then deleted every `meta` row except `session_key`. Sprint 33
+   * read the absent version as "brand-new file", applied `CREATE TABLE IF NOT
+   * EXISTS` — which adds no columns — stamped version 2, and handed back a
+   * database that claimed to be current and failed on the first query touching
+   * a new column. Its own upgrade test always inserted version 1, so it never
+   * saw this.
+   */
+  it("is recognised as version 1 by its shape, not assumed to be new", () => {
+    const path = makeLegacyDatabase(null);
+    const raw = new DatabaseSync(path);
+    // Precondition: complete v1 data, no version row.
+    expect(
+      raw.prepare("SELECT value FROM meta WHERE key = 'schema_version'").get(),
+    ).toBeUndefined();
+    expect(row<{ n: number }>(raw.prepare("SELECT COUNT(*) AS n FROM students").get())!.n).toBe(1);
+    expect(classifySchema(raw)).toEqual({ kind: "unversioned", version: 1 });
+    raw.close();
+
+    const db = openDatabase(path);
+    const version = row<{ value: string }>(
+      db.prepare("SELECT value FROM meta WHERE key = 'schema_version'").get(),
+    );
+    expect(Number(version!.value)).toBe(LATEST_VERSION);
+    db.close();
+  });
+
+  it("migrates it and keeps every record", () => {
+    const path = makeLegacyDatabase(null);
+    const db = openDatabase(path);
+
+    // The columns actually arrived this time.
+    const classCols = (
+      db.prepare("PRAGMA table_info(classes)").all() as { name: string }[]
+    ).map((c) => c.name);
+    expect(classCols).toContain("year_ends_on");
+
+    // And a query touching a new column works, which is the thing that failed.
+    expect(listClasses(db, "sch_old")[0].year_ends_on).toBe("");
+    expect(getPrimarySchool(db).academic_year).toBe("2025-2026");
+
+    expect(listStudents(db, "cls_old")[0].display_name).toBe("Sam R.");
+    const attempt = row<{ evidence_json: string }>(
+      db.prepare("SELECT * FROM attempts WHERE id = 'att_old'").get(),
+    )!;
+    expect(JSON.parse(attempt.evidence_json)).toEqual({ "privacy.identity": "demonstrated" });
+    for (const [table, id] of [
+      ["assignments", "asg_old"],
+      ["benchmarks", "bmk_old"],
+      ["certifications", "crt_old"],
+      ["audit_log", "aud_old"],
+    ] as const) {
+      expect(rows(db.prepare(`SELECT id FROM ${table} WHERE id = ?`).all(id)), table).toHaveLength(
+        1,
+      );
+    }
+    // Retention is still blocked, unchanged by this fix.
+    expect(purgeDateForClass(listClasses(db, "sch_old")[0], 12)).toBeNull();
+    db.close();
+  });
+
+  it("recognises an unversioned database that is already current", () => {
+    // The other way the old reset produced this: a sprint 32 database, which
+    // had the v2 shape while `SCHEMA_VERSION` still said "1", reset before
+    // sprint 33 landed.
+    const dir = mkdtempSync(join(tmpdir(), "airk-v2-unversioned-"));
+    dirs.push(dir);
+    const path = join(dir, "v2.db");
+    const seeded = openDatabase(path);
+    seeded.prepare("DELETE FROM meta WHERE key = 'schema_version'").run();
+    expect(classifySchema(seeded)).toEqual({ kind: "unversioned", version: 2 });
+    seeded.close();
+
+    const db = openDatabase(path);
+    const version = row<{ value: string }>(
+      db.prepare("SELECT value FROM meta WHERE key = 'schema_version'").get(),
+    );
+    expect(Number(version!.value)).toBe(2);
+    db.close();
+  });
+});
+
+describe("anything unrecognised fails closed", () => {
+  /**
+   * Stamping a version onto a file whose contents nobody has established is
+   * how sprint 33's defect worked. Refusing to open is the safe direction: the
+   * data is still there and a person can look at it.
+   */
+  function fileWith(sql: string, name: string): string {
+    const dir = mkdtempSync(join(tmpdir(), "airk-odd-"));
+    dirs.push(dir);
+    const path = join(dir, name);
+    const db = new DatabaseSync(path);
+    db.exec(sql);
+    db.close();
+    return path;
+  }
+
+  it("opens a genuinely empty file and stamps it current", () => {
+    const dir = mkdtempSync(join(tmpdir(), "airk-empty-"));
+    dirs.push(dir);
+    const path = join(dir, "empty.db");
+    // Touch it into existence with no tables at all.
+    new DatabaseSync(path).close();
+
+    const raw = new DatabaseSync(path);
+    expect(classifySchema(raw)).toEqual({ kind: "empty" });
+    raw.close();
+
+    const db = openDatabase(path);
+    expect(
+      Number(
+        row<{ value: string }>(
+          db.prepare("SELECT value FROM meta WHERE key = 'schema_version'").get(),
+        )!.value,
+      ),
+    ).toBe(LATEST_VERSION);
+    db.close();
+  });
+
+  it("refuses a partial schema it does not recognise", () => {
+    const path = fileWith(
+      `CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+       CREATE TABLE schools (id TEXT PRIMARY KEY, name TEXT NOT NULL);`,
+      "partial.db",
+    );
+    expect(() => openDatabase(path)).toThrow(/missing .*users/i);
+    expect(() => openDatabase(path)).toThrow(/Nothing has been changed/);
+  });
+
+  it("refuses a malformed version rather than coercing it", () => {
+    for (const bad of ["two", "2.5", "-1", " ", "0", "2abc"]) {
+      const path = makeLegacyDatabase(bad);
+      expect(() => openDatabase(path), bad).toThrow(/Refusing to open/);
+    }
+  });
+
+  it("refuses a database from a newer build instead of downgrading it", () => {
+    const path = makeLegacyDatabase(String(LATEST_VERSION + 1));
+    expect(() => openDatabase(path)).toThrow(/newer version of this software/);
+    // And it says what to do about it.
+    expect(() => openDatabase(path)).toThrow(/Take a copy of the file/);
+  });
+
+  it("refuses a version whose claimed shape is not the shape present", () => {
+    // Says version 2, has version 1 columns.
+    const path = makeLegacyDatabase("2");
+    expect(() => openDatabase(path)).toThrow(/do not have that shape/);
+    // Nothing was written on the way out.
+    const raw = new DatabaseSync(path);
+    expect(
+      row<{ value: string }>(
+        raw.prepare("SELECT value FROM meta WHERE key = 'schema_version'").get(),
+      )!.value,
+    ).toBe("2");
+    expect(
+      (raw.prepare("PRAGMA table_info(schools)").all() as { name: string }[]).map((c) => c.name),
+    ).not.toContain("academic_year");
+    raw.close();
+  });
 });

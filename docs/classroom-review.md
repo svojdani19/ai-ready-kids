@@ -266,6 +266,15 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       and from a coached recovery, and the page cannot tell them apart — so
       "you worked these out after a Try again" told a child who chose
       thoughtfully that they had needed correcting.
+- [ ] **A sentinel answers one question, not two.** `null` meaning both
+      "absent" and "nothing there" is how sprint 34's defect worked: an
+      existing database with no version row read identically to a brand-new
+      file. Where a value has to distinguish more than two situations, give it
+      a type that can, and let the compiler insist every case is handled.
+- [ ] **Unrecognised state fails closed.** Refusing to open a file leaves the
+      data where it is and lets a person look at it. Guessing, stamping, or
+      half-applying leaves something that claims to be fine and is not. Say
+      what was found and what to do about it, starting with taking a copy.
 - [ ] **A schema change ships with a migration.** `CREATE TABLE IF NOT EXISTS`
       creates missing tables and does nothing about missing columns, so a new
       column without a migration is an existing database that stops working.

@@ -2,28 +2,13 @@ import { DatabaseSync } from "node:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { SCHEMA_SQL } from "./schema";
-import { LATEST_VERSION, MIGRATIONS } from "./migrations";
+import { classifySchema, LATEST_VERSION, MIGRATIONS } from "./migrations";
 import { seedIfEmpty } from "./seed";
-import { row, type Db } from "./helpers";
+import type { Db } from "./helpers";
 
 export * from "./helpers";
 
 export const DEFAULT_DB_PATH = resolve(process.cwd(), "data", "airk.db");
-
-/** The version recorded in an existing database, or null if there is none. */
-function storedVersion(db: Db): number | null {
-  try {
-    const found = row<{ value: string }>(
-      db.prepare("SELECT value FROM meta WHERE key = 'schema_version'").get(),
-    );
-    if (!found) return null;
-    const parsed = Number(found.value);
-    return Number.isFinite(parsed) ? parsed : null;
-  } catch {
-    // No meta table yet: a brand-new file.
-    return null;
-  }
-}
 
 function stampVersion(db: Db, version: number): void {
   db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)").run(
@@ -78,17 +63,34 @@ export function openDatabase(path: string): Db {
   }
   const db = new DatabaseSync(path);
 
-  // Read before writing anything, or there is no way to tell a new file from
-  // an old one. The previous code stamped the version unconditionally, which
-  // is why an out-of-date database claimed to be current.
-  const existing = storedVersion(db);
+  // Classify before touching anything. An absent version row is not evidence
+  // of a new file — the pre-sprint-33 reset deleted it from databases that were
+  // otherwise complete — so the shape is inspected rather than inferred, and
+  // anything unrecognised stops here rather than being stamped.
+  const state = classifySchema(db);
+  if (state.kind === "unrecognised") {
+    db.close();
+    throw new Error(
+      `Refusing to open ${path}: ${state.reason}. Nothing has been changed. ` +
+        "Take a copy of the file before doing anything else — it is a single file and a copy is a complete backup. " +
+        "If it was written by a newer version of this software, run that version instead of downgrading. " +
+        "Otherwise restore the most recent backup, or start a fresh database with `npm run db:reset` if the contents are demo data you do not need.",
+    );
+  }
+
   db.exec(SCHEMA_SQL);
 
-  if (existing === null) {
+  if (state.kind === "empty") {
+    // Nothing was there, so the schema just applied is already current.
     stampVersion(db, LATEST_VERSION);
-  } else if (existing < LATEST_VERSION) {
-    migrate(db, existing);
+    return db;
   }
+
+  // A recognised-but-unstamped database gets the version its shape actually
+  // has, and is then migrated forward like any other.
+  const from = state.version;
+  if (state.kind === "unversioned") stampVersion(db, from);
+  if (from < LATEST_VERSION) migrate(db, from);
   return db;
 }
 
