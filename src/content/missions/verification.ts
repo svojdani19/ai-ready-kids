@@ -94,8 +94,8 @@ export const theVerySureAnswer: Mission = {
           label: "Probably. It is a computer, and computers do not make mistakes.",
           feedback: {
             tone: "rethink",
-            headline: "Calculators do not. This is different.",
-            body: "A calculator follows exact rules. A tool like AskMe guesses which words usually come next. Guessing well is not the same as knowing. Try again.",
+            headline: "A calculator does exactly the sum you type",
+            body: "Which is not the same as being right. Type the wrong sum and it hands you a perfect answer to the wrong question. AskMe is different again: it puts likely words together, and nothing here shows it checked anything. Try again.",
           },
           next: "s3",
           retry: true,
@@ -162,16 +162,17 @@ export const theVerySureAnswer: Mission = {
       art: "library",
       narration: [
         "Mr. Ruiz is in the library with a whole shelf of animal books, and there is a science site the school subscribes to.",
+        "He says the useful question is not which one looks best. It is which one would have had to get it right.",
       ],
       prompt: "What would actually settle this?",
       choices: [
         {
           id: "c1",
-          label: "Look it up in a book about fish and see who wrote it",
+          label: "The school's science site, because it says where the page came from",
           feedback: {
             tone: "strong",
-            headline: "You went and got evidence",
-            body: "The book has an author, and the author is a person who studied fish. It turns out goldfish remember things for months. Nia's three seconds was a myth all along.",
+            headline: "You found somebody answerable for it",
+            body: "The page names the aquarium that keeps the fish and the study they did. Goldfish remember things for months, and the three seconds was a myth all along. You could go back and find the same page tomorrow.",
           },
           evidence: { skillId: "verify.source", result: "demonstrated" },
           next: "s7",
@@ -189,6 +190,17 @@ export const theVerySureAnswer: Mission = {
         },
         {
           id: "c3",
+          label: "Look it up in a book about fish and see who wrote it",
+          feedback: {
+            tone: "partial",
+            headline: "Halfway. Now find out who they are.",
+            body: "A name on a cover says somebody wrote it, not that they study fish or that they checked this bit. Turn to the back: this one says where the author works and lists where the facts came from. That is the part that counts.",
+          },
+          evidence: { skillId: "verify.source", result: "developing" },
+          next: "s7",
+        },
+        {
+          id: "c4",
           label: "Write down the answer you like better and move on",
           feedback: {
             tone: "rethink",
@@ -276,20 +288,28 @@ export const theVerySureAnswer: Mission = {
       "The core misconception this mission attacks is that fluent, well-formatted output signals accuracy. The same tool contradicts itself in front of the student, which does more work than any explanation.",
     lookFor: [
       "Students treating confident phrasing or the word researchers as evidence",
-      "Students who assume a computer cannot be wrong because a calculator is not",
+      "Students who assume a computer cannot be wrong because a calculator does what it is told",
+      "Students who treat a named author as evidence, without asking who the author is",
       "Students who resolve a contradiction by preference rather than by evidence",
     ],
     questions: [
       "AskMe gave two different answers. How sure did each one sound?",
       "It said researchers confirmed it. What was missing?",
       "What is the difference between a calculator and a tool like AskMe?",
+      "A calculator gave the right answer to the wrong sum. Whose mistake was that?",
+      "The book had an author's name on it. What else would you want to know?",
       "What would it take to make you believe a fact about goldfish?",
     ],
     misconceptions: [
       {
         student: "Computers do not make mistakes.",
         response:
-          "Draw the distinction explicitly: a calculator applies rules, a language tool predicts likely words. Both are computers; only one is checking anything.",
+          "Draw the distinction, and then draw the second one, because the first is not enough on its own. A calculator does exactly the arithmetic it is handed, which is a different thing from answering the question correctly: wrong sum, wrong units, wrong assumption, and it returns a flawless wrong answer. A language tool is different again — it assembles likely words, and nothing in what it hands you shows a check having happened. Neither of them checks whether the child asked the right thing.",
+      },
+      {
+        student: "It is in a book, so it is true.",
+        response:
+          "A name on a cover means somebody wrote it, and nothing more. Ask two follow-ups every time: who is this person in relation to this subject, and where did they say they got it? A book that answers both is worth more than three that answer neither, and one that answers neither is in the same position as the app.",
       },
       {
         student: "It said it was confirmed, so somebody checked.",
@@ -302,11 +322,11 @@ export const theVerySureAnswer: Mission = {
   },
   family: {
     summary:
-      "We learned that a confident AI answer can still be wrong. Your child watched the same tool give two different answers to the same question, then went and checked a book.",
+      "We learned that a confident AI answer can still be wrong. Your child watched the same tool give two different answers to the same question, then went and found a source that says where its information came from.",
     questions: [
       "How can you tell if something on a screen is true?",
       "If a computer sounds really sure, does that mean it is right?",
-      "Where could you look to check a fact about animals?",
+      "Who would have had to get that right, and where would they have written it down?",
     ],
     tryAtHome:
       "Pick a fact your family is not sure about and find one source that names the person or organisation responsible for the information.",

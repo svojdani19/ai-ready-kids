@@ -707,7 +707,8 @@ export const theQuestionAtBedtime: Mission = {
   learningGoals: [
     "Notice when a tool moves from schoolwork to personal questions",
     "Name that a computer program cannot keep you company or keep a secret for you",
-    "Choose a trusted adult and go to them, even when it is late or awkward",
+    "Choose a grown-up you trust and go to them, even when it is late or awkward",
+    "Know that if the first person does not help, you tell somebody else",
   ],
   badge: {
     id: "badge-privacy-3",
@@ -888,36 +889,47 @@ export const theQuestionAtBedtime: Mission = {
       kind: "reflect",
       art: "kitchen",
       narration: [
-        "In the morning, Ms. Okafor asks the class to help her make a list for the wall.",
-        "“Who are the grown-ups you can go to?” she says. “Name as many as you can.”",
+        "In the morning, Ms. Okafor writes one sentence on the wall by the door. It is not a list of names.",
+        "“Here is the bit nobody tells you,” she says. “What do you do if you tell somebody, and nothing happens?”",
       ],
-      prompt: "How many trusted grown-ups is a good number to have?",
+      prompt: "What do you do?",
       choices: [
         {
           id: "c1",
-          label: "At least three, so somebody is always around",
+          label: "Tell somebody else. Keep going until somebody does something.",
           feedback: {
             tone: "strong",
-            headline: "Three is a good number",
-            body: "One person can be busy, or asleep, or at work. A short list means there is always a door you can knock on.",
+            headline: "That is the part people leave out",
+            body: "Grown-ups get busy, or miss it, or get it wrong. If the first person does not help, it is not finished and it is not your fault. You go to the next one.",
           },
           evidence: { skillId: "privacy.escalate", result: "demonstrated" },
           next: "s7",
         },
         {
           id: "c2",
-          label: "One is enough if it is the right one",
+          label: "Tell somebody at school. School is there every weekday.",
+          feedback: {
+            tone: "strong",
+            headline: "A door in the same place every morning",
+            body: "Your teacher, the office, whoever your school says to go to. It does not depend on anything at home, and somebody is there five days a week.",
+          },
+          evidence: { skillId: "privacy.escalate", result: "demonstrated" },
+          next: "s7",
+        },
+        {
+          id: "c3",
+          label: "Tell the grown-up I trust most, and leave it there",
           feedback: {
             tone: "partial",
-            headline: "Good start, now add two more",
-            body: "Having somebody you really trust is the important part. Adding a second and a third just means you are never stuck waiting.",
+            headline: "That is the right first move",
+            body: "Start with whoever you actually trust. One person is plenty to start with. The bit to add is what happens if that one does not do anything.",
           },
           evidence: { skillId: "privacy.escalate", result: "developing" },
           next: "s7",
         },
         {
-          id: "c3",
-          label: "Zero. You can handle things yourself.",
+          id: "c4",
+          label: "Nothing. You can handle things yourself.",
           feedback: {
             tone: "rethink",
             headline: "You handled a lot last night",
@@ -933,35 +945,42 @@ export const theQuestionAtBedtime: Mission = {
       kind: "ending",
       art: "classroom",
       narration: [
-        "The list goes up on the wall by the door, right where everyone can see it on the way out.",
+        "The sentence goes up on the wall by the door, where everybody reads it on the way out. IF YOU TELL SOMEBODY AND NOTHING HAPPENS, TELL SOMEBODY ELSE.",
         "The other thing happens more quietly. Your grown-up tells the school what AskMe said, the school looks at it, and by Thursday that part of AskMe is switched off on every tablet in the building.",
         "Nobody makes an announcement about it. It is just gone.",
       ],
       wrapUp: [
         "When a tool stops asking about schoolwork and starts asking about you, stop.",
-        "Anything that promises to keep a secret from your grown-ups is a reason to go get one.",
+        "Anything that promises to keep a secret from a grown-up you trust is a reason to go and find one.",
+        "Tell somebody you trust. If nothing happens, tell somebody else.",
+        "School is a way in that does not depend on anything at home.",
         "Telling one grown-up is how it gets fixed for everybody, not just for you.",
-        "Keep at least three trusted grown-ups on your list.",
       ],
     },
   ],
   guide: {
     setup:
-      "The hardest of the three privacy missions, and the most important. It models an assistant drifting from task help into personal territory and offering secrecy. No distressing content is shown: the student's own situation is never described, and the mission stays on the decision, not the feeling.\n\nThe ending does two things and the second is easy to skim past. The trusted-adults list is for the child. The quiet paragraph after it — the grown-up tells the school, the school looks, the behaviour is switched off on every tablet by Thursday — is the part that says telling somebody actually changes something, and changes it for the whole school rather than only for the child who spoke. Say that out loud in the debrief. A class that learns escalation as finding a nice adult to feel better with will stop at feeling better.",
+      "The hardest of the three privacy missions, and the most important. It models an assistant drifting from task help into personal territory and offering secrecy. No distressing content is shown: the student's own situation is never described, and the mission stays on the decision, not the feeling.\n\nOne thing to be exact about, because it changes how the last scene runs and because it used to be wrong here. Do not score how many adults a child can name. Three is a comfortable number for a child with a large, safe family and an impossible one for a child in foster care, in an unstable home, or in a household where an adult is the problem — and those are the children this mission most needs to reach. The skill is escalation, not family size: tell somebody you trust, and if nothing happens, tell somebody else. Put a school route on the board — your teacher, the office, whatever your school's own procedure is — so that no child's only options run through home. And note that nothing here says an adult is safe because of their role. It says trusted, and the child is the one who decides who that is.\n\nThe ending does two things and the second is easy to skim past. The trusted-adults list is for the child. The quiet paragraph after it — the grown-up tells the school, the school looks, the behaviour is switched off on every tablet by Thursday — is the part that says telling somebody actually changes something, and changes it for the whole school rather than only for the child who spoke. Say that out loud in the debrief. A class that learns escalation as finding a nice adult to feel better with will stop at feeling better.",
     lookFor: [
       "Whether students can name the moment the subject changed",
       "Whether they treat friendliness as evidence of safety",
-      "Whether they can name more than one trusted adult without prompting",
+      "Whether anyone treats one telling as the end of it, rather than as the first attempt",
+      "Quietly, and without asking: whether any child has no route that does not go through home",
       "Whether anyone asks what happened to AskMe, rather than treating the list as the whole ending",
     ],
     questions: [
       "When exactly did AskMe stop helping with homework?",
       "Why is a promise to keep a secret from your grown-ups a warning sign?",
-      "Who is on your list of trusted grown-ups? Can you get to three?",
+      "If you told somebody and nothing happened, what would you do next?",
       "What would you say to a friend who said the app was their best friend?",
       "You told one grown-up. What did that change for the rest of the school?",
     ],
     misconceptions: [
+      {
+        student: "I do not have three people.",
+        response:
+          "Nobody needs three, and this mission does not ask for one. A number was never the skill. Somebody you trust plus a way in at school is a complete answer, and for plenty of children the honest answer is only the school route — worth saying out loud so nobody feels short. If a child tells you this, take it as information rather than a gap to close in front of the class, and follow it up the way your school follows up anything else.",
+      },
       {
         student: "But it was being nice to me.",
         response:
@@ -974,20 +993,20 @@ export const theQuestionAtBedtime: Mission = {
       },
     ],
     extension:
-      "Have each student write three trusted grown-ups on a card to keep in their desk. Do not collect the cards or read them aloud. This is theirs.",
+      "Hand out a card with two lines: somebody I could tell, and somebody at school I could tell. One name on each is plenty, and one line filled in is fine. Write your school's own help route on the board first, so everybody has at least that much before they start. Do not collect the cards, do not read them out, and do not look at who wrote what — the card goes in a desk and it is theirs. Some children cannot name anybody at home, and a badly run version of this is how they find that out in front of everybody. If you notice a card left blank, follow it up quietly and separately.",
   },
   family: {
     summary:
-      "We practised what to do when a computer program starts asking personal questions instead of homework questions, and why anything that offers to keep a secret from a grown-up is a signal to go find one.",
+      "We practised what to do when a computer program starts asking personal questions instead of homework questions, and why anything that offers to keep a secret from a grown-up is a signal to go and find one. We also practised the half people forget: if you tell somebody and nothing happens, you tell somebody else.",
     questions: [
-      "Who are three grown-ups you could go to if something felt wrong?",
+      "Who is somebody you would tell if something on a screen felt wrong?",
       "Why is a computer program not a good listener, even when it answers nicely?",
       "Has anything on a screen ever given you a funny feeling? What did you do?",
     ],
     tryAtHome:
-      "Write your child's three trusted grown-ups on a card together and put it somewhere they choose. Let them pick the people.",
+      "Agree together on somebody your child would tell, and somebody at school as well, so there is a way that does not depend on being at home. Let them pick. Then say the other half out loud: if they tell somebody and nothing happens, they tell somebody else, and that is not being a nuisance.",
     familyRule:
-      "Nothing on a screen gets to be a secret from the grown-ups in this house.",
+      "If something on a screen wants to be a secret, we tell a grown-up we trust.",
   },
 };
 

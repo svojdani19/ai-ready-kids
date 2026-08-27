@@ -7,82 +7,82 @@ likely to be.
 
 ---
 
-## Sprint 19 — a scene that could not be true on every path
+## Sprint 20 — a mission that scored a child's family
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-27-sprint-19.md`](2026-08-27-sprint-19.md)
+- **Full review:** [`2026-08-27-sprint-20.md`](2026-08-27-sprint-20.md)
 - **Review trail:** sprints 01–16 in this directory. Sprint 09 tripled the
   curriculum to 27 missions. Sprint 10 fixed two mechanism defects found in it.
   Sprints 11 to 15 fixed content defects in ten of them, two per sprint.
   Sprint 16 read the remaining eight; all eighteen have been read and seventeen
   had findings. Sprint 17 closed the eight legacy forced-award scenes as a rule
-  in `validateMission`. **Sprints 18 and 19 work through the original nine: six
-  read now, six with findings, three to go.**
+  in `validateMission`. **Sprints 18 to 20 work through the original nine: eight
+  read now, eight with findings, one to go.**
 
 ### What changed
 
-1. **"The Homework That Did Itself" awarded honesty for a false report.** Its
-   one strong disclosure was *"Sprocket gave me a hint on number two and I did
-   the rest"* — but scene four also offered, at full credit, *keep number two's
-   answer and redo the other five*. On that path no hint existed; the tool
-   supplied the answer and the child kept it, and the mission recorded
-   `own.honesty` demonstrated for calling it a hint. Walking the graph, only one
-   of four combinations reaching that scene made its sentence true. **Scene four
-   now branches**: clearing the page routes to the shared report, keeping the
-   answer routes to its own. Keeping is `partial` — allowed, and less of the
-   practice. On the kept-answer report the accurate sentence earns mastery and
-   the old strong line is the partial: *"hint is the wrong word... calling it a
-   hint makes the help sound smaller than it was."* Neither strong option in the
-   shared report says "hint" at all. The offered example is now stated to be
-   unworked, which is what makes the report honest.
-2. **"The Spelling Test Surprise" put spelling in the hand.** The story says the
-   child handwrote every word five times, and the mission then explained the
-   failure as *"my hand never learned it"*, planned that *"the words go in when
-   your hand writes them"*, and had the family sheet require *"the practice has
-   to happen in their handwriting"*. The story contradicts its own explanation,
-   and the explanation is false in a way that lands worst on children who type,
-   dictate, use assistive technology or have dysgraphia. What was missing was
-   **recall** — producing the letters without the answer in view. The strong
-   answer is now *"I copied every word. I never once wrote one without looking"*,
-   the plan is cover-then-attempt-then-check in **any** modality ("out loud,
-   typed, on a whiteboard, with letter tiles, whatever you and your grown-up
-   have agreed"), and "messy is the evidence" became "every crossing-out is a
-   word you tried before you knew".
+1. **"The Very Sure Answer" swapped one authority shortcut for two.** Its retry
+   for "computers do not make mistakes" was headlined *"Calculators do not"* —
+   telling a seven-year-old one kind of computer is infallible, which is the
+   same confidence error rewrapped. And its full-credit fact-check said *"the
+   book has an author, and the author is a person who studied fish"*, which does
+   not follow from a name on a cover. Execution is now separated from
+   verification: **"A calculator does exactly the sum you type"**, and type the
+   wrong sum and it hands you a perfect answer to the wrong question. Mastery
+   now comes from a source answerable for the claim — the science site that
+   names the aquarium and the study — and the book is `partial`: *"a name on a
+   cover says somebody wrote it, not that they study fish or that they checked
+   this bit."*
+2. **"The Question at Bedtime" scored a child's family.** Its reflection asked
+   *how many trusted grown-ups is a good number*, awarding `demonstrated` for
+   **at least three** and `developing` for one genuinely trusted adult; the
+   wrap-up, extension and family sheet all required three. Three names guarantee
+   nothing about availability — and worse, that measured family size and called
+   it a skill. A child in foster care, an unstable home, or a household where an
+   adult is the problem answered honestly, scored lowest, and was then asked to
+   write the shortfall on a card at their desk. The family rule compounded it:
+   *"nothing on a screen gets to be a secret from the grown-ups in this house"*
+   is unsafe wherever a caregiver is the harm. **The count is gone.** The scene
+   now asks *"What do you do if you tell somebody, and nothing happens?"*, with
+   full credit for **tell somebody else, keep going until somebody does
+   something** and **tell somebody at school — it does not depend on anything at
+   home**. One trusted person is `partial`, the right first move. The card is
+   two lines, one filled in is fine, nothing collected or read out, school route
+   on the board first.
 
 ### Already verified — please do not redo
 
-- `npm run verify` green: typecheck, lint, **315 tests**, Turbopack build.
-- Six new guards, plus four phrases added to the brittle-absolutes ban list:
-  `my hand never learned it`, `when your hand writes them`, `in their
-  handwriting`, `messy is the evidence`.
-- The path guard asserts that the clearing choices share a `next` and the
-  keeping choice does not, that no strong option in the shared report contains
-  "hint", and that calling a kept answer a hint is `partial` wherever it appears.
-- All guards from sprints 10 to 18 unchanged and still passing.
-- Both missions checked in the browser at the teacher preview, including the new
-  branch and its two reporting scenes.
+- `npm run verify` green: typecheck, lint, **321 tests**, Turbopack build.
+- The quota guard is a **sweep across every mission**: no choice recording
+  `demonstrated` may use quota wording about trusted adults, and no scene prompt
+  may ask a child how many they have.
+- Four phrases added to the brittle-absolutes ban list: `calculators do not`,
+  `the author is a person who studied`, `at least three trusted`,
+  `so somebody is always around`.
+- All guards from sprints 10 to 19 unchanged and still passing.
+- Both missions checked in the browser at the teacher preview.
 
 ### Where this is most likely still wrong
 
-- **Three of the original nine still have no systematic read.** Six read, six
+- **One of the original nine still has no systematic read.** Eight read, eight
   with findings. Nothing in the legacy set has come back clean.
-- **Shared scenes are the unswept surface.** Sprint 19's finding needed two
-  scenes held together — an action in one, a sentence in the next — and the
-  mission reads as correct anywhere you stop. `validateMission` walks the graph
-  for reachability and evidence rules; it cannot check that a disclosure is
-  *true* on the paths reaching it, and nothing can short of tracing branches by
-  hand. Every mission with a shared reporting or reflection scene is worth this
-  treatment; none of the other twenty-six has had it.
-- **Inclusion defects are now four in five sprints** — familiar-adult
-  exoneration, peer profiling, practice-makes-recall, and spelling-lives-in-the-
-  hand. All four were written warmly and none was visible from the sentence
-  alone. Each needed the question *who does this fail?*
+- **Nothing checks what a wrong answer costs a child.** The evidence model is
+  well tested for integrity — no forced awards, no coached mastery — and not at
+  all for whether the honest answer is available to every child. Sprint 20's
+  defect worked *through* that model: a child in foster care answered truthfully,
+  was recorded at `developing`, and it flowed to a teacher dashboard as a
+  competency gap. The pipeline was doing exactly what it was built to do. The
+  only place to catch that is the content, by reading the strong choices and
+  asking who cannot pick one.
+- **Inclusion defects are five in six sprints.** All five read plausibly as
+  sentences and fail the moment you ask which child they fail.
+- **Sweeps need to be narrow enough to mean one thing.** The quota guard took
+  three attempts: `at least three` is legitimate in The Science Fair Fact about
+  counting sources, `twenty-three people` matched `three people`, and `putting
+  two adults in touch` matched as a quota.
+- **Shared scenes remain unswept.** Sprint 19's path defect could exist in any
+  of the twenty-six missions that have not been traced branch by branch.
 - **Teacher-facing copy promises timelines it cannot support.**
-- **Seven shapes to hunt:** a correct choice resting on a reason that will not
-  hold; an ending that acts out the error; a state never made observable; anyone
-  treated as safe because of who they are; a check that runs through a person;
-  escalation that ends at telling somebody; and a verdict wider than what was
-  actually checked.
 - **No general guard against factual error exists or can.**
 - **Stickiness keeps aggregate demonstration rates near 95%.**
 - **The student "getting the hang of" list is untested with children.**

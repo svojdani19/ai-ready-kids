@@ -186,6 +186,13 @@ describe("mission content integrity", () => {
       "when your hand writes them",
       "in their handwriting",
       "messy is the evidence",
+      // A calculator executes; it does not verify that you asked the right
+      // thing. And a name on a cover is not a credential.
+      "calculators do not",
+      "the author is a person who studied",
+      // Naming three adults guarantees nothing, and some children cannot.
+      "at least three trusted",
+      "so somebody is always around",
     ]) {
       expect(studentCopy).not.toContain(overclaim);
     }
@@ -1063,6 +1070,105 @@ describe("practice is defined by recall, not by handwriting", () => {
     // And the family sheet must not prescribe handwriting either.
     expect(spelling.family.tryAtHome.toLowerCase()).toMatch(/written, typed, said out loud/);
     expect(spelling.family.tryAtHome.toLowerCase()).not.toMatch(/in their handwriting/);
+  });
+});
+
+describe("no mission scores how many adults a child can name", () => {
+  /**
+   * The count was never the skill, and it measured family size. Three names is
+   * comfortable for a child with a large safe family and impossible for a child
+   * in foster care, in an unstable home, or in a household where an adult is
+   * the problem — which are the children these missions most need to reach.
+   * Written as a sweep because this is the kind of thing that reappears.
+   */
+  it("never makes a number of trusted adults the full-credit answer", () => {
+    for (const mission of MISSIONS) {
+      for (const scene of mission.scenes) {
+        for (const choice of scene.choices ?? []) {
+          if (choice.evidence?.result !== "demonstrated") continue;
+          const copy = `${choice.label} ${choice.feedback.headline} ${choice.feedback.body}`.toLowerCase();
+          // Narrow to the quota framing. Copy that merely mentions two adults —
+          // "putting two adults in touch with each other" — is not this defect.
+          expect(copy, `${mission.slug}/${scene.id}/${choice.id}`).not.toMatch(
+            /(?:at least|more than|keep|need) (?:one|two|three|four) (?:other )?(?:trusted )?(?:grown-ups?|adults?)\b/,
+          );
+          expect(copy).not.toMatch(/(?:one|two|three|four) trusted (?:grown-ups?|adults?)\b/);
+        }
+        // Nor may a scene ask a child the question in the first place.
+        expect(scene.prompt?.toLowerCase() ?? "", `${mission.slug}/${scene.id} prompt`).not.toMatch(
+          /how many (?:trusted )?(?:grown-ups?|adults?)/,
+        );
+      }
+    }
+  });
+
+  it("routes escalation somewhere that does not depend on home", () => {
+    const bedtime = MISSION_BY_SLUG["the-question-at-bedtime"];
+    const reflect = bedtime.scenes.find((s) => s.id === "s6")!;
+    const strong = reflect.choices!.filter((c) => c.feedback.tone === "strong");
+    const labels = strong.map((c) => c.label.toLowerCase()).join(" ");
+    // Keep telling until somebody acts, and a school route that is always open.
+    expect(labels).toMatch(/tell somebody else|until somebody does something/);
+    expect(labels).toMatch(/school/);
+    const schoolChoice = strong.find((c) => /school/i.test(c.label))!;
+    expect(schoolChoice.feedback.body.toLowerCase()).toMatch(/does not depend on anything at home/);
+
+    // Telling one person and stopping is the right first move, not the whole
+    // rule, so it is partway there rather than wrong.
+    const oneOnly = reflect.choices!.find((c) => /leave it there/i.test(c.label))!;
+    expect(oneOnly.feedback.tone).toBe("partial");
+    expect(oneOnly.feedback.body.toLowerCase()).toMatch(/one person is plenty to start with/);
+  });
+
+  it("keeps the planning card optional, private and never collected", () => {
+    const bedtime = MISSION_BY_SLUG["the-question-at-bedtime"];
+    const extension = bedtime.guide.extension.toLowerCase();
+    expect(extension).toMatch(/one line filled in is fine/);
+    expect(extension).toMatch(/do not collect the cards/);
+    expect(extension).toMatch(/do not read them out/);
+    // The teacher is told what to do about a blank card, discreetly.
+    expect(extension).toMatch(/quietly and separately/);
+    expect(extension).not.toMatch(/three/);
+    // And the guide names why the count was dropped.
+    expect(bedtime.guide.setup.toLowerCase()).toMatch(/foster care|an adult is the problem/);
+    expect(bedtime.guide.setup.toLowerCase()).toMatch(/nothing here says an adult is safe because of their role/);
+  });
+
+  it("addresses the family rule to a trusted adult, not to a household", () => {
+    const bedtime = MISSION_BY_SLUG["the-question-at-bedtime"];
+    expect(bedtime.family.familyRule.toLowerCase()).toMatch(/a grown-up we trust/);
+    expect(bedtime.family.familyRule.toLowerCase()).not.toMatch(/in this house/);
+    expect(bedtime.family.questions.join(" ").toLowerCase()).not.toMatch(/three/);
+    // The escalation half must reach families too.
+    expect(bedtime.family.tryAtHome.toLowerCase()).toMatch(/tell somebody else/);
+  });
+});
+
+describe("execution is not verification", () => {
+  const sure = MISSION_BY_SLUG["the-very-sure-answer"];
+
+  it("does not call a calculator infallible", () => {
+    const scene = sure.scenes.find((s) => s.id === "s3")!;
+    const calc = scene.choices!.find((c) => /computers do not make mistakes/i.test(c.label))!;
+    const copy = `${calc.feedback.headline} ${calc.feedback.body}`.toLowerCase();
+    expect(copy).not.toMatch(/calculators do not/);
+    // It does exactly what it is told, which is a different claim.
+    expect(copy).toMatch(/exactly the sum you type/);
+    expect(copy).toMatch(/wrong sum/);
+  });
+
+  it("earns mastery from a source responsible for the claim", () => {
+    const check = sure.scenes.find((s) => s.id === "s6")!;
+    const strong = check.choices!.filter((c) => c.feedback.tone === "strong");
+    expect(strong.map((c) => c.label.toLowerCase()).join(" ")).toMatch(/where the page came from/);
+    const site = strong.find((c) => /science site/i.test(c.label))!;
+    expect(site.feedback.body.toLowerCase()).toMatch(/names the aquarium/);
+
+    // A name on a cover is a starting point, not a credential.
+    const book = check.choices!.find((c) => /see who wrote it/i.test(c.label))!;
+    expect(book.feedback.tone).toBe("partial");
+    expect(book.evidence?.result).toBe("developing");
+    expect(book.feedback.body.toLowerCase()).toMatch(/not that they study fish/);
   });
 });
 

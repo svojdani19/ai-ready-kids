@@ -146,6 +146,14 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       learning the language, disabled children and children with less at home
       all lose on that kind of test, and never because they did anything wrong.
       Prefer a question every person is asked the same way.
+- [ ] **Every child can give the full-credit answer.** Read the strong choices
+      and ask who cannot honestly pick one. A child in foster care, an unstable
+      home, or a household where an adult is the problem must not be recorded
+      at `developing` for answering truthfully. This matters more here than in
+      ordinary content, because the evidence model reports it: a scored answer
+      a child cannot give turns their circumstances into what a dashboard shows
+      as a skill gap. Never score the size of a child's support network, and
+      always leave a route that does not run through home.
 - [ ] **Nobody is exonerated by category.** Check every place the content
       implies a person is safe, honest or in the clear because of who they are
       — a familiar adult, a teacher, a friend, a parent. Warmth in a mission
