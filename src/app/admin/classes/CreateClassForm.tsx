@@ -20,7 +20,13 @@ export function CreateClassForm({
 
   return (
     <form action={formAction} className="grid gap-4 sm:grid-cols-4" noValidate>
-      <input type="hidden" name="schoolYear" value={schoolYear} />
+      {/* Shown, not hidden. The year the class lands in is the thing most
+          likely to be wrong in August, and it used to be invisible — and
+          ignored, since the action now takes it from the school record. */}
+      <p className="sm:col-span-4 text-sm text-ink-soft">
+        New classes join the current school year, <strong>{schoolYear}</strong>. Roll the
+        school over on the Program &amp; plan page when the year changes.
+      </p>
       <div className="sm:col-span-2">
         <Field label="Class name" htmlFor="name" hint="What the room is called, like Room 7." error={state.error}>
           <input id="name" name="name" required maxLength={40} className={inputClass} placeholder="Room 7" />

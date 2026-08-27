@@ -3,9 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/session";
+import { previewRollover } from "@/lib/domain/rollover";
 import {
   archiveClass,
   deleteClass,
+  listClasses,
   getClass,
   listStudents,
   reassignClass,
@@ -19,6 +21,8 @@ import {
   getUserByEmail,
   listUsers,
   recordAudit,
+  getSchool,
+  setAcademicYear,
   setBenchmarkWindow,
   setRetentionMonths,
   updateSchoolProfile,
@@ -233,6 +237,45 @@ export async function reassignClassAction(
   revalidatePath("/admin/classes");
   revalidatePath("/admin/staff");
   return {};
+}
+
+/**
+ * Roll the school into its next academic year.
+ *
+ * Archives the current year's classes, moves the academic dates on by a year,
+ * and closes any open check-in window. It deliberately does not touch
+ * subscription dates, and it cannot move an existing class's deletion date,
+ * because every class carries the year-end it was created with.
+ */
+export async function rolloverYearAction(): Promise<ActionState> {
+  const { user } = await requireAdmin();
+  const db = getDb();
+  const school = getSchool(db, user.school_id);
+  if (!school) return { error: "That school could not be found." };
+
+  const preview = previewRollover(school, listClasses(db, user.school_id, true));
+  if ("error" in preview) return { error: preview.error };
+
+  for (const c of preview.toArchive) archiveClass(db, c.id);
+  setAcademicYear(db, user.school_id, {
+    year: preview.toYear,
+    startsOn: preview.startsOn,
+    endsOn: preview.endsOn,
+  });
+  setBenchmarkWindow(db, user.school_id, "closed");
+
+  recordAudit(db, {
+    schoolId: user.school_id,
+    actorLabel: user.name,
+    action: "year.rolled",
+    detail: `${preview.fromYear} rolled into ${preview.toYear}. ${preview.toArchive.length} class${preview.toArchive.length === 1 ? "" : "es"} archived, check-ins closed, and no existing deletion date moved.`,
+  });
+  revalidatePath("/admin/program");
+  revalidatePath("/admin/classes");
+  revalidatePath("/admin/data");
+  return {
+    ok: `${preview.toYear} is now the current year. ${preview.toArchive.length} class${preview.toArchive.length === 1 ? " was" : "es were"} archived and check-ins are closed.`,
+  };
 }
 
 export async function removeStaffAction(userId: string): Promise<{ error?: string }> {

@@ -146,6 +146,7 @@ describe("school scoping", () => {
       name: "Room 99",
       grade: 3,
       schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-12",
     });
 
     // The guard every staff action performs: compare the class's school to
@@ -455,6 +456,7 @@ describe("deleting a child is scoped to the class that authorised it", () => {
       name,
       grade: 3,
       schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-12",
     }).id;
   }
 
@@ -507,7 +509,7 @@ describe("a class is owned by a teacher at the same school", () => {
   });
   afterAll(() => cleanup2());
 
-  const base = { name: "Owned", grade: 3, schoolYear: "2025-2026" };
+  const base = { name: "Owned", grade: 3, schoolYear: "2025-2026", yearEndsOn: "2026-06-12" };
 
   it("creates a class for a teacher at this school", () => {
     const created = createClass(db2, { ...base, schoolId: DEMO_SCHOOL, teacherId: DEMO_TEACHER });

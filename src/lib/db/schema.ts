@@ -34,8 +34,15 @@ CREATE TABLE IF NOT EXISTS schools (
   brand_accent      TEXT NOT NULL DEFAULT 'pine',
   plan              TEXT NOT NULL DEFAULT 'school',
   licensed_students INTEGER NOT NULL DEFAULT 0,
+  -- Subscription dates. When money changes hands, and nothing else.
   term_starts_on    TEXT NOT NULL,
   term_renews_on    TEXT NOT NULL,
+  -- Academic dates, which are a different thing and were being conflated with
+  -- the ones above until sprint 32. Retention is "months after the school year
+  -- ends", and the school year does not end when the invoice renews.
+  academic_year     TEXT NOT NULL DEFAULT '2025-2026',
+  year_starts_on    TEXT NOT NULL DEFAULT '2025-08-25',
+  year_ends_on      TEXT NOT NULL DEFAULT '2026-06-12',
   contact_name      TEXT NOT NULL,
   contact_email     TEXT NOT NULL,
   -- How long completed student records are kept before the annual purge.
@@ -67,6 +74,11 @@ CREATE TABLE IF NOT EXISTS classes (
   grade       INTEGER NOT NULL CHECK (grade BETWEEN 2 AND 4),
   join_code   TEXT NOT NULL UNIQUE,
   school_year TEXT NOT NULL,
+  -- The end date of the year this cohort belonged to, snapshotted at creation.
+  -- Retention is calculated from this and never from the school's current
+  -- dates, so rolling over cannot move an old cohort's deletion date and a new
+  -- cohort cannot inherit an old term's.
+  year_ends_on TEXT NOT NULL DEFAULT '2026-06-12',
   created_at  TEXT NOT NULL,
   archived_at TEXT
 );

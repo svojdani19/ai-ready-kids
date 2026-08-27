@@ -21,6 +21,7 @@ import { Meter } from "@/components/ui/Meter";
 import { AssignToggle } from "@/components/staff/AssignToggle";
 import { AddStudentForm } from "@/components/staff/AddStudentForm";
 import { RemoveStudentButton } from "@/components/staff/RemoveStudentButton";
+import { RenameStudentForm } from "@/components/staff/RenameStudentForm";
 
 export const metadata: Metadata = { title: "Class" };
 
@@ -297,11 +298,18 @@ export default async function ClassPage({
                           </span>
                         </td>
                         <td className="px-5 py-2.5 text-right">
-                          <RemoveStudentButton
-                            classId={classroom.id}
-                            studentId={student.id}
-                            displayName={student.display_name}
-                          />
+                          <div className="flex flex-wrap items-center justify-end gap-2">
+                            <RenameStudentForm
+                              classId={classroom.id}
+                              studentId={student.id}
+                              displayName={student.display_name}
+                            />
+                            <RemoveStudentButton
+                              classId={classroom.id}
+                              studentId={student.id}
+                              displayName={student.display_name}
+                            />
+                          </div>
                         </td>
                       </tr>
                     );

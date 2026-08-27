@@ -56,9 +56,13 @@ export default async function AdminData() {
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat label="Student records" value={totalStudents} hint="Display name and avatar only" />
-        <Stat label="Retention window" value={`${school.retention_months} months`} hint="After the school year ends" />
         <Stat
-          label="Deletion due"
+          label="Retention window"
+          value={`${school.retention_months} months`}
+          hint={`After a cohort's own school year ends. This year's ends ${formatDate(school.year_ends_on)}.`}
+        />
+        <Stat
+          label="This year due"
           value={formatDate(purgeDateFor(school))}
           hint={eligible.length ? `${eligible.length} classes eligible now` : "Nothing eligible yet"}
           tone={eligible.length ? "berry" : "neutral"}

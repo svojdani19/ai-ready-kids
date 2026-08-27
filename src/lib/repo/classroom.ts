@@ -120,7 +120,15 @@ export function rotateJoinCode(db: Db, classId: string): string | undefined {
  */
 export function createClass(
   db: Db,
-  input: { schoolId: string; teacherId: string; name: string; grade: number; schoolYear: string },
+  input: {
+    schoolId: string;
+    teacherId: string;
+    name: string;
+    grade: number;
+    schoolYear: string;
+    /** This cohort's year-end date. Snapshotted; retention counts from it. */
+    yearEndsOn: string;
+  },
 ): Classroom {
   const owner = row<{ role: string; school_id: string }>(
     db.prepare("SELECT role, school_id FROM users WHERE id = ?").get(input.teacherId),
@@ -130,8 +138,8 @@ export function createClass(
   }
   const id = newId("cls");
   db.prepare(
-    `INSERT INTO classes (id, school_id, teacher_id, name, grade, join_code, school_year, created_at, archived_at)
-     VALUES (?,?,?,?,?,?,?,?,NULL)`,
+    `INSERT INTO classes (id, school_id, teacher_id, name, grade, join_code, school_year, year_ends_on, created_at, archived_at)
+     VALUES (?,?,?,?,?,?,?,?,?,NULL)`,
   ).run(
     id,
     input.schoolId,
@@ -140,6 +148,7 @@ export function createClass(
     input.grade,
     generateJoinCode(db),
     input.schoolYear,
+    input.yearEndsOn,
     nowIso(),
   );
   return getClass(db, id)!;
@@ -248,6 +257,22 @@ export function createStudent(
  * Returns whether a row was actually removed, so the caller can refuse to
  * write a success audit for a deletion that did not happen.
  */
+/**
+ * Change a display name, scoped by class. Only that column moves: the id the
+ * attempts, check-ins, badges and session all hang off is untouched.
+ */
+export function renameStudent(
+  db: Db,
+  id: string,
+  classId: string,
+  displayName: string,
+): boolean {
+  const result = db
+    .prepare("UPDATE students SET display_name = ? WHERE id = ? AND class_id = ?")
+    .run(displayName, id, classId);
+  return Number(result.changes) > 0;
+}
+
 export function deleteStudentFromClass(db: Db, id: string, classId: string): boolean {
   const result = db
     .prepare("DELETE FROM students WHERE id = ? AND class_id = ?")

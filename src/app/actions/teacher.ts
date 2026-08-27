@@ -14,9 +14,10 @@ import {
   deleteStudentFromClass,
   getClass,
   listStudents,
+  renameStudent,
   unassignMission,
 } from "@/lib/repo/classroom";
-import { getUser, recordAudit } from "@/lib/repo/school";
+import { getSchool, getUser, recordAudit } from "@/lib/repo/school";
 import {
   completeCertification,
   getCertification,
@@ -73,12 +74,18 @@ export async function createClassAction(
     return { error: "Choose a teacher at this school to own the class." };
   }
 
+  // The academic year comes from the school, not from a hidden form field with
+  // a hard-coded fallback. On the day this was written that fallback meant
+  // every new class was still being created in 2025-2026.
+  const school = getSchool(db, user.school_id);
+  if (!school) return { error: "That school could not be found." };
   const created = createClass(db, {
     schoolId: user.school_id,
     teacherId: owner.id,
     name,
     grade,
-    schoolYear: String(formData.get("schoolYear") ?? "2025-2026"),
+    schoolYear: school.academic_year,
+    yearEndsOn: school.year_ends_on,
   });
   recordAudit(db, {
     schoolId: user.school_id,
@@ -91,6 +98,24 @@ export async function createClassAction(
   return { ok: `${created.name} created. The class code is ${created.join_code}.` };
 }
 
+/**
+ * The one place a roster name is checked, so adding and renaming cannot drift
+ * apart. Data minimisation is enforced here, not just documented: a roster
+ * entry that looks like a full surname is refused with an explanation.
+ */
+function validateDisplayName(displayName: string): string | undefined {
+  if (displayName.length < 2) {
+    return "Enter a first name and a last initial, like Sam R.";
+  }
+  if (displayName.length > 24) {
+    return "Keep it short: a first name and a last initial.";
+  }
+  if (/\b[A-Za-z]{2,}\s+[A-Za-z]{3,}\b/.test(displayName)) {
+    return "Use a first name and a last initial only, like Sam R. This product never stores a student's full name.";
+  }
+  return undefined;
+}
+
 export async function addStudentAction(
   _prev: ActionState,
   formData: FormData,
@@ -98,20 +123,8 @@ export async function addStudentAction(
   const classId = String(formData.get("classId") ?? "");
   const displayName = String(formData.get("displayName") ?? "").trim();
 
-  if (displayName.length < 2) {
-    return { error: "Enter a first name and a last initial, like Sam R." };
-  }
-  if (displayName.length > 24) {
-    return { error: "Keep it short: a first name and a last initial." };
-  }
-  // Data minimisation is enforced here, not just documented. A roster entry
-  // that looks like a full surname is refused with an explanation.
-  if (/\b[A-Za-z]{2,}\s+[A-Za-z]{3,}\b/.test(displayName)) {
-    return {
-      error:
-        "Use a first name and a last initial only, like Sam R. This product never stores a student's full name.",
-    };
-  }
+  const invalid = validateDisplayName(displayName);
+  if (invalid) return { error: invalid };
 
   const { db, user, classroom } = await requireOwnClass(classId);
   const existing = listStudents(db, classId);
@@ -128,6 +141,58 @@ export async function addStudentAction(
   });
   revalidatePath(`/teacher/class/${classId}`);
   return { ok: `${displayName} added to ${classroom.name}.` };
+}
+
+/**
+ * Fix a name without touching anything else.
+ *
+ * The roster offered Add and Remove and nothing between them, so a typo, a
+ * preferred name, or two children needing clearer initials left a teacher
+ * choosing between a wrong name on a shared screen all year and deleting the
+ * child — losing every attempt, check-in and badge — then re-adding a blank
+ * record. For a seven-year-old, seeing the wrong name in front of the class is
+ * both common and needlessly personal.
+ *
+ * Only `display_name` moves. The student id, avatar, attempts, check-ins,
+ * badges and any live session are all keyed on the id and survive untouched.
+ */
+export async function renameStudentAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const classId = String(formData.get("classId") ?? "");
+  const studentId = String(formData.get("studentId") ?? "");
+  const displayName = String(formData.get("displayName") ?? "").trim();
+
+  const invalid = validateDisplayName(displayName);
+  if (invalid) return { error: invalid };
+
+  const { db, user, classroom } = await requireOwnClass(classId);
+  const students = listStudents(db, classId);
+  const target = students.find((s) => s.id === studentId);
+  // Same shape as the delete: authorising the class is not authorising the
+  // child, so the student has to be on this roster.
+  if (!target) return { error: "That student is not on this class's roster." };
+
+  if (target.display_name === displayName) return { ok: "That is already the name." };
+  if (
+    students.some(
+      (s) => s.id !== studentId && s.display_name.toLowerCase() === displayName.toLowerCase(),
+    )
+  ) {
+    return { error: `${displayName} is already on this roster.` };
+  }
+
+  renameStudent(db, studentId, classroom.id, displayName);
+  recordAudit(db, {
+    schoolId: user.school_id,
+    actorLabel: user.name,
+    // No child's name in a school-wide log, before or after.
+    action: "roster.renamed",
+    detail: `A student's display name was corrected in ${classroom.name}. No records changed.`,
+  });
+  revalidatePath(`/teacher/class/${classId}`);
+  return { ok: "Name updated. Everything they have done is still there." };
 }
 
 export async function removeStudentAction(classId: string, studentId: string): Promise<void> {

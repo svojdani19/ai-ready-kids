@@ -20,6 +20,11 @@ export interface School {
   contact_name: string;
   contact_email: string;
   retention_months: number;
+  /** The academic year label, e.g. "2025-2026". Not the subscription term. */
+  academic_year: string;
+  year_starts_on: string;
+  /** When the school year ends. Retention counts from here. */
+  year_ends_on: string;
   /** 'closed' | 'pre' | 'post' — which check-in window is open, if any. */
   benchmark_window: BenchmarkWindow;
   created_at: string;
@@ -43,6 +48,8 @@ export interface Classroom {
   grade: number;
   join_code: string;
   school_year: string;
+  /** This cohort's year-end date, snapshotted when the class was created. */
+  year_ends_on: string;
   created_at: string;
   archived_at: string | null;
 }

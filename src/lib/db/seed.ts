@@ -19,8 +19,14 @@ import type { Db } from "./helpers";
 
 const SCHOOL_ID = "sch_brightwood";
 const SCHOOL_YEAR = "2025-2026";
+// Subscription dates: when money changes hands.
 const TERM_START = "2025-08-18";
 const TERM_RENEWS = "2026-09-01";
+// Academic dates: when the children arrive and go home. Deliberately different
+// from the two above, because conflating them was the sprint 32 defect and a
+// seed where they coincided would hide it.
+const YEAR_STARTS = "2025-08-25";
+const YEAR_ENDS = "2026-06-12";
 
 /** Small deterministic PRNG so the demo looks identical on every machine. */
 function makeRng(seed: number) {
@@ -276,9 +282,10 @@ export function seedIfEmpty(db: Db): boolean {
 export function seed(db: Db): void {
   const insertSchool = db.prepare(`
     INSERT INTO schools (id, name, slug, district, city, state, monogram, brand_accent,
-      plan, licensed_students, term_starts_on, term_renews_on, contact_name,
+      plan, licensed_students, term_starts_on, term_renews_on, academic_year,
+      year_starts_on, year_ends_on, contact_name,
       contact_email, retention_months, created_at)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `);
   insertSchool.run(
     SCHOOL_ID,
@@ -293,6 +300,9 @@ export function seed(db: Db): void {
     120,
     TERM_START,
     TERM_RENEWS,
+    SCHOOL_YEAR,
+    YEAR_STARTS,
+    YEAR_ENDS,
     "Rosa Delgado",
     "r.delgado@brightwood.demo",
     12,
@@ -307,8 +317,8 @@ export function seed(db: Db): void {
   }
 
   const insertClass = db.prepare(`
-    INSERT INTO classes (id, school_id, teacher_id, name, grade, join_code, school_year, created_at, archived_at)
-    VALUES (?,?,?,?,?,?,?,?,NULL)
+    INSERT INTO classes (id, school_id, teacher_id, name, grade, join_code, school_year, year_ends_on, created_at, archived_at)
+    VALUES (?,?,?,?,?,?,?,?,?,NULL)
   `);
   const insertStudent = db.prepare(
     "INSERT INTO students (id, class_id, display_name, avatar_key, created_at) VALUES (?,?,?,?,?)",
@@ -338,6 +348,7 @@ export function seed(db: Db): void {
       cls.grade,
       cls.joinCode,
       SCHOOL_YEAR,
+      YEAR_ENDS,
       isoDay(-20),
     );
 

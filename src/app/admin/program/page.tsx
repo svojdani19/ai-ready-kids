@@ -13,6 +13,9 @@ import { Note, Stat, Tag } from "@/components/ui/Bits";
 import { SchoolForm } from "./SchoolForm";
 import { PlanForm } from "./PlanForm";
 import { WindowForm } from "./WindowForm";
+import { RolloverForm } from "./RolloverForm";
+import { previewRollover } from "@/lib/domain/rollover";
+import { listClasses } from "@/lib/repo/classroom";
 
 export const metadata: Metadata = { title: "Program and plan" };
 
@@ -112,6 +115,15 @@ export default async function AdminProgram() {
                 </li>
               ))}
             </ul>
+          </PanelBody>
+        </Panel>
+
+        <Panel
+          title="Academic year"
+          description={`Currently ${school.academic_year}, ending ${formatDate(school.year_ends_on)}.`}
+        >
+          <PanelBody>
+            <RolloverForm preview={previewRollover(school, listClasses(db, school.id, true))} />
           </PanelBody>
         </Panel>
 

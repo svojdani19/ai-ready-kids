@@ -7,10 +7,10 @@ likely to be.
 
 ---
 
-## Sprint 31 — the dashboard invented a history, and June was impossible
+## Sprint 32 — the product could not survive its own first renewal
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-27-sprint-31.md`](2026-08-27-sprint-31.md)
+- **Full review:** [`2026-08-27-sprint-32.md`](2026-08-27-sprint-32.md)
 - **Review trail:** sprints 01–16 in this directory. Sprint 09 tripled the
   curriculum to 27 missions. Sprint 10 fixed two mechanism defects found in it.
   Sprints 11 to 15 fixed content defects in ten of them, two per sprint.
@@ -21,83 +21,90 @@ likely to be.
   are the second pass over the reporting layer, sprint 24 the assessment layer.
   sprint 25 the educator orientation. Every body of authored content has been
   read once. Sprints 26-30 audit what the product permits and promises.
-  **Sprint 31 closes the "wrong-answer cost" item open since sprint 20, and
-  fixes the first workflow defect found here: a teacher who owned a class could
-  not be offboarded without deleting a child's records.**
+  **Sprints 31-32 walk ordinary school workflows. Sprint 32 found that the
+  academic year and the subscription term were the same field, and that there
+  was no rollover at all.**
 
 ### What changed
 
-1. **The student page invented a history.** It said of every skill in the second
-   list *"You worked these out after a Try again"*. `developing` also arrives
-   **directly from first-go partial choices that continue with no retry at all**
-   — "Lean over and ask Theo", "Type your school name, but not your street" — so
-   a child who made a thoughtful partly-safe choice was told they had needed
-   correcting. It now describes the state and never the route: **"You made a
-   good start on these. Each one moves up when you get it first go in a new
-   story."** The empty state was false in the same direction and now points at
-   the badge the child did earn.
-2. **The teacher's legend was already right**, which is the striking part: *"a
-   partly-right choice, or the safe answer reached after a Try again"*. Only the
-   child was told the invented version. The audit found one more in the school
-   report, which named only the retry route; it names both now.
-3. **A teacher who owned a class could not be offboarded.** `removeStaffAction`
-   refused and said to "reassign or archive it first" — there was no reassign,
-   and the count included archived classes so archiving did not clear it either.
-   The only ways out were deleting every class they had ever owned, rosters and
-   records included, or leaving the account live, which in a build where staff
-   sign in with a known email and no password keeps a former employee's roster
-   access.
-4. **`reassignClass` moves a class and keeps everything else** — roster,
-   attempts, check-ins, assignments and **the join code**, so no child is told a
-   new one because an adult left. Same ownership invariant as `createClass`, so
-   nothing can become ownerless or cross-school by being moved. Administrator-
-   only action, per-row control on the classes page, and the offboarding block
-   now **names** the blocking classes with advice that is true.
+1. **There was no school year, only a subscription term.** The classes page took
+   the year from whichever class sorted first with `?? "2025-2026"` behind it,
+   the create form hid it, and the action had the same literal as its fallback —
+   so **on 27 August 2026 every new class was still being created in
+   2025-2026**. Nothing anywhere moved the term dates, and reports took the year
+   from `classes[0]`, labelling a mixed-cohort school by an accident of
+   ordering.
+2. **Retention was anchored to the renewal date.** `purgeDateFor` used
+   `term_renews_on` for every class while the interface said "months after the
+   school year ends". In the seed those are **1 September and 12 June**.
+   `class.school_year` already existed and was ignored, and a future cohort
+   would have inherited that fixed date and could have come due **before its own
+   retention period elapsed**.
+3. **They are separate fields now.** A school carries `academic_year`,
+   `year_starts_on` and `year_ends_on` beside the subscription dates, and every
+   class **snapshots its cohort's year end at creation**. Retention is per class
+   from that snapshot, so a rollover cannot move an existing cohort's date and a
+   new cohort cannot inherit an old term's. The seed keeps the two sets
+   deliberately apart and a test asserts they differ.
+4. **There is a rollover, and it previews before it acts** — what will be
+   archived, the new year and its dates, that check-ins close, and that every
+   class keeps the year-end it was created with. Subscription dates are
+   explicitly untouched. `nextYearLabel` refuses a label it cannot parse;
+   `addYear` turns 29 February into 28 February.
+5. **A name can be corrected without deleting the child.** The roster had Add
+   and Remove and nothing between, so a typo meant a wrong name all year or
+   losing every attempt, check-in and badge. `renameStudent` moves only
+   `display_name`, scoped by class and student, sharing one `validateDisplayName`
+   with adding so the two cannot drift. The audit names the class, never the
+   child.
 
 ### Already verified — please do not redo
 
-- `npm run verify` green: typecheck, lint, **428 tests**, Turbopack build.
-- The evidence tests prove the old sentence was **false** rather than asserting
-  the new one is nicer: a walk taking a first-go partial, checking the path has
-  exactly one step at that scene — no retry — while the record reads
-  `developing`. Plus copy assertions on all three surfaces, including that the
-  teacher legend stays accurate.
-- Offboarding: a move keeps the join code and roster, the old owner loses
-  `canTeachClass` and the new owner gains it, an **archived** class moves, an
-  administrator and a nonexistent user are both refused with the owner
-  unchanged, a missing class is refused, and a teacher becomes removable once
-  their classes have moved **with the child's records still there**.
-- Verified in the app: Room 4 moved from Danny Whitfield to Lucas Brennan with
-  the same code, 21 students and 9 assignments; the dropdown excludes the
-  current owner.
+- `npm run verify` green: typecheck, lint, **440 tests**, Turbopack build.
+- The year tests include the one that matters: a 2026-2027 cohort run through
+  the purge **in the gap between the old term-derived date and its own** must
+  survive, and go only when its own date arrives. Plus mixed cohorts each right
+  about themselves, the leap-day boundary, the preview's four claims, and a full
+  rollover asserting no historical deletion date moved and the subscription date
+  did not either.
+- Rename tests: a typo corrected with attempt, evidence, badge and avatar
+  intact; a preferred-name change; a colleague's student refused; both actions
+  sharing one validator.
+- Verified in the app: rolled Brightwood to 2026-2027, four classes archived,
+  check-ins closed, and the 2025-2026 cohorts still read June 12, 2027 on the
+  retention page afterwards.
 
 ### Where this is most likely still wrong
 
-- **An open item phrased as a general worry does not get closed.** "Nothing
-  checks what a wrong answer costs a child" sat in this handoff for eleven
-  sprints. It was never going to be closed by auditing the model — the model,
-  the roll-up and the teacher legend were all correct — because the defect was
-  one sentence on the page a child reads. Somebody had to read the actual
-  sentence against the actual data paths.
-- **This was the first workflow defect found here.** Thirty sprints asked
-  whether the product is honest and whether it is safe. None asked whether it is
-  *usable* on an ordinary Tuesday in June. Walk the routine operations —
-  somebody leaves, somebody arrives, a class changes hands.
-- **Bulk reassignment does not exist.** One class at a time, each confirmed,
-  which is the right default for an operation that changes who can see
-  children's names — but a teacher with four classes takes four moves.
+- **Nothing here had ever run the year forward.** Thirty-one sprints ran against
+  a database seeded to a single school year and all of them passed. The defect
+  was not that something computed wrongly — it was that the passage of time had
+  never happened. There was no second cohort, no archived year, no August. That
+  is a whole category: not "is this correct" but "is this correct *the second
+  time*".
+- **Two ideas sharing one field** is now the fourth appearance: school
+  membership doing the work of ownership (26), "fall and spring" with no state
+  (27), a friendly identifier doing the work of a credential (30), and the
+  invoice date doing the work of the last day of school (32). Each time the
+  interface described the second idea, the code stored only the first, and they
+  coincided closely enough in the demo that nothing looked wrong.
+- **No migrations.** Adding a column needs `data/airk.db` deleted, because
+  `db:reset` truncates in place. Documented in the README; a real deployment
+  needs migrations.
+- **Rollover is one school at a time** and archives everything in the current
+  year. Two cohorts running side by side is not modelled.
+- **Bulk reassignment does not exist** — sprint 31.
 - **The route and action inventory is still not complete.**
 - **`enterDemo("student")` writes a student session directly**, and
   **`simulateAttempt` writes seed paths directly**.
-- **The limiter is per process** — sprint 30, stated in the README.
+- **The limiter is per process** — sprint 30.
 - **The instrument is still unequated with one item per skill** — sprint 24.
 - **Marketing prose is still mostly untested** — sprint 26.
 - **Every mission has been read once. None has been read twice.**
 - **Shared scenes remain untraced** in twenty-six of twenty-seven missions.
 - **Teacher-facing copy promises timelines it cannot support.**
 - **No general guard against factual error exists or can.**
-- **The student "getting the hang of" list is untested with children** — and
-  sprint 31 rewrote it, so that is now more true rather than less.
+- **The student "getting the hang of" list is untested with children.**
 
 ### Standing constraints
 

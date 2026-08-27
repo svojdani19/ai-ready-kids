@@ -23,7 +23,9 @@ export default async function AdminClasses() {
   const school = getSchool(db, user.school_id)!;
   const classes = listClasses(db, user.school_id, true);
   const teachers = listUsers(db, user.school_id, "teacher");
-  const schoolYear = classes[0]?.school_year ?? "2025-2026";
+  // The school's own current year, not whichever class sorts first. That
+  // fallback meant every new class was still being created in 2025-2026.
+  const schoolYear = school.academic_year;
 
   const rows = classes.map((c) => ({
     classroom: c,

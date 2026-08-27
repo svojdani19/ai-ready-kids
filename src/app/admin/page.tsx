@@ -67,7 +67,7 @@ export default async function AdminOverview() {
                 : `Renewal due in ${renewalInDays} days`
             }
           >
-            The {report.school.schoolYear} term ends {formatDate(report.school.termRenewsOn)}.
+            The {report.school.schoolYear} subscription renews {formatDate(report.school.termRenewsOn)}.
             Your annual report for the year is ready to export for the district office.{" "}
             <Link href="/admin/program" className="font-semibold underline underline-offset-2">
               Review the program status

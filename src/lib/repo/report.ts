@@ -186,7 +186,10 @@ export function buildSchoolReport(db: Db, schoolId: string, now = new Date()): S
       district: school.district,
       city: school.city,
       state: school.state,
-      schoolYear: classes[0]?.school_year ?? "",
+      // The school's deliberate current year. Taking it from whichever class
+      // sorted first meant a mixed-cohort school got labelled by an accident
+      // of ordering.
+      schoolYear: school.academic_year,
       termStartsOn: school.term_starts_on,
       termRenewsOn: school.term_renews_on,
       plan: school.plan,

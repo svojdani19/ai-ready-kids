@@ -4,6 +4,10 @@ import { createTestDb, DEMO_ADMIN, DEMO_CLASS, DEMO_SCHOOL, DEMO_TEACHER, playTo
 import { MISSIONS, getMission } from "@/content/missions";
 import { CERTIFICATION_MODULES } from "@/content/certification";
 import { createUser } from "@/lib/repo/school";
+import { renameStudent } from "@/lib/repo/classroom";
+import { getAttempt, listAttemptsForStudent } from "@/lib/repo/progress";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   assignMission,
   createClass,
@@ -47,6 +51,7 @@ describe("teacher manages a class", () => {
       name: "Room 9",
       grade: 2,
       schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-12",
     });
     classId = created.id;
     expect(created.join_code).toMatch(/^[A-Z]+-[A-Z]+-\d{3}$/);
@@ -150,6 +155,7 @@ describe("teacher sees completion and competency evidence", () => {
       name: "Room 0",
       grade: 4,
       schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-12",
     });
     const cohort = summariseCohort({ studentIds: [], attempts: [], assignedMissionIds: [] });
     expect(cohort.completionRate).toBe(0);
@@ -164,6 +170,7 @@ describe("teacher sees completion and competency evidence", () => {
       name: "Room 5",
       grade: 3,
       schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-12",
     });
     const mission = getMission("the-very-sure-answer")!;
     assignMission(db, { classId: classroom.id, missionId: mission.id, assignedBy: DEMO_TEACHER });
@@ -453,5 +460,94 @@ describe("the orientation reports completion, not competence", () => {
     for (const key of ["score", "passed", "correct", "grade", "result"]) {
       expect(Object.keys(record ?? {})).not.toContain(key);
     }
+  });
+});
+
+describe("a name can be corrected without deleting the child", () => {
+  /**
+   * The roster offered Add and Remove and nothing between them. A typo, a
+   * preferred name, or two children needing clearer initials left a teacher
+   * choosing between a wrong name on a shared screen all year and deleting the
+   * child — losing every attempt, check-in and badge — then re-adding a blank
+   * record. For grades 2-4 that is both common and needlessly personal.
+   */
+  let classId: string;
+  let studentId: string;
+
+  beforeAll(() => {
+    classId = createClass(db, {
+      schoolId: DEMO_SCHOOL,
+      teacherId: DEMO_TEACHER,
+      name: "Room 40",
+      grade: 3,
+      schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-12",
+    }).id;
+    studentId = createStudent(db, { classId, displayName: "Sammm R." }).id;
+  });
+
+  it("keeps every record when a typo is corrected", () => {
+    const mission = MISSIONS[0];
+    assignMission(db, { classId, missionId: mission.id, assignedBy: DEMO_TEACHER });
+    playToEnd(db, studentId, mission);
+
+    const before = getAttempt(db, studentId, mission.id)!;
+    const avatar = listStudents(db, classId).find((s) => s.id === studentId)!.avatar_key;
+
+    expect(renameStudent(db, studentId, classId, "Sam R.")).toBe(true);
+
+    const after = listStudents(db, classId).find((s) => s.id === studentId)!;
+    expect(after.display_name).toBe("Sam R.");
+    // The id everything hangs off is untouched, so is the avatar, and so is
+    // every record — which is the entire point of the operation.
+    expect(after.id).toBe(studentId);
+    expect(after.avatar_key).toBe(avatar);
+    const kept = getAttempt(db, studentId, mission.id)!;
+    expect(kept.completed_at).toBe(before.completed_at);
+    expect(kept.evidence).toEqual(before.evidence);
+    expect(summariseStudent(listAttemptsForStudent(db, studentId)).badgeIds).toEqual([
+      mission.badge.id,
+    ]);
+  });
+
+  it("handles a preferred name, not only a typo", () => {
+    expect(renameStudent(db, studentId, classId, "Sasha R.")).toBe(true);
+    expect(listStudents(db, classId).find((s) => s.id === studentId)!.display_name).toBe(
+      "Sasha R.",
+    );
+  });
+
+  it("refuses a student who is not on this roster", () => {
+    const other = createClass(db, {
+      schoolId: DEMO_SCHOOL,
+      teacherId: DEMO_TEACHER,
+      name: "Room 41",
+      grade: 4,
+      schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-12",
+    }).id;
+    const theirs = createStudent(db, { classId: other, displayName: "Nadia B." }).id;
+
+    // Same shape as the delete: authorising the class is not authorising the
+    // child, so the rename is scoped by both ids.
+    expect(renameStudent(db, theirs, classId, "Renamed R.")).toBe(false);
+    expect(listStudents(db, other).find((s) => s.id === theirs)!.display_name).toBe("Nadia B.");
+  });
+
+  it("shares its validation with adding, rather than repeating it", () => {
+    const src = readFileSync(join(process.cwd(), "src/app/actions/teacher.ts"), "utf8");
+    expect(src).toContain("function validateDisplayName");
+    for (const action of ["addStudentAction", "renameStudentAction"]) {
+      const start = src.indexOf(`export async function ${action}`);
+      const body = src.slice(start, src.indexOf("export async function", start + 10));
+      expect(body, action).toContain("validateDisplayName(displayName)");
+    }
+    const start = src.indexOf("export async function renameStudentAction");
+    const body = src.slice(start, src.indexOf("export async function", start + 10));
+    // Within-class uniqueness, excluding the student being renamed.
+    expect(body).toContain("s.id !== studentId");
+    // And no child's name in a school-wide audit line.
+    expect(body).toContain("No child's name in a school-wide log");
+    expect(body).toContain("A student's display name was corrected in");
   });
 });

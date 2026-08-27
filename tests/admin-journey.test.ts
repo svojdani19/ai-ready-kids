@@ -38,10 +38,17 @@ import { buildSchoolReport, MIN_REPORTABLE_GROUP, reportToCsv } from "@/lib/repo
 import { MISSIONS } from "@/content/missions";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
 import { MIN_BENCHMARK_GROUP, summariseCohortBenchmark } from "@/lib/domain/benchmark";
-import { addMonths, formatDate, purgeDateFor, retentionRows } from "@/lib/domain/retention";
+import {
+  addMonths,
+  formatDate,
+  purgeDateFor,
+  purgeDateForClass,
+  retentionRows,
+} from "@/lib/domain/retention";
+import { addYear, nextYearLabel, previewRollover } from "@/lib/domain/rollover";
 import { runScheduledPurge } from "@/lib/domain/purge";
 import { canTeachClass } from "@/lib/auth/access";
-import { classesOwnedBy } from "@/lib/repo/school";
+import { classesOwnedBy, setAcademicYear, setBenchmarkWindow } from "@/lib/repo/school";
 import { getClass, reassignClass } from "@/lib/repo/classroom";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -113,6 +120,7 @@ describe("privacy-conscious export", () => {
       name: "Room 1",
       grade: 4,
       schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-12",
     });
     for (let i = 0; i < MIN_REPORTABLE_GROUP - 2; i += 1) {
       createStudent(db, { classId: tiny.id, displayName: `Kid ${String.fromCharCode(65 + i)}.` });
@@ -175,6 +183,7 @@ describe("retention and deletion", () => {
       name: "Room 3",
       grade: 3,
       schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-12",
     });
     archiveClass(db, classroom.id);
 
@@ -210,6 +219,7 @@ describe("retention and deletion", () => {
       name: "Room 8",
       grade: 2,
       schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-12",
     });
     createStudent(db, { classId: classroom.id, displayName: "Gone S." });
 
@@ -288,6 +298,7 @@ describe("suppression counts the students who actually contributed", () => {
       name,
       grade: 3,
       schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-12",
     }).id;
     const studentIds = Array.from({ length: size }, (_, i) =>
       createStudent(db2, { classId, displayName: `Child ${name}${i}.` }).id,
@@ -401,6 +412,7 @@ describe("benchmark suppression happens on the object, not in one view", () => {
       name: "Bench One",
       grade: 3,
       schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-12",
     }).id;
     const only = createStudent(db3, { classId, displayName: "Solo B." }).id;
     // Pad the roster so the school is plainly larger than the reporting floor.
@@ -440,6 +452,7 @@ describe("benchmark suppression happens on the object, not in one view", () => {
       name: "Bench Many",
       grade: 4,
       schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-12",
     }).id;
     const ids = Array.from(
       { length: MIN_BENCHMARK_GROUP },
@@ -552,7 +565,7 @@ describe("the retention date has a job behind it", () => {
   it("says due rather than claiming an automatic deletion", () => {
     const page = readFileSync(join(process.cwd(), "src/app/admin/data/page.tsx"), "utf8");
     // The build ships the job without a timer in front of it, and says so.
-    expect(page).toContain("Deletion due");
+    expect(page).toContain("This year due");
     expect(page).not.toContain("Scheduled purge");
     expect(page).not.toContain("when it disappears");
     expect(page).toContain("npm run purge");
@@ -596,6 +609,7 @@ describe("a departing teacher can be offboarded without deleting a child's recor
       name: "Room 30",
       grade: 3,
       schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-12",
     }).id;
     const before = getClass(db6, classId)!;
     createStudent(db6, { classId, displayName: "Kept K." });
@@ -623,6 +637,7 @@ describe("a departing teacher can be offboarded without deleting a child's recor
       name: "Room 31",
       grade: 4,
       schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-12",
     }).id;
     archiveClass(db6, classId);
 
@@ -640,6 +655,7 @@ describe("a departing teacher can be offboarded without deleting a child's recor
       name: "Room 32",
       grade: 2,
       schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-12",
     }).id;
 
     // No class may become ownerless or cross-school by being moved.
@@ -674,6 +690,7 @@ describe("a departing teacher can be offboarded without deleting a child's recor
       name: "Room 33",
       grade: 3,
       schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-12",
     }).id;
     createStudent(db6, { classId, displayName: "Safe S." });
 
@@ -682,5 +699,166 @@ describe("a departing teacher can be offboarded without deleting a child's recor
     expect(classesOwnedBy(db6, leaving.id)).toHaveLength(0);
     // The point of the whole exercise: the child's records are still there.
     expect(listStudents(db6, classId)).toHaveLength(1);
+  });
+});
+
+describe("the academic year is not the subscription term", () => {
+  /**
+   * They were the same field. Retention used `term_renews_on` — the renewal
+   * date — for every class, while the interface said "months after the school
+   * year ends". In the seed those are 1 September and 12 June, three months
+   * apart. And there was no rollover at all: the classes page took the year
+   * from whichever class sorted first with a hard-coded "2025-2026" fallback,
+   * and the create action had the same literal as its default, so on 27 August
+   * 2026 every new class was still landing in the previous year.
+   */
+  let db7: Db;
+  let cleanup7: () => void;
+  beforeAll(() => {
+    ({ db: db7, cleanup: cleanup7 } = createTestDb());
+  });
+  afterAll(() => cleanup7());
+
+  it("keeps the two sets of dates apart in the seed", () => {
+    const s = getPrimarySchool(db7);
+    // A seed where they coincided would hide the defect.
+    expect(s.year_ends_on).not.toBe(s.term_renews_on);
+    expect(s.academic_year).toBe("2025-2026");
+  });
+
+  it("counts retention from the school year, not the renewal", () => {
+    const s = getPrimarySchool(db7);
+    expect(purgeDateFor(s)).toEqual(addMonths(s.year_ends_on, s.retention_months));
+    expect(purgeDateFor(s)).not.toEqual(addMonths(s.term_renews_on, s.retention_months));
+  });
+
+  it("gives each cohort its own due date from its own year end", () => {
+    const old = createClass(db7, {
+      schoolId: DEMO_SCHOOL,
+      teacherId: DEMO_TEACHER,
+      name: "Old Cohort",
+      grade: 3,
+      schoolYear: "2024-2025",
+      yearEndsOn: "2025-06-13",
+    });
+    const current = createClass(db7, {
+      schoolId: DEMO_SCHOOL,
+      teacherId: DEMO_TEACHER,
+      name: "Current Cohort",
+      grade: 3,
+      schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-12",
+    });
+    const s = getPrimarySchool(db7);
+    expect(purgeDateForClass(old, s.retention_months)).toEqual(addMonths("2025-06-13", 12));
+    expect(purgeDateForClass(current, s.retention_months)).toEqual(addMonths("2026-06-12", 12));
+    // Mixed years in one school, and each row is right about itself.
+    expect(purgeDateForClass(old, s.retention_months).getTime()).toBeLessThan(
+      purgeDateForClass(current, s.retention_months).getTime(),
+    );
+  });
+
+  it("never lets a new cohort be purged from an old term date", () => {
+    const s = getPrimarySchool(db7);
+    const nextYear = createClass(db7, {
+      schoolId: DEMO_SCHOOL,
+      teacherId: DEMO_TEACHER,
+      name: "Next Year",
+      grade: 2,
+      schoolYear: "2026-2027",
+      yearEndsOn: "2027-06-11",
+    });
+    // The old behaviour anchored every class to the renewal date, which for
+    // this cohort would have been 2027-09-01 — nine months before its own year
+    // had even finished its retention window.
+    const fromOldTerm = addMonths(s.term_renews_on, s.retention_months);
+    const fromOwnYear = purgeDateForClass(nextYear, s.retention_months);
+    expect(fromOwnYear.getTime()).toBeGreaterThan(fromOldTerm.getTime());
+
+    // A run in the gap between the two dates must leave it alone. This is the
+    // exact window where the old behaviour would have deleted it early.
+    const inTheGap = runScheduledPurge(db7, new Date("2027-10-01T00:00:00.000Z"));
+    expect(inTheGap.classNames).not.toContain("Next Year");
+    expect(listClasses(db7, DEMO_SCHOOL, true).some((c) => c.name === "Next Year")).toBe(true);
+
+    // And once its own date arrives, it goes.
+    expect(runScheduledPurge(db7, new Date("2029-01-01T00:00:00.000Z")).classNames).toContain(
+      "Next Year",
+    );
+  });
+});
+
+describe("rolling over into the next school year", () => {
+  it("derives the next label and refuses one it cannot parse", () => {
+    expect(nextYearLabel("2025-2026")).toBe("2026-2027");
+    expect(nextYearLabel("2026-2027")).toBe("2027-2028");
+    // Not a consecutive pair, and not a year at all.
+    expect(nextYearLabel("2025-2027")).toBeNull();
+    expect(nextYearLabel("Autumn term")).toBeNull();
+  });
+
+  it("moves a date on by a year and survives 29 February", () => {
+    expect(addYear("2026-06-12")).toBe("2027-06-12");
+    // A leap day cannot become 1 March.
+    expect(addYear("2024-02-29")).toBe("2025-02-28");
+    expect(addYear("2027-02-28")).toBe("2028-02-28");
+  });
+
+  it("previews exactly what it will do, including what it will not touch", () => {
+    const { db: db8, cleanup } = createTestDb();
+    try {
+      const school = getPrimarySchool(db8);
+      const preview = previewRollover(school, listClasses(db8, DEMO_SCHOOL, true));
+      expect("error" in preview).toBe(false);
+      if ("error" in preview) return;
+
+      expect(preview.fromYear).toBe("2025-2026");
+      expect(preview.toYear).toBe("2026-2027");
+      expect(preview.endsOn).toBe(addYear(school.year_ends_on));
+      expect(preview.toArchive.length).toBeGreaterThan(0);
+      // The claim that matters: existing deletion dates do not move.
+      expect(preview.retentionNote).toMatch(/keeps the year-end it was created with/);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("archives the old cohort, opens the new year and closes check-ins", () => {
+    const { db: db9, cleanup } = createTestDb();
+    try {
+      setBenchmarkWindow(db9, DEMO_SCHOOL, "post");
+      const before = listClasses(db9, DEMO_SCHOOL).map((c) => ({
+        id: c.id,
+        due: purgeDateForClass(c, getPrimarySchool(db9).retention_months).getTime(),
+      }));
+      expect(before.length).toBeGreaterThan(0);
+
+      const school = getPrimarySchool(db9);
+      const preview = previewRollover(school, listClasses(db9, DEMO_SCHOOL, true));
+      if ("error" in preview) throw new Error(preview.error);
+      for (const c of preview.toArchive) archiveClass(db9, c.id);
+      setAcademicYear(db9, DEMO_SCHOOL, {
+        year: preview.toYear,
+        startsOn: preview.startsOn,
+        endsOn: preview.endsOn,
+      });
+      setBenchmarkWindow(db9, DEMO_SCHOOL, "closed");
+
+      const after = getPrimarySchool(db9);
+      expect(after.academic_year).toBe("2026-2027");
+      expect(after.benchmark_window).toBe("closed");
+      // Subscription dates are a separate thing and must not have moved.
+      expect(after.term_renews_on).toBe(school.term_renews_on);
+      expect(listClasses(db9, DEMO_SCHOOL)).toHaveLength(0);
+
+      // And no historical deletion date moved, because each class carries its
+      // own snapshot.
+      for (const row of before) {
+        const c = listClasses(db9, DEMO_SCHOOL, true).find((x) => x.id === row.id)!;
+        expect(purgeDateForClass(c, after.retention_months).getTime()).toBe(row.due);
+      }
+    } finally {
+      cleanup();
+    }
   });
 });

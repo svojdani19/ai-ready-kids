@@ -266,6 +266,16 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       and from a coached recovery, and the page cannot tell them apart — so
       "you worked these out after a Try again" told a child who chose
       thoughtfully that they had needed correcting.
+- [ ] **It still works the second time.** Run the year forward. A product sold
+      annually needs a second cohort, an archived year, and an August in which
+      last year's classes are finished and this year's do not exist yet. Every
+      test here ran against one seeded school year for thirty-one sprints, and
+      the passage of time had simply never happened.
+- [ ] **Two ideas are not sharing one field.** Where the interface describes
+      something the code does not store — the last day of school when the
+      column holds an invoice date, ownership when it holds school membership —
+      the two usually coincide in the demo and diverge in a real school. Read
+      the label, then read the column it comes from.
 - [ ] **The routine school operations work.** Somebody leaves in June, somebody
       arrives in September, a class changes hands. Walk those through as a real
       administrator would. A product can be honest and safe and still make an

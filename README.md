@@ -392,6 +392,19 @@ administrator surfaces, with every student-facing control measured against the
   retention — is class identity and lives in `canAdministerClass`.
 - **Read-aloud uses the browser's voice.** Quality varies by platform. Recorded
   narration per mission is the right answer and is a content job.
+- **The academic year and the subscription term are different fields.** A
+  school carries `academic_year`, `year_starts_on` and `year_ends_on` alongside
+  `term_starts_on` and `term_renews_on`, and every class snapshots its cohort's
+  `year_ends_on` at creation. **Retention counts from the cohort's own year
+  end, never from the renewal date** — they are three months apart in the seed
+  on purpose, because a seed where they coincided would hide the difference.
+  An administrator rolls the school forward from Program & plan; the preview
+  states what will be archived, the new year's dates, that check-ins close, and
+  that no existing deletion date moves.
+- **Adding a column needs a fresh database file.** `db:reset` truncates and
+  re-seeds in place so a running dev server keeps working, which means it does
+  not pick up schema changes. Delete `data/airk.db` and reset. There are no
+  migrations in this build.
 - **Retention deletes when the job runs, not when the date arrives.** The
   product shows when a class becomes *due*, and `npm run purge` deletes
   everything past its date with each roster, attempt and check-in, writing an

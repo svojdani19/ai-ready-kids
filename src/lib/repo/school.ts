@@ -42,6 +42,17 @@ export function setRetentionMonths(db: Db, id: string, months: number): void {
  * explicit: the spring form does not become available because the fall one was
  * finished, it becomes available because somebody opened spring.
  */
+/** Move the school into a new academic year. Subscription dates untouched. */
+export function setAcademicYear(
+  db: Db,
+  id: string,
+  input: { year: string; startsOn: string; endsOn: string },
+): void {
+  db.prepare(
+    "UPDATE schools SET academic_year = ?, year_starts_on = ?, year_ends_on = ? WHERE id = ?",
+  ).run(input.year, input.startsOn, input.endsOn, id);
+}
+
 export function setBenchmarkWindow(db: Db, id: string, window: BenchmarkWindow): void {
   db.prepare("UPDATE schools SET benchmark_window = ? WHERE id = ?").run(window, id);
 }
