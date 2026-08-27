@@ -151,16 +151,23 @@ describe("student plays a mission end to end", () => {
     expect(findScene(other, resumed)).toBeDefined();
   });
 
-  it("keeps demonstrated evidence sticky against a later weaker answer", () => {
-    const target = "privacy.identity";
-    recordDecision(db, {
-      studentId,
-      missionId: mission.id,
-      sceneId: "s2",
-      choiceId: "c3",
-      evidence: { skillId: target, result: "developing" },
-    });
-    expect(getAttempt(db, studentId, mission.id)!.evidence[target]).toBe("demonstrated");
+  it("refuses any further decision once the mission is finished", () => {
+    // This used to post a weaker answer at s2 on a completed attempt and check
+    // that stickiness held. Stickiness is now asserted properly in
+    // tests/evidence-integrity.test.ts, and the more useful claim is that a
+    // finished attempt cannot be written to at all.
+    const before = getAttempt(db, studentId, mission.id)!;
+    expect(() =>
+      recordDecision(db, {
+        studentId,
+        missionId: mission.id,
+        sceneId: "s2",
+        choiceId: "c3",
+        evidence: { skillId: "privacy.identity", result: "developing" },
+      }),
+    ).toThrow(/already finished/i);
+    expect(getAttempt(db, studentId, mission.id)!.path).toEqual(before.path);
+    expect(getAttempt(db, studentId, mission.id)!.evidence).toEqual(before.evidence);
   });
 
   it("lets a student replay from scratch", () => {

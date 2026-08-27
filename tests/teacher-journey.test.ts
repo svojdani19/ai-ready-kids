@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Db } from "@/lib/db";
-import { createTestDb, DEMO_ADMIN, DEMO_CLASS, DEMO_SCHOOL, DEMO_TEACHER } from "./helpers";
+import { createTestDb, DEMO_ADMIN, DEMO_CLASS, DEMO_SCHOOL, DEMO_TEACHER, playToEnd } from "./helpers";
 import { MISSIONS, getMission } from "@/content/missions";
 import { CERTIFICATION_MODULES } from "@/content/certification";
 import { createUser } from "@/lib/repo/school";
@@ -8,7 +8,7 @@ import {
   assignMission,
   createClass,
   createStudent,
-  deleteStudent,
+  deleteStudentFromClass,
   generateJoinCode,
   listAssignments,
   listClassesForTeacher,
@@ -16,13 +16,11 @@ import {
   unassignMission,
 } from "@/lib/repo/classroom";
 import {
-  completeAttempt,
   completeCertification,
   getCertification,
   listAttemptsForClass,
   recordDecision,
   saveCertificationAnswer,
-  startAttempt,
 } from "@/lib/repo/progress";
 import {
   missionsOfferingSkill,
@@ -70,11 +68,10 @@ describe("teacher manages a class", () => {
     expect(listStudents(db, classId)).toHaveLength(1);
 
     const mission = MISSIONS[0];
-    startAttempt(db, student.id, mission.id);
-    completeAttempt(db, student.id, mission.id);
+    playToEnd(db, student.id, mission);
     expect(listAttemptsForClass(db, classId)).toHaveLength(1);
 
-    deleteStudent(db, student.id);
+    expect(deleteStudentFromClass(db, student.id, classId)).toBe(true);
     expect(listStudents(db, classId)).toHaveLength(0);
     // Cascade: no orphaned attempt is left behind.
     expect(listAttemptsForClass(db, classId)).toHaveLength(0);
@@ -191,7 +188,8 @@ describe("teacher sees completion and competency evidence", () => {
     expect(partial.startedCount).toBe(1);
     expect(partial.skills.every((s) => s.demonstrated === 0)).toBe(true);
 
-    completeAttempt(db, student.id, mission.id);
+    // Finishing has to be earned by the path now, so play the rest of it.
+    playToEnd(db, student.id, mission);
     const done = summariseCohort({
       studentIds: [student.id],
       attempts: listAttemptsForClass(db, classroom.id),

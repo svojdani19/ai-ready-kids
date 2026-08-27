@@ -1,5 +1,8 @@
 import "server-only";
 import { type Db, newId, nowIso, parseJson, row, rows } from "@/lib/db";
+import { MISSION_BY_ID } from "@/content/missions";
+import { BENCHMARK_FORMS } from "@/content/benchmark";
+import { expectedDecisionSceneId, hasReachedEnding } from "@/lib/domain/missionPath";
 import type {
   Attempt,
   BenchmarkRecord,
@@ -108,6 +111,21 @@ export function recordDecision(
   },
 ): Attempt {
   const attempt = startAttempt(db, input.studentId, input.missionId);
+
+  // The invariants live here rather than only in the action, because the action
+  // is one caller and this is the boundary. A decision may only be recorded
+  // against the scene the stored path actually leads to, and never against a
+  // finished attempt.
+  if (attempt.completed_at) {
+    throw new Error("That mission is already finished.");
+  }
+  const mission = MISSION_BY_ID[input.missionId];
+  if (!mission) throw new Error(`Unknown mission: ${input.missionId}`);
+  const expected = expectedDecisionSceneId(mission, attempt.path);
+  if (expected !== input.sceneId) {
+    throw new Error("That is not the decision this attempt is on.");
+  }
+
   const path = [...attempt.path, { sceneId: input.sceneId, choiceId: input.choiceId }];
   const evidence: EvidenceMap = { ...attempt.evidence };
 
@@ -133,6 +151,12 @@ export function recordDecision(
 
 export function completeAttempt(db: Db, studentId: string, missionId: string): Attempt {
   const attempt = startAttempt(db, studentId, missionId);
+  const mission = MISSION_BY_ID[missionId];
+  if (!mission) throw new Error(`Unknown mission: ${missionId}`);
+  // Finishing has to be earned by the path, not asserted by the caller.
+  if (!attempt.completed_at && !hasReachedEnding(mission, attempt.path)) {
+    throw new Error("That mission has not been played to the end.");
+  }
   if (!attempt.completed_at) {
     db.prepare("UPDATE attempts SET completed_at = ? WHERE id = ?").run(nowIso(), attempt.id);
   }
@@ -216,6 +240,11 @@ export function saveBenchmarkResponse(
   input: { studentId: string; form: "pre" | "post"; itemId: string; optionId: string },
 ): BenchmarkRecord {
   let record = getBenchmark(db, input.studentId, input.form);
+  // A finished form is finished. Reopening it would let a child revise answers
+  // that have already been counted into a cohort figure.
+  if (record?.completed_at) {
+    throw new Error("That check-in is already finished.");
+  }
   if (!record) {
     db.prepare(
       `INSERT INTO benchmarks (id, student_id, form, started_at, completed_at, responses_json)
@@ -239,6 +268,17 @@ export function completeBenchmark(
   const record = getBenchmark(db, studentId, form);
   if (!record) return undefined;
   if (!record.completed_at) {
+    // A form completed with nothing in it still counts a child into the
+    // cohort, and every unanswered item scores as incorrect. Completion means
+    // one valid answer to every authored item, and nothing less.
+    const content = BENCHMARK_FORMS[form];
+    const answered = content.items.every((item) => {
+      const chosen = record.responses[item.id];
+      return typeof chosen === "string" && item.options.some((o) => o.id === chosen);
+    });
+    if (!answered) {
+      throw new Error("Every question has to be answered before a check-in can be finished.");
+    }
     db.prepare("UPDATE benchmarks SET completed_at = ? WHERE id = ?").run(nowIso(), record.id);
   }
   return getBenchmark(db, studentId, form);

@@ -7,12 +7,18 @@ import { decodeJoinGrant, encodeJoinGrant } from "@/lib/auth/token";
 import { canTakeBenchmark, missionAccessFor, nextBenchmarkFor } from "@/lib/domain/eligibility";
 import type { BenchmarkRecord } from "@/lib/types";
 import type { Db } from "@/lib/db";
-import { createTestDb, DEMO_CLASS, DEMO_SCHOOL, DEMO_STUDENT } from "./helpers";
+import { createTestDb, DEMO_CLASS, DEMO_SCHOOL, DEMO_STUDENT, DEMO_TEACHER } from "./helpers";
 import { decodeSession, encodeSession } from "@/lib/auth/token";
 import { getMission, MISSIONS } from "@/content/missions";
 import { getBenchmarkForm } from "@/content/benchmark";
 import { findChoice, findScene, validateMission } from "@/lib/domain/missionPath";
-import { createClass, getClass } from "@/lib/repo/classroom";
+import {
+  createClass,
+  createStudent,
+  deleteStudentFromClass,
+  getClass,
+  listStudents,
+} from "@/lib/repo/classroom";
 import { createUser } from "@/lib/repo/school";
 
 let db: Db;
@@ -400,5 +406,64 @@ describe("what a student may open is a rule, not a rendered card", () => {
       const body = actions.slice(start, actions.indexOf("export async function", start + 10) + 1 || undefined);
       expect(body, action).toContain("requireOpenCheckIn");
     }
+  });
+});
+
+describe("deleting a child is scoped to the class that authorised it", () => {
+  /**
+   * `removeStudentAction` authorised the *class* and then deleted the
+   * *student* by bare id. A teacher could pass their own legitimate class id
+   * alongside any student id they knew and permanently delete that child —
+   * from a colleague's class, or another school — taking every cascaded
+   * attempt and check-in with them, while the audit entry named the wrong
+   * class. Same shape as sprint 27, one level deeper: the thing checked and
+   * the thing acted on were different objects.
+   */
+  let scoped: Db;
+  let cleanupScoped: () => void;
+  beforeAll(() => {
+    ({ db: scoped, cleanup: cleanupScoped } = createTestDb());
+  });
+  afterAll(() => cleanupScoped());
+
+  function makeClass(name: string) {
+    return createClass(scoped, {
+      schoolId: DEMO_SCHOOL,
+      teacherId: DEMO_TEACHER,
+      name,
+      grade: 3,
+      schoolYear: "2025-2026",
+    }).id;
+  }
+
+  it("removes a student who is on that roster", () => {
+    const classId = makeClass("Scoped A");
+    const student = createStudent(scoped, { classId, displayName: "Owned P." });
+    expect(deleteStudentFromClass(scoped, student.id, classId)).toBe(true);
+    expect(listStudents(scoped, classId)).toHaveLength(0);
+  });
+
+  it("refuses a student from a colleague's class and changes nothing", () => {
+    const mine = makeClass("Scoped Mine");
+    const theirs = makeClass("Scoped Theirs");
+    const victim = createStudent(scoped, { classId: theirs, displayName: "Other C." });
+
+    expect(deleteStudentFromClass(scoped, victim.id, mine)).toBe(false);
+    expect(listStudents(scoped, theirs).map((s) => s.id)).toContain(victim.id);
+  });
+
+  it("refuses an unknown student id without reporting success", () => {
+    const classId = makeClass("Scoped Ghost");
+    expect(deleteStudentFromClass(scoped, "stu_does_not_exist", classId)).toBe(false);
+  });
+
+  it("makes the action refuse a mismatch rather than writing a false audit", () => {
+    const src = readFileSync(join(process.cwd(), "src/app/actions/teacher.ts"), "utf8");
+    const start = src.indexOf("export async function removeStudentAction");
+    const body = src.slice(start, src.indexOf("export async function", start + 10));
+    // Scoped by both ids, and the audit is only reached when a row went.
+    expect(body).toContain("deleteStudentFromClass(db, studentId, classroom.id)");
+    expect(body.indexOf("if (!removed)")).toBeLessThan(body.indexOf("recordAudit"));
+    expect(body).not.toContain("deleteStudent(db, studentId)");
   });
 });

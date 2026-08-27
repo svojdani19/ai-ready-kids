@@ -138,8 +138,24 @@ export function createStudent(
   return getStudent(db, id)!;
 }
 
-export function deleteStudent(db: Db, id: string): void {
-  db.prepare("DELETE FROM students WHERE id = ?").run(id);
+/**
+ * Delete a student, scoped by the class they belong to.
+ *
+ * Both ids, and the class one is not decoration. `removeStudentAction`
+ * authorised the *class* and then deleted the *student* by bare id, so a
+ * teacher could pass their own class id alongside any student id they knew and
+ * permanently delete that child — from a colleague's class, or another school —
+ * with every cascaded attempt and check-in going with them, and an audit entry
+ * naming the wrong class.
+ *
+ * Returns whether a row was actually removed, so the caller can refuse to
+ * write a success audit for a deletion that did not happen.
+ */
+export function deleteStudentFromClass(db: Db, id: string, classId: string): boolean {
+  const result = db
+    .prepare("DELETE FROM students WHERE id = ? AND class_id = ?")
+    .run(id, classId);
+  return Number(result.changes) > 0;
 }
 
 export function listAssignments(db: Db, classId: string): Assignment[] {

@@ -59,6 +59,45 @@ export function resumeSceneId(mission: Mission, path: PathStep[]): string {
   return scene?.id ?? mission.openingSceneId;
 }
 
+/** Walk forward through story scenes to the next thing that stops you. */
+function settle(mission: Mission, startId: string): Scene | undefined {
+  const seen = new Set<string>();
+  let scene = findScene(mission, startId);
+  while (scene && !scene.choices?.length && scene.kind !== "ending" && scene.next) {
+    if (seen.has(scene.id)) break;
+    seen.add(scene.id);
+    scene = findScene(mission, scene.next);
+  }
+  return scene;
+}
+
+/**
+ * The one decision this attempt may record next, or null if the mission has
+ * run out of decisions.
+ *
+ * Until sprint 28 nothing computed this. `submitDecision` checked that a scene
+ * and a choice existed somewhere in the mission and `recordDecision` appended
+ * whatever it was handed, so a caller could post the strongest option from
+ * every decision scene in any order — skipping the story, skipping every
+ * authored correction — and come out with a full set of `demonstrated`
+ * evidence. The authored graph is the product's central claim, and it was
+ * being enforced by the player component rather than by the server.
+ */
+export function expectedDecisionSceneId(mission: Mission, path: PathStep[]): string | null {
+  const scene = settle(mission, resumeSceneId(mission, path));
+  if (!scene || scene.kind === "ending") return null;
+  return scene.choices?.length ? scene.id : null;
+}
+
+/**
+ * Whether replaying this path actually arrives at an ending. `completeAttempt`
+ * used to take the caller's word for it, so a mission could be marked finished
+ * — badge and all — from its opening scene.
+ */
+export function hasReachedEnding(mission: Mission, path: PathStep[]): boolean {
+  return settle(mission, resumeSceneId(mission, path))?.kind === "ending";
+}
+
 /** Decision scenes only — what the student's "step 3 of 5" counter shows. */
 export function decisionSceneIds(mission: Mission): string[] {
   return mission.scenes.filter((s) => (s.choices?.length ?? 0) > 0).map((s) => s.id);

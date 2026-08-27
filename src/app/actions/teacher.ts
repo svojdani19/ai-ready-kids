@@ -10,7 +10,7 @@ import {
   assignMission,
   createClass,
   createStudent,
-  deleteStudent,
+  deleteStudentFromClass,
   getClass,
   listStudents,
   unassignMission,
@@ -121,7 +121,16 @@ export async function addStudentAction(
 
 export async function removeStudentAction(classId: string, studentId: string): Promise<void> {
   const { db, user, classroom } = await requireOwnClass(classId);
-  deleteStudent(db, studentId);
+
+  // Authorising the class is not authorising the child. The delete is scoped
+  // by both ids and reports whether it actually removed anything, so a
+  // mismatched pair changes nothing and does not leave a success audit behind
+  // claiming it did.
+  const removed = deleteStudentFromClass(db, studentId, classroom.id);
+  if (!removed) {
+    throw new Error("That student is not on this class's roster.");
+  }
+
   recordAudit(db, {
     schoolId: user.school_id,
     actorLabel: user.name,

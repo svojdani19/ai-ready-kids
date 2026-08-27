@@ -180,6 +180,20 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       administrators see aggregates only — with no code behind it at all. When
       a page makes several claims, enumerate them and check each one, because
       the one you are looking at is the one least likely to be wrong.
+- [ ] **Existence is not sequence.** Checking that a scene, a choice, an item
+      or a form is real is not checking that it is *next*. Where the product
+      claims an authored order — and this one's entire safety case rests on
+      that — the server derives the expected step from stored state and refuses
+      anything else. A player component enforcing it is a suggestion.
+- [ ] **Invariants live at the boundary, not in the caller.** An action is one
+      caller. Put the rule in the repository or the domain function every path
+      goes through, then the next surface somebody adds inherits it instead of
+      having to remember it.
+- [ ] **A test that constructs an impossible state proves nothing.** When a new
+      invariant turns tests red, ask first whether they were describing
+      something a user could actually do. Six here had been green for
+      twenty-eight sprints while fabricating attempts no child could make —
+      the fabrication was the missing rule, written down and passing.
 - [ ] **Existence is not entitlement.** Nearly every check in this product
       asked whether a record exists — a real class, a real student, a shipped
       mission, a valid form — and none asked whether the caller was entitled to

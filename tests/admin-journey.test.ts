@@ -1,6 +1,13 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Db } from "@/lib/db";
-import { createTestDb, DEMO_ADMIN, DEMO_CLASS, DEMO_SCHOOL, DEMO_TEACHER } from "./helpers";
+import {
+  createTestDb,
+  DEMO_ADMIN,
+  DEMO_CLASS,
+  DEMO_SCHOOL,
+  DEMO_TEACHER,
+  playToEnd,
+} from "./helpers";
 import {
   archiveClass,
   createClass,
@@ -21,14 +28,11 @@ import {
   setRetentionMonths,
 } from "@/lib/repo/school";
 import {
-  completeAttempt,
   completeBenchmark,
   listAttemptsForSchool,
   listBenchmarksForSchool,
   listBenchmarksForClass,
-  recordDecision,
   saveBenchmarkResponse,
-  startAttempt,
 } from "@/lib/repo/progress";
 import { buildSchoolReport, MIN_REPORTABLE_GROUP, reportToCsv } from "@/lib/repo/report";
 import { MISSIONS } from "@/content/missions";
@@ -289,17 +293,9 @@ describe("suppression counts the students who actually contributed", () => {
   function contribute(classId: string, studentId: string, missionId: string) {
     assignMission(db2, { classId, missionId, assignedBy: DEMO_TEACHER });
     const mission = MISSIONS.find((m) => m.id === missionId)!;
-    startAttempt(db2, studentId, missionId);
-    const scene = mission.scenes.find((sc) => sc.choices?.some((c) => c.evidence))!;
-    const choice = scene.choices!.find((c) => c.evidence)!;
-    recordDecision(db2, {
-      studentId,
-      missionId,
-      sceneId: scene.id,
-      choiceId: choice.id,
-      evidence: choice.evidence,
-    });
-    completeAttempt(db2, studentId, missionId);
+    // Played to the end rather than fabricated, because the server no longer
+    // accepts an attempt that could not have happened.
+    playToEnd(db2, studentId, mission);
   }
 
   it("suppresses a competency one student of thirty contributed to", () => {

@@ -7,10 +7,10 @@ likely to be.
 
 ---
 
-## Sprint 27 — the class code protected nothing
+## Sprint 28 — the authored graph was enforced by the browser
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-27-sprint-27.md`](2026-08-27-sprint-27.md)
+- **Full review:** [`2026-08-27-sprint-28.md`](2026-08-27-sprint-28.md)
 - **Review trail:** sprints 01–16 in this directory. Sprint 09 tripled the
   curriculum to 27 missions. Sprint 10 fixed two mechanism defects found in it.
   Sprints 11 to 15 fixed content defects in ten of them, two per sprint.
@@ -20,77 +20,74 @@ likely to be.
   one of the 27 missions has now been read, and 26 had findings. Sprints 22-23
   are the second pass over the reporting layer, sprint 24 the assessment layer.
   sprint 25 the educator orientation. Every body of authored content has been
-  read once. **Sprints 26 and 27 audit what the product *permits*. Sprint 26
-  found a staff-side hole; sprint 27 found student impersonation, which is
-  worse.**
+  read once. **Sprints 26-28 audit what the product *permits*: a staff-side
+  hole, student impersonation, and now the authored graph itself — which was
+  being enforced by a React component.**
 
 ### What changed
 
-1. **The class code protected nothing.** `findClassByCode` validated the code
-   and threw it away. `/join/[classId]` rendered every child's name and avatar
-   to anyone holding a class id, and **`chooseStudent` took any student id in
-   the database and wrote that child's session** — no grant, and no check that
-   the student was even in the class whose roster had been shown. A direct URL
-   listed a school's children; a direct action call logged in as any of them.
-2. **Entering the code now writes a signed, expiring, class-bound grant**,
-   reusing the session HMAC. Ten minutes, `httpOnly`, its own cookie.
-   `/join/[classId]` refuses unless the grant names that exact class.
-   `chooseStudent` verifies the grant itself rather than trusting the page that
-   rendered the buttons — grant present, student in that class, class not
-   archived — and **spends the grant** before writing the session.
-3. **Mission and check-in availability were UI, not rules.** The play page and
-   all four mission actions accepted any shipped slug, so an unassigned mission
-   could be opened by URL and real evidence recorded into it. Worse:
-   `nextBenchmarkFor` offered the spring form **the moment the fall one was
-   completed**, with no window state and no date anywhere, while the admin
-   pages, plans page and report all called them fall and spring windows. A
-   child could take both back to back and the report presented the difference
-   as a year's change.
-4. **Both are rules now**, in `src/lib/domain/eligibility.ts`, shared by page
-   loaders and actions. `missionAccessFor` returns assigned / replay / denied,
-   with replay a **documented exception** so withdrawing an assignment does not
-   delete access to completed work. `canTakeBenchmark` opens a form only when
-   the school's window names it and it is unfinished. **The window is real
-   state**: `schools.benchmark_window` is `closed | pre | post`, default closed,
-   with an administrator control and an audit entry. The old window-blind
-   `nextBenchmarkFor` is deleted, not deprecated.
+1. **The authored graph was enforced by the browser.** The server checked that a
+   submitted scene and choice existed *somewhere in the mission* and appended
+   whatever it was handed; nothing compared the scene against the one the stored
+   path leads to. `completeAttempt` took the caller's word that a mission was
+   finished. So a direct caller could post the strongest option at every
+   decision in any order — skipping every story beat and every authored
+   correction — collect a full set of `demonstrated` evidence, mark it complete
+   and take the badge. Teacher evidence and the annual report would describe a
+   mission nobody played. This is the premise of every content sprint and the
+   first line of the product description, and nothing checked it.
+2. **The check-in had the same terminal defect.** `completeBenchmark` marked a
+   form finished with **zero responses** — counting that child into the cohort
+   and scoring every unanswered item incorrect — and a completed form could
+   still be written to afterwards.
+3. **The invariants now live in the repository, not the action.** Two pure
+   functions — `expectedDecisionSceneId` and `hasReachedEnding` — and
+   `recordDecision` refuses a scene that is not the expected one or any write to
+   a completed attempt; `completeAttempt` refuses unless the path reaches an
+   ending; `saveBenchmarkResponse` refuses a finished form; `completeBenchmark`
+   requires one valid answer for every authored item.
+4. **`removeStudentAction` authorised the class and deleted the student.** The
+   two ids were never checked against each other, so a teacher could pass their
+   own class id with any student id they knew and permanently delete that child
+   — from a colleague's class or another school — while the audit named the
+   wrong class. `deleteStudentFromClass` is scoped by both ids and returns
+   whether a row went; the action refuses a mismatch **before** the audit.
 
 ### Already verified — please do not redo
 
-- `npm run verify` green: typecheck, lint, **381 tests**, Turbopack build.
-- The grant is asserted at the token layer beside the session tamper cases:
-  round-trip, wrong key, **class swapped after signing**, expiry at the boundary
-  both ways, session-token-as-grant and the reverse, malformed input.
-- The eligibility rules are asserted directly, including the one that was the
-  whole defect: `canTakeBenchmark({ window: "pre", form: "post" })` is false and
-  `nextBenchmarkFor(finishedPre, "pre")` is null.
-- Wiring assertions: both join surfaces read the grant, `chooseStudent` checks
-  `class_id` and spends it, both student pages call the rules, and **each of the
-  six student actions goes through `requirePlayableMission` or
-  `requireOpenCheckIn`**.
-- Verified in the app: `/join/cls_room12` with no grant redirects; a Room 12
-  grant does not open Room 4; as the demo student, `/student/checkin/post` and
-  an unassigned mission URL both redirect to `/student`.
-- No new student fields. No passwords. No telemetry.
+- `npm run verify` green: typecheck, lint, **393 tests**, Turbopack build.
+- Twelve new tests assert the attack rather than its absence: posting every
+  strong choice in reverse accepts at most one and then refuses to complete;
+  finishing from the opening scene is refused; empty and partial check-ins are
+  refused; a completed check-in locks against revision.
+- Delete tests: same-class succeeds, a colleague's student is refused with
+  nothing changed, an unknown id reports failure, and the action's body must
+  check `removed` before `recordAudit`.
+- **Six existing tests failed when the invariants landed and were rewritten to
+  walk the mission, not loosened.** There are `playTo` and `playToEnd` helpers
+  now. One — "keeps demonstrated sticky once earned unaided elsewhere" — had
+  been posting the same choice at the same scene twice, so the claim in its name
+  is tested for the first time.
 
 ### Where this is most likely still wrong
 
-- **Existence is not entitlement, and that was the shape of every check here.**
-  Does this class exist, is it in my school, is this a real student, a shipped
-  mission, a valid form. Not one asked whether the caller was entitled to it.
-  Two sprints have each found what they were pointed at; **nobody has enumerated
-  every route and asked who may reach it.**
-- **`enterDemo("student")` still writes a student session directly**, bypassing
-  the grant. It is an explicit demo button and the mechanism the whole demo
-  rests on, but it is there.
-- **Commercial framing was load-bearing on state that did not exist.** "Fall and
-  spring windows" is what makes an annual subscription and an annual report
-  coherent, and nothing was behind it. Same class of defect as sprint 25's
-  "certified" — a word doing work the system could not support. That one was
-  fixed by changing the word; this one was worth keeping, so the state got built.
+- **A test that constructs an impossible state proves nothing.** Six here had
+  been green for twenty-eight sprints while fabricating attempts no child could
+  make. The fabrication *was* the missing rule, written down and passing. When
+  an invariant lands and tests go red, ask first whether they described
+  something a user could actually do.
+- **Existence is not sequence**, the sibling of sprint 27's *existence is not
+  entitlement*. Every check asked whether a thing was real; none asked whether
+  it was next.
+- **No route audit is complete.** Three sprints have each found what they were
+  pointed at. **Nobody has enumerated every route and action and asked, for
+  each, what it checks and what it acts on.** That enumeration is the obvious
+  next piece of work and it has not been done.
+- **`simulateAttempt` in the seed still writes paths directly**, bypassing
+  `recordDecision`. Demo data only, and it means seeded paths are not themselves
+  proof of anything.
+- **`enterDemo("student")` still writes a student session directly** — sprint 27.
 - **The instrument is still unequated with one item per skill** — sprint 24.
-  Real windows make the time separation true; they do not make the forms
-  parallel.
 - **Marketing prose is still mostly untested** — sprint 26.
 - **Every mission has been read once. None has been read twice.**
 - **Nothing checks what a wrong answer costs a child** — sprint 20.
