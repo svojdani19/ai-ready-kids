@@ -48,7 +48,7 @@ const SECTIONS = [
       "A student joins by typing a class code their teacher shows the room, then tapping their own name.",
       "There is no password to reset, no email address to verify and no recovery flow to attack.",
       "A class code protects a child's own progress list. That is the entire value of what sits behind it, and the security is proportionate to that.",
-      "In a district deployment this is replaced by your roster sync and single sign-on, at which point the class code disappears.",
+      "Roster sync and single sign-on would replace class codes in a production deployment. Neither is built in this demonstration, so the class code is how a child gets in, and it is the only credential in the product.",
     ],
   },
   {

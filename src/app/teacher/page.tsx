@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
-import { requireStaff } from "@/lib/auth/session";
-import { listAssignments, listClasses, listClassesForTeacher, listStudents } from "@/lib/repo/classroom";
+import { requireTeacher } from "@/lib/auth/session";
+import { listAssignments, listClassesForTeacher, listStudents } from "@/lib/repo/classroom";
 import { getCertification, listAttemptsForClass } from "@/lib/repo/progress";
 import { nextTeachingFocus, summariseCohort } from "@/lib/domain/evidence";
 import { COMPETENCY_BY_ID } from "@/content/competencies";
@@ -22,15 +22,13 @@ const ACCENT: Record<string, "pine" | "marigold" | "denim"> = {
 };
 
 export default async function TeacherOverview() {
-  const { user } = await requireStaff();
+  const { user } = await requireTeacher();
   const db = getDb();
 
-  // An administrator opening the teacher view sees every class, since they do
-  // not own one of their own.
-  const classes =
-    user.role === "admin"
-      ? listClasses(db, user.school_id)
-      : listClassesForTeacher(db, user.id);
+  // Only classes this teacher is the teacher of record for. This used to hand
+  // an administrator every class in the school, with a button through to each
+  // roster — the second way into the same disclosure.
+  const classes = listClassesForTeacher(db, user.id);
 
   const cards = classes.map((classroom) => {
     const students = listStudents(db, classroom.id);

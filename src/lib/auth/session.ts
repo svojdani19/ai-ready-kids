@@ -93,6 +93,17 @@ export async function requireStaff(): Promise<StaffContext> {
   return staff;
 }
 
+/**
+ * Teacher surfaces render named children and their individual evidence. An
+ * administrator arriving at one is sent to their own dashboard rather than
+ * shown the roster, because the product tells them they see aggregates.
+ */
+export async function requireTeacher(): Promise<StaffContext> {
+  const staff = await requireStaff();
+  if (staff.user.role !== "teacher") redirect("/admin");
+  return staff;
+}
+
 export async function requireAdmin(): Promise<StaffContext> {
   const staff = await requireStaff();
   if (staff.user.role !== "admin") redirect("/teacher");

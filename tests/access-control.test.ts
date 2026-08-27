@@ -1,5 +1,8 @@
 import { randomBytes } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { canAdministerClass, canTeachClass } from "@/lib/auth/access";
 import type { Db } from "@/lib/db";
 import { createTestDb, DEMO_CLASS, DEMO_SCHOOL, DEMO_STUDENT } from "./helpers";
 import { decodeSession, encodeSession } from "@/lib/auth/token";
@@ -158,5 +161,96 @@ describe("the student record holds nothing it should not", () => {
       expect(step.choiceId).toMatch(/^c\d+$/);
       expect(Object.keys(step).sort()).toEqual(["choiceId", "sceneId"]);
     }
+  });
+});
+
+describe("a class belongs to its teacher, not to the school", () => {
+  /**
+   * Two live disclosures until sprint 26, both from the same missing rule.
+   * `requireStaff` accepts administrators, and every teacher page and action
+   * checked only `school_id`, so an administrator could open a roster and read
+   * each child's name beside their individual evidence — while the privacy
+   * page promised aggregates — and any teacher holding a colleague's class id
+   * could read that roster and mutate it.
+   *
+   * These assert the rule directly rather than through a rendered page,
+   * because a server action is a public endpoint whatever the UI links to.
+   */
+  const school = "sch_a";
+  const owner = { id: "usr_owner", role: "teacher" as const, school_id: school };
+  const colleague = { id: "usr_colleague", role: "teacher" as const, school_id: school };
+  const admin = { id: "usr_admin", role: "admin" as const, school_id: school };
+  const outsider = { id: "usr_far", role: "teacher" as const, school_id: "sch_b" };
+  const classroom = { teacher_id: owner.id, school_id: school };
+
+  it("lets the teacher of record in", () => {
+    expect(canTeachClass(owner, classroom)).toBe(true);
+  });
+
+  it("keeps a colleague out of a class that is not theirs", () => {
+    expect(canTeachClass(colleague, classroom)).toBe(false);
+  });
+
+  it("keeps an administrator out, deliberately rather than by not linking", () => {
+    // The old fix would have been to remove the link. A link is not a
+    // permission model: the URL is guessable and the actions are callable.
+    expect(canTeachClass(admin, classroom)).toBe(false);
+  });
+
+  it("keeps another school out even when the ids look right", () => {
+    expect(canTeachClass(outsider, { ...classroom, teacher_id: outsider.id })).toBe(false);
+  });
+
+  it("refuses a missing class rather than throwing at the call site", () => {
+    expect(canTeachClass(owner, undefined)).toBe(false);
+  });
+
+  it("gives an administrator the class as an object and not the children in it", () => {
+    // Creating, renaming, archiving, deleting and retention are class
+    // identity. Rosters and evidence are not, and this rule cannot express
+    // them, which is the point.
+    expect(canAdministerClass(admin, classroom)).toBe(true);
+    expect(canAdministerClass(owner, classroom)).toBe(false);
+    expect(canAdministerClass(admin, { school_id: "sch_b" })).toBe(false);
+  });
+
+  it("has no role that can both administer and teach the same class", () => {
+    for (const user of [owner, colleague, admin, outsider]) {
+      const both = canTeachClass(user, classroom) && canAdministerClass(user, classroom);
+      expect(both, `${user.id}`).toBe(false);
+    }
+  });
+});
+
+describe("no surface routes an administrator to a named roster", () => {
+  const src = (p: string) => readFileSync(join(process.cwd(), p), "utf8");
+
+  it("does not link from the admin class list into the teacher class page", () => {
+    // The disclosure had two doors: this link, and the teacher overview
+    // handing an administrator every class in the school.
+    expect(src("src/app/admin/classes/page.tsx")).not.toContain("/teacher/class/");
+  });
+
+  it("gates both roster-bearing teacher pages on the teacher role", () => {
+    for (const page of ["src/app/teacher/page.tsx", "src/app/teacher/class/[classId]/page.tsx"]) {
+      const body = src(page);
+      expect(body, page).toContain("requireTeacher()");
+      expect(body, page).not.toContain("requireStaff()");
+    }
+  });
+
+  it("routes every class mutation through the ownership check", () => {
+    const actions = src("src/app/actions/teacher.ts");
+    // Each mutating action takes a classId and must resolve it via
+    // requireOwnClass rather than looking the class up itself.
+    for (const action of ["addStudentAction", "removeStudentAction", "setAssignmentAction"]) {
+      const start = actions.indexOf(`export async function ${action}`);
+      expect(start, action).toBeGreaterThan(-1);
+      const body = actions.slice(start, actions.indexOf("export async function", start + 10));
+      expect(body, action).toContain("requireOwnClass");
+    }
+    // And the check itself must be ownership, not school membership.
+    expect(actions).toContain("canTeachClass(user, classroom)");
+    expect(actions).not.toContain("classroom.school_id !== user.school_id");
   });
 });

@@ -175,6 +175,17 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
 - [ ] **A privacy statement addressed to a child is still a privacy
       statement.** "Your teacher only uses this" has to be true of every adult
       who can reach the result, including through reports and exports.
+- [ ] **Every promise is a test case, not the one being edited.** Sprint 23
+      asserted the suppression thresholds and left the sentence beside them —
+      administrators see aggregates only — with no code behind it at all. When
+      a page makes several claims, enumerate them and check each one, because
+      the one you are looking at is the one least likely to be wrong.
+- [ ] **Ask what a role may do, not what a record belongs to.** Access control
+      here was tested as "same school" throughout, which is a fact about the
+      schema. Authorization is a fact about people: which role, acting on whose
+      class, may read a roster and which may only manage the class as an
+      object. A link removed is not a permission; server actions are public
+      endpoints whatever the UI renders.
 - [ ] **A promise in the prose is a test case.** Where the product tells a
       school what it will not show, assert that against the code that decides.
       A sentence in an export is a commitment, and it is the kind that goes

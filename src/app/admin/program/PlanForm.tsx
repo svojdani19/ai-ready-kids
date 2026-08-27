@@ -59,6 +59,11 @@ export function PlanForm({ plan, seats }: { plan: string; seats: number }) {
             product on a purchase order, so the real flow is a quote, a PO and an invoice
             from your account contact.
           </Note>
+          <Note tone="neutral" title="Choosing District does not enable anything">
+            The plan is a label on this school&rsquo;s record. Roster sync, single sign-on and
+            multi-school rollup reporting are not built, and selecting District does not
+            switch them on or change what this product can do.
+          </Note>
         </div>
       </div>
     </form>

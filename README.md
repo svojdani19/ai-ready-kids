@@ -373,11 +373,23 @@ administrator surfaces, with every student-facing control measured against the
 - **The school year is `2025–2026`** and the demo sits just after it ends, so
   renewal is due and the annual report is ready to export.
 - **Class codes are the whole student security model.** Proportionate to what
-  sits behind them — a child's own progress list — and replaced by SSO in
-  production.
+  sits behind them — a child's own progress list. Single sign-on would replace
+  them in production and is not built here.
+- **A class belongs to its teacher.** `canTeachClass` in
+  `src/lib/auth/access.ts` is the only rule that grants access to a roster or
+  to individual evidence, and it requires the requesting user to be the teacher
+  of record. Administrators are excluded by the rule rather than by not being
+  linked, because the product promises them aggregate figures. What an
+  administrator may do with a class — create, rename, archive, delete, set
+  retention — is class identity and lives in `canAdministerClass`.
 - **Read-aloud uses the browser's voice.** Quality varies by platform. Recorded
   narration per mission is the right answer and is a content job.
-- **Prices on the landing page are illustrative.**
+- **Prices on the landing page are illustrative**, and the District card
+  separates what the build does from what a district deployment would need.
+  Roster sync, single sign-on and multi-school rollup appear there under "Not
+  in this build" rather than in the feature list, because a feature list is
+  read as a list of features. Selecting District in the administrator area
+  changes a label and enables nothing.
 
 ## Deliberately deferred
 

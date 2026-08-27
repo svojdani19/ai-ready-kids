@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDb } from "@/lib/db";
-import { requireStaff } from "@/lib/auth/session";
+import { requireTeacher } from "@/lib/auth/session";
+import { canTeachClass } from "@/lib/auth/access";
 import { getClass, listAssignments, listStudents } from "@/lib/repo/classroom";
 import { getUser } from "@/lib/repo/school";
 import { listAttemptsForClass, listBenchmarksForClass } from "@/lib/repo/progress";
@@ -39,11 +40,15 @@ export default async function ClassPage({
   params: Promise<{ classId: string }>;
 }) {
   const { classId } = await params;
-  const { user } = await requireStaff();
+  const { user } = await requireTeacher();
   const db = getDb();
 
-  const classroom = getClass(db, classId);
-  if (!classroom || classroom.school_id !== user.school_id) notFound();
+  // Ownership, not school membership. An administrator reaching this URL gets
+  // the same 404 as a stranger: the product promises them aggregates, and this
+  // page renders named children beside their individual evidence.
+  const found = getClass(db, classId);
+  if (!canTeachClass(user, found)) notFound();
+  const classroom = found!;
 
   const teacher = getUser(db, classroom.teacher_id);
   const students = listStudents(db, classId);

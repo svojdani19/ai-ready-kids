@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getDb } from "@/lib/db";
 import { requireStaff } from "@/lib/auth/session";
+import { canTeachClass } from "@/lib/auth/access";
 import { MISSION_BY_ID } from "@/content/missions";
 import { CERTIFICATION_MODULES } from "@/content/certification";
 import {
@@ -27,14 +28,22 @@ export interface ActionState {
 }
 
 /** Staff may only touch classes inside their own school. */
+/**
+ * Every mutation below goes through this. It used to accept any staff member
+ * in the school, which meant a teacher holding a colleague's class id could
+ * add students to it, remove them, and change its assignments — and an
+ * administrator could do the same. Ownership is the rule now, and it is
+ * checked here rather than only in the page that renders the buttons, because
+ * a server action is a public endpoint whatever the UI shows.
+ */
 async function requireOwnClass(classId: string) {
   const { user } = await requireStaff();
   const db = getDb();
   const classroom = getClass(db, classId);
-  if (!classroom || classroom.school_id !== user.school_id) {
-    throw new Error("That class is not part of your school.");
+  if (!canTeachClass(user, classroom)) {
+    throw new Error("That is not your class.");
   }
-  return { user, db, classroom };
+  return { user, db, classroom: classroom! };
 }
 
 export async function createClassAction(
@@ -49,9 +58,13 @@ export async function createClassAction(
   if (![2, 3, 4].includes(grade)) return { error: "Choose grade 2, 3 or 4." };
 
   const db = getDb();
+  // A teacher may only create a class for themselves. An administrator may
+  // name any teacher, which is class identity rather than access to a roster.
+  const requestedTeacher = String(formData.get("teacherId") ?? user.id);
+  const teacherId = user.role === "admin" ? requestedTeacher : user.id;
   const created = createClass(db, {
     schoolId: user.school_id,
-    teacherId: String(formData.get("teacherId") ?? user.id),
+    teacherId,
     name,
     grade,
     schoolYear: String(formData.get("schoolYear") ?? "2025-2026"),

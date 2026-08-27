@@ -42,12 +42,16 @@ const PLANS = [
     price: "Talk to us",
     unit: "annual agreement",
     seats: "Multiple schools",
-    features: [
-      "Everything in Whole school",
+    features: ["Everything in Whole school", "Purchase order and invoicing"],
+    // Not built. This demonstration runs one school, on a file-backed
+    // database, with email-only sign-in and manually entered rosters. Listing
+    // these beside the working features let an evaluator conclude a district
+    // subscription includes integrations that do not exist, so they are
+    // labelled rather than sold.
+    planned: [
       "Roster sync via Clever or ClassLink",
       "District-level rollup reporting",
       "Single sign-on",
-      "Purchase order and invoicing",
     ],
   },
 ];
@@ -80,7 +84,7 @@ export default function PlansPage() {
               <p className="mt-3 font-display text-4xl text-ink">{p.price}</p>
               <p className="text-sm text-ink-soft">{p.unit}</p>
               <p className="mt-1 text-sm font-bold text-ink-soft">{p.seats}</p>
-              <ul className="mt-5 flex-1 space-y-2">
+              <ul className="mt-5 space-y-2">
                 {p.features.map((f) => (
                   <li key={f} className="flex gap-2 text-[0.95rem] leading-relaxed text-ink-soft">
                     <span aria-hidden="true" className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-pine" />
@@ -88,6 +92,27 @@ export default function PlansPage() {
                   </li>
                 ))}
               </ul>
+              <div className="flex-1">
+                {p.planned && (
+                  <div className="mt-5 rounded-xl border-2 border-dashed border-sand-deep p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-faint">
+                      Not in this build
+                    </p>
+                    <ul className="mt-2 space-y-1.5">
+                      {p.planned.map((f) => (
+                        <li key={f} className="flex gap-2 text-sm leading-relaxed text-ink-soft">
+                          <span aria-hidden="true" className="mt-1.5 h-2 w-2 shrink-0 rounded-full border border-sand-deep" />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-2.5 text-sm leading-relaxed text-ink-soft">
+                      Production requirements for a district deployment, not features you
+                      can use today.
+                    </p>
+                  </div>
+                )}
+              </div>
               <ButtonLink
                 href="/demo"
                 variant={p.featured ? "primary" : "secondary"}
@@ -105,7 +130,17 @@ export default function PlansPage() {
           This demonstration takes no payment details and stores no billing information.
           The plan control in the administrator area records an intent to change and
           writes an audit entry — nothing more. There is no payment processor behind it,
-          and there is no card field anywhere in the product.
+          and there is no card field anywhere in the product. Selecting a plan there does
+          not switch anything on.
+        </p>
+        <p className="mt-4 max-w-3xl text-[1.05rem] leading-relaxed text-ink">
+          It also runs a single school. Roster sync through Clever or ClassLink, single
+          sign-on, and reporting that rolls several schools into a district view are all
+          deliberately deferred — they are named on the District card as production
+          requirements rather than listed as features, because an evaluator reading a
+          feature list is entitled to assume the features are there. Teachers enter
+          rosters by hand, staff sign in by email address with no password, and every
+          figure in the product is scoped to one school.
         </p>
       </Section>
     </>
