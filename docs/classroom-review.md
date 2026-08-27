@@ -146,6 +146,19 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       learning the language, disabled children and children with less at home
       all lose on that kind of test, and never because they did anything wrong.
       Prefer a question every person is asked the same way.
+- [ ] **Suppression counts the people who contributed, not the people who
+      could have.** A rate over one child in a school of thirty is a disclosure
+      however many are enrolled, and in a grade 2-4 school somebody can usually
+      work out who. Check what the threshold is applied to, and deduplicate
+      across groups before applying it. Suppress the raw counts beside the rate:
+      "1 of 1" says exactly what the percentage would have.
+- [ ] **A promise in the prose is a test case.** Where the product tells a
+      school what it will not show, assert that against the code that decides.
+      A sentence in an export is a commitment, and it is the kind that goes
+      stale silently when the calculation underneath it changes.
+- [ ] **A correctness fix does not carry a privacy fix with it.** Changing what
+      a number means changes who it identifies. Re-read the guard in the same
+      breath as the arithmetic.
 - [ ] **Every reported number states what it divided by.** A rate over "the
       students who met this skill" and a rate over "the class" are different
       claims, and only one of them is usually true. Check the denominator in

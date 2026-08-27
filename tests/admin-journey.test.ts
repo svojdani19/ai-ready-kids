@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Db } from "@/lib/db";
-import { createTestDb, DEMO_ADMIN, DEMO_CLASS, DEMO_SCHOOL } from "./helpers";
+import { createTestDb, DEMO_ADMIN, DEMO_CLASS, DEMO_SCHOOL, DEMO_TEACHER } from "./helpers";
 import {
   archiveClass,
   createClass,
@@ -8,6 +8,7 @@ import {
   deleteClass,
   listClasses,
   listStudents,
+  assignMission,
 } from "@/lib/repo/classroom";
 import {
   createUser,
@@ -20,13 +21,19 @@ import {
   setRetentionMonths,
 } from "@/lib/repo/school";
 import {
+  completeAttempt,
+  completeBenchmark,
   listAttemptsForSchool,
   listBenchmarksForSchool,
   listBenchmarksForClass,
+  recordDecision,
+  saveBenchmarkResponse,
+  startAttempt,
 } from "@/lib/repo/progress";
 import { buildSchoolReport, MIN_REPORTABLE_GROUP, reportToCsv } from "@/lib/repo/report";
 import { MISSIONS } from "@/content/missions";
-import { summariseCohortBenchmark } from "@/lib/domain/benchmark";
+import { BENCHMARK_FORMS } from "@/content/benchmark";
+import { MIN_BENCHMARK_GROUP, summariseCohortBenchmark } from "@/lib/domain/benchmark";
 import { addMonths, formatDate, purgeDateFor, retentionRows } from "@/lib/domain/retention";
 
 let db: Db;
@@ -241,5 +248,239 @@ describe("staff management", () => {
     expect(listUsers(db, DEMO_SCHOOL, "admin").length).toBeGreaterThanOrEqual(1);
     expect(listUsers(db, DEMO_SCHOOL, "teacher").length).toBeGreaterThanOrEqual(1);
     expect(listUsers(db, DEMO_SCHOOL).find((u) => u.id === DEMO_ADMIN)?.role).toBe("admin");
+  });
+});
+
+describe("suppression counts the students who actually contributed", () => {
+  /**
+   * The promise in the export is that nothing below five students is reported.
+   * It was being checked against roster size, so a school of thirty where one
+   * child had completed the only relevant mission exported that child's result
+   * as a competency percentage. In a grade 2-4 school somebody can usually work
+   * out who the one participant was, which makes "aggregate" no protection at
+   * all. These tests hold the promise to what it says.
+   */
+  let school: string;
+  let db2: Db;
+  let cleanup2: () => void;
+
+  beforeAll(() => {
+    ({ db: db2, cleanup: cleanup2 } = createTestDb());
+    school = DEMO_SCHOOL;
+  });
+  afterAll(() => cleanup2());
+
+  /** A fresh class with `size` students and no attempts at all. */
+  function emptyClass(name: string, size: number): { classId: string; studentIds: string[] } {
+    const classId = createClass(db2, {
+      schoolId: school,
+      teacherId: DEMO_TEACHER,
+      name,
+      grade: 3,
+      schoolYear: "2025-2026",
+    }).id;
+    const studentIds = Array.from({ length: size }, (_, i) =>
+      createStudent(db2, { classId, displayName: `Child ${name}${i}.` }).id,
+    );
+    return { classId, studentIds };
+  }
+
+  /** Complete one mission for a student so they contribute to a competency. */
+  function contribute(classId: string, studentId: string, missionId: string) {
+    assignMission(db2, { classId, missionId, assignedBy: DEMO_TEACHER });
+    const mission = MISSIONS.find((m) => m.id === missionId)!;
+    startAttempt(db2, studentId, missionId);
+    const scene = mission.scenes.find((sc) => sc.choices?.some((c) => c.evidence))!;
+    const choice = scene.choices!.find((c) => c.evidence)!;
+    recordDecision(db2, {
+      studentId,
+      missionId,
+      sceneId: scene.id,
+      choiceId: choice.id,
+      evidence: choice.evidence,
+    });
+    completeAttempt(db2, studentId, missionId);
+  }
+
+  it("suppresses a competency one student of thirty contributed to", () => {
+    const { classId, studentIds } = emptyClass("Thirty", 30);
+    const mission = MISSIONS.find((m) => m.competency === "privacy")!;
+    contribute(classId, studentIds[0], mission.id);
+
+    const report = buildSchoolReport(db2, school);
+    const row = report.byClass.find((c) => c.classId === classId)!;
+    const cell = row.competencies.find((c) => c.competency === "privacy")!;
+
+    // One contributor, thirty enrolled. The old check saw thirty.
+    expect(cell.contributors).toBe(1);
+    expect(cell.demonstratedRate).toBeNull();
+    // The class itself is not suppressed — it has thirty children on the roster.
+    expect(row.suppressed).toBe(false);
+  });
+
+  it("suppresses the raw counts alongside the rate", () => {
+    const report = buildSchoolReport(db2, school);
+    for (const c of report.competencies) {
+      if (c.demonstratedRate !== null) continue;
+      // "1 of 1" discloses exactly what the percentage would have.
+      expect(c.demonstrated).toBeNull();
+      expect(c.possible).toBeNull();
+    }
+  });
+
+  it("holds the boundary at five distinct contributors", () => {
+    const mission = MISSIONS.find((m) => m.competency === "verification")!;
+    const four = emptyClass("Four", 20);
+    for (let i = 0; i < MIN_REPORTABLE_GROUP - 1; i += 1) {
+      contribute(four.classId, four.studentIds[i], mission.id);
+    }
+    let cell = buildSchoolReport(db2, school)
+      .byClass.find((c) => c.classId === four.classId)!
+      .competencies.find((c) => c.competency === "verification")!;
+    expect(cell.contributors).toBe(MIN_REPORTABLE_GROUP - 1);
+    expect(cell.demonstratedRate).toBeNull();
+
+    // One more child, and the same cell becomes reportable.
+    contribute(four.classId, four.studentIds[MIN_REPORTABLE_GROUP - 1], mission.id);
+    cell = buildSchoolReport(db2, school)
+      .byClass.find((c) => c.classId === four.classId)!
+      .competencies.find((c) => c.competency === "verification")!;
+    expect(cell.contributors).toBe(MIN_REPORTABLE_GROUP);
+    expect(cell.demonstratedRate).not.toBeNull();
+  });
+
+  it("deduplicates contributors across classes at school level", () => {
+    const mission = MISSIONS.find((m) => m.competency === "ownership")!;
+    const a = emptyClass("OwnA", 10);
+    const b = emptyClass("OwnB", 10);
+    for (let i = 0; i < 3; i += 1) contribute(a.classId, a.studentIds[i], mission.id);
+    for (let i = 0; i < 2; i += 1) contribute(b.classId, b.studentIds[i], mission.id);
+
+    const report = buildSchoolReport(db2, school);
+    // Neither class reaches five on its own.
+    for (const classId of [a.classId, b.classId]) {
+      const cell = report.byClass
+        .find((c) => c.classId === classId)!
+        .competencies.find((c) => c.competency === "ownership")!;
+      expect(cell.contributors).toBeLessThan(MIN_REPORTABLE_GROUP);
+      expect(cell.demonstratedRate).toBeNull();
+    }
+    // Together they do, counted as distinct children rather than as cells.
+    const schoolCell = report.competencies.find((c) => c.competency === "ownership")!;
+    expect(schoolCell.contributors).toBeGreaterThanOrEqual(MIN_REPORTABLE_GROUP);
+    expect(schoolCell.demonstratedRate).not.toBeNull();
+  });
+});
+
+describe("benchmark suppression happens on the object, not in one view", () => {
+  let db3: Db;
+  let cleanup3: () => void;
+  beforeAll(() => {
+    ({ db: db3, cleanup: cleanup3 } = createTestDb());
+  });
+  afterAll(() => cleanup3());
+
+  function record(studentId: string, form: "pre" | "post") {
+    for (const item of BENCHMARK_FORMS[form].items) {
+      saveBenchmarkResponse(db3, {
+        studentId,
+        form,
+        itemId: item.id,
+        optionId: item.options.find((o) => o.correct)!.id,
+      });
+    }
+    completeBenchmark(db3, studentId, form);
+  }
+
+  it("withholds every rate and growth cell for a single matched student", () => {
+    const classId = createClass(db3, {
+      schoolId: DEMO_SCHOOL,
+      teacherId: DEMO_TEACHER,
+      name: "Bench One",
+      grade: 3,
+      schoolYear: "2025-2026",
+    }).id;
+    const only = createStudent(db3, { classId, displayName: "Solo B." }).id;
+    // Pad the roster so the school is plainly larger than the reporting floor.
+    for (let i = 0; i < 20; i += 1) {
+      createStudent(db3, { classId, displayName: `Other ${i}.` });
+    }
+    record(only, "pre");
+    record(only, "post");
+
+    const bench = summariseCohortBenchmark(listBenchmarksForClass(db3, classId));
+    expect(bench.matched).toBe(1);
+    expect(bench.preRate).toBeNull();
+    expect(bench.postRate).toBeNull();
+    expect(bench.growthPoints).toBeNull();
+    for (const c of bench.byCompetency) {
+      expect(c.preRate).toBeNull();
+      expect(c.postRate).toBeNull();
+      expect(c.growthPoints).toBeNull();
+    }
+
+    // And it must be withheld in the export, not merely hidden in a page. The
+    // seeded school has plenty of matched students of its own, so this checks
+    // the export path against a report whose benchmark is the suppressed one.
+    const report = { ...buildSchoolReport(db3, DEMO_SCHOOL), benchmark: bench };
+    const csv = reportToCsv(report);
+    const growthRow = csv.split("\n").find((r) => r.startsWith("Matched growth"))!;
+    expect(growthRow).toContain("too few to report");
+    expect(growthRow).not.toMatch(/-?\d+(\.\d+)?"?$/);
+    // The participation count is not itself a result and stays visible.
+    expect(csv.split("\n").find((r) => r.startsWith("Matched students"))).toContain("1");
+  });
+
+  it("reports once the matched group reaches the threshold", () => {
+    const classId = createClass(db3, {
+      schoolId: DEMO_SCHOOL,
+      teacherId: DEMO_TEACHER,
+      name: "Bench Many",
+      grade: 4,
+      schoolYear: "2025-2026",
+    }).id;
+    const ids = Array.from(
+      { length: MIN_BENCHMARK_GROUP },
+      (_, i) => createStudent(db3, { classId, displayName: `Many ${i}.` }).id,
+    );
+    for (const id of ids) {
+      record(id, "pre");
+      record(id, "post");
+    }
+    const bench = summariseCohortBenchmark(listBenchmarksForClass(db3, classId));
+    expect(bench.matched).toBe(MIN_BENCHMARK_GROUP);
+    expect(bench.preRate).not.toBeNull();
+    expect(bench.growthPoints).not.toBeNull();
+  });
+});
+
+describe("the export never contradicts its own privacy note", () => {
+  it("leaks no number where the object says the cell is suppressed", () => {
+    const report = buildSchoolReport(db, DEMO_SCHOOL);
+    const csv = reportToCsv(report);
+    const lines = csv.split("\n");
+
+    for (const c of report.competencies) {
+      const row = lines.find((r) => r.startsWith(c.label))!;
+      if (c.demonstratedRate === null) {
+        expect(row, `${c.label} row`).toContain("too few to report");
+        expect(row).not.toMatch(/\d+%/);
+      }
+    }
+    for (const c of report.byClass) {
+      if (c.completionRate !== null) continue;
+      const row = lines.find((r) => r.startsWith(c.className))!;
+      expect(row).toContain("too few to report");
+    }
+  });
+
+  it("says what the threshold is actually counted over", () => {
+    const notes = buildSchoolReport(db, DEMO_SCHOOL).privacy.join(" ");
+    // The old note said "any group smaller than five", which was not true of
+    // the cells it was describing.
+    expect(notes).toContain("distinct students contributed to that particular figure");
+    expect(notes).toMatch(/usually fewer students than are enrolled/);
+    // Completion rate is the documented exception rather than a quiet one.
+    expect(notes).toMatch(/Completion rates are the one figure calculated over everybody assigned/);
   });
 });

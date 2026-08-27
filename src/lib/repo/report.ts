@@ -4,7 +4,11 @@ import { COMPETENCY_BY_ID, COMPETENCY_IDS } from "@/content/competencies";
 import { MISSIONS, MISSION_BY_ID } from "@/content/missions";
 import { CERTIFICATION_MODULES } from "@/content/certification";
 import { summariseCohort } from "@/lib/domain/evidence";
-import { summariseCohortBenchmark, type CohortBenchmark } from "@/lib/domain/benchmark";
+import {
+  MIN_BENCHMARK_GROUP,
+  summariseCohortBenchmark,
+  type CohortBenchmark,
+} from "@/lib/domain/benchmark";
 import { listAssignments, listClasses, listStudents } from "./classroom";
 import { listAttemptsForClass, listBenchmarksForClass, listCertifications } from "./progress";
 import { getSchool, listUsers } from "./school";
@@ -29,7 +33,12 @@ export interface ClassReport {
   students: number;
   assignedMissions: number;
   completionRate: number | null;
-  competencies: { competency: CompetencyId; demonstratedRate: number | null }[];
+  competencies: {
+    competency: CompetencyId;
+    demonstratedRate: number | null;
+    /** Distinct students who contributed to this figure. */
+    contributors: number;
+  }[];
   suppressed: boolean;
 }
 
@@ -56,8 +65,11 @@ export interface SchoolReport {
     competency: CompetencyId;
     label: string;
     demonstratedRate: number | null;
-    demonstrated: number;
-    possible: number;
+    /** Null alongside a suppressed rate: the raw pair counts disclose it too. */
+    demonstrated: number | null;
+    possible: number | null;
+    /** Distinct students across all classes who contributed to this figure. */
+    contributors: number;
   }[];
   missions: { missionId: string; title: string; completed: number; assignedTo: number }[];
   byClass: ClassReport[];
@@ -67,8 +79,21 @@ export interface SchoolReport {
   privacy: string[];
 }
 
-function rateOrSuppress(rate: number, groupSize: number): number | null {
-  return groupSize >= MIN_REPORTABLE_GROUP ? rate : null;
+/**
+ * Suppress a rate unless enough **distinct students actually contributed to
+ * that figure**. The group size passed in must never be a roster count or a
+ * count of student-skill pairs: a school of thirty where one child completed
+ * the only relevant mission has a contributing group of one, however many are
+ * enrolled, and reporting it as a percentage discloses that child in a class
+ * small enough for a principal to work out who.
+ *
+ * The one deliberate exception is completion rate, where every assigned student
+ * is a contributor by construction — a completion figure is over the whole
+ * class by definition. That is called out separately in the privacy notes
+ * rather than being folded into the same sentence.
+ */
+function rateOrSuppress(rate: number, contributors: number): number | null {
+  return contributors >= MIN_REPORTABLE_GROUP ? rate : null;
 }
 
 export function buildSchoolReport(db: Db, schoolId: string, now = new Date()): SchoolReport {
@@ -103,23 +128,22 @@ export function buildSchoolReport(db: Db, schoolId: string, now = new Date()): S
   );
 
   const competencies = COMPETENCY_IDS.map((competency) => {
-    const demonstrated = perClass.reduce(
-      (n, c) => n + (c.cohort.competencies.find((x) => x.competency === competency)?.demonstrated ?? 0),
-      0,
+    const cells = perClass.map((c) =>
+      c.cohort.competencies.find((x) => x.competency === competency),
     );
-    const totalPossible = perClass.reduce(
-      (n, c) => n + (c.cohort.competencies.find((x) => x.competency === competency)?.possible ?? 0),
-      0,
-    );
+    const demonstrated = cells.reduce((n, x) => n + (x?.demonstrated ?? 0), 0);
+    const totalPossible = cells.reduce((n, x) => n + (x?.possible ?? 0), 0);
+    // Deduplicated across classes before the threshold is checked.
+    const contributors = new Set(cells.flatMap((x) => x?.contributorIds ?? [])).size;
+    const rate = rateOrSuppress(totalPossible ? demonstrated / totalPossible : 0, contributors);
     return {
       competency,
       label: COMPETENCY_BY_ID[competency].formalName,
-      demonstrated,
-      possible: totalPossible,
-      demonstratedRate: rateOrSuppress(
-        totalPossible ? demonstrated / totalPossible : 0,
-        allStudents,
-      ),
+      // The raw counts disclose the same thing the rate would, so they go too.
+      demonstrated: rate === null ? null : demonstrated,
+      possible: rate === null ? null : totalPossible,
+      contributors,
+      demonstratedRate: rate,
     };
   });
 
@@ -190,7 +214,9 @@ export function buildSchoolReport(db: Db, schoolId: string, now = new Date()): S
       completionRate: rateOrSuppress(cohort.completionRate, students.length),
       competencies: cohort.competencies.map((c) => ({
         competency: c.competency,
-        demonstratedRate: rateOrSuppress(c.demonstratedRate, students.length),
+        // This class's own distinct contributors, not its roster.
+        demonstratedRate: rateOrSuppress(c.demonstratedRate, c.contributorIds.length),
+        contributors: c.contributorIds.length,
       })),
       suppressed: students.length < MIN_REPORTABLE_GROUP,
     })),
@@ -203,7 +229,9 @@ export function buildSchoolReport(db: Db, schoolId: string, now = new Date()): S
     },
     privacy: [
       "This report contains no student names, initials, identifiers, dates of birth or free text written by a child.",
-      `Any group smaller than ${MIN_REPORTABLE_GROUP} students is reported as "too few to report" rather than as a percentage.`,
+      `Every competency figure reads "too few to report" unless at least ${MIN_REPORTABLE_GROUP} distinct students contributed to that particular figure. Contributing means having completed a mission that offered the skill, which is usually fewer students than are enrolled.`,
+      `Check-in rates read "too few to report" unless at least ${MIN_BENCHMARK_GROUP} students completed that window. Growth is withheld unless at least ${MIN_BENCHMARK_GROUP} students completed both windows, and the same threshold applies to every per-competency growth figure.`,
+      "Completion rates are the one figure calculated over everybody assigned, because there the contributing group is the whole class by definition. They are suppressed on class size.",
       "Figures describe demonstrated competencies from authored choices. They are not risk scores, behavioural predictions or psychological assessments.",
       "Check-in results are reported only in aggregate. No individual student's answers appear anywhere in this export.",
     ],

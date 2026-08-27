@@ -94,8 +94,10 @@ export default async function AdminReport() {
         <section className="mt-7">
           <h2 className="font-display text-xl text-ink">Competencies demonstrated</h2>
           <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
-            Share of all possible skill demonstrations achieved. Each competency has three
-            named skills. A skill counts once a student has chosen it unaided; reaching the same answer after a Try again is recorded as developing instead.
+            Share of the skill demonstrations that students have actually had a chance at.
+            Each competency has three named skills, and a skill counts once a student has
+            chosen it unaided; reaching the same answer after a Try again is recorded as
+            developing instead. Rows read “—” where fewer than five children have contributed.
           </p>
           <table className="mt-3 w-full border-collapse text-sm">
             <thead>
@@ -112,8 +114,8 @@ export default async function AdminReport() {
                   <th scope="row" className="py-2 text-left font-medium text-ink">
                     {c.label}
                   </th>
-                  <td className="ark-tabular py-2 text-ink-soft">{c.demonstrated}</td>
-                  <td className="ark-tabular py-2 text-ink-soft">{c.possible}</td>
+                  <td className="ark-tabular py-2 text-ink-soft">{c.demonstrated ?? "—"}</td>
+                  <td className="ark-tabular py-2 text-ink-soft">{c.possible ?? "—"}</td>
                   <td className="ark-tabular py-2 font-semibold text-ink">
                     {pct(c.demonstratedRate)}
                   </td>

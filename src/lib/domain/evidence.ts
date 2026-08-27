@@ -212,6 +212,14 @@ export interface CohortSummary {
     demonstratedRate: number;
     demonstrated: number;
     possible: number;
+    /**
+     * Distinct students who contributed at least one opportunity to this
+     * competency. This — not the roster, and not `possible`, which counts
+     * student-skill pairs — is the group that suppression must be applied to.
+     * Ids rather than a count so that a school-level roll-up can deduplicate
+     * across classes before checking the threshold. Never exported.
+     */
+    contributorIds: string[];
   }[];
 }
 
@@ -276,11 +284,17 @@ export function summariseCohort(input: {
     const own = skills.filter((s) => s.competency === id);
     const demonstrated = own.reduce((n, s) => n + s.demonstrated, 0);
     const possible = own.reduce((n, s) => n + s.withOpportunity, 0);
+    const contributorIds = studentIds.filter((studentId, index) =>
+      summaries[index].skills.some(
+        (skill) => skill.competency === id && skill.opportunities.length > 0,
+      ),
+    );
     return {
       competency: id,
       demonstrated,
       possible,
       demonstratedRate: possible ? demonstrated / possible : 0,
+      contributorIds,
     };
   });
 

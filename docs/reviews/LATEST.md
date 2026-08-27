@@ -7,83 +7,86 @@ likely to be.
 
 ---
 
-## Sprint 22 — the dashboard was making a claim it could not support
+## Sprint 23 — the export promised a protection it did not provide
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-27-sprint-22.md`](2026-08-27-sprint-22.md)
+- **Full review:** [`2026-08-27-sprint-23.md`](2026-08-27-sprint-23.md)
 - **Review trail:** sprints 01–16 in this directory. Sprint 09 tripled the
   curriculum to 27 missions. Sprint 10 fixed two mechanism defects found in it.
   Sprints 11 to 15 fixed content defects in ten of them, two per sprint.
   Sprint 16 read the remaining eight; all eighteen have been read and seventeen
   had findings. Sprint 17 closed the eight legacy forced-award scenes as a rule
   in `validateMission`. Sprints 18 to 21 worked through the original nine; every
-  one of the 27 missions has now been read, and 26 had findings. **Sprint 22 is
-  the first finding about the reporting layer rather than the content, and the
-  first of the second pass.**
+  one of the 27 missions has now been read, and 26 had findings. **Sprints 22
+  and 23 are the second pass over the reporting layer. Sprint 23 is the first
+  defect here where the product made a written promise it did not keep.**
 
 ### What changed
 
-Twenty-one sprints asked whether the missions tell children the truth. This one
-asked whether the dashboard tells teachers the truth, and it did not.
+Worse than sprint 22. That was a claim that could mislead a teacher; this was a
+privacy defect and a false statement inside the export.
 
-1. **The recommendation ran on a metric that only goes up.** `mergeEvidence`
-   treats `demonstrated` as sticky, which is right for the claim the student and
-   roster labels make — *shown unaided at least once*. But sprint 10 tripled the
-   curriculum so each skill is met three times, and a lifetime maximum cannot
-   tell **"shown once, then coached twice"** from **"shown independently every
-   time"**. The teacher card took that saturated number, called it *Suggested
-   next focus*, and printed a percentage of the class.
-2. **The rate divided by the wrong denominator.** `demonstratedRate` was
-   documented as the share of students *with a completed opportunity* and
-   implemented as `demonstrated / studentIds.length` — every enrolled student.
-   A skill one student of thirty had met and shown read as **3%**, not 100% of
-   those who practised it, and `nextTeachingFocus` picked the lowest rate, so
-   early in a sequence it reliably selected the **least-assigned** skill. A
-   teacher acting on it reteaches a lesson the class never had.
-3. **Two views now, named separately.** Lifetime is unchanged and still sticky.
-   Opportunity is new: one entry per completed mission that recorded a result,
-   oldest first, with counts and `latest` — **a later coached result is visible
-   and does not erase the earlier success.** `demonstratedRate` divides by
-   `withOpportunity`, which the type exposes so every surface can state it; the
-   competency rate had the same defect and got the same fix.
-4. **The suggestion ranks on `independentRate`** — independent choices over
-   total encounters — because unlike the lifetime figure it can fall. The card
-   reads *"Chosen first go 78 of the 109 times it has come up, across 23
-   students"*, and it selects a different skill from the saturated metric. When
-   no skill has comparable coverage it changes its own heading to **Next
-   unpractised skill** and says outright that this is coverage, not competence.
+1. **Competency rates were suppressed on the wrong group.** Sprint 22 fixed the
+   rate's own arithmetic and left the suppression check pointing at
+   `allStudents` / `students.length`. A school of thirty where **one** child had
+   completed the only relevant mission exported that competency as a percentage:
+   contributing group one, check saw thirty. In grades 2-4 somebody can usually
+   work out who the single participant was.
+2. **The benchmark path had no suppression at all.** Fall, spring and matched
+   growth were computed for any non-empty list, one student included, passed
+   through `buildSchoolReport` unchanged and exported by `reportToCsv`. A school
+   with one matched student could export that child's before-and-after change in
+   a file that assured the recipient groups below five are suppressed.
+3. **Suppression now counts distinct contributing students, everywhere.**
+   `summariseCohort` carries `contributorIds` per competency so the school
+   roll-up can **deduplicate across classes** before checking the threshold.
+   Class cells use that class's own contributors. Suppressed cells carry null
+   raw counts too, because "1 of 1" discloses what the percentage would have.
+4. **Benchmark suppression happens at the source**, in
+   `summariseCohortBenchmark`: five distinct students per window, five *matched*
+   for growth, and the same matched threshold on every per-competency growth
+   cell. Every consumer inherits it. Participation counts stay visible — they
+   say how many took part, not how anybody did.
+5. **The privacy note now says what is true**, in three sentences: what
+   contributing means and that it is usually fewer than are enrolled; the
+   check-in thresholds; and completion rate named as the documented exception
+   rather than quietly covered by a sentence that never fitted it. The public
+   privacy page and the report page's own table description had the same stale
+   claim and were corrected too.
 
 ### Already verified — please do not redo
 
-- `npm run verify` green: typecheck, lint, **335 tests**, Turbopack build.
-- Eight new tests in `tests/teacher-journey.test.ts` cover unequal coverage,
-  demonstrate-then-coached, saturation, ordering, and per-encounter counting.
-  One of them asserts on purpose that the two children are **identical** under
-  the lifetime view, so nobody re-collapses the two.
-- No new student fields, no telemetry, no per-child prediction. Everything is
-  computed from authored attempts and assignments that already existed.
-- Both surfaces checked in the browser: the teacher card and the per-skill
-  transfer line on the class page.
+- `npm run verify` green: typecheck, lint, **343 tests**, Turbopack build.
+- Eight new tests: thirty enrolled with one contributor; suppressed raw counts;
+  the four-versus-five boundary in one class; multi-class deduplication (3 + 2
+  reports at school level, neither class alone); one matched benchmark student
+  with every rate and growth cell null; five matched reporting; and a sweep that
+  **every suppressed cell in the object produces a CSV row containing "too few
+  to report" and no percentage**.
+- A class row being unsuppressed and its competency cell being suppressed are
+  asserted as two different things, because they are.
+- No new student fields, identifiers, telemetry or scoring. `contributorIds` is
+  internal to the calculation and never reaches the report object.
+- The admin report page and public privacy page checked in the browser.
 
 ### Where this is most likely still wrong
 
-- **The rest of the reporting layer has not had this treatment.** The admin
-  roll-up, the school report and the CSV export consume these numbers and
-  inherit the fix, but nobody has read them for claims of their own. The
-  benchmark roll-up is a separate calculation and is untouched.
-- **A comment that disagrees with its implementation is a finding.** That is how
-  this one was visible in the code the whole time: the doc comment on
-  `demonstratedRate` described a different calculation from the one three lines
-  below it. I have not been treating comments as claims to check.
-- **Watch for the honest thing being promoted downstream.** The student labels,
-  roster legend and export suppression were all careful about stickiness. One
-  surface took the same number and made it a recommendation. That is the usual
-  shape of this defect.
-- **Every mission has been read once. None has been read twice**, and the find
-  rate did not fall as the pass went on.
-- **Nothing checks what a wrong answer costs a child.** Still true from sprint
-  20, and separate from this: the evidence model is tested for integrity, not
-  for whether the honest answer is reachable by every child.
+- **A correctness fix does not carry a privacy fix with it.** Sprint 22 fixed
+  the arithmetic of this exact rate and left the guard pointing at the wrong
+  number — two passes over the same twenty lines, one defect each, and the
+  second was the more serious. Changing what a number means changes who it
+  identifies. Re-read the guard in the same breath as the arithmetic.
+- **Nothing verifies the privacy prose against the code that implements it**,
+  beyond the specific assertions added here. The notes are authored text sitting
+  next to a separate implementation and can drift again. A promise in the prose
+  is a test case; only some of them have tests.
+- **The CSV suppression sweep is not generic.** It covers competency and
+  class-completion rows, not every row type.
+- **The benchmark roll-up has now been touched but not read for claims of its
+  own** — only for suppression.
+- **Every mission has been read once. None has been read twice.**
+- **Nothing checks what a wrong answer costs a child** — still open from
+  sprint 20.
 - **Shared scenes remain untraced** in twenty-six of twenty-seven missions.
 - **Teacher-facing copy promises timelines it cannot support.**
 - **No general guard against factual error exists or can.**
