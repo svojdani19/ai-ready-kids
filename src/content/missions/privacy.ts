@@ -362,7 +362,7 @@ export const theFilterThatWantedMore: Mission = {
           label: "It is asking for four things, and a fox filter only needs one",
           feedback: {
             tone: "strong",
-            headline: "You caught the mismatch",
+            headline: "You noticed what does not fit",
             body: "To put ears on your face, an app needs the camera. That is it. Photos, location and posting are extras it wants, not things the fox needs.",
           },
           evidence: { skillId: "privacy.media", result: "demonstrated" },

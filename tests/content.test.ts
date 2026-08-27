@@ -3,6 +3,7 @@ import { MISSIONS, MISSION_BY_SLUG } from "@/content/missions";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
 import { CERTIFICATION_MODULES } from "@/content/certification";
 import { ALL_SKILLS, COMPETENCIES, SKILL_BY_ID } from "@/content/competencies";
+import { simulateAttempt } from "@/lib/db/seed";
 import { validateMission } from "@/lib/domain/missionPath";
 
 /**
@@ -139,6 +140,44 @@ describe("mission content integrity", () => {
     ]) {
       expect(studentCopy).not.toContain(overclaim);
     }
+
+    expect(studentCopy).not.toMatch(/\bmismatch\b|\bflipped\b|\bcropped\b/);
+  });
+
+  it("treats visual artefacts as reasons to pause, not proof of a fake", () => {
+    const mission = MISSION_BY_SLUG["the-penguin-on-the-playground"];
+    const clueScene = mission.scenes.find((scene) => scene.id === "s3")!;
+    const firstHandChoice = clueScene.choices!.find((choice) => choice.id === "c1")!;
+    const artefactChoices = clueScene.choices!.filter((choice) =>
+      ["c2", "c3"].includes(choice.id),
+    );
+
+    expect(firstHandChoice.feedback.tone).toBe("strong");
+    expect(firstHandChoice.evidence?.result).toBe("demonstrated");
+    for (const choice of artefactChoices) {
+      expect(choice.feedback.tone).toBe("partial");
+      expect(choice.evidence?.result).toBe("developing");
+      expect(choice.feedback.body.toLowerCase()).toMatch(/pause|check/);
+      expect(choice.feedback.body.toLowerCase()).not.toMatch(/mismatch|flipped|cropped/);
+    }
+
+    const voiceScene = mission.scenes.find((scene) => scene.id === "s5")!;
+    const nonRetryChoices = voiceScene.choices!.filter((choice) => !choice.retry);
+    expect(nonRetryChoices).toHaveLength(1);
+    expect(nonRetryChoices[0].evidence).toBeUndefined();
+  });
+
+  it("does not turn a coached Mission 5 completion into demonstrated evidence", () => {
+    const mission = MISSION_BY_SLUG["the-penguin-on-the-playground"];
+    const result = simulateAttempt(mission, () => 0.1, 0);
+
+    expect(result.path).toEqual(
+      expect.arrayContaining([
+        { sceneId: "s5", choiceId: "c2" },
+        { sceneId: "s5", choiceId: "c1" },
+      ]),
+    );
+    expect(result.evidence["verify.synthetic"]).toBe("developing");
   });
 });
 

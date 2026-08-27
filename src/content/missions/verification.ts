@@ -303,7 +303,7 @@ export const thePenguinOnThePlayground: Mission = {
   estimatedMinutes: 9,
   teaser: "There is a photo of a penguin behind the slide. And a voice message that sounds like Ms. Okafor.",
   summary:
-    "Students examine a shared image and an audio clip that may be AI generated. They practise checking whether anybody actually saw it, looking for details that do not hold up, and asking the real person directly.",
+    "Students examine a shared image and an audio clip that may be AI generated. They practise following the trail back to a maker or witness, using odd details as reasons to pause rather than proof, and asking the real person directly.",
   learningGoals: [
     "List questions to ask about a surprising picture",
     "Notice that a voice can be copied",
@@ -311,8 +311,8 @@ export const thePenguinOnThePlayground: Mission = {
   ],
   badge: {
     id: "badge-verify-2",
-    name: "Sharp Eyes",
-    blurb: "You checked a picture instead of believing it.",
+    name: "Trail Checker",
+    blurb: "You checked who made it and who saw it.",
   },
   openingSceneId: "s1",
   scenes: [
@@ -342,7 +342,7 @@ export const thePenguinOnThePlayground: Mission = {
           feedback: {
             tone: "strong",
             headline: "The best first question",
-            body: "Nobody can name who took it. It came from a friend of a friend of somebody's cousin. A picture with no photographer is a picture with nothing behind it.",
+            body: "Nobody can name who took it. It came from a friend of a friend of somebody's cousin. That gives you no trail to follow yet.",
           },
           evidence: { skillId: "verify.synthetic", result: "demonstrated" },
           next: "s3",
@@ -386,8 +386,8 @@ export const thePenguinOnThePlayground: Mission = {
           label: "It did not snow yesterday and you were outside all afternoon",
           feedback: {
             tone: "strong",
-            headline: "You checked it against what you know",
-            body: "You were there. That beats any detail in the picture. When an image argues with something you saw with your own eyes, trust your eyes.",
+            headline: "You checked the real world",
+            body: "You were there, so this clue has a witness: you. That is stronger than a strange-looking detail. You can also ask somebody else who was outside.",
           },
           evidence: { skillId: "verify.synthetic", result: "demonstrated" },
           next: "s4",
@@ -396,22 +396,22 @@ export const thePenguinOnThePlayground: Mission = {
           id: "c2",
           label: "The penguin has no shadow",
           feedback: {
-            tone: "strong",
-            headline: "A real clue, well spotted",
-            body: "Made-up pictures often get light and shadows slightly wrong. Hands, letters on signs and reflections are worth a close look too.",
+            tone: "partial",
+            headline: "A clue, not proof",
+            body: "A real picture can have a strange shadow. A made-up picture can have a normal-looking shadow. This clue means pause and ask who took the picture or saw it happen.",
           },
-          evidence: { skillId: "verify.synthetic", result: "demonstrated" },
+          evidence: { skillId: "verify.synthetic", result: "developing" },
           next: "s4",
         },
         {
           id: "c3",
           label: "The slide is on the wrong side",
           feedback: {
-            tone: "strong",
-            headline: "You know this playground",
-            body: "Whoever made this has never stood on it. Knowing a place well is one of the best fake detectors there is.",
+            tone: "partial",
+            headline: "Your local knowledge helps",
+            body: "That looks wrong for our playground, so it is worth checking. But a real photo can be turned around or have its edges cut off. Use the clue to pause, then ask who made the picture or who was there.",
           },
-          evidence: { skillId: "verify.synthetic", result: "demonstrated" },
+          evidence: { skillId: "verify.synthetic", result: "developing" },
           next: "s4",
         },
       ],
@@ -440,9 +440,8 @@ export const thePenguinOnThePlayground: Mission = {
           feedback: {
             tone: "strong",
             headline: "Go to the actual person",
-            body: "She did not say it. A voice can be copied from as little as a few seconds of recording, so hearing somebody is not proof any more. Asking them is.",
+            body: "She did not say it. A voice can be copied from a short recording, so hearing somebody is not proof. Asking the real person is the check.",
           },
-          evidence: { skillId: "verify.synthetic", result: "demonstrated" },
           next: "s6",
         },
         {
@@ -558,11 +557,11 @@ export const thePenguinOnThePlayground: Mission = {
       },
     ],
     extension:
-      "Show four images, two real and two generated, without telling students the split. Debrief on how confident they were versus how accurate they were.",
+      "Use four images already in a school newsletter, textbook or classroom display. For each one, ask only: who made it, who saw it, and where could we check? Do not ask students to guess real or fake from appearance.",
   },
   family: {
     summary:
-      "We looked at a photo and a voice message that were made by a computer. Your child practised asking who made it and who actually saw it, instead of trying to spot a fake by staring at it.",
+      "We looked at a surprising photo with no clear source and a copied voice message. Your child practised asking who made it and who actually saw it, instead of trying to spot a fake by staring at it.",
     questions: [
       "How could a picture look real but not be real?",
       "If you got a message in a voice you know, how could you check it was really them?",

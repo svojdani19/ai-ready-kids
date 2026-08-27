@@ -7,57 +7,58 @@ likely to be.
 
 ---
 
-## Sprint 04 — interrupted-session recovery and visible keyboard focus
+## Sprint 06 — provenance over pixel-hunting
 
-- **Commit:** `de054bc` on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-26-sprint-04.md`](2026-08-26-sprint-04.md)
-- **Files touched:** `src/app/student/checkin/[form]/CheckInPlayer.tsx`,
-  `tests/checkin-player.test.tsx`, `docs/classroom-review.md`, `README.md`
+- **Status:** complete in the working tree; commit pending
+- **Full review:** [`2026-08-26-sprint-06.md`](2026-08-26-sprint-06.md)
+- **Independent review:**
+  [`2026-08-26-sprint-06-independent-review.md`](2026-08-26-sprint-06-independent-review.md)
+- **Files touched:** `src/content/missions/verification.ts`,
+  `src/content/missions/privacy.ts`, `src/content/competencies.ts`,
+  `src/lib/domain/missionPath.ts`, `tests/content.test.ts`, and the review
+  handoff files
 
 ### What changed
 
-1. **Recovery state for an unfinalized check-in.** "Every authored item
-   answered, completion marker missing" is now distinct from "start at the
-   beginning". The player opens on a *Let's finish saving* screen, renders no
-   stories and no radios, and resubmits no answers. Partial sets still resume at
-   the first unanswered story.
-2. **Focus ring moved onto the visible card.** The option cards wrap an
-   `sr-only` radio, so the global ring was painting on a clipped 1px box.
-   Now `has-[input:focus-visible]` paints a 4px marigold outline on the card,
-   with `focus-visible:outline-none` on the input.
+1. **Visual artefacts are now partial evidence.** In the suspicious penguin
+   picture, a missing shadow and a reversed playground layout trigger a pause
+   and a source check; they no longer earn the same full evidence as the child
+   knowing first-hand that it did not snow.
+2. **The measured skill now matches the durable behaviour.** *Trail Checker*
+   and the shared competency label reward checking who made or witnessed media,
+   replacing the detector identity implied by *Sharp Eyes*.
+3. **The teacher extension practises provenance.** It no longer asks children
+   to classify unlabeled real and generated images by appearance.
+4. **A forced answer no longer inflates the report.** The voice-check scene has
+   only one safe exit, so it now teaches the action without awarding evidence.
+   The mission's result comes from earlier decisions with real alternatives.
+5. **The newest copy is easier and more accurate.** Student copy no longer uses
+   three editing terms, and the family note no longer claims the story proved
+   who made the untraceable photo.
 
 ### Already verified — please do not redo
 
-- `npm run verify` green: typecheck, lint, 151 tests, production build.
-- Recovery driven in a real browser at 768×1024 against a seeded 9/9
-  unfinalized check-in; stored responses came back **byte-identical** after
-  finishing, one row, one completion timestamp.
-- Focus confirmed by computed style on the live DOM (`solid 4px rgb(156,86,5)`
-  on the label, `outline-style: none` on the input) and by checking the
-  generated stylesheet carries the `:has(:is(input:focus-visible))` rule.
-  Rechecked at an emulated 200% zoom (384×512), no horizontal overflow.
-- Classroom Mode regression at 1280×800: reveal, touch switching A → C without
-  leaving the decision, *Show the choices*, hands-up tally, keyboard routes.
+- Lint, typecheck and 154 tests pass. The default Turbopack build passes
+  repeatedly in Claude's local session; an independent webpack build also
+  produces all 28 routes.
+- Independent player at 768×1024: revised partial feedback and **Keep going**
+  are visible together; no horizontal overflow.
+- Classroom Mode at 1280×800: comparison controls, feedback and all teacher
+  controls fit in one viewport; no horizontal overflow.
+- No browser-console errors, data changes or new child input.
 
 ### Where this is most likely still wrong
 
-Worth attacking these rather than re-verifying the above:
-
-- **Recovery copy at a grade 2 reading level.** *"You already answered all 9
-  stories, and every one of them is safe"* — is "answered" the right word for a
-  seven year old here, and does "safe" read as *saved* or as *not dangerous*?
-  This is the one new piece of child-facing copy in the sprint.
-- **Recovery offers no review of answers.** Deliberate, so a child cannot
-  overwrite a real first-pass answer. But a child who genuinely misremembers
-  finishing has no way to see what they picked. Is that the right trade?
-- **Focus ring colour is fixed marigold.** It works on paper and on the denim
-  selected wash, but it is not derived from school branding. If branding ever
-  reaches student surfaces this will collide.
-- **200% zoom was emulated by halving the viewport.** Reflow is faithful, text
-  rasterisation is not. Real browser zoom remains unchecked.
-- **Content, not mechanics.** The last four sprints have all been interaction
-  integrity. The nine missions' scenarios, feedback wording and progression
-  have not been reviewed since they were written.
+- **Source hierarchy in Mission 6.** The plaque is treated as the closest source
+  and then corroborated by office records. Review whether the wording still
+  overstates what a plaque alone proves for grades 2–4.
+- **Badge migration.** Seeded demo data stores the same badge ID, so the renamed
+  label renders correctly. A future external export contract should keep IDs,
+  not cache display names.
+- **Evidence aggregation remains permissive elsewhere.** Mission 5's forced
+  answer no longer records evidence, but Claude found the same pattern in eight
+  other missions. The next integrity sprint needs a product-wide rule for
+  first-choice versus coached evidence, plus seed and reporting verification.
 
 ### Standing constraints
 

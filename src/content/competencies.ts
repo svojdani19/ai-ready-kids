@@ -53,8 +53,8 @@ export const COMPETENCIES: Competency[] = [
       {
         id: "verify.synthetic",
         competency: "verification",
-        kidLabel: "Spotted a picture or voice that might be made up",
-        educatorLabel: "Identifies plausible indicators of synthetic image or audio",
+        kidLabel: "Checked who made or saw a picture or voice",
+        educatorLabel: "Checks provenance or first-hand context for possibly synthetic media",
       },
       {
         id: "verify.source",

@@ -107,6 +107,7 @@ export function validateMission(mission: Mission): ContentIssue[] {
 
     if (scene.choices?.length) {
       if (!scene.prompt) add(scene.id, "Choice scene has no prompt");
+      const nonRetryChoices = scene.choices.filter((choice) => !choice.retry);
       for (const choice of scene.choices) {
         if (!choice.feedback.body.trim()) {
           add(scene.id, `Choice ${choice.id} has empty feedback`);
@@ -120,7 +121,14 @@ export function validateMission(mission: Mission): ContentIssue[] {
             add(scene.id, `Unsafe choice ${choice.id} must not record evidence`);
           }
         }
-        if (choice.feedback.tone === "strong" && !choice.evidence) {
+        // A sole safe exit teaches the recovery step, but every completer is
+        // funnelled through it. It may intentionally omit evidence because it
+        // cannot distinguish independent reasoning from a coached retry.
+        if (
+          choice.feedback.tone === "strong" &&
+          !choice.evidence &&
+          nonRetryChoices.length > 1
+        ) {
           add(scene.id, `Strong choice ${choice.id} records no evidence`);
         }
       }
