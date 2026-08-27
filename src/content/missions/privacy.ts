@@ -682,8 +682,52 @@ export const theFilterThatWantedMore: Mission = {
           "Useful moment to note that private settings change, screenshots exist, and the child is not the one who controls the app's own copy.",
       },
     ],
+    // Sprint 37. This used to read "Project three classroom photos you have
+    // taken. As a group, list everything in each background that could
+    // identify the school." In a mission about what a picture gives away,
+    // that put real children's faces, names on cubbies and work, uniforms,
+    // timetables and school signage on a projector, and a projected screen can
+    // itself be photographed. The three photos below are invented, so there is
+    // nothing to source and nothing real on the board. Photo 3 is deliberately
+    // clean: without it the activity collapses back into background-spotting
+    // and the class learns that a tidy picture is a safe picture.
     extension:
-      "Project three classroom photos you have taken. As a group, list everything in each background that could identify the school. Students are usually faster at this than adults.",
+      "Three invented photos, below. Read each one aloud or put it on the board, then ask the room two separate questions: what does this picture SUGGEST, and what would we actually have to know to be SURE? Take answers as hand signals so nobody is on the spot — thumb up for yes, flat hand for maybe, thumb down for no. Then ask the second question about all three: is this one ready to go somewhere big? Photo 3 is the one that matters most: nothing is wrong with the background and it is still not ready. Nothing is written down about any child. Do not swap in real photos of your class, your students, their families or your colleagues — these three exist so that you never have to, and a picture on a projector can be photographed off the wall.",
+    extensionCards: [
+      {
+        label: "Photo 1",
+        description:
+          "Two children on a bench, grinning. Behind them a banner reads BRIGHTWOOD FALL FAIR — SATURDAY, and a bus shelter shows a route number.",
+        suggests:
+          "A place with a fair on Saturday, and a bus route that goes past it.",
+        proves:
+          "That the banner and the shelter were behind whoever took the picture. It does not prove either child goes to that school, lives on that route, or will be at the fair. It is a strong clue and still only a clue.",
+        audience:
+          "Two faces and a place and a day, all in one picture. That is a lot to hand to people you cannot name.",
+      },
+      {
+        label: "Photo 2",
+        description:
+          "One child holding a trophy. The shirt says CENTRAL LEAGUE U9. A hallway behind them, no signs, no names.",
+        suggests:
+          "A league somewhere, and roughly how old the player is.",
+        proves:
+          "Almost nothing on its own. Plenty of towns have a Central League. A weak clue is still a clue once you stack it on the others.",
+        audience:
+          "One face, and the child in it is the one deciding. That is the easiest of the three, and it is still worth asking who ends up seeing it.",
+      },
+      {
+        label: "Photo 3",
+        description:
+          "A close-up of two children laughing. A plain wall behind them. Nothing written anywhere, no window, no sign, nothing in the background at all.",
+        suggests:
+          "Nothing about where they are. The background is genuinely empty.",
+        proves:
+          "Nothing about the place. That was never the only question.",
+        audience:
+          "Two children are in it and only one of them was asked. A clean background does not make a picture ready. Who is in it, and who agreed, is a different question from what is behind them.",
+      },
+    ],
   },
   family: {
     summary:

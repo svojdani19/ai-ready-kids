@@ -264,6 +264,34 @@ export default async function MissionPreview({
               <p className="text-[0.95rem] leading-relaxed text-ink-soft">
                 {mission.guide.extension}
               </p>
+              {mission.guide.extensionCards && (
+                <ol className="mt-3 space-y-3">
+                  {mission.guide.extensionCards.map((card) => (
+                    <li key={card.label} className="rounded-lg border border-sand p-3">
+                      <p className="text-sm font-semibold text-ink">{card.label}</p>
+                      <p className="mt-1 text-[0.95rem] leading-relaxed text-ink">
+                        {card.description}
+                      </p>
+                      <dl className="mt-2 space-y-1 text-sm leading-relaxed text-ink-soft">
+                        <div>
+                          <dt className="inline font-semibold text-ink">Suggests: </dt>
+                          <dd className="inline">{card.suggests}</dd>
+                        </div>
+                        <div>
+                          <dt className="inline font-semibold text-ink">Proves: </dt>
+                          <dd className="inline">{card.proves}</dd>
+                        </div>
+                        <div>
+                          <dt className="inline font-semibold text-ink">
+                            Ready for a big audience?{" "}
+                          </dt>
+                          <dd className="inline">{card.audience}</dd>
+                        </div>
+                      </dl>
+                    </li>
+                  ))}
+                </ol>
+              )}
               <Note tone="pine" title="Family take-home">
                 <Link
                   href={`/family/${mission.slug}`}

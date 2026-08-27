@@ -107,6 +107,23 @@ export interface Scene {
   wrapUp?: string[];
 }
 
+/**
+ * One invented picture, described rather than shown. Every field is authored:
+ * nothing here is sourced, uploaded, or photographed by a school.
+ */
+export interface ExtensionCard {
+  /** What the room calls it, like "Photo 1". */
+  label: string;
+  /** The picture, described in a sentence or two, to read out or project. */
+  description: string;
+  /** What it hints at. Never what it settles. */
+  suggests: string;
+  /** What it would actually take to know, and what stays unknown. */
+  proves: string;
+  /** Whether this one is ready for a big audience, and why that is separate. */
+  audience: string;
+}
+
 export interface DiscussionGuide {
   /** 2-4 sentence framing for the teacher before the lesson. */
   setup: string;
@@ -118,6 +135,19 @@ export interface DiscussionGuide {
   misconceptions: { student: string; response: string }[];
   /** 10-minute unplugged extension. */
   extension: string;
+  /**
+   * Optional invented material for the extension, so that an activity about
+   * looking closely at pictures never requires a teacher to supply a real one.
+   *
+   * Sprint 37: the extension for The Filter That Wanted More used to ask a
+   * teacher to project three photographs of their own classroom. In a mission
+   * about what a picture gives away, that put real children's faces, names on
+   * cubbies and work, uniforms and school signage on a projector — and a
+   * projected screen can itself be photographed. The activity contained the
+   * hazard it was teaching against. Authored cards remove the sourcing step
+   * entirely: they are read aloud or projected as they are.
+   */
+  extensionCards?: ExtensionCard[];
 }
 
 export interface FamilyTakeHome {

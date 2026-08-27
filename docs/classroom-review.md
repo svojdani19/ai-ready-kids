@@ -367,6 +367,14 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       that told somebody to work around its absence, and delete each one.
       Prose is not documentation of the code, it is part of the product, and it
       goes stale silently.
+- [ ] **An activity never requires the hazard it teaches about.** The tell is a
+      preparation step: when a lesson asks the teacher to *bring* the material,
+      ask what the material is. Real student photos, real names, real
+      schedules and real work do not go on a projector to demonstrate why they
+      are sensitive. Author the material instead — invented cards cost a few
+      hundred words and remove the sourcing, the consent question and the
+      exposure at once, and let the clues be graded and one case be a clean
+      decoy, which real material never reliably is.
 - [ ] **A shared scene is checked against every path into it.** List the
       predecessors, then read the scene once per predecessor. Any sentence
       about what has already happened — what an app knows, what the child

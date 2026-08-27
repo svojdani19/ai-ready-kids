@@ -123,6 +123,32 @@ export default async function PrintableGuide({
         <section className="mt-6 break-inside-avoid">
           <h2 className="font-display text-lg text-ink">Ten-minute unplugged extension</h2>
           <p className="mt-2 leading-relaxed text-ink-soft">{mission.guide.extension}</p>
+          {/* Authored material, so nothing has to be sourced. Prints with the
+              guide and reads aloud without a screen. */}
+          {mission.guide.extensionCards && (
+            <ol className="mt-3 space-y-3">
+              {mission.guide.extensionCards.map((card) => (
+                <li key={card.label} className="rounded border border-sand p-3">
+                  <p className="font-semibold text-ink">{card.label}</p>
+                  <p className="mt-1 leading-relaxed text-ink">{card.description}</p>
+                  <dl className="mt-2 space-y-1 text-sm leading-relaxed text-ink-soft">
+                    <div>
+                      <dt className="inline font-semibold text-ink">Suggests: </dt>
+                      <dd className="inline">{card.suggests}</dd>
+                    </div>
+                    <div>
+                      <dt className="inline font-semibold text-ink">Proves: </dt>
+                      <dd className="inline">{card.proves}</dd>
+                    </div>
+                    <div>
+                      <dt className="inline font-semibold text-ink">Ready for a big audience? </dt>
+                      <dd className="inline">{card.audience}</dd>
+                    </div>
+                  </dl>
+                </li>
+              ))}
+            </ol>
+          )}
         </section>
 
         <section className="mt-6 break-inside-avoid rounded-lg border border-sand-deep bg-paper p-4">

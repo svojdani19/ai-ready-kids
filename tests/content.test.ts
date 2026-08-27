@@ -887,6 +887,116 @@ describe("no scene reports mastery for the only way out of it", () => {
   });
 });
 
+/**
+ * Sprint 37. The extension for The Filter That Wanted More used to read "Project
+ * three classroom photos you have taken. As a group, list everything in each
+ * background that could identify the school." In a mission about what a picture
+ * gives away, that put real children's faces, names on cubbies and work,
+ * uniforms, timetables and school signage on a projector — and a projected
+ * screen can itself be photographed. The activity contained the hazard.
+ */
+describe("the photo-reading extension supplies its own pictures", () => {
+  const filter = MISSION_BY_SLUG["the-filter-that-wanted-more"];
+  const cards = filter.guide.extensionCards ?? [];
+  const extension = filter.guide.extension.toLowerCase();
+
+  it("no longer asks a teacher to photograph or project their own classroom", () => {
+    expect(extension).not.toMatch(/classroom photos you have taken/);
+    expect(extension).not.toMatch(/(take|project) .{0,30}(a )?photo of your own/);
+    expect(extension).not.toMatch(/photograph your/);
+    // And nothing anywhere in the guide sends them looking for one.
+    const guide = [
+      filter.guide.setup,
+      filter.guide.extension,
+      ...filter.guide.questions,
+      ...filter.guide.misconceptions.map((m) => m.response),
+      ...cards.flatMap((c) => [c.description, c.suggests, c.proves, c.audience]),
+    ]
+      .join(" ")
+      .toLowerCase();
+    expect(guide).not.toMatch(/upload|your camera roll|photos on your phone/);
+  });
+
+  it("carries the material itself, so there is nothing to source", () => {
+    expect(cards).toHaveLength(3);
+    for (const card of cards) {
+      for (const field of [card.description, card.suggests, card.proves, card.audience]) {
+        expect(field.trim().length, card.label).toBeGreaterThan(0);
+      }
+    }
+    // Readable with no screen at all: the pictures are described, not shown.
+    expect(extension).toMatch(/read each one aloud|read .{0,20}aloud/);
+  });
+
+  it("says in as many words not to substitute real photographs", () => {
+    expect(extension).toMatch(/do not swap in real photos/);
+    expect(extension).toMatch(/students|class/);
+    expect(extension).toMatch(/families|colleagues/);
+    // The reason is given, because a rule with a reason survives a busy week.
+    expect(extension).toMatch(/photographed off the wall|can be photographed/);
+  });
+
+  it("separates what a clue suggests from what it proves", () => {
+    expect(extension).toMatch(/suggest/);
+    expect(extension).toMatch(/sure|prove/);
+    for (const card of cards) {
+      // Every card answers both, so the distinction is not left to one example.
+      expect(card.suggests.trim().length, card.label).toBeGreaterThan(0);
+      expect(card.proves.trim().length, card.label).toBeGreaterThan(0);
+    }
+    // Clues of different strength, or there is nothing to compare.
+    const proves = cards.map((c) => c.proves.toLowerCase()).join(" ");
+    expect(proves).toMatch(/still only a clue|strong clue/);
+    expect(proves).toMatch(/weak clue|almost nothing/);
+  });
+
+  it("includes a clean picture that is still not ready, so it is not background-spotting", () => {
+    const clean = cards.find((c) => /nothing in the background|plain wall/i.test(c.description));
+    expect(clean, "a card with no background clues at all").toBeDefined();
+    // Its background is genuinely empty...
+    expect(clean!.suggests.toLowerCase()).toMatch(/nothing/);
+    // ...and it is still not approved, on audience and permission grounds.
+    expect(clean!.audience.toLowerCase()).toMatch(/only one of them was asked|agreed/);
+    expect(clean!.audience.toLowerCase()).toMatch(/clean background does not make|different question/);
+  });
+
+  it("takes the room's answers anonymously and records nothing", () => {
+    expect(extension).toMatch(/hand signals/);
+    expect(extension).toMatch(/nothing is written down about any child/);
+    // No named child, no tally, no per-student anything.
+    expect(extension).not.toMatch(/write down (who|which student)|note which children/);
+  });
+
+  it("names no real school and reuses the product's own fiction", () => {
+    const all = cards.map((c) => c.description).join(" ");
+    // Brightwood is this product's invented school, used throughout the
+    // curriculum. Nothing here points at a place that exists.
+    expect(all).toMatch(/BRIGHTWOOD/);
+  });
+
+  /**
+   * The same instruction survives in two other extensions. Sprint 37 was scoped
+   * to this mission, so they are pinned rather than fixed: the list may shrink,
+   * and a new mission may not join it.
+   *
+   *   - the-class-photo is the same defect, unmitigated, and it names the
+   *     sensitive content as the target: "Names on trays, timetables, a rota
+   *     with home details."
+   *   - what-the-camera-sees is the mitigated case: empty room, before school,
+   *     never a live feed, never children in frame, and a prepared image
+   *     offered as an alternative.
+   */
+  it("leaves no other mission free to ask for a real classroom photograph", () => {
+    const KNOWN = ["the-class-photo", "what-the-camera-sees"];
+    const asksForOne = MISSIONS.filter((m) =>
+      /(take|project|photograph) [^.]{0,40}\byour (own |empty )*classroom\b|classroom photos you have taken/i.test(
+        m.guide.extension,
+      ),
+    ).map((m) => m.slug);
+    expect(asksForOne.sort()).toEqual([...KNOWN].sort());
+  });
+});
+
 describe("an app must be allowed before its permissions are minimised", () => {
   const filter = MISSION_BY_SLUG["the-filter-that-wanted-more"];
 
