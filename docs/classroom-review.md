@@ -110,6 +110,14 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
 
 ## Part 3 — Applies to every review
 
+- [ ] **Every factual claim in student copy is true.** Not plausible, not
+      close enough for the age — true. A simplification a child will carry for
+      years is a claim, so check the ones that sound like throwaway examples.
+      No automated suite can do this; somebody has to read it.
+- [ ] **The activity does not contain the hazard.** Read every extension and
+      family prompt as a seven year old would follow it literally. An exercise
+      about personal information must never ask a child to supply their own,
+      and a lesson about declining must not award full credit for continuing.
 - [ ] **Developmental appropriateness.** Concrete before abstract. A situation
       a child could actually be in, not a principle they are asked to accept.
       Warm without being babyish: this age group notices being talked down to.

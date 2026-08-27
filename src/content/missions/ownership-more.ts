@@ -908,7 +908,7 @@ export const theQuestionWithNoAnswer: Mission = {
   learningGoals: [
     "Tell a fact question from an opinion question",
     "Recognise that some questions are yours to answer",
-    "Notice when a tool answers a question it cannot possibly know",
+    "Notice when a tool answers confidently about something it was never told",
   ],
   badge: {
     id: "badge-own-7",
@@ -953,7 +953,7 @@ export const theQuestionWithNoAnswer: Mission = {
           feedback: {
             tone: "strong",
             headline: "There is nothing for it to know",
-            body: "This is not a fact it got wrong. There is no fact. What you think about the mud rule exists in exactly one place and it is not on the internet.",
+            body: "It was never told about your school, your field or your mud. It made a general answer that sounds right. What you think is in your head, and nothing has been in there.",
           },
           evidence: { skillId: "own.toolchoice", result: "demonstrated" },
           next: "s4",
@@ -998,7 +998,7 @@ export const theQuestionWithNoAnswer: Mission = {
           feedback: {
             tone: "strong",
             headline: "Two facts and one opinion",
-            body: "February and the mountain have been settled by somebody measuring. The mud rule has not been settled by anybody, and it is not waiting to be found.",
+            body: "A fact is something you can check. February you check against the calendar rule. The mountain you check against somebody's measurement. The mud rule has no rule and no measurement behind it.",
           },
           evidence: { skillId: "own.toolchoice", result: "demonstrated" },
           next: "s5",
@@ -1020,7 +1020,7 @@ export const theQuestionWithNoAnswer: Mission = {
           feedback: {
             tone: "rethink",
             headline: "Still a fact though",
-            body: "It changes according to a rule anybody can check. Look for the one where two sensible people could disagree forever. Have another go.",
+            body: "Leap years follow a rule, and a rule is something anybody can look up and check. Look for the one where two sensible people could disagree forever. Have another go.",
           },
           next: "s4",
           retry: true,
@@ -1086,19 +1086,19 @@ export const theQuestionWithNoAnswer: Mission = {
           label: "That whatever answered it is not really answering my question",
           feedback: {
             tone: "strong",
-            headline: "Confidence where there is nothing to know",
-            body: "For a fact, confidence is unreliable. For an opinion about your own school, it is impossible. That makes it a very clear signal.",
+            headline: "Confident about something it was never told",
+            body: "For a fact, sounding sure proves nothing. For a question about your school, it had nothing to go on at all. Sounding sure anyway is the clearest signal there is.",
           },
           evidence: { skillId: "own.toolchoice", result: "demonstrated" },
           next: "s7",
         },
         {
           id: "c2",
-          label: "That it is guessing what most people would say",
+          label: "That it is making a general answer out of patterns",
           feedback: {
             tone: "strong",
-            headline: "Usually exactly that",
-            body: "It produces the average opinion, which is nobody's opinion, and definitely not yours. Your answer has a path in it because you talked to a caretaker.",
+            headline: "That is what it is built to do",
+            body: "It puts together words that usually go together when people write about school rules. That is a general answer. Yours has a path in it, because you talked to a caretaker.",
           },
           evidence: { skillId: "own.toolchoice", result: "demonstrated" },
           next: "s7",
@@ -1125,22 +1125,22 @@ export const theQuestionWithNoAnswer: Mission = {
         "Underneath it, Ms. Okafor has written: SOME QUESTIONS ARE YOURS.",
       ],
       wrapUp: [
-        "Some questions do not have an answer waiting to be found.",
-        "If sensible people can disagree, it is yours to answer.",
-        "A confident answer to an opinion question is answering something else.",
+        "A fact can be checked against evidence, a rule or a record. An opinion cannot.",
+        "If sensible people can disagree, the question is yours to answer.",
+        "A tool can sound sure about your school without ever being told anything about it.",
       ],
     },
   ],
   guide: {
     setup:
-      "The most philosophically ambitious mission in the set, and grades 2 to 4 handle it better than adults expect. The fact-opinion boundary is taught in most classrooms already; this connects it to tool use, where a confident reply to a values question is the clearest possible tell.",
+      "The most philosophically ambitious mission in the set, and grades 2 to 4 handle it better than adults expect. The working definition it uses is that a fact can be checked against evidence, a rule or a record — the calendar rule for February, a measurement for the mountain — while an opinion has none of those behind it. That matters for the second half, where a tool answers confidently about a school it was never told anything about.",
     lookFor: [
       "Students who accept a general answer to a specific question",
       "Whether anyone finds the fact question hidden inside the opinion",
       "Students who defer to a tool on questions about their own values",
     ],
     questions: [
-      "Which questions have answers waiting somewhere, and which do not?",
+      "What are the three ways of checking a fact? Give an example of each.",
       "How can you tell an opinion question?",
       "What was the fact hiding inside the question about the mud?",
       "Who is the only expert on what you think?",
@@ -1149,7 +1149,12 @@ export const theQuestionWithNoAnswer: Mission = {
       {
         student: "It gave a good answer though.",
         response:
-          "Ask what it was a good answer to. It was a decent general essay and it was not an answer to the question that was set, which is the distinction worth drilling.",
+          "Ask what it was a good answer to. It was a decent general piece about school rules, assembled from the patterns in how people write about them, and it was not an answer to the question that was set. It had been told nothing about this school.",
+      },
+      {
+        student: "It could work it out if it thought harder.",
+        response:
+          "There is nothing to work out from. It has no information about your field, your corridors or last winter unless somebody types it in. Adding those facts changes what it can help with, and still does not make the judgement for you.",
       },
       {
         student: "So opinions cannot be wrong.",
@@ -1162,11 +1167,11 @@ export const theQuestionWithNoAnswer: Mission = {
   },
   family: {
     summary:
-      "We practised telling the difference between questions with an answer waiting somewhere and questions that are yours to answer. A confident reply to what do you think is a sign something has gone wrong.",
+      "We practised telling a fact from an opinion. A fact can be checked against evidence, a rule or a record. An opinion has none of those, so it is yours to make — and a tool that sounds sure about your school has been told nothing about it.",
     questions: [
+      "What are three ways you could check a fact? A rule, a record, or somebody measuring.",
       "What is a question nobody can look up for you?",
-      "How can you tell if a question is a fact or an opinion?",
-      "Who is the only person who knows what you think?",
+      "If an app has never been to your school, how can it sound so sure about it?",
     ],
     tryAtHome:
       "At dinner, ask a question with no right answer and let everybody disagree. Notice that it gets more interesting rather than less.",

@@ -181,6 +181,78 @@ describe("mission content integrity", () => {
   });
 });
 
+describe("the curriculum does not teach a hazard while teaching the lesson", () => {
+  it("makes stopping and telling the strongest move when a tool asks for recovery facts", () => {
+    const mission = MISSION_BY_SLUG["the-quiz-that-kept-asking"];
+    const decision = mission.scenes.find((scene) => scene.id === "s6")!;
+
+    // The only full-credit answer is closing it and telling an adult. Skipping
+    // the field and carrying on is at most partway there, because steering
+    // around one question does not change what the tool is collecting.
+    const strong = decision.choices!.filter((c) => c.feedback.tone === "strong");
+    expect(strong).toHaveLength(1);
+    expect(strong[0].evidence).toEqual({
+      skillId: "privacy.escalate",
+      result: "demonstrated",
+    });
+    expect(strong[0].label.toLowerCase()).toMatch(/tell|ms\. okafor/);
+
+    const carriesOn = decision.choices!.find((c) => /skip/i.test(c.label))!;
+    expect(carriesOn.feedback.tone).toBe("partial");
+    expect(carriesOn.evidence?.result).toBe("developing");
+  });
+
+  it("never asks students to supply their own recovery facts in an activity", () => {
+    for (const mission of MISSIONS) {
+      const extension = mission.guide.extension.toLowerCase();
+      // An activity that has children invent security questions invites them
+      // to write down the real answers. Cards are handed out, not authored.
+      const invitesOwnAnswers =
+        /write .{0,40}(quiz )?questions as a class/.test(extension) ||
+        /swap with another table/.test(extension);
+      expect(invitesOwnAnswers, `${mission.slug} extension`).toBe(false);
+    }
+
+    const quiz = MISSION_BY_SLUG["the-quiz-that-kept-asking"];
+    expect(quiz.guide.extension.toLowerCase()).toContain(
+      "nobody writes or says their own answers",
+    );
+    // The family sheet asks for kinds of question, never for examples.
+    expect(quiz.family.questions.join(" ").toLowerCase()).toContain("not your answers");
+  });
+});
+
+describe("the curriculum is accurate about facts and about AI", () => {
+  const factOpinion = MISSION_BY_SLUG["the-question-with-no-answer"];
+  const studentCopy = factOpinion.scenes
+    .flatMap((scene) => [
+      ...scene.narration,
+      scene.prompt ?? "",
+      ...(scene.wrapUp ?? []),
+      ...(scene.choices ?? []).flatMap((c) => [c.label, c.feedback.headline, c.feedback.body]),
+    ])
+    .join(" ")
+    .toLowerCase();
+
+  it("defines a fact as checkable against evidence, a rule or a record", () => {
+    expect(studentCopy).toContain("calendar rule");
+    expect(factOpinion.scenes.find((s) => s.kind === "ending")!.wrapUp!.join(" ")).toMatch(
+      /evidence, a rule or a record/i,
+    );
+    // February is settled by a rule, never by measuring it.
+    expect(studentCopy).not.toContain("settled by somebody measuring");
+  });
+
+  it("describes AI output as generated from patterns, not as an average opinion", () => {
+    expect(studentCopy).not.toContain("average opinion");
+    expect(studentCopy).toMatch(/patterns|words that usually go together/);
+    // It has no way to know the child's school unless told. That is different
+    // from it being impossible for it to say anything.
+    expect(studentCopy).not.toContain("it is impossible");
+    expect(studentCopy).toMatch(/never told|nothing to go on|has never been to my school/);
+  });
+});
+
 describe("benchmark forms", () => {
   it("has exactly one correct option per item", () => {
     for (const form of Object.values(BENCHMARK_FORMS)) {

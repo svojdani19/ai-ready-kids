@@ -28,12 +28,12 @@ export const theQuizThatKeptAsking: Mission = {
   learningGoals: [
     "Notice when a game starts asking questions a game does not need",
     "Name the facts that grown-ups use to prove who you are",
-    "Stop partway through something fun, which is the hard part",
+    "Stop partway through something fun and tell a grown-up, which is the hard part",
   ],
   badge: {
     id: "badge-privacy-4",
     name: "Quiz Quitter",
-    blurb: "You stopped a fun thing when it turned nosy.",
+    blurb: "You stopped a fun thing when it turned nosy, and said so.",
   },
   openingSceneId: "s1",
   scenes: [
@@ -171,35 +171,46 @@ export const theQuizThatKeptAsking: Mission = {
       choices: [
         {
           id: "c1",
-          label: "Tap Skip and finish the quiz without answering those two",
+          label: "Close it and go tell Ms. Okafor what it asked for",
           feedback: {
             tone: "strong",
-            headline: "You got the fun and kept the key",
-            body: "Otter, as it turns out. The quiz worked perfectly without knowing anything real about you, which tells you those questions were never for the quiz.",
+            headline: "That is the move that helps everybody",
+            body: "Nobody chose this quiz for Room 12. Once something asks for spare keys, a grown-up needs to know, because it is asking the whole class the same thing.",
           },
-          evidence: { skillId: "privacy.identity", result: "demonstrated" },
+          evidence: { skillId: "privacy.escalate", result: "demonstrated" },
           next: "s7",
         },
         {
           id: "c2",
           label: "Close the whole thing, even though you are nearly done",
           feedback: {
-            tone: "strong",
-            headline: "Walking away is always allowed",
-            body: "Eighty per cent finished is not a reason to keep going. You do not owe a quiz anything, and nothing bad happens when you close it.",
+            tone: "partial",
+            headline: "You kept yourself safe",
+            body: "Walking away at eighty per cent is a real thing to be able to do. Telling somebody is the part that helps the twenty-two people still tapping.",
           },
-          evidence: { skillId: "privacy.identity", result: "demonstrated" },
+          evidence: { skillId: "privacy.identity", result: "developing" },
           next: "s7",
         },
         {
           id: "c3",
+          label: "Tap Skip and carry on to the end",
+          feedback: {
+            tone: "partial",
+            headline: "You kept the two answers, and not much else",
+            body: "Skipping one question does not make the rest of it safe. It already showed you what it is after, and it is still going. This one is worth closing, not steering around.",
+          },
+          evidence: { skillId: "privacy.identity", result: "developing" },
+          next: "s7",
+        },
+        {
+          id: "c4",
           label: "Answer them. You are so close to the end.",
           feedback: {
             tone: "rethink",
             headline: "That is what the big button is for",
-            body: "Eighty per cent done, one more step, nearly there. All of that is there to make stopping feel like losing. Look for the small grey button and try again.",
+            body: "Eighty per cent done, one more step, nearly there. All of that is there to make stopping feel like losing. Have another go.",
             coachNote:
-              "Name the sunk-cost pull out loud. Children feel it strongly and rarely have a word for it.",
+              "Two things to name here. The sunk-cost pull of the eighty-per-cent button, which children feel strongly and rarely have a word for. And the belief that skipping one field makes a service safe — students who pick Skip usually think they have solved it.",
           },
           next: "s6",
           retry: true,
@@ -211,21 +222,23 @@ export const theQuizThatKeptAsking: Mission = {
       kind: "ending",
       art: "classroom",
       narration: [
-        "Theo skips the questions too and gets badger anyway, which he says proves he is a badger in his soul.",
-        "Ms. Okafor adds a line under the trusted grown-ups list: some questions are spare keys.",
+        "Ms. Okafor turns the quiz off for the whole class while she looks into who made it.",
+        "Theo is briefly outraged, on the grounds that he was going to be a badger.",
+        "She adds a line under the trusted grown-ups list: some questions are spare keys.",
       ],
       wrapUp: [
         "A quiz can start out fun and turn nosy partway through.",
         "First pet, first teacher, old street: those are spare keys, not fun facts.",
-        "Being nearly finished is not a reason to keep going.",
+        "When something asks for a spare key, close it and tell a grown-up you trust.",
       ],
     },
   ],
   guide: {
     setup:
-      "This mission is about security questions, which children meet years before they own an account that uses them. The quiz is genuinely fun for three questions, which is the point: the format does not change when the purpose does.",
+      "This mission is about security questions, which children meet years before they own an account that uses them. The quiz is genuinely fun for three questions, which is the point: the format does not change when the purpose does. The default it teaches is stop and tell. Once a tool nobody approved asks for account-recovery facts, closing it and telling an adult is the answer, and steering around the question by skipping it is not.",
     lookFor: [
       "Students who judge a request by how the app feels rather than by what it asked",
+      "Students who treat skipping a field as having solved it",
       "Whether anyone names the sunk-cost pull of the eighty-per-cent button",
       "Students who can explain why a pet's name matters more than a favourite colour",
     ],
@@ -233,6 +246,7 @@ export const theQuizThatKeptAsking: Mission = {
       "Which questions were about the quiz, and which were about you?",
       "Why does a grown-up get asked about their first pet when they are locked out?",
       "The button said eighty per cent done. Why put that there?",
+      "Somebody skips the two questions and finishes the quiz. Are they safe now?",
       "What is a spare key you would never tape to a front door?",
     ],
     misconceptions: [
@@ -242,21 +256,26 @@ export const theQuizThatKeptAsking: Mission = {
           "Agree completely, then separate the two jobs it was doing. The quiz worked. It also collected. Both can be true, and the second one does not need the first to stop.",
       },
       {
+        student: "I skipped it, so it is fine now.",
+        response:
+          "The most likely wrong lesson from this mission, and worth heading off directly. Skipping one field does not change what the tool is for, and it carries on collecting everything else. Once something has shown a collection motive, the decision is about the tool, not about that one question.",
+      },
+      {
         student: "My pet's name is not a secret, my friends know it.",
         response:
-          "Correct, and the risk is not secrecy. It is that a stranger with that fact plus a name can convince somebody else they are your child.",
+          "Correct, and the risk is not secrecy. It is that a stranger holding that fact and a name can use the pair of them to convince some other service that they are the student.",
       },
     ],
     extension:
-      "Unplugged, ten minutes. Write six quiz questions as a class: four that are genuinely about the quiz and two that are spare keys. Swap with another table and have them spot the two.",
+      "Unplugged, ten minutes, using cards you hand out already written — students do not write these themselves. Six per table: four ordinary quiz questions such as favourite weather or climb or swim, and two spare keys such as the name of a first pet or the street somebody lived on when they were small. Tables sort them into Fun and Spare Key. Say this once, out loud, before you start: we are sorting the questions, and nobody writes or says their own answers to them. If a student volunteers a real pet name anyway, move on without repeating it.",
   },
   family: {
     summary:
-      "We looked at a fun quiz that started asking for things like a first pet's name and an old street. Those are the questions grown-ups get asked when they are locked out of an account, so we called them spare keys.",
+      "We looked at a fun quiz that started asking for things like a first pet's name and an old street. Those are the questions grown-ups get asked when they are locked out of an account, so we called them spare keys. When something asks for one, the answer is to close it and tell a grown-up, not to skip that question and carry on.",
     questions: [
-      "What is a spare key question? Can you think of one?",
+      "What kinds of question are spare keys? Just the kinds — not your answers.",
       "A quiz says you are eighty per cent finished. Why would it tell you that?",
-      "Can something be fun and still be collecting things about you?",
+      "If a quiz asks for a spare key, what should you do about the whole quiz?",
     ],
     tryAtHome:
       "Next time a quiz or a game asks something personal, read the question out loud together and ask what it has to do with the game.",
