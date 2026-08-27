@@ -2,7 +2,6 @@ import Link from "next/link";
 import { COMPETENCIES } from "@/content/competencies";
 import { MISSIONS } from "@/content/missions";
 import { ButtonLink } from "@/components/ui/Button";
-import { Tag } from "@/components/ui/Bits";
 import { SceneArt } from "@/components/art/SceneArt";
 
 /**
@@ -27,16 +26,15 @@ export default function LandingPage() {
       <section className="border-b-2 border-ink bg-paper">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-14 lg:grid-cols-[1.05fr_0.95fr] lg:py-20">
           <div>
-            <Tag tone="grape">Grades 2 to 4 · Annual school subscription</Tag>
-            <h1 className="mt-4 font-display text-5xl leading-[1.05] text-ink sm:text-6xl">
+            <h1 className="font-display text-5xl leading-[1.05] text-ink sm:text-6xl">
               Walk before you run.
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-soft">
-              Children are going to run. Into a homework helper, a photo filter, a smart
-              speaker at somebody else&rsquo;s house, usually with no adult beside them.
-              AI Ready Kids is the walking: seven to ten year olds rehearse what to keep
-              private, how to check whether something is true, and how to keep the
-              learning their own — nine minutes at a time, before it counts.
+              AI Ready Kids helps students understand the nuances of safety in using
+              artificial intelligence before they are thrust into prompts and language
+              models. Through teacher-guided scenarios, students build privacy,
+              verification and independent learning — specific situations written to
+              instruct and to engage.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <ButtonLink href="/demo" size="lg">
