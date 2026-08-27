@@ -201,10 +201,19 @@ export default async function StudentHome() {
       )}
 
       {/* Kid-facing evidence. No score, no ranking, no risk label.
-          Two lists, not one. A skill only reaches the first list if the child
-          chose it without needing the Try again explanation, which is what
-          makes it worth something. The second list exists so that needing the
-          explanation reads as being partway there rather than as nothing. */}
+          Two lists, not one. A skill reaches the first list when the child
+          chose the safest answer first go, which is what makes it worth
+          something. The second list exists so that anything short of that
+          reads as partway there rather than as nothing.
+
+          The copy below describes the state and never the history. `developing`
+          arrives two different ways — a first-go partial choice that continues
+          without any Try again, and the safe answer reached after one — and
+          this page cannot tell them apart. It used to say "you worked these out
+          after a Try again", which told a child who made a thoughtful
+          partly-safe choice that they had needed correcting. That is a story
+          the data does not support and it is the kind a seven-year-old
+          believes. */}
       <section aria-labelledby="can-do" className="mt-10 rounded-2xl border-2 border-sand-deep bg-surface p-5">
         <h2 id="can-do" className="font-display text-2xl text-ink">
           Things you have shown you can do
@@ -214,7 +223,8 @@ export default async function StudentHome() {
         </p>
         {summary.skillsDemonstrated === 0 ? (
           <p className="mt-4 text-[0.95rem] text-ink-soft">
-            Finish a mission and your first one will appear here.
+            Nothing here yet. These show up when you get one first go. You still get a
+            badge for finishing a mission either way.
           </p>
         ) : (
           <ul className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -247,8 +257,8 @@ export default async function StudentHome() {
               Things you are getting the hang of
             </h3>
             <p className="mt-1 text-[0.95rem] text-ink-soft">
-              You worked these out after a Try again. That still counts, and they move
-              up when you get one first go.
+              You made a good start on these. Each one moves up when you get it first go
+              in a new story.
             </p>
             <ul className="mt-3 grid gap-2 sm:grid-cols-2">
               {COMPETENCIES.flatMap((c) =>

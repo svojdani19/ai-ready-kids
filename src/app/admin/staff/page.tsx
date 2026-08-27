@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/session";
-import { countClassesForTeacher, listUsers } from "@/lib/repo/school";
+import { classesOwnedBy, listUsers } from "@/lib/repo/school";
 import { listCertifications } from "@/lib/repo/progress";
 import { removeStaffAction } from "@/app/actions/admin";
 import { CERTIFICATION_MODULES, CERTIFICATION_TITLE } from "@/content/certification";
@@ -64,7 +64,7 @@ export default async function AdminStaff() {
                 {staff.map((member) => {
                   const cert = certByUser.get(member.id);
                   const answered = CERTIFICATION_MODULES.filter((m) => cert?.answers[m.id]).length;
-                  const owned = countClassesForTeacher(db, member.id);
+                  const owned = classesOwnedBy(db, member.id);
                   return (
                     <tr key={member.id} className="border-b border-sand last:border-0">
                       <th scope="row" className="px-5 py-3 text-left font-medium text-ink">
@@ -83,7 +83,20 @@ export default async function AdminStaff() {
                           {member.email}
                         </code>
                       </td>
-                      <td className="ark-tabular px-3 py-3 text-ink-soft">{owned}</td>
+                      <td className="px-3 py-3 text-ink-soft">
+                        {owned.length === 0 ? (
+                          <span className="ark-tabular">0</span>
+                        ) : (
+                          <>
+                            <span className="ark-tabular">{owned.length}</span>
+                            <span className="block text-xs text-ink-faint">
+                              {owned
+                                .map((c) => (c.archived ? `${c.name} (archived)` : c.name))
+                                .join(", ")}
+                            </span>
+                          </>
+                        )}
+                      </td>
                       <td className="px-3 py-3">
                         {cert?.completed_at ? (
                           <Tag tone="pine">Completed {formatShortDate(cert.completed_at)}</Tag>

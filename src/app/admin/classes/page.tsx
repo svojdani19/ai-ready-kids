@@ -12,6 +12,7 @@ import {
 import { PageHeader, Panel, PanelBody } from "@/components/ui/Panel";
 import { EmptyState, Note, Tag } from "@/components/ui/Bits";
 import { ConfirmAction } from "@/components/staff/ConfirmAction";
+import { ReassignForm } from "./ReassignForm";
 import { CreateClassForm } from "./CreateClassForm";
 
 export const metadata: Metadata = { title: "Classes" };
@@ -106,6 +107,12 @@ export default async function AdminClasses() {
                       <td className="ark-tabular px-3 py-3 text-ink-soft">{assignments}</td>
                       <td className="px-5 py-3">
                         <div className="flex flex-wrap justify-end gap-2">
+                          <ReassignForm
+                            classId={classroom.id}
+                            className={classroom.name}
+                            currentTeacherId={classroom.teacher_id}
+                            teachers={teachers.map((t) => ({ id: t.id, name: t.name }))}
+                          />
                           {classroom.archived_at ? (
                             <ConfirmAction
                               tone="quiet"

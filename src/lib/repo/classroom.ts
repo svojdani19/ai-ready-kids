@@ -145,6 +145,36 @@ export function createClass(
   return getClass(db, id)!;
 }
 
+/**
+ * Move a class to a different teacher, keeping everything else.
+ *
+ * Without this, offboarding a teacher who owned a class was impossible.
+ * `removeStaffAction` refused while they owned one and told the administrator
+ * to "reassign or archive it first" — there was no reassign, and the count
+ * included archived classes so archiving did not help either. The only ways out
+ * were to permanently delete every class they had ever owned, students and all,
+ * or to leave the account live. In a build where staff sign in with a known
+ * email address and no password, leaving it live keeps a former employee's
+ * roster access.
+ *
+ * Roster, attempts, check-ins, assignments and the join code all stay exactly
+ * as they were: this changes who is responsible, and nothing about the class.
+ */
+export function reassignClass(db: Db, classId: string, teacherId: string): boolean {
+  const classroom = getClass(db, classId);
+  if (!classroom) return false;
+  const owner = row<{ role: string; school_id: string }>(
+    db.prepare("SELECT role, school_id FROM users WHERE id = ?").get(teacherId),
+  );
+  // Same invariant as creation, in the same place, so a class can never become
+  // ownerless or cross-school by being moved.
+  if (!owner || owner.role !== "teacher" || owner.school_id !== classroom.school_id) {
+    return false;
+  }
+  db.prepare("UPDATE classes SET teacher_id = ? WHERE id = ?").run(teacherId, classId);
+  return true;
+}
+
 export function archiveClass(db: Db, id: string): void {
   db.prepare("UPDATE classes SET archived_at = ? WHERE id = ?").run(nowIso(), id);
 }

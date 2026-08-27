@@ -7,10 +7,10 @@ likely to be.
 
 ---
 
-## Sprint 30 — the credential was 13,500 values wide
+## Sprint 31 — the dashboard invented a history, and June was impossible
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-27-sprint-30.md`](2026-08-27-sprint-30.md)
+- **Full review:** [`2026-08-27-sprint-31.md`](2026-08-27-sprint-31.md)
 - **Review trail:** sprints 01–16 in this directory. Sprint 09 tripled the
   curriculum to 27 missions. Sprint 10 fixed two mechanism defects found in it.
   Sprints 11 to 15 fixed content defects in ten of them, two per sprint.
@@ -20,83 +20,84 @@ likely to be.
   one of the 27 missions has now been read, and 26 had findings. Sprints 22-23
   are the second pass over the reporting layer, sprint 24 the assessment layer.
   sprint 25 the educator orientation. Every body of authored content has been
-  read once. **Sprints 26-30 audit what the product *permits* and what it
-  promises. Sprint 30 widens the class code from 13,500 values to 3.6 million,
-  throttles guessing, allows rotation, and gives the retention date the job it
-  never had.**
+  read once. Sprints 26-30 audit what the product permits and promises.
+  **Sprint 31 closes the "wrong-answer cost" item open since sprint 20, and
+  fixes the first workflow defect found here: a teacher who owned a class could
+  not be offboarded without deleting a child's records.**
 
 ### What changed
 
-1. **The class code was cheaply enumerable.** Sprint 27 made possession
-   enforceable — grant, binding, expiry, spend-on-use — and never looked at the
-   credential itself: **one word from a list of fifteen plus three digits,
-   13,500 values, from `Math.random`**, checked by a public unthrottled action
-   that searches every active class. One hit hands over a roster and then any
-   child's session. It is now two distinct words plus three digits from a
-   64-word list, drawn with `randomInt` — **3.6 million** — and still three
-   chunks a child reads off a board, case- and punctuation-insensitive.
-2. **Guessing costs something now.** Five free attempts, then doubling backoff
-   to a sixty-second ceiling, cleared when somebody gets in. Deliberately not a
-   profile: an in-memory counter and timestamp, nothing in the database, nothing
-   surviving a restart, no identifier of a child near it. **Per process, which
-   is exactly as good as one process** — the README says a deployment does this
-   at the edge.
-3. **Codes rotate.** A teacher can change one from the class page without
-   deleting the class. The grant carries the code it was issued against, so
-   rotating invalidates outstanding grants immediately, including one held
-   mid-join. Audited.
-4. **The retention date had no mechanism.** The page said "Scheduled purge" and
-   "Deletes on", the privacy page said "deletion is a date", and the only thing
-   that deleted anything was an administrator clicking a button — `eligibleNow`
-   changed a label. **Both halves fixed**: `runScheduledPurge` deletes every
-   class past its date with each roster, attempt and check-in and writes an
-   audit entry, idempotent, comparing **dates in UTC**, entry point `npm run
-   purge`. And the copy stopped calling it automatic: "Deletion due", "Due on",
-   and a note saying *"Nothing in this build runs it on a timer... until it
-   runs, records past the date are still here."*
+1. **The student page invented a history.** It said of every skill in the second
+   list *"You worked these out after a Try again"*. `developing` also arrives
+   **directly from first-go partial choices that continue with no retry at all**
+   — "Lean over and ask Theo", "Type your school name, but not your street" — so
+   a child who made a thoughtful partly-safe choice was told they had needed
+   correcting. It now describes the state and never the route: **"You made a
+   good start on these. Each one moves up when you get it first go in a new
+   story."** The empty state was false in the same direction and now points at
+   the badge the child did earn.
+2. **The teacher's legend was already right**, which is the striking part: *"a
+   partly-right choice, or the safe answer reached after a Try again"*. Only the
+   child was told the invented version. The audit found one more in the school
+   report, which named only the retry route; it names both now.
+3. **A teacher who owned a class could not be offboarded.** `removeStaffAction`
+   refused and said to "reassign or archive it first" — there was no reassign,
+   and the count included archived classes so archiving did not clear it either.
+   The only ways out were deleting every class they had ever owned, rosters and
+   records included, or leaving the account live, which in a build where staff
+   sign in with a known email and no password keeps a former employee's roster
+   access.
+4. **`reassignClass` moves a class and keeps everything else** — roster,
+   attempts, check-ins, assignments and **the join code**, so no child is told a
+   new one because an adult left. Same ownership invariant as `createClass`, so
+   nothing can become ownerless or cross-school by being moved. Administrator-
+   only action, per-row control on the classes page, and the offboarding block
+   now **names** the blocking classes with advice that is true.
 
 ### Already verified — please do not redo
 
-- `npm run verify` green: typecheck, lint, **419 tests**, Turbopack build.
-- Credential: entropy and format, 200 draws essentially never colliding, no
-  repeated word, still typeable. Throttle: free allowance, progressive backoff,
-  block expiry, forgiveness on success, bucket isolation, nothing persisted, and
-  exactly one "did not match" message so a guess never learns which kind of
-  wrong it was. Rotation: class survives, roster survives, old grant unusable,
-  missing class refused.
-- Purge boundaries: nothing the day before, everything **at one minute past
-  midnight UTC on the day**, cascades checked through attempts and check-ins,
-  the audit entry, and a repeat run that deletes nothing and adds no audit
-  noise. Plus a copy assertion that the page says "Deletion due" and does not
-  say "Scheduled purge" or "when it disappears".
-- Checked in the browser: a wrong code throttles after five tries with a
-  distinct message, and `maple heron 317` still opens Room 12.
+- `npm run verify` green: typecheck, lint, **428 tests**, Turbopack build.
+- The evidence tests prove the old sentence was **false** rather than asserting
+  the new one is nicer: a walk taking a first-go partial, checking the path has
+  exactly one step at that scene — no retry — while the record reads
+  `developing`. Plus copy assertions on all three surfaces, including that the
+  teacher legend stays accurate.
+- Offboarding: a move keeps the join code and roster, the old owner loses
+  `canTeachClass` and the new owner gains it, an **archived** class moves, an
+  administrator and a nonexistent user are both refused with the owner
+  unchanged, a missing class is refused, and a teacher becomes removable once
+  their classes have moved **with the child's records still there**.
+- Verified in the app: Room 4 moved from Danny Whitfield to Lucas Brennan with
+  the same code, 21 students and 9 assignments; the dropdown excludes the
+  current owner.
 
 ### Where this is most likely still wrong
 
-- **Enforcing a credential correctly and the credential being worth anything
-  are separate questions**, and fixing one reads as having fixed both. Sprint 27
-  hardened every path to the class code while it was 13,500 values wide, because
-  the finding was about possession and I audited possession. When a sprint
-  hardens the path to a secret, ask in the same breath how large the secret is.
-- **The limiter is per process.** Correct for this build, insufficient for a
-  deployment, stated in the README rather than papered over.
-- **Fifth instance of a word doing work the system could not support** —
-  "certified" (25), "aggregates only" (26), "fall and spring windows" (27),
-  "scheduled purge" (30). Two were fixed by changing the word, two by building
-  the state. The test each time is which the product actually needs.
-- **The route and action inventory is still not complete.** Three sprints
-  running it has found something.
+- **An open item phrased as a general worry does not get closed.** "Nothing
+  checks what a wrong answer costs a child" sat in this handoff for eleven
+  sprints. It was never going to be closed by auditing the model — the model,
+  the roll-up and the teacher legend were all correct — because the defect was
+  one sentence on the page a child reads. Somebody had to read the actual
+  sentence against the actual data paths.
+- **This was the first workflow defect found here.** Thirty sprints asked
+  whether the product is honest and whether it is safe. None asked whether it is
+  *usable* on an ordinary Tuesday in June. Walk the routine operations —
+  somebody leaves, somebody arrives, a class changes hands.
+- **Bulk reassignment does not exist.** One class at a time, each confirmed,
+  which is the right default for an operation that changes who can see
+  children's names — but a teacher with four classes takes four moves.
+- **The route and action inventory is still not complete.**
 - **`enterDemo("student")` writes a student session directly**, and
   **`simulateAttempt` writes seed paths directly**.
+- **The limiter is per process** — sprint 30, stated in the README.
 - **The instrument is still unequated with one item per skill** — sprint 24.
 - **Marketing prose is still mostly untested** — sprint 26.
 - **Every mission has been read once. None has been read twice.**
-- **Nothing checks what a wrong answer costs a child** — sprint 20.
 - **Shared scenes remain untraced** in twenty-six of twenty-seven missions.
 - **Teacher-facing copy promises timelines it cannot support.**
 - **No general guard against factual error exists or can.**
-- **The student "getting the hang of" list is untested with children.**
+- **The student "getting the hang of" list is untested with children** — and
+  sprint 31 rewrote it, so that is now more true rather than less.
 
 ### Standing constraints
 

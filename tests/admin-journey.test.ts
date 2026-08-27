@@ -40,6 +40,9 @@ import { BENCHMARK_FORMS } from "@/content/benchmark";
 import { MIN_BENCHMARK_GROUP, summariseCohortBenchmark } from "@/lib/domain/benchmark";
 import { addMonths, formatDate, purgeDateFor, retentionRows } from "@/lib/domain/retention";
 import { runScheduledPurge } from "@/lib/domain/purge";
+import { canTeachClass } from "@/lib/auth/access";
+import { classesOwnedBy } from "@/lib/repo/school";
+import { getClass, reassignClass } from "@/lib/repo/classroom";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -554,5 +557,130 @@ describe("the retention date has a job behind it", () => {
     expect(page).not.toContain("when it disappears");
     expect(page).toContain("npm run purge");
     expect(page).toContain("Nothing in this build");
+  });
+});
+
+describe("a departing teacher can be offboarded without deleting a child's records", () => {
+  /**
+   * `removeStaffAction` refused while a teacher owned any class and told the
+   * administrator to "reassign or archive it first". No reassignment existed,
+   * and the count included archived classes so archiving changed nothing. The
+   * only ways through were to permanently delete every class they had ever
+   * owned — rosters, attempts and check-ins — or leave the account live, which
+   * in a build where staff sign in with a known email and no password preserves
+   * their roster access. A teacher leaving in June is not an edge case.
+   */
+  let db6: Db;
+  let cleanup6: () => void;
+  beforeAll(() => {
+    ({ db: db6, cleanup: cleanup6 } = createTestDb());
+  });
+  afterAll(() => cleanup6());
+
+  function teacher(name: string, email: string) {
+    return createUser(db6, {
+      schoolId: DEMO_SCHOOL,
+      name,
+      title: "Grade 3 Teacher",
+      email,
+      role: "teacher",
+    });
+  }
+
+  it("moves a class and keeps everything about it", () => {
+    const leaving = teacher("Leaving Teacher", "leaving@brightwood.demo");
+    const staying = teacher("Staying Teacher", "staying@brightwood.demo");
+    const classId = createClass(db6, {
+      schoolId: DEMO_SCHOOL,
+      teacherId: leaving.id,
+      name: "Room 30",
+      grade: 3,
+      schoolYear: "2025-2026",
+    }).id;
+    const before = getClass(db6, classId)!;
+    createStudent(db6, { classId, displayName: "Kept K." });
+
+    expect(reassignClass(db6, classId, staying.id)).toBe(true);
+    const after = getClass(db6, classId)!;
+
+    expect(after.teacher_id).toBe(staying.id);
+    // Roster, join code and identity all survive: this changes who is
+    // responsible and nothing else.
+    expect(after.join_code).toBe(before.join_code);
+    expect(after.name).toBe(before.name);
+    expect(listStudents(db6, classId)).toHaveLength(1);
+    // And the old owner can no longer reach it.
+    expect(canTeachClass({ ...leaving }, after)).toBe(false);
+    expect(canTeachClass({ ...staying }, after)).toBe(true);
+  });
+
+  it("moves an archived class too, because archiving never changed ownership", () => {
+    const leaving = teacher("Archived Owner", "archived.owner@brightwood.demo");
+    const staying = teacher("New Owner", "new.owner@brightwood.demo");
+    const classId = createClass(db6, {
+      schoolId: DEMO_SCHOOL,
+      teacherId: leaving.id,
+      name: "Room 31",
+      grade: 4,
+      schoolYear: "2025-2026",
+    }).id;
+    archiveClass(db6, classId);
+
+    expect(classesOwnedBy(db6, leaving.id).some((c) => c.archived)).toBe(true);
+    expect(reassignClass(db6, classId, staying.id)).toBe(true);
+    expect(classesOwnedBy(db6, leaving.id)).toHaveLength(0);
+    expect(classesOwnedBy(db6, staying.id).some((c) => c.id === classId)).toBe(true);
+  });
+
+  it("refuses an administrator, a non-teacher and somebody from another school", () => {
+    const owner = teacher("Owner Two", "owner.two@brightwood.demo");
+    const classId = createClass(db6, {
+      schoolId: DEMO_SCHOOL,
+      teacherId: owner.id,
+      name: "Room 32",
+      grade: 2,
+      schoolYear: "2025-2026",
+    }).id;
+
+    // No class may become ownerless or cross-school by being moved.
+    expect(reassignClass(db6, classId, DEMO_ADMIN)).toBe(false);
+    expect(reassignClass(db6, classId, "usr_nobody")).toBe(false);
+    expect(getClass(db6, classId)!.teacher_id).toBe(owner.id);
+  });
+
+  it("refuses to move a class that does not exist", () => {
+    expect(reassignClass(db6, "cls_nope", DEMO_TEACHER)).toBe(false);
+  });
+
+  it("names what is blocking removal rather than counting it", () => {
+    const src = readFileSync(join(process.cwd(), "src/app/actions/admin.ts"), "utf8");
+    const start = src.indexOf("export async function removeStaffAction");
+    const body = src.slice(start, src.indexOf("export async function", start + 10) + 1 || undefined);
+    expect(body).toContain("classesOwnedBy");
+    expect(body).not.toContain("countClassesForTeacher");
+    // The old advice was wrong: archiving does not change ownership.
+    expect(body).not.toContain("Reassign or archive it first");
+    expect(body).toContain("archiving does not change who owns a class");
+    // Last-administrator protection stays.
+    expect(body).toContain("must keep at least one administrator");
+  });
+
+  it("leaves a teacher removable once their classes have moved", () => {
+    const leaving = teacher("Clear Teacher", "clear.teacher@brightwood.demo");
+    const staying = teacher("Receiving Teacher", "receiving@brightwood.demo");
+    const classId = createClass(db6, {
+      schoolId: DEMO_SCHOOL,
+      teacherId: leaving.id,
+      name: "Room 33",
+      grade: 3,
+      schoolYear: "2025-2026",
+    }).id;
+    createStudent(db6, { classId, displayName: "Safe S." });
+
+    expect(classesOwnedBy(db6, leaving.id)).toHaveLength(1);
+    reassignClass(db6, classId, staying.id);
+    expect(classesOwnedBy(db6, leaving.id)).toHaveLength(0);
+    // The point of the whole exercise: the child's records are still there.
+    expect(listStudents(db6, classId)).toHaveLength(1);
   });
 });

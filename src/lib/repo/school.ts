@@ -90,6 +90,25 @@ export function countClassesForTeacher(db: Db, teacherId: string): number {
   return r.n;
 }
 
+/**
+ * Every class a teacher owns, active and archived, for the offboarding flow.
+ *
+ * Archived ones count. `removeStaffAction` used to tell an administrator to
+ * "reassign or archive" a class, and archiving changed nothing about ownership
+ * — so the advice was wrong and the block stayed. Naming them is what lets the
+ * administrator actually clear it.
+ */
+export function classesOwnedBy(
+  db: Db,
+  teacherId: string,
+): { id: string; name: string; archived: boolean }[] {
+  return rows<{ id: string; name: string; archived_at: string | null }>(
+    db
+      .prepare("SELECT id, name, archived_at FROM classes WHERE teacher_id = ? ORDER BY name")
+      .all(teacherId),
+  ).map((c) => ({ id: c.id, name: c.name, archived: Boolean(c.archived_at) }));
+}
+
 export function recordAudit(
   db: Db,
   input: { schoolId: string; actorLabel: string; action: string; detail: string },

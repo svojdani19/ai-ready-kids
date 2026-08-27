@@ -8,10 +8,11 @@ import {
   deleteClass,
   getClass,
   listStudents,
+  reassignClass,
   restoreClass,
 } from "@/lib/repo/classroom";
 import {
-  countClassesForTeacher,
+  classesOwnedBy,
   createUser,
   deleteUser,
   getUser,
@@ -197,15 +198,59 @@ export async function addTeacherAction(
   return { ok: `${name} can now sign in with ${email}.` };
 }
 
+/**
+ * Hand a class to a different teacher. Administrator-only, because it changes
+ * who can see a roster.
+ */
+export async function reassignClassAction(
+  classId: string,
+  teacherId: string,
+): Promise<{ error?: string }> {
+  const { user } = await requireAdmin();
+  const db = getDb();
+  const classroom = getClass(db, classId);
+  if (!classroom || classroom.school_id !== user.school_id) {
+    return { error: "Unknown class." };
+  }
+  const from = getUser(db, classroom.teacher_id);
+  const to = getUser(db, teacherId);
+  if (!to || to.role !== "teacher" || to.school_id !== user.school_id) {
+    return { error: "Choose a teacher at this school." };
+  }
+  if (to.id === classroom.teacher_id) {
+    return { error: `${to.name} already has ${classroom.name}.` };
+  }
+  if (!reassignClass(db, classId, teacherId)) {
+    return { error: "That class could not be reassigned." };
+  }
+
+  recordAudit(db, {
+    schoolId: user.school_id,
+    actorLabel: user.name,
+    action: "class.reassigned",
+    detail: `${classroom.name} moved from ${from?.name ?? "an unassigned owner"} to ${to.name}. Roster, records and class code unchanged.`,
+  });
+  revalidatePath("/admin/classes");
+  revalidatePath("/admin/staff");
+  return {};
+}
+
 export async function removeStaffAction(userId: string): Promise<{ error?: string }> {
   const { user } = await requireAdmin();
   const db = getDb();
   const target = getUser(db, userId);
   if (!target || target.school_id !== user.school_id) return { error: "Unknown staff member." };
   if (target.id === user.id) return { error: "You cannot remove your own account." };
-  if (countClassesForTeacher(db, target.id) > 0) {
+  // Named, not counted, and archived ones included — archiving never changed
+  // ownership, so telling an administrator to archive was wrong advice that
+  // left them with no way through except deleting a child's records.
+  const owned = classesOwnedBy(db, target.id);
+  if (owned.length > 0) {
+    const list = owned
+      .map((c) => (c.archived ? `${c.name} (archived)` : c.name))
+      .join(", ");
     return {
-      error: `${target.name} still owns a class. Reassign or archive it first, so nobody's roster disappears by accident.`,
+      error: `${target.name} still owns ${owned.length === 1 ? "a class" : `${owned.length} classes`}: ${list}. Give ${owned.length === 1 ? "it" : "them"} to another teacher on the Classes page first — archiving does not change who owns a class, and deleting one takes its roster and records with it.`,
     };
   }
   if (

@@ -15,6 +15,8 @@ import {
   startAttempt,
 } from "@/lib/repo/progress";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { Choice, Mission } from "@/content/types";
 import type { EvidenceMap } from "@/lib/types";
 
@@ -438,5 +440,84 @@ describe("a check-in is finished when it is answered", () => {
         optionId: form.items[0].options[1].id,
       }),
     ).toThrow(/already finished/i);
+  });
+});
+
+describe("developing arrives two ways, and the child is told neither story", () => {
+  /**
+   * The student page said every developing skill meant "you worked these out
+   * after a Try again". It does not. `developing` is recorded directly by
+   * first-go partial choices that continue without any retry at all, so a child
+   * who made a thoughtful partly-safe choice was told they had needed
+   * correcting — a story the data does not support and the kind a seven-year-old
+   * believes about themselves.
+   */
+  it("records developing from a first-go partial with no retry in the path", () => {
+    // Find a decision whose partial option is reachable as the first choice.
+    let found:
+      | { mission: (typeof MISSIONS)[number]; sceneId: string; choiceId: string; skillId: string }
+      | undefined;
+    for (const mission of MISSIONS) {
+      const scene = mission.scenes.find((sc) =>
+        sc.choices?.some((c) => c.feedback.tone === "partial" && c.evidence && !c.retry),
+      );
+      if (!scene) continue;
+      const partial = scene.choices!.find(
+        (c) => c.feedback.tone === "partial" && c.evidence && !c.retry,
+      )!;
+      found = {
+        mission,
+        sceneId: scene.id,
+        choiceId: partial.id,
+        skillId: partial.evidence!.skillId,
+      };
+      break;
+    }
+    expect(found).toBeDefined();
+    const { mission, sceneId, choiceId, skillId } = found!;
+
+    const studentId = freshStudent();
+    playTo(db, studentId, mission, sceneId);
+    const before = getAttempt(db, studentId, mission.id)!.path.length;
+
+    const choice = mission.scenes.find((s) => s.id === sceneId)!.choices!.find(
+      (c) => c.id === choiceId,
+    )!;
+    recordDecision(db, {
+      studentId,
+      missionId: mission.id,
+      sceneId,
+      choiceId,
+      evidence: choice.evidence,
+    });
+
+    const attempt = getAttempt(db, studentId, mission.id)!;
+    // One step added, and it moved on: no Try again happened at this scene.
+    expect(attempt.path.length).toBe(before + 1);
+    expect(attempt.path.filter((step) => step.sceneId === sceneId)).toHaveLength(1);
+    // And the record is developing all the same.
+    expect(attempt.evidence[skillId]).toBe("developing");
+  });
+
+  it("tells the child what the state is, never what they did to get there", () => {
+    const page = readFileSync(join(process.cwd(), "src/app/student/page.tsx"), "utf8");
+    // The page cannot distinguish the two routes, so it must not claim either.
+    expect(page).not.toContain("You worked these out after a Try again");
+    expect(page).toContain("You made a good start on these");
+    // And the empty state must be true however a child got there: finishing a
+    // mission with only partial choices leaves this list empty.
+    expect(page).not.toContain("Finish a mission and your first one will appear here");
+    expect(page).toContain("Nothing here yet");
+    expect(page).toContain("badge for finishing a mission");
+  });
+
+  it("keeps the teacher legend accurate about both routes", () => {
+    // The roster legend was already right, which is the odd part: only the
+    // child was told the invented story.
+    const page = readFileSync(
+      join(process.cwd(), "src/app/teacher/class/[classId]/page.tsx"),
+      "utf8",
+    );
+    expect(page).toContain("a partly-right choice, or the safe answer reached after a Try again");
   });
 });

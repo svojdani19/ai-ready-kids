@@ -260,6 +260,16 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       calculator and an AI system are all "a tool", the choice is not about
       strategy any more. Name the route precisely, say what can be used at all
       of them, and say whether they can be combined in sequence.
+- [ ] **Status copy describes the state, not a history it cannot know.** Check
+      every way a status can be produced before writing a sentence about how
+      the child got there. `developing` arrives from a first-go partial choice
+      and from a coached recovery, and the page cannot tell them apart — so
+      "you worked these out after a Try again" told a child who chose
+      thoughtfully that they had needed correcting.
+- [ ] **The routine school operations work.** Somebody leaves in June, somebody
+      arrives in September, a class changes hands. Walk those through as a real
+      administrator would. A product can be honest and safe and still make an
+      ordinary Tuesday impossible without deleting a child's records.
 - [ ] **Every child can give the full-credit answer.** Read the strong choices
       and ask who cannot honestly pick one. A child in foster care, an unstable
       home, or a household where an adult is the problem must not be recorded
