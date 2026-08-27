@@ -325,11 +325,12 @@ export const thePenguinOnThePlayground: Mission = {
   estimatedMinutes: 9,
   teaser: "There is a photo of a penguin behind the slide. And a voice message that sounds like Ms. Okafor.",
   summary:
-    "Students examine a shared image and an audio clip that may be AI generated. They practise following the trail back to a maker or witness, using odd details as reasons to pause rather than proof, and asking the real person directly.",
+    "Students examine a shared image and an audio clip that may be AI generated. They practise following the trail back to a maker or witness, using odd details as reasons to pause rather than proof, and — hardest of all — reporting exactly what they established, when one of the two turns out to be settled and the other does not.",
   learningGoals: [
     "List questions to ask about a surprising picture",
-    "Notice that a voice can be copied",
-    "Check with the real person or a real witness before passing something on",
+    "Check a picture against what it actually claims, including when",
+    "Notice that a voice can be copied, and check where a message should have come from",
+    "Say exactly what you found out, and no more than that",
   ],
   badge: {
     id: "badge-verify-2",
@@ -345,6 +346,7 @@ export const thePenguinOnThePlayground: Mission = {
       narration: [
         "Before the bell, a picture is going around the third grade.",
         "It shows a penguin standing behind the big slide on the school playground. In the picture it is snowing.",
+        "Somebody has typed underneath it: PENGUIN AT BRIGHTWOOD THIS MORNING!!!",
         "Six people have already sent it to six other people.",
       ],
       next: "s2",
@@ -399,17 +401,17 @@ export const thePenguinOnThePlayground: Mission = {
       art: "playground",
       narration: [
         "You look at the picture properly this time, close up.",
-        "The slide is on the wrong side of the sandbox. The penguin has no shadow, even though everything else does. And it did not snow yesterday. It was sixty degrees.",
+        "The slide is on the wrong side of the sandbox. The penguin has no shadow, even though everything else does. And the message says this morning, and this morning it was sixty degrees and you were out there at break.",
       ],
       prompt: "Which of these is the strongest clue?",
       choices: [
         {
           id: "c1",
-          label: "It did not snow yesterday and you were outside all afternoon",
+          label: "It says this morning, and this morning there was no snow",
           feedback: {
             tone: "strong",
-            headline: "You checked the real world",
-            body: "You were there, so this clue has a witness: you. That is stronger than a strange-looking detail. You can also ask somebody else who was outside.",
+            headline: "You checked it against what it claims",
+            body: "Somebody typed a time on it, so now there is something to test. You were out at break and there was no snow, which settles the words underneath the picture. Where the picture itself came from is still nobody.",
           },
           evidence: { skillId: "verify.synthetic", result: "demonstrated" },
           next: "s4",
@@ -462,12 +464,24 @@ export const thePenguinOnThePlayground: Mission = {
           feedback: {
             tone: "strong",
             headline: "Go to the actual person",
-            body: "She did not say it. A voice can be copied from a short recording, so hearing somebody is not proof. Asking the real person is the check.",
+            body: "She did not send it. For a homework message from your own teacher, standing in front of her settles it, because she is the person it is supposed to have come from.",
           },
+          evidence: { skillId: "verify.synthetic", result: "demonstrated" },
           next: "s6",
         },
         {
           id: "c2",
+          label: "Check the class page, where homework actually gets posted",
+          feedback: {
+            tone: "strong",
+            headline: "You checked where it should have come from",
+            body: "Tonight's homework is on the class page, same as every night. A message that turns up somewhere else, saying a thing you would like to hear, is worth holding up against the place it was supposed to arrive.",
+          },
+          evidence: { skillId: "verify.source", result: "demonstrated" },
+          next: "s6",
+        },
+        {
+          id: "c3",
           label: "Believe it. You would know her voice anywhere.",
           feedback: {
             tone: "rethink",
@@ -480,7 +494,7 @@ export const thePenguinOnThePlayground: Mission = {
           retry: true,
         },
         {
-          id: "c3",
+          id: "c4",
           label: "Send it to three more people to see what they think",
           feedback: {
             tone: "rethink",
@@ -504,17 +518,28 @@ export const thePenguinOnThePlayground: Mission = {
       choices: [
         {
           id: "c1",
-          label: "Tell the people you got it from that it is not real",
+          label: "“Ms. Okafor did not send the homework message. Nobody knows where the picture came from.”",
           feedback: {
             tone: "strong",
-            headline: "You closed the loop",
-            body: "Checking something and then keeping quiet lets it keep travelling. Telling the person who sent it to you is the part that actually stops it.",
+            headline: "Two things, said separately",
+            body: "You found out two different amounts, so you say two different things. The homework is settled. The picture is not, and saying so is more use to somebody than guessing either way.",
           },
           evidence: { skillId: "verify.source", result: "demonstrated" },
           next: "s7",
         },
         {
           id: "c2",
+          label: "Tell them the whole thing is fake",
+          feedback: {
+            tone: "partial",
+            headline: "You know that about one of them",
+            body: "It stops the homework message, which matters. Nobody has found out where the picture came from though. Calling it fake is a guess, and it is the same mistake as believing it, pointing the other way.",
+          },
+          evidence: { skillId: "verify.source", result: "developing" },
+          next: "s7",
+        },
+        {
+          id: "c3",
           label: "Just delete it and say nothing",
           feedback: {
             tone: "partial",
@@ -525,7 +550,7 @@ export const thePenguinOnThePlayground: Mission = {
           next: "s7",
         },
         {
-          id: "c3",
+          id: "c4",
           label: "Make a better fake to show how easy it is",
           feedback: {
             tone: "rethink",
@@ -544,33 +569,44 @@ export const thePenguinOnThePlayground: Mission = {
       narration: [
         "The class makes a poster with three questions on it and tapes it above the tablet cart.",
         "Who made this? Who saw it happen? Does it match what I know?",
+        "Nobody ever finds out where the penguin picture came from. Ms. Okafor writes UNKNOWN beside it on the board and leaves it up all week, which Theo finds far more annoying than an answer would have been.",
       ],
       wrapUp: [
         "A picture is a claim, not proof. Computers can draw anything.",
-        "A voice can be copied. Ask the real person.",
+        "Check a picture against what it says about itself. Words underneath it can be wrong on their own.",
+        "A voice can be copied. Ask the real person, and check where the message should have come from.",
+        "Say exactly what you found out. Unknown is a real answer and it beats a guess.",
         "Checking it and then staying quiet still leaves it travelling.",
       ],
     },
   ],
   guide: {
     setup:
-      "This mission deliberately teaches process over pixel-hunting. Artefacts like missing shadows do help, but generators improve; the durable moves are asking who made it, who witnessed it, and whether it matches first-hand knowledge.",
+      "This mission deliberately teaches process over pixel-hunting. Artefacts like missing shadows do help, but generators improve; the durable moves are asking who made it, who witnessed it, and whether it matches what it claims about itself.\n\nThe two artefacts are deliberately not resolved to the same degree, and that is the hard part to teach. The voice message is settled: Ms. Okafor did not send it, and tonight's homework is on the class page where it always is. The picture is never settled at all — nobody traces it, and the mission ends with UNKNOWN written on the board. Children will want to collapse the two into \"it was all fake\", and that is the same error as believing it, pointed the other way. What the caption claimed can be disproved, because somebody typed a time on it. Where the picture came from cannot, because nobody knows. Hold the class to reporting exactly what was found.",
     lookFor: [
       "Students who rely only on visual artefacts and would be beaten by a better fake",
       "Students who treat familiarity with a voice as proof",
       "Students who verify privately but do not correct the chain",
+      "Students who collapse the picture and the voice message into one verdict",
+      "Whether anyone can say unknown out loud without treating it as a failure",
     ],
     questions: [
       "What was the very first question worth asking about the penguin picture?",
       "Which clue would still work if the picture had been made better?",
-      "Ms. Okafor's voice sounded exactly right. Why was that not enough?",
-      "You checked and it was fake. What do you owe the person who sent it to you?",
+      "Ms. Okafor's voice sounded exactly right. What did you check instead?",
+      "What did we actually find out about the picture? What did we not?",
+      "Nobody found out about the penguin. Is that a failure?",
     ],
     misconceptions: [
       {
         student: "I can always tell when a picture is fake.",
         response:
           "Gently disprove it. The point of the mission is that provenance beats inspection, precisely because detection gets harder every year.",
+      },
+      {
+        student: "So the penguin picture was fake.",
+        response:
+          "The most likely sentence in the debrief and the one to slow down. What was disproved is the words typed under it, because they named a morning with no snow in it. The picture itself was never traced to anybody. It might be a computer's, or a real penguin somewhere else entirely with a caption stuck on it. Not knowing is where the mission ends on purpose.",
       },
       {
         student: "If it is fake, it does not matter, it is just a penguin.",
@@ -583,11 +619,11 @@ export const thePenguinOnThePlayground: Mission = {
   },
   family: {
     summary:
-      "We looked at a surprising photo with no clear source and a copied voice message. Your child practised asking who made it and who actually saw it, instead of trying to spot a fake by staring at it.",
+      "We looked at a surprising photo with no clear source and a copied voice message. Your child practised asking who made it and who actually saw it, and practised the harder half: the voice message was settled, the picture never was, and saying so exactly is better than deciding.",
     questions: [
       "How could a picture look real but not be real?",
       "If you got a message in a voice you know, how could you check it was really them?",
-      "What are the three questions from the classroom poster?",
+      "If you found out about one thing and not the other, what would you tell people?",
     ],
     tryAtHome:
       "If a surprising picture or video comes into the family chat, pause and ask together: who made this, and who saw it happen?",
@@ -606,16 +642,18 @@ export const twoAnswersOneTruth: Mission = {
   estimatedMinutes: 8,
   teaser: "AskMe says the school was built in 1908. The plaque by the front door disagrees.",
   summary:
-    "Students hit a direct conflict between an AI answer and a primary source they can walk to. They build a simple hierarchy of sources and learn to ask who would actually know.",
+    "Two dates disagree, and neither of them is wrong. Students learn to work out what a question is actually asking before deciding which answer loses, to read what a source says rather than how official it looks, and to find the record whose job it is to hold that particular fact.",
   learningGoals: [
-    "Ask who would actually know a given fact",
-    "Prefer a first-hand or official source over a repeated one",
+    "Work out exactly what a question is asking before answering it",
+    "Read what a source says, rather than trusting how official it looks",
+    "Reconcile two answers before deciding that one of them is wrong",
+    "Find the record whose job it is to hold a particular fact",
     "Write down where an answer came from",
   ],
   badge: {
     id: "badge-verify-3",
-    name: "Source Finder",
-    blurb: "You went and found out where the answer came from.",
+    name: "Question Sorter",
+    blurb: "You worked out the question before you picked the answer.",
   },
   openingSceneId: "s1",
   scenes: [
@@ -656,41 +694,57 @@ export const twoAnswersOneTruth: Mission = {
       id: "s4",
       kind: "decision",
       art: "hallway",
-      narration: ["Two answers. 1908 and 1961. They cannot both be right."],
-      prompt: "Which one do you believe, and why?",
+      narration: [
+        "Two answers. 1908 and 1961.",
+        "You are about to decide which one is wrong.",
+      ],
+      prompt: "Before you pick one, what is worth noticing?",
       choices: [
         {
           id: "c1",
-          label: "The plaque, because it was put there by the people who built it",
+          label: "The plaque says ERECTED. That is about a building.",
           feedback: {
             tone: "strong",
-            headline: "You found the closest source",
-            body: "The plaque is first-hand. It was made by the people who were actually there. AskMe was guessing at words about a school it has never been to.",
+            headline: "You read the actual words",
+            body: "Erected means somebody put a building up. A school is a name and a lot of people as well as walls, and those do not have to start in the same year.",
           },
           evidence: { skillId: "verify.source", result: "demonstrated" },
           next: "s5",
         },
         {
           id: "c2",
-          label: "AskMe, because it knows about the whole district",
-          feedback: {
-            tone: "rethink",
-            headline: "Knowing a lot is not the same as knowing this",
-            body: "AskMe has never stood in your hallway. Ask yourself who would actually know this fact, and go back and choose again.",
-          },
-          next: "s4",
-          retry: true,
-        },
-        {
-          id: "c3",
-          label: "Neither yet. Find one more source before deciding.",
+          label: "They might both be true, about two different things",
           feedback: {
             tone: "strong",
-            headline: "Careful, and completely fair",
-            body: "Two sources disagreeing is a good reason to find a third. The office has the original building records, and they say 1961 too.",
+            headline: "That is the thing to check first",
+            body: "A school can start in one place in one year and move into a new building later. Nothing you have read so far says these two answers are even about the same question.",
           },
           evidence: { skillId: "verify.source", result: "demonstrated" },
           next: "s5",
+        },
+        {
+          id: "c3",
+          label: "Nobody has said which year the poster wants",
+          feedback: {
+            tone: "partial",
+            headline: "Worth asking, and you can get quite far yourself",
+            body: "The year the school was built is two questions in one coat, and asking Ms. Okafor which one she meant is a fair move. The words on the plaque already tell you a lot too.",
+          },
+          evidence: { skillId: "verify.source", result: "developing" },
+          next: "s5",
+        },
+        {
+          id: "c4",
+          label: "The plaque wins. It is old and official and it is right there.",
+          feedback: {
+            tone: "rethink",
+            headline: "Looking official is not a reason",
+            body: "A plaque can be put up years afterwards, by anybody, and it can be wrong, and it can be answering a narrower question than yours. Read what this one actually says before you decide it beats anything. Try again.",
+            coachNote:
+              "Deference to an official-looking object is the failure this mission is really about, and it is more common than believing the app. Name it out loud.",
+          },
+          next: "s4",
+          retry: true,
         },
       ],
     },
@@ -699,40 +753,52 @@ export const twoAnswersOneTruth: Mission = {
       kind: "decision",
       art: "library",
       narration: [
-        "Mr. Ruiz puts four things on the library table and asks you to put them in order, best source first, for the question of when your school was built.",
-        "The brass plaque. AskMe. A blog post called Old Schools of America. Ms. Okafor.",
+        "Mrs. Delgado in the office keeps the district's building records in a grey cabinet, and she is delighted anybody has asked.",
+        "Brightwood Elementary opened in 1908, in a wooden building on Cedar Street.",
+        "The building you are standing in went up in 1961, after the old one burned down.",
       ],
-      prompt: "Which goes first?",
+      prompt: "So who was wrong?",
       choices: [
         {
           id: "c1",
-          label: "The brass plaque",
+          label: "Nobody. They were answering different questions.",
           feedback: {
             tone: "strong",
-            headline: "First-hand goes first",
-            body: "The order is: the thing that was there, then the people who keep the records, then a person who might remember, then anything that is repeating what it heard.",
+            headline: "That is what the records show",
+            body: "1908 is right about the school. 1961 is right about the building. The disagreement was never between them, it was inside your question.",
           },
           evidence: { skillId: "verify.source", result: "demonstrated" },
           next: "s6",
         },
         {
           id: "c2",
-          label: "Ms. Okafor",
+          label: "My sentence was. It never said which one I meant.",
+          feedback: {
+            tone: "strong",
+            headline: "The question was the broken part",
+            body: "Once you decide whether you mean the school or the building, both answers stop fighting. Most arguments about facts are this, wearing a disguise.",
+          },
+          evidence: { skillId: "verify.source", result: "demonstrated" },
+          next: "s6",
+        },
+        {
+          id: "c3",
+          label: "AskMe got lucky. It never knew about the fire.",
           feedback: {
             tone: "partial",
-            headline: "A good source, not the first one",
-            body: "Ms. Okafor is trustworthy, but she was not there in 1961 either. She would go and look at the plaque, same as you.",
+            headline: "Fair, and half of it",
+            body: "It happened to be right about 1908 and it was never answering the other question at all. It is still worth noticing that the records are what let you tell.",
           },
           evidence: { skillId: "verify.source", result: "developing" },
           next: "s6",
         },
         {
-          id: "c3",
-          label: "The blog post, because it is about old schools",
+          id: "c4",
+          label: "The plaque was, because the school really started in 1908",
           feedback: {
             tone: "rethink",
-            headline: "Being about the topic is not enough",
-            body: "Anybody can write a blog post, and most of them are repeating something they read somewhere else. Ask who was actually there. Try again.",
+            headline: "The plaque never said that",
+            body: "It says ERECTED 1961, and the building did go up in 1961. You are still trying to pick a winner. Look for the answer that lets both of them be right. Try again.",
           },
           next: "s5",
           retry: true,
@@ -744,7 +810,8 @@ export const twoAnswersOneTruth: Mission = {
       kind: "decision",
       art: "classroom",
       narration: [
-        "Your sentence goes on the poster. Ms. Okafor asks you to add one more line underneath it.",
+        "Your sentence ends up being two. Brightwood Elementary opened in 1908. The building we are in went up in 1961, after a fire.",
+        "Ms. Okafor asks you to add one more line underneath.",
       ],
       prompt: "What should the extra line say?",
       choices: [
@@ -754,7 +821,7 @@ export const twoAnswersOneTruth: Mission = {
           feedback: {
             tone: "strong",
             headline: "Now anybody can check you",
-            body: "Writing down where an answer came from is what makes it useful to other people. It is the difference between a fact and a rumour.",
+            body: "The office building records, for both dates. Writing down where an answer came from is what makes it useful to other people, and it is the difference between a fact and a rumour.",
           },
           evidence: { skillId: "verify.source", result: "demonstrated" },
           next: "s7",
@@ -788,27 +855,31 @@ export const twoAnswersOneTruth: Mission = {
       kind: "ending",
       art: "hallway",
       narration: [
-        "The poster goes up by the front doors, about two metres from the plaque it came from.",
+        "The poster goes up by the front doors, about two metres from the plaque, which turns out to have been telling the truth about a narrower question than anybody was asking it.",
       ],
       wrapUp: [
-        "Ask who would actually know this.",
-        "First-hand beats repeated. The plaque beats the blog.",
+        "Work out what the question is before you decide which answer is wrong.",
+        "Read what a source actually says. Erected is not the same as founded.",
+        "Two answers that disagree might be answering two different questions.",
+        "Find the record whose job it is to keep that particular fact.",
         "Always write down where the answer came from.",
       ],
     },
   ],
   guide: {
     setup:
-      "This mission gives students a conflict they can resolve by walking down a hallway, which makes the abstract idea of source quality physical. The sorting task in scene five is the transferable artefact.",
+      "The conflict in this mission is not real, and that is the whole design. 1908 and 1961 are both correct: the school opened in 1908 and the present building went up in 1961 after a fire. Nothing has to lose.\n\nThat matters because the obvious lesson here — believe the official-looking object over the app — is not a reliable one. Plaques get installed years later, by people who were not there, and they answer whatever narrow question somebody chose to engrave. This one is accurate and it is still not an answer to \"when was the school built\", because that phrase is two questions in one coat. The move to teach, in order: work out what is actually being asked, read what each source actually says, find the record whose job it is to keep that fact, and only then decide whether anybody is wrong. Most of the time nobody is.\n\nExpect the class to want a winner. The retry in scene four exists for exactly that, and so does the one in scene five, which offers the chance to pick the app instead.",
     lookFor: [
-      "Students who rank breadth of knowledge above proximity to the fact",
-      "Students who can articulate who would actually know",
+      "Students who defer to the plaque because it looks official, without reading it",
+      "Whether anyone notices that erected and founded are different claims",
+      "Students who insist on picking a winner after the records reconcile both",
       "Whether citing a source feels like a chore or like the point",
     ],
     questions: [
-      "Who would actually know when our school was built?",
-      "Why is a plaque a better source than a blog post about old schools?",
-      "AskMe knows about thousands of schools. Why did that not help?",
+      "The year the school was built. What are the two questions hiding in that?",
+      "The plaque says ERECTED. What does that word actually claim?",
+      "Who was wrong, in the end?",
+      "Where would you go for a fact about a building in this district?",
       "What is the difference between a fact and a rumour?",
     ],
     misconceptions: [
@@ -822,21 +893,26 @@ export const twoAnswersOneTruth: Mission = {
         response:
           "Point out that repeated sources can all be copying one wrong original. Counting is not checking.",
       },
+      {
+        student: "The plaque was there, so it knows.",
+        response:
+          "The one to answer carefully, because it sounds like good thinking. A plaque is an object somebody made, at some point, with a sentence somebody chose. It was not necessarily made in the year it names, or by anybody who was present, and this one answers a question about a building. Being physical and being engraved are not the same as being right, and neither is being screwed to a wall.",
+      },
     ],
     extension:
-      "Send pairs to find a primary source somewhere in the building: a plaque, a dedication, a trophy, a mural signature. Photograph and present.",
+      "Send pairs to find a dated object somewhere in the building: a plaque, a dedication, a trophy, a mural signature. For each one, have them write down the exact words and then answer two questions — what does this actually claim, and what does it not tell us? A trophy dated 1994 says a team won something; it says nothing about when the hall was built.",
   },
   family: {
     summary:
-      "We practised deciding which source to believe when two answers disagree, by asking who would actually know, and by preferring a first-hand source over one that is repeating something.",
+      "Two answers about our school disagreed — 1908 and 1961 — and it turned out both were right, about different things. We practised working out what a question is actually asking before deciding somebody is wrong, and reading what a source says rather than trusting how official it looks.",
     questions: [
-      "Who would actually know how old our house is?",
-      "What is the difference between somebody who was there and somebody who read about it?",
+      "How old is our house? Does that mean the building, or how long we have been here?",
+      "If two people give different answers, how could they both be right?",
       "Why should you write down where you found an answer?",
     ],
     tryAtHome:
-      "Find something in your home with a date on it, a coin, a plaque, a stamped label, and talk about why the object is better evidence than a memory.",
-    familyRule: "We ask who would actually know.",
+      "Find something in your home with a date on it — a coin, a stamped label, a photograph — and work out together what the date actually refers to. It is almost never the thing you first assume.",
+    familyRule: "Work out the question before deciding who is wrong.",
   },
 };
 

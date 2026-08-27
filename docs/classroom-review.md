@@ -158,6 +158,15 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       resting on a wrong reason — a technical claim that will not hold, a
       conclusion the evidence does not reach — teaches the reason, not the
       answer. Ask what happens to the child's rule when the reason fails.
+- [ ] **The verdict is no wider than what was checked.** Where a mission
+      settles one thing, make sure it does not quietly claim the neighbouring
+      thing too. Two artefacts checked to different depths get reported
+      separately, in the words that were actually earned, and "we could not
+      find out" is a legitimate place for a mission to end.
+- [ ] **The guide is not the mission.** A discussion guide can state the right
+      principle while the scenes teach the opposite, and the evidence awards
+      follow the scenes. Read what the child does and what it records, not what
+      the setup says the mission is about.
 - [ ] **The ending does not act out the error.** Read the resolution as a
       story. A mission can teach one thing in its feedback and the opposite in
       what the characters go on to do.

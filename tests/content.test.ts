@@ -172,6 +172,14 @@ describe("mission content integrity", () => {
       "stops being worse surprisingly quickly",
       // First-hand observation wins for a question about right now, not always.
       "first-hand beats forecast, every time",
+      // Source quality is not a fixed league table, and an object is not
+      // first-hand because it looks official.
+      "first-hand beats repeated",
+      "the plaque beats the blog",
+      "put there by the people who built it",
+      "they cannot both be right",
+      // A subject's denial is context, not a universal proof about a recording.
+      "asking the real person is the check",
     ]) {
       expect(studentCopy).not.toContain(overclaim);
     }
@@ -196,22 +204,28 @@ describe("mission content integrity", () => {
       expect(choice.feedback.body.toLowerCase()).not.toMatch(/mismatch|flipped|cropped/);
     }
 
+    // The voice scene used to have a single exit and therefore recorded
+    // nothing, under the sole-exit exemption sprint 06 introduced. It now has
+    // two genuinely different checks — the person the message claims to come
+    // from, and the channel it should have arrived on — so it can record
+    // evidence honestly. Both must be there, because asking the subject alone
+    // is context for a routine instruction, not a universal proof of a fake.
     const voiceScene = mission.scenes.find((scene) => scene.id === "s5")!;
-    const nonRetryChoices = voiceScene.choices!.filter((choice) => !choice.retry);
-    expect(nonRetryChoices).toHaveLength(1);
-    expect(nonRetryChoices[0].evidence).toBeUndefined();
+    const exits = voiceScene.choices!.filter((choice) => !choice.retry);
+    expect(exits).toHaveLength(2);
+    expect(exits.map((c) => c.label.toLowerCase()).join(" ")).toMatch(/ask ms\. okafor/);
+    expect(exits.map((c) => c.label.toLowerCase()).join(" ")).toMatch(/class page/);
+    for (const exit of exits) expect(exit.evidence?.result).toBe("demonstrated");
   });
 
-  it("does not turn a coached Mission 5 completion into demonstrated evidence", () => {
+  it("does not turn a coached Mission 5 opening into demonstrated evidence", () => {
+    // A weak simulated learner takes the partial exits — the science question
+    // at s2, an artefact clue at s3 — and never independently reaches the
+    // provenance answer. The mission's primary skill must come out developing.
+    // Nothing in the mission may quietly upgrade that.
     const mission = MISSION_BY_SLUG["the-penguin-on-the-playground"];
     const result = simulateAttempt(mission, () => 0.1, 0);
 
-    expect(result.path).toEqual(
-      expect.arrayContaining([
-        { sceneId: "s5", choiceId: "c2" },
-        { sceneId: "s5", choiceId: "c1" },
-      ]),
-    );
     expect(result.evidence["verify.synthetic"]).toBe("developing");
   });
 });
@@ -866,6 +880,94 @@ describe("feedback headlines survive being joined to the body", () => {
         }
       }
     }
+  });
+});
+
+describe("a verdict is only as wide as what was actually checked", () => {
+  const penguin = MISSION_BY_SLUG["the-penguin-on-the-playground"];
+
+  it("gives the image a checkable claim, including when", () => {
+    // Without a claimed time, "it did not snow yesterday" settles nothing.
+    const opening = penguin.scenes.find((s) => s.id === penguin.openingSceneId)!;
+    expect(opening.narration.join(" ").toLowerCase()).toMatch(/this morning/);
+    const clues = penguin.scenes.find((s) => s.id === "s3")!;
+    const strong = clues.choices!.find((c) => c.feedback.tone === "strong")!;
+    expect(strong.label.toLowerCase()).toMatch(/this morning/);
+    // And the check settles the caption, not the picture's origin.
+    expect(strong.feedback.body.toLowerCase()).toMatch(/where the picture itself came from is still nobody/);
+  });
+
+  it("checks the voice against a channel as well as against the person", () => {
+    const voice = penguin.scenes.find((s) => s.id === "s5")!;
+    const exits = voice.choices!.filter((c) => !c.retry);
+    expect(exits).toHaveLength(2);
+    const labels = exits.map((c) => c.label.toLowerCase()).join(" ");
+    expect(labels).toMatch(/ms\. okafor/);
+    expect(labels).toMatch(/class page/);
+    // Asking the subject is scoped to this instruction, not made a general law.
+    const askHer = exits.find((c) => /ms\. okafor/i.test(c.label))!;
+    expect(askHer.feedback.body.toLowerCase()).toMatch(/homework message from your own teacher/);
+  });
+
+  it("reports the two artefacts separately, because they were settled differently", () => {
+    const correct = penguin.scenes.find((s) => s.id === "s6")!;
+    const strong = correct.choices!.filter((c) => c.feedback.tone === "strong");
+    expect(strong).toHaveLength(1);
+    expect(strong[0].label.toLowerCase()).toMatch(/did not send/);
+    expect(strong[0].label.toLowerCase()).toMatch(/nobody knows where the picture came from/);
+
+    // Declaring the whole thing fake is the same error pointed the other way.
+    const blanket = correct.choices!.find((c) => /whole thing is fake/i.test(c.label))!;
+    expect(blanket.feedback.tone).toBe("partial");
+    expect(blanket.evidence?.result).toBe("developing");
+
+    // And the mission ends with the picture unresolved, on purpose.
+    const ending = penguin.scenes.find((s) => s.kind === "ending")!;
+    const copy = [...ending.narration, ...(ending.wrapUp ?? [])].join(" ").toLowerCase();
+    expect(copy).toMatch(/unknown/);
+    expect(copy).toMatch(/unknown is a real answer/);
+  });
+});
+
+describe("conflicting answers are reconciled before one is called wrong", () => {
+  const dates = MISSION_BY_SLUG["two-answers-one-truth"];
+  const studentCopy = dates.scenes
+    .flatMap((scene) => [
+      ...scene.narration,
+      scene.prompt ?? "",
+      ...(scene.wrapUp ?? []),
+      ...(scene.choices ?? []).flatMap((c) => [c.label, c.feedback.headline, c.feedback.body]),
+    ])
+    .join(" ")
+    .toLowerCase();
+
+  it("never asserts that the two dates are incompatible", () => {
+    // A school founded in 1908 can move into a building erected in 1961.
+    expect(studentCopy).not.toMatch(/cannot both be right/);
+    expect(studentCopy).toMatch(/both be true|both of them be right|nobody\. they were answering/);
+  });
+
+  it("makes reading the plaque's actual wording the full-credit move", () => {
+    const conflict = dates.scenes.find((s) => s.id === "s4")!;
+    const strong = conflict.choices!.filter((c) => c.feedback.tone === "strong");
+    expect(strong.length).toBeGreaterThanOrEqual(2);
+    expect(strong.map((c) => c.label.toLowerCase()).join(" ")).toMatch(/erected/);
+    // Deferring to the object because it looks official is the retry.
+    const deference = conflict.choices!.find((c) => /official/i.test(c.label))!;
+    expect(deference.retry).toBe(true);
+    expect(deference.feedback.headline.toLowerCase()).toMatch(/looking official is not a reason/);
+  });
+
+  it("settles it with the record responsible for the fact, not a hierarchy", () => {
+    const records = dates.scenes.find((s) => s.id === "s5")!;
+    expect(records.narration.join(" ").toLowerCase()).toMatch(/building records/);
+    expect(records.narration.join(" ").toLowerCase()).toMatch(/1908/);
+    expect(records.narration.join(" ").toLowerCase()).toMatch(/1961/);
+    // No universal league table of source types in the wrap-up.
+    const wrapUp = dates.scenes.find((s) => s.kind === "ending")!.wrapUp!.join(" ").toLowerCase();
+    expect(wrapUp).toMatch(/work out what the question is/);
+    expect(wrapUp).toMatch(/erected is not the same as founded/);
+    expect(wrapUp).not.toMatch(/first-hand beats/);
   });
 });
 
