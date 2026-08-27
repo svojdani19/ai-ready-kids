@@ -177,8 +177,18 @@ export default async function ClassPage({
                           label={s.educatorLabel}
                           value={s.demonstratedRate}
                           accent={ACCENT[competency.id]}
-                          valueLabel={`${s.demonstrated}/${students.length}`}
+                          valueLabel={
+                            s.withOpportunity === 0
+                              ? "not met yet"
+                              : `${s.demonstrated}/${s.withOpportunity} met it`
+                          }
                         />
+                        {s.opportunities > 0 && (
+                          <p className="mt-1 text-xs text-ink-faint">
+                            {s.independentOpportunities} of {s.opportunities} times it came
+                            up, it was chosen first go
+                          </p>
+                        )}
                       </li>
                     ))}
                 </ul>

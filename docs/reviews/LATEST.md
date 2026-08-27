@@ -7,89 +7,86 @@ likely to be.
 
 ---
 
-## Sprint 21 — the last mission, and what the whole pass found
+## Sprint 22 — the dashboard was making a claim it could not support
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-27-sprint-21.md`](2026-08-27-sprint-21.md)
+- **Full review:** [`2026-08-27-sprint-22.md`](2026-08-27-sprint-22.md)
 - **Review trail:** sprints 01–16 in this directory. Sprint 09 tripled the
   curriculum to 27 missions. Sprint 10 fixed two mechanism defects found in it.
   Sprints 11 to 15 fixed content defects in ten of them, two per sprint.
   Sprint 16 read the remaining eight; all eighteen have been read and seventeen
   had findings. Sprint 17 closed the eight legacy forced-award scenes as a rule
-  in `validateMission`. Sprints 18 to 21 worked through the original nine.
-  **Every one of the 27 missions has now been read by a person. Twenty-six had
-  findings; only The Art Show Label came back clean.**
+  in `validateMission`. Sprints 18 to 21 worked through the original nine; every
+  one of the 27 missions has now been read, and 26 had findings. **Sprint 22 is
+  the first finding about the reporting layer rather than the content, and the
+  first of the second pass.**
 
 ### What changed
 
-Both findings are about the four doors — the mission's central artefact, which a
-wall poster, three other missions and a shared art asset all point at.
+Twenty-one sprints asked whether the missions tell children the truth. This one
+asked whether the dashboard tells teachers the truth, and it did not.
 
-1. **The first card scored arithmetic and called it strategy.** The card said
-   only *seven plus eight*, and the full-credit feedback asserted a learner state
-   the story never established: *"you already know this one, or you nearly do"*.
-   Reaching for a tool was a retry because *"you can do seven plus eight"*. For a
-   child with dyscalculia, a working-memory difference, maths anxiety or an
-   agreed calculator arrangement, that records them below mastery for their
-   numeracy rather than their strategy selection. The mission also contradicted
-   its own final reflection, which says the right door moves as the learner does.
-   **The state is now in the story** — worked it out yesterday, nearly back today
-   — so thinking it out is right *for where you are today*. And there is a second
-   full-credit answer: **ask for a hint, or use whatever you have agreed with the
-   teacher**, because an agreed accommodation is an arrangement, not a shortcut.
-2. **The taxonomy overlapped and the activity logged children.** THINK IT OUT /
-   LOOK IT UP / ASK A PERSON / **USE A TOOL** — but looking something up uses a
-   tool, and so is a calculator, a book, or software that reads a page aloud.
-   Door four is now **ASK AN AI TOOL**, with Ms. Okafor saying out loud that it
-   means the tools the school allows, that a tool can help at any door, and that
-   the doors are about where an answer comes from rather than what you hold. The
-   doors also stack now: a tool that names a source sends you through the second
-   door to read it. And the extension — *"keep a door tally for a week, each time
-   a student gets stuck they mark which door they used"* — was a running record
-   of which children need help and what they reach for. It is now an anonymous,
-   teacher-authored scenario sort with nothing written down.
+1. **The recommendation ran on a metric that only goes up.** `mergeEvidence`
+   treats `demonstrated` as sticky, which is right for the claim the student and
+   roster labels make — *shown unaided at least once*. But sprint 10 tripled the
+   curriculum so each skill is met three times, and a lifetime maximum cannot
+   tell **"shown once, then coached twice"** from **"shown independently every
+   time"**. The teacher card took that saturated number, called it *Suggested
+   next focus*, and printed a percentage of the class.
+2. **The rate divided by the wrong denominator.** `demonstratedRate` was
+   documented as the share of students *with a completed opportunity* and
+   implemented as `demonstrated / studentIds.length` — every enrolled student.
+   A skill one student of thirty had met and shown read as **3%**, not 100% of
+   those who practised it, and `nextTeachingFocus` picked the lowest rate, so
+   early in a sequence it reliably selected the **least-assigned** skill. A
+   teacher acting on it reteaches a lesson the class never had.
+3. **Two views now, named separately.** Lifetime is unchanged and still sticky.
+   Opportunity is new: one entry per completed mission that recorded a result,
+   oldest first, with counts and `latest` — **a later coached result is visible
+   and does not erase the earlier success.** `demonstratedRate` divides by
+   `withOpportunity`, which the type exposes so every surface can state it; the
+   competency rate had the same defect and got the same fix.
+4. **The suggestion ranks on `independentRate`** — independent choices over
+   total encounters — because unlike the lifetime figure it can fall. The card
+   reads *"Chosen first go 78 of the 109 times it has come up, across 23
+   students"*, and it selects a different skill from the saturated metric. When
+   no skill has comparable coverage it changes its own heading to **Next
+   unpractised skill** and says outright that this is coverage, not competence.
 
 ### Already verified — please do not redo
 
-- `npm run verify` green: typecheck, lint, **327 tests**, Turbopack build.
-- A **sweep over every mission's extension**: no classroom activity may
-  accumulate per-child help-seeking over time. Noticing in the moment is what
-  `lookFor` is for and stays fine. This is the first sweep here to come back
-  empty, which is still worth having — it applies to every extension written
-  from now on.
-- All guards from sprints 10 to 20 unchanged and still passing.
-- Four Doors checked in the browser at the teacher preview.
+- `npm run verify` green: typecheck, lint, **335 tests**, Turbopack build.
+- Eight new tests in `tests/teacher-journey.test.ts` cover unequal coverage,
+  demonstrate-then-coached, saturation, ordering, and per-encounter counting.
+  One of them asserts on purpose that the two children are **identical** under
+  the lifetime view, so nobody re-collapses the two.
+- No new student fields, no telemetry, no per-child prediction. Everything is
+  computed from authored attempts and assignments that already existed.
+- Both surfaces checked in the browser: the teacher card and the per-skill
+  transfer line on the class page.
 
 ### Where this is most likely still wrong
 
-**The pass is complete and the number is 26 of 27.** Two conclusions from it,
-both of which should shape whatever comes next:
-
-- **The defects were not randomly distributed.** Five were inclusion failures —
-  scoring a child's family, a classmate's talent, a hand's writing, a familiar
-  adult's character, a second grader's arithmetic. Every one read plausibly as a
-  sentence and failed the moment somebody asked which child it fails. That
-  question is now four items on the checklist and it should have been the first.
-- **Guides described intent; scenes did the teaching.** More than once a
-  discussion guide stated the right principle while the scenes taught the
-  opposite, and the evidence awards followed the scenes. Reviewing by reading
-  setups would have passed those missions.
-
-Still open:
-
+- **The rest of the reporting layer has not had this treatment.** The admin
+  roll-up, the school report and the CSV export consume these numbers and
+  inherit the fix, but nobody has read them for claims of their own. The
+  benchmark roll-up is a separate calculation and is untouched.
+- **A comment that disagrees with its implementation is a finding.** That is how
+  this one was visible in the code the whole time: the doc comment on
+  `demonstratedRate` described a different calculation from the one three lines
+  below it. I have not been treating comments as claims to check.
+- **Watch for the honest thing being promoted downstream.** The student labels,
+  roster legend and export suppression were all careful about stickiness. One
+  surface took the same number and made it a recommendation. That is the usual
+  shape of this defect.
 - **Every mission has been read once. None has been read twice**, and the find
-  rate did not fall as the pass went on. Do not treat one read as clearance.
-- **Nothing checks what a wrong answer costs a child.** The evidence model is
-  well tested for integrity — no forced awards, no coached mastery — and not at
-  all for whether the honest answer is reachable by every child.
+  rate did not fall as the pass went on.
+- **Nothing checks what a wrong answer costs a child.** Still true from sprint
+  20, and separate from this: the evidence model is tested for integrity, not
+  for whether the honest answer is reachable by every child.
 - **Shared scenes remain untraced** in twenty-six of twenty-seven missions.
-  Sprint 19's path defect could exist in any of them.
-- **Sweeps need to be narrow enough to mean one thing** — sprint 20's quota
-  guard took three attempts, tripping on `twenty-three people` and on legitimate
-  copy about counting sources.
 - **Teacher-facing copy promises timelines it cannot support.**
 - **No general guard against factual error exists or can.**
-- **Stickiness keeps aggregate demonstration rates near 95%.**
 - **The student "getting the hang of" list is untested with children.**
 
 ### Standing constraints

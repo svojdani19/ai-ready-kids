@@ -146,6 +146,15 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       learning the language, disabled children and children with less at home
       all lose on that kind of test, and never because they did anything wrong.
       Prefer a question every person is asked the same way.
+- [ ] **Every reported number states what it divided by.** A rate over "the
+      students who met this skill" and a rate over "the class" are different
+      claims, and only one of them is usually true. Check the denominator in
+      the code, not in the doc comment — a comment that disagrees with its
+      implementation is itself a finding.
+- [ ] **A metric that only moves one way cannot recommend anything.** Sticky
+      lifetime evidence saturates by design, so it can say what a child has
+      ever done and never what a class needs next. If a surface makes an
+      instructional claim, check that the number behind it can fall.
 - [ ] **No activity accumulates a record of children.** Read every extension
       as a thing a teacher will actually run for a week. A tally of who got
       stuck, how often, and what they reached for is behavioural tracking, and

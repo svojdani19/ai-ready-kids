@@ -151,7 +151,7 @@ export default async function TeacherOverview() {
 
                 <div className="rounded-lg border border-sand-deep bg-paper p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-faint">
-                    Suggested next focus
+                    {focus?.kind === "not-practised" ? "Next unpractised skill" : "Suggested next focus"}
                   </p>
                   {focus ? (
                     <>
@@ -159,7 +159,23 @@ export default async function TeacherOverview() {
                         {focus.label}
                       </p>
                       <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
-                        {Math.round(focus.rate * 100)}% of this class has shown it so far.
+                        {focus.kind === "reteach" ? (
+                          <>
+                            Chosen first go {focus.independentOpportunities} of the{" "}
+                            {focus.opportunities} times it has come up, across{" "}
+                            {focus.withOpportunity} students.
+                          </>
+                        ) : (
+                          <>
+                            Not enough of this class has met this skill yet to say anything
+                            about how well it is understood.{" "}
+                            {focus.withOpportunity === 0
+                              ? "Nobody has reached it."
+                              : `${focus.withOpportunity} ${
+                                  focus.withOpportunity === 1 ? "student has" : "students have"
+                                } so far.`}
+                          </>
+                        )}
                         {focus.mission
                           ? ` The mission built around it is “${focus.mission.title}”.`
                           : ""}
