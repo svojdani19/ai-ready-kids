@@ -294,10 +294,10 @@ export const theStudyGroup: Mission = {
   estimatedMinutes: 8,
   teaser: "Everyone in the reading group is friendly. One question is about your bus.",
   summary:
-    "A moderated class study space mixes a helper tool with real classmates. Students practise the difference between facts about them and facts about where they will be, and learn that a routine is the most useful thing a stranger can learn.",
+    "A moderated class study space mixes a helper tool with real classmates. Students practise the difference between facts about them and facts about where they will be, and learn why a routine needs extra care: a school, a route and a finishing time together make a place somebody could wait.",
   learningGoals: [
     "Tell the difference between a fact about you and a fact about where you will be",
-    "Notice that routines are the most useful thing to a stranger",
+    "Notice that a routine puts a place and a time together",
     "Answer a friendly question without answering the risky part of it",
   ],
   badge: {
@@ -410,7 +410,7 @@ export const theStudyGroup: Mission = {
           feedback: {
             tone: "rethink",
             headline: "Theo answering does not answer for you",
-            body: "His route is his to give away. Yours is still yours. Two children on the same bus is twice as useful to somebody than one. Have another go.",
+            body: "His route is his to give away. Yours is still yours. Two children on the same bus is twice as useful to somebody as one. Have another go.",
             coachNote:
               "The peer-precedent move is the strongest pull in this mission. Watch who follows Theo without pausing.",
           },
@@ -472,15 +472,15 @@ export const theStudyGroup: Mission = {
         "Ms. Okafor thanks you and closes the shared list while she checks it.",
         "Then she asks the room a question, in the way she does when she wants everybody thinking.",
       ],
-      prompt: "Which of these is the most useful thing for a stranger to learn?",
+      prompt: "Which one of these tells somebody exactly where to find you, and when?",
       choices: [
         {
           id: "c1",
           label: "Where you are at the same time every day",
           feedback: {
             tone: "strong",
-            headline: "Routines, every time",
-            body: "Not your name. Not your favourite book. Where you reliably are. Bus stops, walking routes, practice nights, the shop after school.",
+            headline: "That is the one with a place and a time in it",
+            body: "Your school, your route and your finishing time add up to a spot and an hour to be there. Bus stops, walking routes, practice nights. That is why routines get extra care.",
           },
           evidence: { skillId: "privacy.identity", result: "demonstrated" },
           next: "s7",
@@ -490,8 +490,8 @@ export const theStudyGroup: Mission = {
           label: "What you look like",
           feedback: {
             tone: "partial",
-            headline: "Worth protecting, not the strongest",
-            body: "Knowing your face without knowing where to stand is not much use. Knowing where to stand is the part that matters.",
+            headline: "Yours to keep, and it does not say where",
+            body: "A picture of you is private and stays private. On its own it does not say where to wait. Pictures often carry a place inside them though, which is a whole mission of its own.",
           },
           evidence: { skillId: "privacy.identity", result: "developing" },
           next: "s7",
@@ -501,8 +501,8 @@ export const theStudyGroup: Mission = {
           label: "What you like reading",
           feedback: {
             tone: "rethink",
-            headline: "That one is safe to share",
-            body: "Books are a lovely thing to have in common with somebody, and they lead nowhere. Look for the answer that tells somebody where to wait.",
+            headline: "That one is fine to share here",
+            body: "Books are a lovely thing to have in common with somebody. Nobody can wait for you at a book. Look for the answer that gives somebody a place and a time.",
           },
           next: "s6",
           retry: true,
@@ -519,30 +519,38 @@ export const theStudyGroup: Mission = {
       ],
       wrapUp: [
         "A fact about you is different from a fact about where you will be.",
-        "Routines are the most useful thing a stranger can learn.",
+        "Your school, your route and your finishing time add up to a place somebody could wait.",
+        "Your photos, your face and the rest of your details are still yours to keep.",
         "You can say no to half a question and still be friendly.",
       ],
     },
   ],
   guide: {
     setup:
-      "The distinction here is subtle and worth slowing down for: children are taught not to share their address, and then share their bus route without blinking. Both answer the same question. Nothing frightening happens in this mission and J is never revealed to be anyone; the lesson is the pause, not a villain.",
+      "The distinction here is subtle and worth slowing down for: children are taught not to share their address, and then share their bus route without blinking. Both answer the same question. Nothing frightening happens in this mission and J is never revealed to be anyone; the lesson is the pause, not a villain. Handle the last scene with care: the point is that a routine puts a place and a time together, not that other details are safe by comparison. A child who leaves thinking a photo is fine as long as they hold back the bus has learned the opposite of the photo and camera missions.",
     lookFor: [
       "Students who protect an address but volunteer a routine",
       "Whether anyone follows Theo's answer without pausing",
       "Students who report the question but protect a friend by omission",
+      "Students who conclude other details are fine to share as long as they hold back a route",
     ],
     questions: [
       "Which of J's questions were fine, and which one was not?",
       "What is the difference between a fact about you and a fact about where you are?",
       "Theo answered first. Did that change anything about your answer?",
       "What could you say that is friendly and still says no?",
+      "What do your school, your route and your finishing time add up to together?",
     ],
     misconceptions: [
       {
         student: "It is only a bus number.",
         response:
           "Push on the word only. A bus number plus a school plus a finishing time is a place and a time. Build it up out loud and let the class see it assemble.",
+      },
+      {
+        student: "So photos are fine, as long as I do not say my bus.",
+        response:
+          "Head this one off before it settles. Nothing in this mission makes a photo safe to hand out. Routines get named here because they carry a time as well as a place; everything else is still private.",
       },
       {
         student: "J was probably just a kid.",
@@ -555,7 +563,7 @@ export const theStudyGroup: Mission = {
   },
   family: {
     summary:
-      "We practised the difference between a fact about you, like your favourite book, and a fact about where you will be, like which bus you take. The second kind is the one we keep.",
+      "We practised the difference between a fact about you, like your favourite book, and a fact about where you will be, like which bus you take. Both kinds can be private. The second kind is the one that tells somebody where to wait, and when.",
     questions: [
       "What is the difference between telling someone your favourite food and telling them your bus?",
       "Somebody friendly online asks where you wait after school. What could you say?",

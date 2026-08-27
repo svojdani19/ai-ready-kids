@@ -306,10 +306,11 @@ export const theHelperAndTheTeacher: Mission = {
   estimatedMinutes: 8,
   teaser: "The app says one thing. Ms. Okafor says another. Somebody has to be wrong.",
   summary:
-    "A tool contradicts a teacher on a maths method. Students practise disagreeing usefully: asking how somebody knows rather than picking a side, and discovering that two different answers can both be right.",
+    "A tool contradicts a teacher on a maths method. Students practise disagreeing usefully: testing both methods, treating matching examples as evidence rather than proof, and asking why each method works.",
   learningGoals: [
     "Ask how somebody knows, instead of choosing who to believe",
-    "Notice when two answers are different rather than wrong",
+    "Treat matching examples as evidence, then ask why a method works",
+    "Check your own steps before deciding a method is broken",
     "Disagree with a grown-up politely and usefully",
   ],
   badge: {
@@ -354,7 +355,7 @@ export const theHelperAndTheTeacher: Mission = {
           feedback: {
             tone: "strong",
             headline: "The question that actually settles it",
-            body: "You try three subtractions both ways. Both give the same answers, every time. They are two roads to one place, which means neither one is wrong.",
+            body: "You try three subtractions both ways. Same answer each time. Three sums are good evidence, not proof, so tomorrow you can ask Ms. Okafor to show you why counting up works.",
           },
           evidence: { skillId: "verify.confidence", result: "demonstrated" },
           next: "s4",
@@ -388,7 +389,7 @@ export const theHelperAndTheTeacher: Mission = {
       kind: "decision",
       art: "kitchen",
       narration: [
-        "So both methods work. But Sprocket said your teacher's one was not correct.",
+        "So far the two methods agree. But Sprocket said your teacher's one was not correct.",
       ],
       prompt: "What was wrong with what Sprocket said?",
       choices: [
@@ -442,7 +443,7 @@ export const theHelperAndTheTeacher: Mission = {
           feedback: {
             tone: "strong",
             headline: "Honest and curious at once",
-            body: "She is delighted. She draws it on a number line for the whole class and says this is the best question anybody has asked her this week.",
+            body: "She is delighted. She draws it on a number line so the class can see why counting up has to work, every time and not just for your three sums.",
           },
           evidence: { skillId: "verify.source", result: "demonstrated" },
           next: "s6",
@@ -486,7 +487,7 @@ export const theHelperAndTheTeacher: Mission = {
           feedback: {
             tone: "strong",
             headline: "That is the test",
-            body: "Same answer every time means different. A different answer means one of them is wrong, and then you go and find out which.",
+            body: "Answers that keep matching are evidence they are different, not wrong. If one day they do not match, check your steps first. Usually somebody has slipped, not the method.",
           },
           evidence: { skillId: "verify.confidence", result: "demonstrated" },
           next: "s7",
@@ -508,7 +509,7 @@ export const theHelperAndTheTeacher: Mission = {
           feedback: {
             tone: "rethink",
             headline: "We know where that leads",
-            body: "Certainty is the one thing that tells you nothing at all. Look for the test you can actually run. Have another go.",
+            body: "Certainty on its own does not settle it. A sure voice can be right and a sure voice can be wrong. Look for the test you can actually run. Have another go.",
           },
           next: "s6",
           retry: true,
@@ -526,16 +527,18 @@ export const theHelperAndTheTeacher: Mission = {
       wrapUp: [
         "Ask how somebody knows, not which one to believe.",
         "Unusual and incorrect are not the same word.",
-        "If both ways reach the same answer, they are different, not wrong.",
+        "If both ways keep reaching the same answer, that is evidence they are different, not wrong.",
+        "If they stop matching, check your steps before you blame the method.",
       ],
     },
   ],
   guide: {
     setup:
-      "This mission is about disagreement rather than error, and it is the one that most often changes how a class argues. The tool is not malicious and the teacher is not infallible; the point is that only one of them can show its working.",
+      "This mission is about disagreement rather than error, and it is the one that most often changes how a class argues. The tool is not malicious and the teacher is not infallible; the point is that only one of them showed any working here. Mind the limit as you teach it: a tool can produce a page of working too, and when it does, that working is another claim to check rather than proof. The move is the same either way — run the test yourself, then ask why the method works.",
     lookFor: [
       "Students who resolve a conflict by ranking people rather than testing claims",
       "Whether anyone separates less common from incorrect",
+      "Whether three matching examples get treated as a proof rather than as evidence",
       "Students who quietly change their method rather than ask",
     ],
     questions: [
@@ -543,6 +546,7 @@ export const theHelperAndTheTeacher: Mission = {
       "How could you find out for yourself who was right?",
       "Sprocket said unusual and then said incorrect. Are those the same?",
       "How do you disagree with a grown-up in a useful way?",
+      "If the two methods gave different answers one day, what would you check first?",
     ],
     misconceptions: [
       {
@@ -553,19 +557,24 @@ export const theHelperAndTheTeacher: Mission = {
       {
         student: "One of them has to be wrong.",
         response:
-          "This is the productive misconception. Run three subtractions both ways on the board and let the matching answers do the arguing.",
+          "This is the productive misconception. Run three subtractions both ways on the board and let the matching answers do the arguing — then show why counting up works, so nobody leaves thinking three examples were the proof.",
+      },
+      {
+        student: "If the app showed its working, that would prove it.",
+        response:
+          "A tool can lay out working that looks right and is not. An explanation is better than a bare verdict, because it gives you something to check. It is still a claim, not a proof.",
       },
     ],
     extension:
-      "Give the class a problem with two valid methods and have half do each. Compare answers, then ask each half to explain why their method works rather than that it does.",
+      "Give the class a problem with two valid methods and have half do each. Compare answers, then ask each half to explain why their method works rather than that it does. If a pair disagrees, have them recheck their steps before anybody blames a method.",
   },
   family: {
     summary:
-      "An app told your child their teacher's maths method was incorrect. We practised testing it — do both ways reach the same answer? — instead of choosing who to believe.",
+      "An app told your child their teacher's maths method was incorrect. We practised testing it — do both ways reach the same answer? — instead of choosing who to believe, and then asking why each method works.",
     questions: [
       "What is the difference between a different way and a wrong way?",
       "If an app and your teacher disagree, how could you find out for yourself?",
-      "What does it mean when something sounds very certain?",
+      "If two ways of doing something stopped agreeing, what would you check first?",
     ],
     tryAtHome:
       "When two sources disagree at home, ask how each one knows before deciding which is right. Sometimes both are.",

@@ -114,6 +114,11 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       close enough for the age — true. A simplification a child will carry for
       years is a claim, so check the ones that sound like throwaway examples.
       No automated suite can do this; somebody has to read it.
+- [ ] **Copy that is true of this case is also true as a rule.** Children
+      generalise the sentence, not the situation. Watch for rankings that
+      dismiss one private fact to elevate another, for a handful of examples
+      described as proof, and for "always" and "never" and "nothing at all"
+      where the honest word is "usually" or "not on its own".
 - [ ] **The activity does not contain the hazard.** Read every extension and
       family prompt as a seven year old would follow it literally. An exercise
       about personal information must never ask a child to supply their own,

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getMission } from "@/content/missions";
+import { getMission, MISSIONS } from "@/content/missions";
 import { COMPETENCY_BY_ID, SKILL_BY_ID } from "@/content/competencies";
 import { PrintButton } from "@/components/PrintButton";
 import { LogoMark } from "@/components/Logo";
@@ -142,7 +142,7 @@ export default async function PrintableGuide({
         </section>
 
         <footer className="mt-8 border-t border-sand pt-4 text-xs text-ink-faint">
-          AI Ready Kids · {competency.formalName} · Mission {mission.order} of 9. Reproduce
+          AI Ready Kids · {competency.formalName} · Mission {mission.order} of {MISSIONS.length}. Reproduce
           freely within your school.
         </footer>
       </article>

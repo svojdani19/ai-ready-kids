@@ -137,6 +137,14 @@ describe("mission content integrity", () => {
       "photos means every picture",
       "if it names no one, no one has checked it",
       "an ai tool usually does not",
+      // Ranking one private fact by dismissing another is how a privacy
+      // lesson turns into permission to share everything else.
+      "most useful thing a stranger",
+      "most useful thing for a stranger",
+      "is not much use",
+      "lead nowhere",
+      // Certainty is insufficient evidence, not meaningless evidence.
+      "tells you nothing at all",
     ]) {
       expect(studentCopy).not.toContain(overclaim);
     }
@@ -250,6 +258,83 @@ describe("the curriculum is accurate about facts and about AI", () => {
     // from it being impossible for it to say anything.
     expect(studentCopy).not.toContain("it is impossible");
     expect(studentCopy).toMatch(/never told|nothing to go on|has never been to my school/);
+  });
+});
+
+describe("one private fact is never ranked by dismissing another", () => {
+  const studyGroup = MISSION_BY_SLUG["the-study-group"];
+
+  it("asks which choice gives a place and a time, not which fact is worth most", () => {
+    const reflect = studyGroup.scenes.find((scene) => scene.id === "s6")!;
+    // The question is a test the child can apply, not a league table of
+    // private facts. "Which is most useful to a stranger" invites the
+    // inference that everything below the top of the list is fine to hand out.
+    expect(reflect.prompt!.toLowerCase()).toMatch(/where to find you|place and a time/);
+    expect(reflect.prompt!.toLowerCase()).not.toContain("most useful");
+
+    const routine = reflect.choices!.find((c) => /same time every day/i.test(c.label))!;
+    expect(routine.feedback.tone).toBe("strong");
+    expect(routine.feedback.body.toLowerCase()).toMatch(/place|spot/);
+
+    // The face option is partway there because it carries no time, and the
+    // copy must still say it is the child's to keep.
+    const face = reflect.choices!.find((c) => /what you look like/i.test(c.label))!;
+    expect(face.feedback.tone).toBe("partial");
+    expect(face.feedback.body.toLowerCase()).toMatch(/private|yours/);
+  });
+
+  it("states the contextual rule rather than a ranking in the wrap-up", () => {
+    const wrapUp = studyGroup.scenes.find((s) => s.kind === "ending")!.wrapUp!.join(" ");
+    // School plus route plus finishing time is what makes a predictable place.
+    expect(wrapUp.toLowerCase()).toMatch(/school, your route and your finishing time/);
+    // And other details are not left looking safe by comparison.
+    expect(wrapUp.toLowerCase()).toMatch(/still yours to keep/);
+  });
+});
+
+describe("verification is evidence-shaped, not brittle", () => {
+  const helper = MISSION_BY_SLUG["the-helper-and-the-teacher"];
+  const studentCopy = helper.scenes
+    .flatMap((scene) => [
+      ...scene.narration,
+      scene.prompt ?? "",
+      ...(scene.wrapUp ?? []),
+      ...(scene.choices ?? []).flatMap((c) => [c.label, c.feedback.headline, c.feedback.body]),
+    ])
+    .join(" ")
+    .toLowerCase();
+
+  it("treats matching examples as evidence and sends the child for a reason", () => {
+    // Three matching sums do not prove a method. They earn the question.
+    expect(studentCopy).toMatch(/evidence, not proof/);
+    expect(studentCopy).not.toMatch(/which means neither one is wrong/);
+    // The teacher's number line is what finishes the job.
+    expect(studentCopy).toMatch(/why counting up (works|has to work)/);
+  });
+
+  it("sends a mismatch to the steps before it condemns the method", () => {
+    const test = helper.scenes.find((scene) => scene.id === "s6")!;
+    const strong = test.choices!.find((c) => c.feedback.tone === "strong")!;
+    expect(strong.feedback.body.toLowerCase()).toMatch(/check your steps/);
+    expect(strong.feedback.body.toLowerCase()).not.toMatch(
+      /a different answer means one of them is wrong/,
+    );
+    const wrapUp = helper.scenes.find((s) => s.kind === "ending")!.wrapUp!.join(" ").toLowerCase();
+    expect(wrapUp).toMatch(/check your steps before you blame the method/);
+  });
+
+  it("says certainty is insufficient rather than meaningless", () => {
+    expect(studentCopy).toMatch(/certainty on its own does not settle it/);
+    expect(studentCopy).not.toMatch(/tells you nothing at all/);
+  });
+
+  it("does not claim an AI tool cannot show working", () => {
+    const guide = `${helper.guide.setup} ${helper.guide.misconceptions
+      .map((m) => `${m.student} ${m.response}`)
+      .join(" ")}`.toLowerCase();
+    expect(guide).not.toMatch(/only one of them can show its working/);
+    // An AI explanation is a further claim to check, not proof and not absent.
+    expect(guide).toMatch(/claim to check|claim, not a proof/);
   });
 });
 

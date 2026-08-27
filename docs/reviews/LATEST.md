@@ -7,58 +7,64 @@ likely to be.
 
 ---
 
-## Sprint 11 — content accuracy and activity safety
+## Sprint 12 — general rules, not local truths
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-27-sprint-11.md`](2026-08-27-sprint-11.md)
-- **Review trail:** sprints 01–11 in this directory. Sprint 09 tripled the
-  curriculum to 27 missions. Sprint 10 fixed two mechanism defects found in it;
-  sprint 11 fixes two content defects found by reading two of the missions.
+- **Full review:** [`2026-08-27-sprint-12.md`](2026-08-27-sprint-12.md)
+- **Review trail:** sprints 01–12 in this directory. Sprint 09 tripled the
+  curriculum to 27 missions. Sprint 10 fixed two mechanism defects found in it.
+  Sprints 11 and 12 each fix content defects found by reading two more of the
+  missions — four missions read so far, four with findings.
 
 ### What changed
 
-1. **Fact and opinion, stated accurately.** "The Question With No Answer" said
-   February had been "settled by somebody measuring", called an AI answer "the
-   average opinion", and said confidence about a local question was
-   "impossible". A fact is now defined as checkable against evidence, a rule or
-   a record; February uses the calendar rule; the tool is described as
-   assembling a general answer from patterns about a school it was never told
-   anything about. The core lesson — local facts inform a judgement the child
-   still has to make — is unchanged.
-2. **The quiz mission no longer rewards carrying on.** Skipping the two
-   account-recovery questions and finishing an unapproved quiz used to score
-   full credit. Closing it and telling an adult is now the only `strong`
-   answer; closing silently or skipping the field are `partial`. Its extension
-   used to have children invent and swap security questions, which invites them
-   to write the real answers — it now uses prewritten cards and says out loud
-   that nobody supplies their own. The family prompt asks for categories, not
-   examples, and a broken point of view in a teacher note is fixed.
+1. **"The Study Group" no longer ranks private facts.** Its reflection scene
+   asked which fact was "most useful to a stranger" and answered by calling
+   faces "not much use" and books "lead nowhere". A child reads a hierarchy as
+   permission for everything below the top of it, which contradicts the photo
+   and camera missions. The question is now a test the child can apply —
+   *which one tells somebody exactly where to find you, and when* — routines
+   win because they carry a time as well as a place, and faces are explicitly
+   still theirs to keep.
+2. **"The Helper and the Teacher" no longer teaches brittle verification.**
+   Three matching sums were treated as proof; a single mismatch condemned a
+   method; certainty "tells you nothing at all"; and the guide claimed only a
+   teacher can show working. Matching examples are now evidence, and the
+   teacher's number line supplies the reason. A mismatch routes to *check your
+   steps first*. Certainty "on its own does not settle it". An AI explanation
+   is described as a further claim to check — better than a bare verdict, still
+   not proof.
+3. **Mission counts unhardcoded.** The guide footer read "Mission 19 of 9" and
+   the teacher dashboard said "N of 9 missions assigned", both left over from
+   the nine-mission curriculum. Found during browser verification; both now
+   derive from `MISSIONS.length`.
 
 ### Already verified — please do not redo
 
-- `npm run verify` green: typecheck, lint, **236 tests**, Turbopack build.
-- Four new guards in `tests/content.test.ts` pin both fixes: the recovery-
-  question scene's single `strong` choice and its escalation evidence, the ban
-  on any extension asking students to author or swap security questions, the
-  calendar-rule definition of a fact, and the absence of "average opinion" and
-  "impossible" from student copy.
-- Sprint 10's evidence and interleaving work is unchanged and still asserted:
-  the retry-first walk across all 27 missions, and the ordering properties.
-- Teacher preview checked in the browser; the corrected hierarchy renders as
-  one Safe choice and two Partly there.
+- `npm run verify` green: typecheck, lint, **242 tests**, Turbopack build.
+- Six new guards in `tests/content.test.ts`, plus five phrases added to the
+  brittle-absolutes ban list, which applies to every mission's student copy:
+  `most useful thing a stranger`, `most useful thing for a stranger`,
+  `is not much use`, `lead nowhere`, `tells you nothing at all`.
+- Sprint 11's four guards and sprint 10's evidence and interleaving assertions
+  are unchanged and still passing.
+- Both missions checked in the browser at the teacher preview and the printable
+  guide; footer now reads "Mission 20 of 27".
 
 ### Where this is most likely still wrong
 
-- **Sixteen Sprint 09 missions have still had no human read.** Two were read
-  and both had findings. Assume the rest do too. This is the highest-value
-  place to look next, and it is not something the suite can do.
-- **No general guard against factual error exists, or can.** The new tests pin
-  four specific claims. Nothing stops the next mission asserting something
-  false.
+- **Fourteen Sprint 09 missions have still had no human read.** Four have been
+  read across sprints 11 and 12, and all four had findings. Treat that as a
+  rate. This is the single highest-value place to look, and no test can do it.
+- **The failure mode has a shape now:** copy that is true of the case in front
+  of the child but false as the general rule they will carry away. Rankings
+  that dismiss, examples called proof, absolutes where "usually" is the honest
+  word. Look for that shape specifically.
+- **No general guard against factual error exists or can.** The bans are
+  literal phrases.
 - **The eight legacy forced-award scenes remain**, and their interaction with
   the coaching rule is still untraced.
-- **Stickiness keeps aggregate demonstration rates near 95%.** Whether a
-  teacher reads that number the way it is meant is a question for a teacher.
+- **Stickiness keeps aggregate demonstration rates near 95%.**
 - **The student "getting the hang of" list is untested with children.**
 
 ### Standing constraints
