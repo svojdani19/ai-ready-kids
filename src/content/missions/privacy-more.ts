@@ -845,9 +845,9 @@ export const theClassPhoto: Mission = {
         proves:
           "That the chart was on that wall on that day. It does not prove the groups are still the same, or that any of it is still true. It is a clue about the room, and it is already too much to put on a page.",
         consent:
-          "Nobody has been asked yet. That question is coming, and it is a separate question from the chart.",
+          "Nobody has been asked yet. That question does not go away when the chart comes down.",
         audience:
-          "Not ready, and not because of anybody in it. Take the chart down and take the picture again.",
+          "Not ready, for two reasons. The chart alone stops this version, so take it down and photograph them again. That fixes the wall and it is not the whole job: after the retake, all twenty-three still have to be asked about the exact place it is going.",
       },
       {
         label: "Photo 2 — the second try",

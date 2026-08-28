@@ -1075,6 +1075,43 @@ describe("the class-photo extension walks consent instead of exposing a real roo
     expect(third.audience.toLowerCase()).toMatch(/yes to one place is not a yes to everywhere/);
   });
 
+  /**
+   * Sprint 39. Photo 1's audience line read "Not ready, and not because of
+   * anybody in it." That was written to mean "the chart is what blocks this
+   * particular version", but to a seven-year-old it says the unasked children
+   * do not matter, and it makes taking the chart down sound like the whole fix.
+   * It contradicted the mission's own three-part rule. Photo 1 has to keep both
+   * blockers live: the chart stops this version, and the retake is necessary
+   * without being sufficient.
+   */
+  it("keeps both blockers active on Photo 1, so the retake is not the whole fix", () => {
+    const first = cards[0];
+    const audience = first.audience.toLowerCase();
+
+    // Both reasons are named in the audience line itself, not split across
+    // fields a teacher might read out separately.
+    expect(audience).toMatch(/chart/);
+    expect(audience).toMatch(/asked/);
+    // Necessary but not sufficient, said in as many words.
+    expect(audience).toMatch(/not the whole job|still have to be asked/);
+    // The exact audience is what they would be asked about, not "somewhere".
+    expect(audience).toMatch(/exact place|school news page/);
+
+    // The dismissive phrasing is gone from every card in the product.
+    for (const mission of MISSIONS) {
+      for (const card of mission.guide.extensionCards ?? []) {
+        const all = [card.description, card.suggests, card.proves, card.consent, card.audience]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        expect(all, `${mission.slug}/${card.label}`).not.toMatch(/not because of anybody in it/);
+      }
+    }
+
+    // And the consent line ties to the chart rather than floating free of it.
+    expect(first.consent!.toLowerCase()).toMatch(/does not go away when the chart/);
+  });
+
   it("forbids real photographs and says why", () => {
     expect(extension).toMatch(/do not use a photo of your own room/);
     expect(extension).toMatch(/students/);

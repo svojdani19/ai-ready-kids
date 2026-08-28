@@ -7,10 +7,10 @@ likely to be.
 
 ---
 
-## Sprint 38 — P1: The Class Photo taught consent by exposing a real room
+## Sprint 39 — P1 correction: Photo 1 made the retake sound sufficient
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-28-sprint-38.md`](2026-08-28-sprint-38.md)
+- **Full review:** [`2026-08-28-sprint-38.md`](2026-08-28-sprint-38.md), with the sprint 39 correction appended
 - **Review trail:** sprints 01–16 in this directory. Sprint 09 tripled the
   curriculum to 27 missions. Sprint 10 fixed two mechanism defects found in it.
   Sprints 11 to 16 read and fixed the eighteen newer missions. Sprint 17 closed
@@ -25,7 +25,29 @@ likely to be.
   second and more direct instance of that defect, which sprint 37 found and left
   standing.**
 
-### What changed
+### The correction (sprint 39)
+
+Photo 1's audience line read *"Not ready, and not because of anybody in it."*
+Written to mean "the chart is what blocks **this** version", it tells a
+seven-year-old that the unasked children are irrelevant and makes taking the
+chart down sound like the whole fix — contradicting the three-part rule inside
+the card meant to introduce it. Now:
+
+> Not ready, for two reasons. The chart alone stops this version, so take it
+> down and photograph them again. That fixes the wall and it is not the whole
+> job: after the retake, all twenty-three still have to be asked about the exact
+> place it is going.
+
+The consent line ties to the chart instead of floating free: *"Nobody has been
+asked yet. That question does not go away when the chart comes down."* The
+phrase is gone from the content and from all review prose. A regression test
+asserts Photo 1's audience names **both** blockers, says necessary-but-not-
+sufficient in as many words, points at the exact audience, and that the phrase
+appears on no card in any mission — confirmed to fail against the old wording.
+**478 tests.** Photos 2 and 3, the mission graph, evidence, scenes and student
+fields are untouched.
+
+### What sprint 38 changed
 
 1. **`the-class-photo`'s extension said "Take a photo of your own classroom,
    project it, and have the class hunt the background for anything they would
@@ -38,8 +60,9 @@ likely to be.
    placement — and a projected screen can be photographed off the wall.
 2. **Three authored cards, staged so the order is the lesson**, reusing sprint
    37's `ExtensionCard` structure and renderer. Photo 1: a readable chart headed
-   `WHO GOES HOME WITH WHO` — not ready, and *not because of anybody in it*,
-   nobody having been asked yet. Photo 2: same class next morning, chart gone,
+   `WHO GOES HOME WITH WHO` — not ready for two reasons: the chart alone stops
+   this version, and taking it down is necessary but not sufficient, because
+   after the retake all twenty-three still have to be asked. Photo 2: same class next morning, chart gone,
    all twenty-three asked one at a time about the school news page, all twenty-
    three said yes — ready, for that page, because that is the exact thing they
    were asked about. Photo 3: **that same clean photo** proposed for a cousin
