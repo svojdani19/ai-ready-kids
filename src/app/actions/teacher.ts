@@ -22,6 +22,8 @@ import {
   ClassroomLimitError,
   classroomLimitRefusal,
   LicenceExceededError,
+  PlanNotRecognisedError,
+  planNotRecognisedRefusal,
 } from "@/lib/repo/entitlement";
 import {
   asExpectedError,
@@ -118,6 +120,15 @@ export async function createClassAction(
       yearEndsOn: school.year_ends_on,
     });
   } catch (error) {
+    if (error instanceof PlanNotRecognisedError) {
+      recordAudit(db, {
+        schoolId: user.school_id,
+        actorLabel: user.name,
+        action: "class.blocked_by_plan_config",
+        detail: `A new class was declined: the school's plan value is not recognised. Nothing was changed.`,
+      });
+      return { error: planNotRecognisedRefusal("create", school.contact_name) };
+    }
     if (error instanceof ClassroomLimitError) {
       recordAudit(db, {
         schoolId: user.school_id,

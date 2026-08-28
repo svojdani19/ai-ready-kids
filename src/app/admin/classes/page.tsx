@@ -50,9 +50,11 @@ export default async function AdminClasses() {
       <Panel
         title="Create a class"
         description={
-          rooms.limit === null
-            ? `${rooms.active} active. Archived classes are kept and do not count.`
-            : `Active classrooms: ${rooms.active} of ${rooms.limit}. Archived classes are kept and do not count.`
+          !rooms.recognised
+            ? `Plan needs configuration — no new classrooms can be activated. ${rooms.active} active, and every class and record is unchanged.`
+            : rooms.limit === null
+              ? `${rooms.active} active. Archived classes are kept and do not count.`
+              : `Active classrooms: ${rooms.active} of ${rooms.limit}. Archived classes are kept and do not count.`
         }
       >
         <PanelBody>

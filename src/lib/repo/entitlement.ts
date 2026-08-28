@@ -33,11 +33,72 @@ import type { Db } from "@/lib/db";
  * `null` means no limit. School and district are sold per school and per
  * district, so the number of rooms is not what they are priced on.
  */
-export const ACTIVE_CLASS_LIMIT: Record<string, number | null> = {
+export const ACTIVE_CLASS_LIMIT = {
   classroom: 1,
   school: null,
   district: null,
+} as const satisfies Record<string, number | null>;
+
+export type KnownPlan = keyof typeof ACTIVE_CLASS_LIMIT;
+
+export function isKnownPlan(plan: string): plan is KnownPlan {
+  return Object.hasOwn(ACTIVE_CLASS_LIMIT, plan);
+}
+
+/**
+ * The plan's name, or an admission that it has none.
+ *
+ * Sprint 53: the administrator page rendered this as a ternary ending in
+ * `: "Classroom"`, so **every** unrecognised value displayed as the Classroom
+ * plan. Combined with `ACTIVE_CLASS_LIMIT[plan] ?? null` — which gave the same
+ * value no limit at all — a typo like `"classrooms"` from a migration or a
+ * vendor edit showed an administrator the cheapest plan while granting the most
+ * expensive behaviour. The paid gate failed open exactly where the entitlement
+ * data was malformed, which is the one place it most needs to hold.
+ */
+export const PLAN_LABEL: Record<KnownPlan, string> = {
+  classroom: "Single classroom",
+  school: "Whole school",
+  district: "District",
 };
+
+export const UNRECOGNISED_PLAN_LABEL = "Plan needs configuration";
+
+export function planLabel(plan: string): string {
+  return isKnownPlan(plan) ? PLAN_LABEL[plan] : UNRECOGNISED_PLAN_LABEL;
+}
+
+/**
+ * Raised when `schools.plan` is not a plan this build sells.
+ *
+ * Distinct from `ClassroomLimitError` because it is a different conversation:
+ * the school has not exceeded anything, the record is wrong. It refuses in the
+ * safe direction — no new or restored classrooms — and changes nothing, because
+ * a bad plan value is not evidence about which classes a school should have.
+ */
+export class PlanNotRecognisedError extends Error {
+  readonly plan: string;
+
+  constructor(plan: string) {
+    super(`Unrecognised plan: ${JSON.stringify(plan)}.`);
+    this.name = "PlanNotRecognisedError";
+    this.plan = plan;
+  }
+}
+
+/** Shown when the plan cannot be verified. Never mentions a specific plan. */
+export function planNotRecognisedRefusal(
+  action: "create" | "restore",
+  contactName: string,
+): string {
+  const verb = action === "create" ? "Creating a class" : "Restoring this class";
+  return (
+    `This school's plan could not be verified, so no new classrooms can be activated. ` +
+    `${verb} has been declined and nothing has been changed — every class, archived class ` +
+    `and record is exactly as it was. Ask ${contactName} to have the plan corrected on the ` +
+    `account, and this will start working again.`
+  );
+}
 
 /** Raised when a class would take a school past its plan's active classes. */
 export class ClassroomLimitError extends Error {
@@ -88,9 +149,17 @@ export function countActiveClasses(db: Db, schoolId: string): number {
 
 export interface ClassroomAllowance {
   active: number;
-  /** `null` when the plan does not limit rooms. */
+  /**
+   * `null` means this plan does not limit rooms — and it is only ever reached
+   * for a plan this build recognises. An unknown plan sets `recognised: false`
+   * and `limit: 0`, so no lookup miss can be read as "no limit". Deliberately
+   * not written with `??`: that operator turns an absent entitlement into an
+   * unlimited one, which is the bug this replaced.
+   */
   limit: number | null;
   plan: string;
+  /** False when `schools.plan` is not a plan this build sells. */
+  recognised: boolean;
 }
 
 export function classroomAllowance(db: Db, schoolId: string): ClassroomAllowance {
@@ -98,11 +167,14 @@ export function classroomAllowance(db: Db, schoolId: string): ClassroomAllowance
     | { plan: string }
     | undefined;
   if (!school) throw new Error("Unknown school");
-  return {
-    active: countActiveClasses(db, schoolId),
-    limit: ACTIVE_CLASS_LIMIT[school.plan] ?? null,
-    plan: school.plan,
-  };
+  const active = countActiveClasses(db, schoolId);
+  if (!isKnownPlan(school.plan)) {
+    // Zero, not null. An unverifiable entitlement grants nothing new, and the
+    // existing classes are untouched — `active` is reported as it is, which is
+    // how the pages can say "3 active, no new ones" without inventing a plan.
+    return { active, limit: 0, plan: school.plan, recognised: false };
+  }
+  return { active, limit: ACTIVE_CLASS_LIMIT[school.plan], plan: school.plan, recognised: true };
 }
 
 /**
@@ -114,7 +186,12 @@ export function classroomAllowance(db: Db, schoolId: string): ClassroomAllowance
  * deletes, archives or picks a class; it refuses the next one and says why.
  */
 export function assertRoomForActiveClass(db: Db, schoolId: string): void {
-  const { active, limit, plan } = classroomAllowance(db, schoolId);
+  const { active, limit, plan, recognised } = classroomAllowance(db, schoolId);
+  // An unverifiable plan fails closed. Sprint 34 settled this direction for an
+  // unrecognised database and the reasoning is the same: refusing leaves
+  // everything readable and recoverable, while guessing grants something
+  // nobody agreed to sell.
+  if (!recognised) throw new PlanNotRecognisedError(plan);
   if (limit !== null && active >= limit) {
     throw new ClassroomLimitError(plan, active, limit);
   }

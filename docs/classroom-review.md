@@ -388,6 +388,16 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       description carries a safety property, read it against the behaviour, not
       the name — and in a multi-step flow give every step its own answer, since
       the gate belongs at the write and not at the entrance.
+- [ ] **`??` on an entitlement lookup is a grant with a default's syntax.** For
+      any limit, quota or permission read from data, ask what an unrecognised
+      value produces. A coalescing default answers "when we cannot tell what
+      you bought, assume the most generous option". Fail closed instead, and use
+      a value that cannot be confused with unlimited.
+- [ ] **A limit and its label must come from the same source.** Two independent
+      expressions about one fact will disagree, and each can look defensible
+      alone — a ternary needs a final branch, a lookup needs a fallback. It is
+      the pair that lies. Derive the display name and the enforced limit from
+      one map, and make a missing key fail both.
 - [ ] **A price with two numbers in it needs two enforcements.** "One classroom,
       up to thirty students" is a conjunction, and it is easy to enforce only
       the half that is simple to count. For every public plan claim, name each

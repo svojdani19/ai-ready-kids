@@ -7,6 +7,80 @@ likely to be.
 
 ---
 
+## Sprint 53 — correction to sprint 52: the gate failed open on bad data
+
+- **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-28-sprint-52.md`](2026-08-28-sprint-52.md), sprint 53
+  section.
+
+### The defect
+
+Two expressions, in different files, that were only a hole together:
+`ACTIVE_CLASS_LIMIT[school.plan] ?? null` gave an unknown plan **no limit**, and
+the admin page's `… : "Classroom"` ternary **labelled it Classroom**.
+`schools.plan` is unconstrained `TEXT` set by the vendor outside the UI, so a
+typo, migration defect or stale value like `"classrooms"` was **shown as the
+cheapest plan while granting unlimited classrooms**.
+
+**The paid gate failed open exactly where the entitlement data was malformed** —
+and it contradicts this codebase's settled direction: sprint 34's schema
+classifier fails *closed* on an unrecognised database, argued at length in that
+review. `??` is what hid it: it reads as a default, and for an entitlement a
+default is a grant.
+
+### The correction
+
+- **The lookup cannot coalesce.** `as const satisfies`, `isKnownPlan` as the only
+  way in, and an unknown plan gets **`limit: 0`, never `null`** — zero grants
+  nothing, `null` means unlimited, and a miss must not reach the second. A test
+  forbids the `??` shape in the source.
+- **No unknown value is labelled.** `planLabel()` returns the real name or
+  `"Plan needs configuration"`; a test forbids `: "Classroom"` in either page.
+- **Fails closed, takes nothing away.** `PlanNotRecognisedError` — distinct from
+  `ClassroomLimitError`, because the school has not exceeded anything, the record
+  is wrong. Create and restore refused; **nothing auto-archived, deleted or
+  chosen**; every class keeps its records and its timestamp.
+- **A distinct, honest message** (not the Single classroom one) naming that the
+  plan could not be verified, that nothing changed, and that the account contact
+  must correct it. Audited as `*_blocked_by_plan_config`, configuration facts
+  only, no child named, no success audit.
+- **The pages say so**: `Plan needs configuration` + `No new classrooms can be
+  activated` on Program & plan, and the same on the Classes create panel.
+- **Read-only and ownership paths untouched** — listing, archiving, deleting and
+  exports still work, with a test to prove it.
+- **classroom = 1 and school/district = unlimited are unchanged from sprint 52.**
+
+### Already verified — please do not redo
+
+- Typecheck, lint, **596 tests** (up from 588), Turbopack production build.
+- Eight cases, **nine failing against the sprint-52 code** when stashed. Six
+  malformed values swept (`"classrooms"`, `"Classroom"`, `""`, `"site"`,
+  `"school "`, `"premium"`) asserting `recognised: false`, `limit: 0`, never
+  `null`; plus a key-parity guard so a new plan cannot arrive with a limit and no
+  label. The `??` guard tripped on its own comment first — sprints 44 and 51
+  again — so it strips comments before scanning.
+- **Browser-checked at 1280×800 and 768×1024** with `plan = 'classrooms'`, three
+  active classes and one archived: `PLAN | Plan needs configuration | Ask your
+  account contact to correct it`, `ACTIVE CLASSROOMS | 3 | No new classrooms can
+  be activated`, create and restore both refused with the verification message,
+  class still Archived, still 4 classes, **90 students intact**, **exactly two
+  audit rows added**, no crash and no overflow.
+- Demo restored: `plan school`, 120 seats, four active classes, 90 students, 16
+  audit rows.
+
+### Where this is most likely still wrong
+
+- **`schools.plan` is still unconstrained TEXT.** This makes a bad value safe and
+  visible; it does not prevent one. A CHECK constraint would need a migration,
+  which was out of scope.
+- **Other lookups on vendor-set data have not been audited for the same shape.**
+  `retention_months`, `benchmark_window` and `licensed_students` all come from
+  the same row; only this one was reported.
+- Everything under sprint 52 below still stands, including that a downgrade is
+  not blocked at the point of change.
+
+---
+
 ## Sprint 52 — P1: one classroom, or thirty students?
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>

@@ -7,6 +7,8 @@ import { canAdministerClass } from "@/lib/auth/access";
 import {
   ClassroomLimitError,
   classroomLimitRefusal,
+  PlanNotRecognisedError,
+  planNotRecognisedRefusal,
   RestoreExceedsLicenceError,
 } from "@/lib/repo/entitlement";
 import {
@@ -494,6 +496,15 @@ export async function restoreClassAction(classId: string): Promise<{ error?: str
     try {
       restoreClass(db, classId);
     } catch (error) {
+      if (error instanceof PlanNotRecognisedError) {
+        recordAudit(db, {
+          schoolId: user.school_id,
+          actorLabel: user.name,
+          action: "class.restore_blocked_by_plan_config",
+          detail: `Restoring ${classroom.name} was declined: the school's plan value is not recognised. Nothing was changed.`,
+        });
+        return { error: planNotRecognisedRefusal("restore", school.contact_name) };
+      }
       if (error instanceof ClassroomLimitError) {
         // Configuration facts only: how many rooms and on which plan. No child
         // is named, and no success audit is written on this path.

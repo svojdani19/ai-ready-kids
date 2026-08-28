@@ -12,6 +12,12 @@ import {
 import {
   ACTIVE_CLASS_LIMIT,
   ClassroomLimitError,
+  isKnownPlan,
+  PLAN_LABEL,
+  planLabel,
+  PlanNotRecognisedError,
+  planNotRecognisedRefusal,
+  UNRECOGNISED_PLAN_LABEL,
   classroomAllowance,
   classroomLimitRefusal,
   countActiveClasses,
@@ -1393,6 +1399,7 @@ describe("the classroom plan includes one active classroom", () => {
         active: 1,
         limit: 1,
         plan: "classroom",
+        recognised: true,
       });
 
       const before = listClasses(db, DEMO_SCHOOL, true).length;
@@ -1517,6 +1524,7 @@ describe("the classroom plan includes one active classroom", () => {
         active: 3,
         limit: 1,
         plan: "classroom",
+        recognised: true,
       });
       // Read-only from here: the next class is refused, and all three survive.
       expect(() => makeClass(db, "Room D")).toThrow(ClassroomLimitError);
@@ -1611,6 +1619,190 @@ describe("the classroom plan includes one active classroom", () => {
     // Every plan the selector offers has a decision recorded here.
     for (const plan of ["classroom", "school", "district"]) {
       expect(Object.hasOwn(ACTIVE_CLASS_LIMIT, plan), plan).toBe(true);
+    }
+  });
+});
+
+
+/**
+ * Sprint 53. `classroomAllowance` used `ACTIVE_CLASS_LIMIT[school.plan] ?? null`
+ * and the administrator page labelled the plan with a ternary ending in
+ * `: "Classroom"`. `schools.plan` is unconstrained TEXT set by the vendor
+ * outside the UI, so a typo, a migration defect or a stale value like
+ * `"classrooms"` was **shown as the Classroom plan while receiving no limit at
+ * all** — unlimited active classrooms.
+ *
+ * The paid gate failed open precisely where the entitlement data was malformed,
+ * which is the one place it most needs to hold.
+ */
+describe("an unrecognised plan grants nothing and claims nothing", () => {
+  const withPlan = (plan: string) => {
+    const { db, cleanup } = createTestDb();
+    db.prepare("DELETE FROM students").run();
+    db.prepare("DELETE FROM classes").run();
+    db.prepare("UPDATE schools SET plan = ? WHERE id = ?").run(plan, DEMO_SCHOOL);
+    return { db, cleanup };
+  };
+
+  const makeClass = (db: Db, name: string) =>
+    createClass(db, {
+      schoolId: DEMO_SCHOOL,
+      teacherId: DEMO_TEACHER,
+      name,
+      grade: 3,
+      schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-19",
+    });
+
+  const MALFORMED = ["classrooms", "Classroom", "", "site", "school ", "premium"];
+
+  it("never reaches an unlimited fallback, for any unknown key", () => {
+    const { db, cleanup } = withPlan("school");
+    try {
+      for (const plan of MALFORMED) {
+        db.prepare("UPDATE schools SET plan = ? WHERE id = ?").run(plan, DEMO_SCHOOL);
+        const allowance = classroomAllowance(db, DEMO_SCHOOL);
+        expect(allowance.recognised, plan).toBe(false);
+        // Zero, never null. `null` is "no limit" and must be unreachable here.
+        expect(allowance.limit, plan).toBe(0);
+        expect(allowance.limit, plan).not.toBeNull();
+        expect(isKnownPlan(plan), plan).toBe(false);
+      }
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("does not use ?? on the entitlement lookup", () => {
+    // Comments stripped first: the note explaining why this is gone quotes the
+    // old expression, and a scan that reads its own explanation as the defect
+    // is the trap sprints 44 and 51 already fell into.
+    const src = readFileSync(join(process.cwd(), "src/lib/repo/entitlement.ts"), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/(^|\s)\/\/[^\n]*/g, "$1");
+    // The exact shape of the defect: a lookup miss coalesced into "no limit".
+    expect(src).not.toMatch(/ACTIVE_CLASS_LIMIT\[[^\]]*\]\s*\?\?/);
+    // And no other entitlement lookup coalesces either.
+    expect(src).not.toMatch(/PLAN_LABEL\[[^\]]*\]\s*\?\?/);
+  });
+
+  it("never displays an unknown plan as Classroom", () => {
+    for (const plan of MALFORMED) {
+      expect(planLabel(plan), plan).toBe(UNRECOGNISED_PLAN_LABEL);
+      expect(planLabel(plan), plan).not.toMatch(/classroom/i);
+    }
+    // The known ones still read correctly.
+    expect(planLabel("classroom")).toBe(PLAN_LABEL.classroom);
+    expect(planLabel("school")).toBe(PLAN_LABEL.school);
+    expect(planLabel("district")).toBe(PLAN_LABEL.district);
+
+    // And no page reconstructs the old ternary.
+    for (const page of ["src/app/admin/program/page.tsx", "src/app/admin/classes/page.tsx"]) {
+      const src = readFileSync(join(process.cwd(), page), "utf8");
+      expect(src, page).not.toMatch(/:\s*"Classroom"/);
+    }
+  });
+
+  it("refuses creation with zero writes, keeping every existing class", () => {
+    const { db, cleanup } = withPlan("school");
+    try {
+      const active = makeClass(db, "Room A");
+      const parked = makeClass(db, "Room B");
+      createStudent(db, { classId: parked.id, displayName: "Kept K." });
+      archiveClass(db, parked.id);
+      db.prepare("UPDATE schools SET plan = 'classrooms' WHERE id = ?").run(DEMO_SCHOOL);
+
+      const before = listClasses(db, DEMO_SCHOOL, true).length;
+      let raised: unknown;
+      try {
+        makeClass(db, "Room C");
+      } catch (error) {
+        raised = error;
+      }
+      expect(raised).toBeInstanceOf(PlanNotRecognisedError);
+      expect((raised as PlanNotRecognisedError).plan).toBe("classrooms");
+
+      // Everything that existed still exists, active and archived alike.
+      expect(listClasses(db, DEMO_SCHOOL, true)).toHaveLength(before);
+      expect(getClass(db, active.id)!.archived_at).toBeNull();
+      expect(getClass(db, parked.id)!.archived_at).toBeTruthy();
+      expect(listStudents(db, parked.id)).toHaveLength(1);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("refuses restoring an archived class, changing nothing", () => {
+    const { db, cleanup } = withPlan("school");
+    try {
+      const parked = makeClass(db, "Room A");
+      createStudent(db, { classId: parked.id, displayName: "Old O." });
+      archiveClass(db, parked.id);
+      const archivedAt = getClass(db, parked.id)!.archived_at;
+      db.prepare("UPDATE schools SET plan = 'premium' WHERE id = ?").run(DEMO_SCHOOL);
+
+      expect(() => restoreClass(db, parked.id)).toThrow(PlanNotRecognisedError);
+      expect(getClass(db, parked.id)!.archived_at).toBe(archivedAt);
+      expect(listStudents(db, parked.id)).toHaveLength(1);
+      expect(countActiveClasses(db, DEMO_SCHOOL)).toBe(0);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("says the plan cannot be verified, not that it is the classroom plan", () => {
+    const message = planNotRecognisedRefusal("create", "Rosa Delgado");
+    expect(message).toMatch(/plan could not be verified/i);
+    expect(message).toMatch(/no new classrooms can be activated/i);
+    expect(message).toMatch(/nothing has been changed/i);
+    expect(message).toMatch(/Rosa Delgado/);
+    // Explicitly not the Single classroom refusal, which would be a lie.
+    expect(message).not.toMatch(/Single classroom plan includes/);
+
+    const admin = readFileSync(join(process.cwd(), "src/app/actions/admin.ts"), "utf8");
+    const teacher = readFileSync(join(process.cwd(), "src/app/actions/teacher.ts"), "utf8");
+    for (const [src, blocked, success] of [
+      [admin, "class.restore_blocked_by_plan_config", "class.restored"],
+      [teacher, "class.blocked_by_plan_config", "class.created"],
+    ] as const) {
+      const at = src.indexOf(blocked);
+      expect(at, blocked).toBeGreaterThan(-1);
+      const entry = src.slice(at, src.indexOf("});", at));
+      // Configuration facts only: no child, and no success audit on this path.
+      expect(entry).not.toMatch(/display_name|displayName|listStudents/);
+      expect(entry).not.toContain(success);
+    }
+  });
+
+  it("keeps classroom at one and school and district unlimited", () => {
+    // The sprint 52 rule is unchanged; only the unknown case moved.
+    expect(ACTIVE_CLASS_LIMIT.classroom).toBe(1);
+    expect(ACTIVE_CLASS_LIMIT.school).toBeNull();
+    expect(ACTIVE_CLASS_LIMIT.district).toBeNull();
+    expect(Object.keys(ACTIVE_CLASS_LIMIT).sort()).toEqual(
+      ["classroom", "district", "school"].sort(),
+    );
+    // A new plan must be added to both maps, so a label cannot go missing.
+    expect(Object.keys(PLAN_LABEL).sort()).toEqual(Object.keys(ACTIVE_CLASS_LIMIT).sort());
+  });
+
+  it("leaves reading, archiving and deleting available", () => {
+    const { db, cleanup } = withPlan("school");
+    try {
+      const one = makeClass(db, "Room A");
+      createStudent(db, { classId: one.id, displayName: "Here H." });
+      db.prepare("UPDATE schools SET plan = 'wat' WHERE id = ?").run(DEMO_SCHOOL);
+
+      // Ownership paths that were already allowed stay allowed: a school still
+      // owns its records whatever its plan field says.
+      expect(listClasses(db, DEMO_SCHOOL, true).length).toBeGreaterThan(0);
+      expect(listStudents(db, one.id)).toHaveLength(1);
+      expect(() => archiveClass(db, one.id)).not.toThrow();
+      expect(getClass(db, one.id)!.archived_at).toBeTruthy();
+      expect(() => deleteClass(db, one.id)).not.toThrow();
+      expect(getClass(db, one.id)).toBeUndefined();
+    } finally {
+      cleanup();
     }
   });
 });
