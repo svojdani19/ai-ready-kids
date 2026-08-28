@@ -1171,8 +1171,58 @@ export const whatTheCameraSees: Mission = {
           "Ask who counts as a friend in a game with strangers in it, and who else is in the room at their end.",
       },
     ],
+    // Sprint 40. This used to ask a teacher to photograph their own empty
+    // classroom before school and project it. "Empty" and "before school"
+    // remove faces and nothing else: names on work, reading and support groups,
+    // collection arrangements, timetables and school identifiers all stay on
+    // the walls, and a projected screen can be photographed off it. It was also
+    // teaching the wrong skill. Comparing a messy wall with a tidy one makes
+    // tidying look like the answer, and this mission is about reading PREVIEW
+    // against LIVE — a tidy live frame is still a frame you cannot check before
+    // it goes out. The three invented screens below are identical in the room
+    // and different in the words underneath, which is the whole lesson.
     extension:
-      "Before school, photograph your empty classroom from where a tablet usually sits. Project that picture — never a live feed, and never a fresh photo with children in it — and have the class list everything a stranger could learn from it. Take a second empty-room picture after they tidy the walls and compare the lists. If your school has a prepared image for this, use that instead. Nothing in this activity turns a camera on in front of the class.",
+      "Three invented screens, below, in order. The whole activity turns on one habit: read the words under the picture, do not guess from the picture. For each screen ask the room four questions and keep them apart — what does the picture give away, what do the words prove about who is receiving it right now, why can tidying not fix the next moment, and would turning the feature off be the safer choice? Take answers as hand signals so nobody is on the spot: thumb up for yes, flat hand for not sure, thumb down for no. Screens 2 and 3 are the pair to spend time on: the room is identical in both, only the words change, and only the words tell you that eight people are receiving it now. Nothing is written down about any child. Do not point a camera at anything, do not use a photo of your own room, your school, your students or their families, and do not open a live feature to demonstrate one — these three screens exist so that you never have to, and a picture on a projector can be photographed off the wall.",
+    extensionCards: [
+      {
+        label: "Screen 1 — the preview, as the room actually is",
+        description:
+          "A little game window in the corner of a tablet. Inside it, a corner of somebody's room: a school jumper over the chair with the badge showing, a window with a street sign readable through it, a birthday card on the shelf with a name on the front, and a poster of a band. Under the window, in small letters: PREVIEW — ONLY YOU CAN SEE THIS.",
+        suggests:
+          "A school and a town from the badge, and a street from the sign — those two are the strong ones. A first name from the card. The poster says nothing about where anybody is.",
+        proves:
+          "Read the words, not the room: PREVIEW — ONLY YOU CAN SEE THIS. Nobody has received any of it. The picture cannot tell you that; only the label can.",
+        control:
+          "Nothing needs controlling yet, because nothing is going anywhere. This is the moment to decide, and it is the cheapest one there will be.",
+        audience:
+          "Zero people. Turning the feature off right now costs nothing at all.",
+      },
+      {
+        label: "Screen 2 — tidied, and still a preview",
+        description:
+          "The same room, tidied. Jumper in a drawer, card off the shelf, blind pulled down over the window. A plain wall in frame now. Underneath it still says PREVIEW — ONLY YOU CAN SEE THIS.",
+        suggests: "Nothing. The frame is genuinely clean.",
+        proves:
+          "Still PREVIEW, still nobody. The words did not change when the room did, which is the thing to notice: the picture and the status are two different things to read.",
+        control:
+          "Tidying fixed this one frame. It did not fix the next one. The blind can go up, somebody can walk in, the tablet can get knocked and point somewhere else — and none of those are decisions anybody gets to make in advance.",
+        audience:
+          "Still zero. A clean frame is not a reason to go live; it only means this frame is clean.",
+      },
+      {
+        label: "Screen 3 — the same tidy frame, live",
+        description:
+          "The same wall, the same angle, the same everything. One difference, in the words underneath: LIVE — 8 PLAYERS CAN SEE THIS NOW. At the very edge of the frame, the door has started to open.",
+        suggests:
+          "Still nothing, for about one more second. The picture has not changed at all.",
+        proves:
+          "The words changed and the picture did not. Eight people are receiving this now, and there is no way to see that by looking at the room.",
+        control:
+          "Whoever is coming through that door is on eight screens before they are on this one. A live moment cannot be checked first. Checking is something you do to a preview.",
+        audience:
+          "Eight, and the number can go up. This is where turning the feature off is the safer choice, because the alternative is guarding a camera for as long as it stays on.",
+      },
+    ],
   },
   family: {
     summary:

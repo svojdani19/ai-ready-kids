@@ -146,6 +146,12 @@ export default async function PrintableGuide({
                         <dd className="inline">{card.consent}</dd>
                       </div>
                     )}
+                    {card.control && (
+                      <div>
+                        <dt className="inline font-semibold text-ink">The next moment: </dt>
+                        <dd className="inline">{card.control}</dd>
+                      </div>
+                    )}
                     <div>
                       <dt className="inline font-semibold text-ink">Ready for a big audience? </dt>
                       <dd className="inline">{card.audience}</dd>

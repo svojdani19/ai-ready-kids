@@ -524,10 +524,15 @@ describe("a preview is not a broadcast", () => {
   });
 
   it("keeps the classroom activity offline", () => {
+    // Sprint 40 replaced the mitigations this used to pin. The old extension
+    // was careful about the photograph — never a live feed, never children in
+    // frame, a prepared image offered — but it still asked for a photograph of
+    // a real room. The activity is now fully authored, so the assertion is that
+    // no camera is involved at all rather than that the camera is handled well.
     const extension = camera.guide.extension.toLowerCase();
-    expect(extension).toMatch(/never a live feed/);
-    expect(extension).toMatch(/empty classroom|prepared image/);
-    expect(extension).toMatch(/never a fresh photo with children in it/);
+    expect(extension).toMatch(/do not point a camera at anything/);
+    expect(extension).toMatch(/do not open a live feature/);
+    expect(extension).not.toMatch(/photograph your/);
   });
 });
 
@@ -976,22 +981,22 @@ describe("the photo-reading extension supplies its own pictures", () => {
 
   /**
    * The same instruction survived in two other extensions. Sprint 37 was scoped
-   * to one mission and sprint 38 cleared the second, so the list has shrunk to
-   * the mitigated case: it may shrink further, and no mission may join it.
+   * to one mission, sprint 38 cleared the second and sprint 40 the third, so
+   * the list is now empty and no mission may join it.
    *
    *   - the-class-photo was the same defect, unmitigated, and named the
    *     sensitive content as the target: "Names on trays, timetables, a rota
    *     with home details." Fixed in sprint 38.
-   *   - what-the-camera-sees is the mitigated case: empty room, before school,
-   *     never a live feed, never children in frame, and a prepared image
-   *     offered as an alternative. Still outstanding.
+   *   - what-the-camera-sees was the mitigated case: empty room, before school,
+   *     never a live feed, never children in frame, a prepared image offered.
+   *     Fixed in sprint 40 — "empty" removes faces and not names, groups,
+   *     collection arrangements, timetables or school identifiers.
    */
-  it("leaves no other mission free to ask for a real classroom photograph", () => {
-    // Sprint 38 removed the-class-photo from this list. Only the mitigated case
-    // remains: what-the-camera-sees photographs an empty room before school,
-    // never a live feed, never children in frame, and offers a prepared image
-    // instead. The list may shrink further; nothing may join it.
-    const KNOWN = ["what-the-camera-sees"];
+  it("leaves no mission free to ask for a real classroom photograph", () => {
+    // Sprint 38 removed the-class-photo; sprint 40 removed what-the-camera-sees,
+    // the last and most mitigated case. The list is empty and must stay empty:
+    // no mission's extension may ask a teacher to photograph their own room.
+    const KNOWN: string[] = [];
     const asksForOne = MISSIONS.filter((m) =>
       /(take|project|photograph) [^.]{0,40}\byour (own |empty )*classroom\b|classroom photos you have taken/i.test(
         m.guide.extension,
@@ -1130,6 +1135,98 @@ describe("the class-photo extension walks consent instead of exposing a real roo
     // one photograph through background, consent and audience.
     expect(filterCards.every((c) => c.consent === undefined)).toBe(true);
     expect(cards.every((c) => typeof c.consent === "string")).toBe(true);
+  });
+});
+
+/**
+ * Sprint 40. What the Camera Sees still asked a teacher to photograph their own
+ * empty classroom before school and project it. "Empty" and "before school"
+ * remove faces and nothing else — names on work, reading and support groups,
+ * collection arrangements, timetables and school identifiers stay on the walls,
+ * and a projected screen can be re-photographed. It also taught the wrong
+ * skill: comparing a messy wall with a tidy one makes tidying look like the
+ * answer, while this mission is about reading PREVIEW against LIVE and knowing
+ * that a tidy live frame is still a frame nobody can check before it goes out.
+ */
+describe("the camera extension teaches preview against live, not tidying", () => {
+  const camera = MISSION_BY_SLUG["what-the-camera-sees"];
+  const cards = camera.guide.extensionCards ?? [];
+  const extension = camera.guide.extension.toLowerCase();
+
+  it("asks for no camera, no photograph and no live feature", () => {
+    expect(extension).not.toMatch(/photograph your/);
+    expect(extension).not.toMatch(/before school/);
+    expect(extension).not.toMatch(/take a second .{0,20}picture/);
+    expect(extension).toMatch(/do not point a camera at anything/);
+    expect(extension).toMatch(/do not open a live feature/);
+    // Zero prep: the material is here, and it is read.
+    expect(cards).toHaveLength(3);
+    expect(extension).toMatch(/three invented screens/);
+  });
+
+  it("prohibits real photographs and gives the re-photographing reason", () => {
+    expect(extension).toMatch(/your own room/);
+    expect(extension).toMatch(/your school/);
+    expect(extension).toMatch(/students or their families/);
+    expect(extension).toMatch(/photographed off the wall/);
+  });
+
+  it("makes children read the status words rather than guess from the picture", () => {
+    expect(extension).toMatch(/read the words under the picture, do not guess from the picture/);
+    const [one, two, three] = cards;
+    // The mission's own on-screen strings, so the activity and the story agree.
+    expect(one.description).toContain("PREVIEW — ONLY YOU CAN SEE THIS");
+    expect(two.description).toContain("PREVIEW — ONLY YOU CAN SEE THIS");
+    expect(three.description).toContain("LIVE — 8 PLAYERS CAN SEE THIS NOW");
+    // Every card's "proves" line is about the label, not the room.
+    for (const card of cards) {
+      expect(card.proves.toLowerCase(), card.label).toMatch(/preview|live|words/);
+    }
+  });
+
+  it("keeps the frame the same while the status changes", () => {
+    const [, two, three] = cards;
+    // Screen 3 is screen 2's frame. If the picture changed too, a child could
+    // still answer by looking at the room, which is the habit being replaced.
+    expect(three.description.toLowerCase()).toMatch(/the same wall, the same angle/);
+    expect(three.description.toLowerCase()).toMatch(/one difference, in the words/);
+    expect(three.suggests.toLowerCase()).toMatch(/the picture has not changed/);
+    expect(three.proves.toLowerCase()).toMatch(/the words changed and the picture did not/);
+    // And the next moment has started, so "live" is not an abstraction.
+    expect(three.description.toLowerCase()).toMatch(/the door has started to open/);
+    expect(three.control!.toLowerCase()).toMatch(/before they are on this one|cannot be checked first/);
+    // Screen 2 is genuinely clean, which is what makes screen 3 land.
+    expect(two.suggests.toLowerCase()).toMatch(/nothing/);
+  });
+
+  it("says tidying is not sufficient, on the card where the room is tidy", () => {
+    const two = cards[1];
+    expect(two.control!.toLowerCase()).toMatch(/tidying fixed this one frame/);
+    expect(two.control!.toLowerCase()).toMatch(/did not fix the next one/);
+    expect(two.audience.toLowerCase()).toMatch(/not a reason to go live/);
+    // Every card carries the next-moment question; it is the mission's skill.
+    for (const card of cards) {
+      expect(card.control?.trim().length, `${card.label} control`).toBeGreaterThan(0);
+    }
+  });
+
+  it("asks the four questions separately and names turning it off", () => {
+    expect(extension).toMatch(/what does the picture give away/);
+    expect(extension).toMatch(/who is receiving it right now/);
+    expect(extension).toMatch(/why can tidying not fix the next moment/);
+    expect(extension).toMatch(/turning the feature off/);
+    expect(extension).toMatch(/keep them apart/);
+    // Anonymous, and nothing kept about anybody.
+    expect(extension).toMatch(/hand signals/);
+    expect(extension).toMatch(/nothing is written down about any child/);
+  });
+
+  it("grades the clues on the untidied screen", () => {
+    const one = cards[0];
+    expect(one.suggests.toLowerCase()).toMatch(/strong ones/);
+    // A deliberately harmless item, so the room is not simply "all bad".
+    expect(one.description.toLowerCase()).toMatch(/poster/);
+    expect(one.suggests.toLowerCase()).toMatch(/poster says nothing/);
   });
 });
 

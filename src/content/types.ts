@@ -126,6 +126,13 @@ export interface ExtensionCard {
    * background — The Class Photo does, The Filter That Wanted More does not.
    */
   consent?: string;
+  /**
+   * What can and cannot be controlled about the next moment. Optional, because
+   * it only applies where a mission teaches that a frame you have checked is
+   * not the same as a frame you can keep checking — What the Camera Sees does,
+   * and it is the difference between a preview and a live stream.
+   */
+  control?: string;
   /** Whether this one is ready for a big audience, and why that is separate. */
   audience: string;
 }

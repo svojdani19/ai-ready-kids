@@ -375,6 +375,11 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       hundred words and remove the sourcing, the consent question and the
       exposure at once, and let the clues be graded and one case be a clean
       decoy, which real material never reliably is.
+- [ ] **A mitigation must not become the curriculum.** When an activity is made
+      safe by constraining it — use an empty room, tidy the wall first, take it
+      before school — check what the constraint teaches. If students see the
+      mitigation, it is part of the lesson whether or not it was meant to be,
+      and it can quietly train the opposite of the mission's skill.
 - [ ] **Specificity about a hazard is not safety from it.** The strongest form
       of the activity-contains-the-hazard defect looks like the most thorough
       version of the lesson: an author naming exactly what to look for — "names
