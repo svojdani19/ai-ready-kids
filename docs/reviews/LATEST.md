@@ -7,88 +7,83 @@ likely to be.
 
 ---
 
-## Sprint 44 — P1: the certification claim that lived in the chrome
+## Sprint 45 — P1: Escape closed the menu and abandoned the user in it
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-28-sprint-44.md`](2026-08-28-sprint-44.md)
+- **Full review:** [`2026-08-28-sprint-45.md`](2026-08-28-sprint-45.md)
 - **Review trail:** sprints 01–25 built and corrected the curriculum, reporting,
-  assessment and orientation layers — 25 is where the five modules were renamed
-  an *educator orientation*; 26–30 audit what the product permits and promises;
-  31–32 walk ordinary school workflows; 33–34 build the migration path and its
-  gate; 35–41 fix teacher-facing and content defects; 42–43 make the paid
-  entitlement the vendor's number and enforce it at both enrolment and
-  restoration. **Sprint 44 removes the last place the product still claimed to
-  certify teachers.**
+  assessment and orientation layers; 26–30 audit what the product permits and
+  promises; 31–32 walk ordinary school workflows; 33–34 build the migration path
+  and its gate; 35–41 fix teacher-facing and content defects; 42–43 make the paid
+  entitlement the vendor's number and enforce it at enrolment and restoration;
+  44 removed the last claim that the product certifies teachers. **Sprint 45
+  fixes the keyboard-focus defect sprint 44 found while checking that copy.**
 
 ### What changed
 
-1. **The shared site header told buyers teachers could "Preview, assign,
-   discuss, certify".** The checks in those five modules are **ungated** — a
-   teacher can answer every one wrong and still receive a certificate of
-   completion — so the only fact held is that pages were opened and questions
-   answered. "Certify" claimed competence the data cannot support, and
-   contradicted the approach page, the annual report and the certificate itself,
-   all of which had already been corrected.
-2. **The blurb now reads "Preview, assign, discuss, prepare"**, matching the
-   destination section's *"5-module educator orientation… with a printable
-   certificate of completion"*.
-3. **A sweep of every buyer-facing surface found nothing else.** The remaining
-   uses are accurate and deliberately kept: "certificate of completion", the
-   compliance denials on the privacy, report and data pages, and the disclaimers
-   "rather than certifying competence" and "does not certify".
-4. **The checks are not gated and the orientation is not broadened.** Gating them
-   to justify a word would be letting marketing copy drive pedagogy; the copy
-   changes to match the product instead.
-
-### Why the guard missed it
-
-The existing test scanned `CERTIFICATION_MODULES` and `CERTIFICATION_TITLE` —
-**the offering's own content constants**, where the word had already been
-removed. The claim was in a shared layout component that no content test had
-reason to open. The blurbs also render **only at desktop width**; the mobile menu
-shows labels without them, so the sentence was invisible at 768px and below.
+1. **Escape stranded keyboard users.** With a desktop dropdown open and one of
+   its links focused, Escape hid the menu and left focus on that link — still in
+   the document, no longer visible — so the next Tab continued from a place the
+   user could not see. A sighted pointer user never meets this; a keyboard or
+   switch user meets it every time. For an accessibility assessment, **a
+   dismissal that does not say where focus went is not a way out.**
+2. **`useDismiss` now reports why it fired.** The close callback takes a
+   `DismissReason` — `"escape" | "pointer" | "focus"` — and only Escape returns
+   focus, to the exact trigger that opened that menu.
+3. **Two guards, both deliberate.** Reason, because every other dismissal already
+   leaves focus somewhere the user chose — the link they followed, what they
+   clicked, what they tabbed to — and pulling it back would be *taking* focus.
+   And `hadFocus`, so the refocus only happens when focus is actually inside the
+   menu being hidden; if the user has already moved on there is nothing to
+   recover.
+4. **No reopen loop.** The refocus lands on the trigger, which is inside the
+   wrapper, so the `focusin` dismissal handler sees a target it contains and does
+   nothing. Click-outside and focus-out behaviour is otherwise untouched.
 
 ### Already verified — please do not redo
 
-- Typecheck, lint, **513 tests** (up from 501), Turbopack production build.
-- The new guard reads the header, the footer and every page under `(site)`. Per
-  file it strips comments, imports and code identifiers, **collapses whitespace
-  before scanning** (the privacy page's compliance denial wraps across two source
-  lines, and a line-based scan read the tail as a bare claim), removes the allowed
-  accurate phrases, and fails on any `certif` left standing.
-- **The accurate phrases are asserted positively too**, so a future sweep cannot
-  pass by deleting honest copy: "certificate of completion" and "educator
-  orientation" on for-schools, and the compliance denial on privacy.
-- Plus a blurb test: no `certif`, still mentions preview and assign, says prepare
-  or orient. Both the file scan and the blurb test confirmed to **fail against
-  the old header** by stashing it.
-- **Browser-checked at 1280×800:** menu opens, `aria-expanded` toggles, four
-  items with blurbs, Teachers reads correctly, no overflow, nothing clipped, all
-  links tabbable and visible with `focus-visible` styling, Escape closes.
-- **Browser-checked at 768×1024:** mobile menu renders labels without blurbs,
-  grouped correctly, no overflow, nothing clipped, legible.
-- **No child-data or authored-curriculum change.** Nothing here reaches student
-  records.
+- Typecheck, lint, **523 tests** (up from 513), Turbopack production build.
+- New `tests/site-header.test.tsx` — jsdom and Testing Library, ten cases,
+  against the real component rather than the source, because **focus is
+  behaviour**: the question is where the browser puts it, not which line was
+  written.
+- **Four assert the fix and were confirmed to fail without it**: Escape returns
+  focus to the trigger with `aria-expanded="false"` and the link neither focused
+  nor visible; each trigger gets its own menu back, not a sibling's; the refocus
+  does not reopen the menu and a second Escape is a no-op; Escape still works the
+  second time a menu is opened.
+- **Six assert it does not over-correct** and pass either way, which is the
+  point — a fix that grabs focus is as bad as one that strands it: choosing a
+  link, clicking outside, focus moving away on its own, and toggling the trigger
+  closed all leave focus where the user put it.
+- **Browser-checked at 1280×800, keyboard only:** open, Tab among links, focus on
+  *Administrators*, Escape → menu hidden, focus on the trigger and **visible**,
+  and Tab from there proceeds to the next visible control (*See the demo*) in
+  document order.
+- **Browser-checked at 768×1024:** mobile navigation unchanged — desktop triggers
+  are not rendered at that width, the panel opens from its own Menu button with
+  ten links, and closing it leaves focus on that button, visible and not
+  stranded. No horizontal overflow.
+- **No curriculum, subscription or child-data change.** Shared header only.
 
 ### Where this is most likely still wrong — best places to push
 
-- **Escape leaves focus on a hidden element.** With the desktop menu open and a
-  link focused, Escape closes the menu but focus stays on that link — still in
-  the DOM, no longer visible — so a keyboard user pressing Escape then Tab
-  resumes from somewhere they cannot see. Focus should return to the trigger.
-  Pre-existing and unrelated to the copy defect, so reported rather than folded
-  into a copy-only sprint.
-- **The guard is a word list on a file list.** It catches `certif` on nine
-  surfaces. It cannot catch a different overclaim ("accredited", "validated",
-  "assessed"), and it cannot catch one made in a component not on the list.
-- **No other marketing claim has been checked against product behaviour since
-  sprint 26.** Two of the claims audited then were false; this one survived that
-  audit too.
-- **Lapsed-subscription enforcement remains documented and unbuilt** — it needs a
-  lifecycle decision and an action-inventory audit, not a copy patch. Nothing
-  switches off at renewal and the program page says so.
+- **The mobile panel does not respond to Escape at all.** It never did, and this
+  sprint was asked to leave mobile unchanged, so it is left. It strands nobody
+  today because the only way to close it is the button that keeps focus. If
+  Escape is added there it needs the same reason-aware treatment.
+- **No other closable surface has been checked for this.** The `ConfirmAction`
+  two-step, Classroom Mode's overlay and any future dialog all pose the same
+  question — is it shut, and where is the user now? — and none has been asked.
+- **This is the first interaction test in the suite for the marketing chrome.**
+  The header now has one; the footer, the demo page and the join flow do not.
+- **No general keyboard-only pass has been done over the product**, only the
+  surfaces a sprint happened to touch.
 - **Nothing reconciles the entitlement against an actual agreement** — sprint 42.
-  Only enrolment and restoration are metered — sprint 43.
+  Only enrolment and restoration are metered — sprint 43. **Lapsed-subscription
+  enforcement remains documented and unbuilt.**
+- **The certification guard is a word list on a file list** — sprint 44. It
+  cannot catch a different overclaim, or one made in a component not on the list.
 - **Twenty-four mission guides have not been read for the real-material defect
   class** — sprints 37–41. **Twenty-six missions have untraced shared scenes** —
   sprint 36.

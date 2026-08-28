@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Logo } from "./Logo";
 
 /**
@@ -60,14 +60,27 @@ const GROUPS: NavGroup[] = [
   },
 ];
 
-function useDismiss(open: boolean, close: () => void, ref: React.RefObject<HTMLDivElement | null>) {
+/**
+ * How a menu was dismissed, because the answer changes what happens to focus.
+ *
+ * Escape is the only one that has to hand focus back. The others already leave
+ * it somewhere the user chose: on the link they followed, on whatever they
+ * clicked, or on whatever they tabbed to.
+ */
+type DismissReason = "escape" | "pointer" | "focus";
+
+function useDismiss(
+  open: boolean,
+  close: (reason: DismissReason) => void,
+  ref: React.RefObject<HTMLDivElement | null>,
+) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
+      if (e.key === "Escape") close("escape");
     };
     const onPointer = (e: PointerEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) close();
+      if (ref.current && !ref.current.contains(e.target as Node)) close("pointer");
     };
     const onFocus = (e: FocusEvent) => {
       const target = e.target as Node | null;
@@ -75,7 +88,7 @@ function useDismiss(open: boolean, close: () => void, ref: React.RefObject<HTMLD
       // window blur, a programmatic focus reset, or the page regaining focus.
       // Closing on those made the menu shut by itself.
       if (!target || target === document.body) return;
-      if (ref.current && !ref.current.contains(target)) close();
+      if (ref.current && !ref.current.contains(target)) close("focus");
     };
     document.addEventListener("keydown", onKey);
     document.addEventListener("pointerdown", onPointer);
@@ -94,7 +107,28 @@ function NavMenu({ group }: { group: NavGroup }) {
   const button = useRef<HTMLButtonElement>(null);
   const id = useId();
 
-  useDismiss(open, () => setOpen(false), wrapper);
+  /**
+   * Escape has to give focus back, or it is not a way out.
+   *
+   * Sprint 44's browser check found the menu hiding while focus stayed on a
+   * link inside it — still in the document, no longer visible — so a keyboard
+   * or switch user pressing Escape and then Tab resumed from a place they
+   * could not see. "Escape closes" is only true if what it closes gives focus
+   * somewhere findable.
+   *
+   * Guarded on focus actually being inside the menu, which keeps this to the
+   * recovery case: if the user has already tabbed away, the thing being hidden
+   * is not what holds focus, and pulling it back would be stealing it. Every
+   * other dismissal leaves focus where the user put it — the link they
+   * followed, what they clicked, what they tabbed to — so none of them refocus.
+   */
+  const dismiss = useCallback((reason: DismissReason) => {
+    const hadFocus = Boolean(wrapper.current?.contains(document.activeElement));
+    setOpen(false);
+    if (reason === "escape" && hadFocus) button.current?.focus();
+  }, []);
+
+  useDismiss(open, dismiss, wrapper);
 
   return (
     <div ref={wrapper} className="relative">

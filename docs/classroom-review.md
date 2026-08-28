@@ -375,6 +375,12 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       hundred words and remove the sourcing, the consent question and the
       exposure at once, and let the clues be graded and one case be a clean
       decoy, which real material never reliably is.
+- [ ] **A dismissal says where focus went.** For anything closable — menu,
+      overlay, two-step confirm, dialog — ask not only "is it shut?" but "where
+      is the user now?". Escape should return focus to the control that opened
+      it; every other close should leave focus where the user put it. A close
+      that hides the focused element strands keyboard and switch users, and is
+      invisible to anyone testing with a mouse.
 - [ ] **Shared chrome is copy, and a claim retired in a feature can survive in
       the navigation.** When a sprint removes a word, sweep the header, footer
       and marketing pages, not only the module that prompted it — and point the
