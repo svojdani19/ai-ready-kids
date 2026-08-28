@@ -18,6 +18,7 @@ import {
   unassignMission,
 } from "@/lib/repo/classroom";
 import { getSchool, getUser, recordAudit } from "@/lib/repo/school";
+import { LicenceExceededError } from "@/lib/repo/entitlement";
 import {
   completeCertification,
   getCertification,
@@ -132,7 +133,33 @@ export async function addStudentAction(
     return { error: `${displayName} is already on this roster.` };
   }
 
-  createStudent(db, { classId, displayName });
+  // The licence check lives in the repository, so this is a catch rather than a
+  // pre-check: an action that asked first and inserted afterwards would leave a
+  // window between the two, and would be one door among several.
+  try {
+    createStudent(db, { classId, displayName });
+  } catch (error) {
+    if (error instanceof LicenceExceededError) {
+      const school = getSchool(db, user.school_id)!;
+      // No row was written, and no success audit. The refusal is recorded
+      // because a school buyer needs to see that the cap did something, and it
+      // names no child: a licence event is a fact about the school.
+      recordAudit(db, {
+        schoolId: user.school_id,
+        actorLabel: user.name,
+        action: "roster.blocked_by_licence",
+        detail: `An enrolment was declined in ${classroom.name}. ${error.used} of ${error.licensed} licensed students in use.`,
+      });
+      return {
+        error:
+          `${error.used} of ${error.licensed} licensed student places are in use, so this ` +
+          `school cannot enrol anybody else yet. Nothing was added. Ask ${school.contact_name} ` +
+          "to request more places on the Program and plan page.",
+      };
+    }
+    throw error;
+  }
+
   recordAudit(db, {
     schoolId: user.school_id,
     actorLabel: user.name,

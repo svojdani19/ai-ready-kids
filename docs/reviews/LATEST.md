@@ -7,127 +7,109 @@ likely to be.
 
 ---
 
-## Sprint 40 — P1: the last real-classroom photograph, and the wrong lesson with it
+## Sprint 42 — P1: the subscription was a label the customer could edit
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-28-sprint-40.md`](2026-08-28-sprint-40.md)
-- **Review trail:** sprints 01–16 read and fixed the curriculum; 17 closed the
-  legacy forced-award scenes as a `validateMission` rule; 18–21 finished the
-  original nine, so all 27 missions have been read and 26 had findings; 22–25
-  are the reporting, assessment and orientation layers; 26–30 audit what the
-  product permits and promises; 31–32 walk ordinary school workflows; 33–34
-  build the migration path and its gate; 35 removed an instruction that would
-  have destroyed children's records; 36 traced the first shared scene; 37–38
-  removed two teacher activities requiring photographs of real children and 39
-  corrected a wording slip in the second. **Sprint 40 closes the class: the
-  third and last such activity is gone, and the guard that tracked them is now
-  empty.**
+- **Full review:** [`2026-08-28-sprint-42.md`](2026-08-28-sprint-42.md)
+- **Review trail:** sprints 01–25 read and fixed the curriculum, reporting,
+  assessment and orientation layers; 26–30 audit what the product permits and
+  promises; 31–32 walk ordinary school workflows; 33–34 build the migration path
+  and its gate; 35 removed an instruction that would have destroyed children's
+  records; 36 traced the first shared scene; 37–41 removed three teacher
+  activities that required photographs of real children and corrected two
+  wording defects in the replacements. **Sprint 42 is the first commercial one:
+  the paid entitlement was self-editable and unenforced.**
+
+### The commercial rationale
+
+Schools buy this on a purchase order — quote, PO, invoice, named account
+contact. There is no card and there should not be one, which makes the
+entitlement record the entire commercial mechanism: the only thing between "what
+we agreed" and "what you are using". It has to be true in both directions. **The
+vendor owns the number**, because a customer-editable seat count cannot appear
+on an invoice and a renewal that opens by disputing it costs more than the seat.
+**The number has to bite**, because an entitlement nothing enforces is how a
+vendor finds at renewal that it has given away a third of its product and how a
+school finds it is being asked for money it never budgeted. Neither half
+restricts schools; both let the two sides point at one figure a year later.
 
 ### What changed
 
-1. **`what-the-camera-sees` still asked a teacher to photograph their own empty
-   classroom before school and project it.** "Empty" and "before school" remove
-   faces and nothing else — names on work, reading and support groups,
-   collection arrangements, timetables and school identifiers are all still on
-   the walls, and an empty room is the state in which that paperwork is *most*
-   visible. It needed sourcing, prep and media-policy judgement, and a projected
-   image can be re-photographed.
-2. **It also taught the wrong skill.** Comparing a messy wall with a tidy one
-   teaches *tidy the wall*. This mission's goals are telling a preview from a
-   live stream **by reading what the screen says**, knowing that once live each
-   moment goes out before it can be checked, and turning a feature off rather
-   than managing it. A tidy live frame is still unchecked. The activity was
-   training the control the mission exists to deny.
-3. **Three authored screens replace it**, zero prep, on the existing
-   `ExtensionCard` path, in a fictional domestic room matching the mission's own
-   setting, using the mission's own on-screen strings verbatim. Screen 1: the
-   room as it is, `PREVIEW — ONLY YOU CAN SEE THIS`, clues graded (badge and
-   street sign strong, a band poster deliberately harmless). Screen 2: the same
-   room tidied, **still PREVIEW** — the words did not change when the room did,
-   and tidying fixed this frame and not the next. Screen 3: **the same wall,
-   same angle, same everything**, `LIVE — 8 PLAYERS CAN SEE THIS NOW`, and
-   **the room unchanged** — the only difference is in the words.
-4. **Screens 2 and 3 are the pair.** The frame is identical, so a child cannot
-   answer by looking harder at the room — only the status line moved. **A door
-   that could open belongs to the next-moment prompt, never to the picture**: it
-   is the little brother from scene `s3` as something that has not happened yet,
-   so activity and story teach the same beat without handing a child a visible
-   change to blame. *(Corrected in sprint 41 — see below.)*
-5. **Four prompts, kept apart and named in the instructions**, mapping onto the
-   mission's four learning goals: what the picture gives away, what the words
-   prove about who is receiving it right now, why tidying cannot fix the next
-   moment, and whether turning the feature off is safer. Hand signals, nothing
-   written down about any child.
-6. **The prohibition covers both improvisations**: do not point a camera at
-   anything, do not use a photo of your own room, school, students or families,
-   and **do not open a live feature to demonstrate one** — with the
-   re-photographing reason attached.
-7. One optional field, `control?`, rendered as "The next moment:". No new
-   format, no second renderer. It sits beside sprint 38's `consent?`, and a test
-   asserts which missions carry which rather than leaving it to convention.
-
-### The correction (sprint 41)
-
-Screen 3 claimed *"same wall, same angle, same everything"* and *"the picture
-has not changed at all"* while its description added a door beginning to open at
-the edge of the frame — and the regression test asserted **both** at once, so it
-locked the contradiction in rather than catching it. An opening door is a
-visible change, so a child could blame the thing that moved and never reach the
-lesson: the frame is identical and the `LIVE` label is the only evidence that
-eight people are receiving it.
-
-Screen 3's visible frame is now exactly screen 2's — *"The room has not changed
-at all. One difference, and it is in the words underneath."* The door moved to
-the next-moment line as a hypothetical: *"This frame is fine, and the next one
-is not promised. The door could open a second from now… and because the label
-says LIVE that moment is on eight screens before it is on this one. A live
-moment cannot be checked first."*
-
-The test now enforces the separation from both sides — screen 3's description
-and `suggests` may contain no door, no opening, nobody entering and nothing
-starting or beginning; the `control` line must carry the possible door opening,
-the one-second framing and the cannot-check-first rule. Confirmed to fail
-against the contradictory version. **486 tests.** All other cards, scenes,
-evidence, fields, guards and standing constraints untouched.
+1. **`requestPlanChangeAction` ran `UPDATE schools SET plan = ?,
+   licensed_students = ?`** while the form said *Request a quote* and *records
+   an intent*. Typing 5000 made the school a 5000-seat district customer as far
+   as every screen was concerned. **And `addStudentAction` never read
+   `licensed_students`**, so enrolment was unlimited across all classes. Either
+   alone is a bug; together the seat count was decoration.
+2. **The request now records a request and nothing else.** The `UPDATE` is gone;
+   one audit entry names what was asked for *and what the entitlement still is*,
+   and the message says so plainly.
+3. **The entitlement is read-only in the UI**, in its own block above the request
+   fields, which are relabelled *Plan you would like* / *Student places you would
+   like*. The page stat is now **used of licensed** with the remainder.
+4. **The cap is enforced in `createStudent`, not the action** — the repository is
+   the only door, and the action *catches* rather than pre-checks so there is no
+   window between asking and inserting. Count and insert run in one
+   `BEGIN IMMEDIATE` transaction, so two near-simultaneous enrolments cannot both
+   read the same count and both write; a refusal rolls back and writes nothing.
+5. **Seats in use = children on active rosters.** Archived cohorts are excluded
+   deliberately: a cohort kept for retention is not a child being taught, and
+   charging a new year for it would mean buying the same desk twice and would
+   push administrators toward deleting records early to free capacity.
+6. **The last licensed seat succeeds** — a cap that blocks *at* the number sold
+   sells one fewer than it says. The next is refused with seats used, seats
+   licensed and the contact path, and the school-wide audit records
+   `roster.blocked_by_licence` with **no child's name**.
+7. **Enrolling into an archived class is refused**, so archiving a full cohort is
+   not a way to keep enrolling.
 
 ### Already verified — please do not redo
 
-- Typecheck, lint, **486 tests** (485 at sprint 40, plus the sprint 41
-  regression), Turbopack production build.
-- 635 words, about five minutes read aloud, leaving five for discussion. No
-  device required.
-- **The guard is empty.** The set of missions whose extension asks for a real
-  classroom photograph has gone from two, to one, to `[]`, and the test now
-  asserts the empty set so nothing can reintroduce the instruction.
-- Nine assertions, all confirmed to **fail against the old extension and pass
-  against the new** by stashing the content and re-running.
-- One older assertion was **superseded and rewritten, not deleted**: it pinned
-  the previous mitigations (*never a live feed*, *never a fresh photo with
-  children in it*, *prepared image*), which were careful handling of a
-  photograph that no longer exists. It now asserts no camera is involved at all.
-- **Both teacher surfaces browser-checked at 1280×800 and 768×1024**: no
-  horizontal overflow, all three cards inside the content column, nothing
-  clipped, four definition rows per card at every size.
-- **Scenes, mission graph, evidence, student fields and the authored-choice
-  design are untouched.**
+- Typecheck, lint, **494 tests** (up from 486), Turbopack production build.
+- Eight acceptance tests, all confirmed to **fail without the enforcement** by
+  stashing the changed source and re-running: quote leaves plan and seats
+  unchanged while recording the request; two active classes combine toward one
+  cap; the final seat succeeds and the next fails with **no row and no success
+  audit**; archived cohorts do not consume seats and their records survive;
+  archived classes refuse enrolment; two schools count separately; the check is
+  in the repository with `BEGIN IMMEDIATE`/`ROLLBACK` and the refusal audit
+  carries no display name; and the student record still holds exactly the five
+  existing fields.
+- **Browser-verified at 1280×800** with the dev school temporarily at 91 seats
+  against 90 children: a **district / 5000** request returned the
+  unchanged-entitlement message and left the row at `school` / 91; the 91st child
+  enrolled; the 92nd was refused, **no row was written**, and the audit named the
+  class and numbers only. Demo data restored to 90 students / 120 seats.
+- **No card fields, payment processor or billing identifiers.** Purchase orders,
+  quotes, invoices and the named account contact are untouched.
+- **Student fields, aggregate-only admin reporting, privacy constraints and the
+  authored niche are unchanged.**
+- One harness change: `createTestDb` licenses the fixture generously, since
+  almost no test is about entitlement and many enrol past the demo school's
+  purchase. Cap tests call the new `setLicensedSeats` and state the number.
 
 ### Where this is most likely still wrong — best places to push
 
-- **The defect class is closed only as far as the guard can see.** The regex
-  catches "photograph/take/project your own classroom". An activity could ask
-  for real material in wording it never matches — student work, a family photo,
-  a real timetable — and **the other twenty-four guides have not been read for
-  this class.** Three of three checked had some version of it.
-- **`extensionCards` now has two optional mission-specific rows** (`consent?`,
-  `control?`). A third would be a signal the type is becoming a grab-bag and
-  wants a general "extra rows" shape instead.
-- **All the new content guards are string assertions against authored copy.**
-  They pin these fixes, not the underlying properties.
-- **Twenty-six of twenty-seven missions still have untraced shared scenes** —
-  sprint 36 traced one and the defect reached the evidence record.
-- **Prose goes stale silently** — sprint 35.
-- **`src/app/(site)/privacy/page.tsx` has two unused-import lint warnings**
-  predating sprint 35, unrelated to this work.
+- **Restoring an archived class can cross the cap.** Archiving frees seats, so
+  archive a full cohort, enrol a new one, restore the old one, and the active
+  roster exceeds the licence. `restoreClassAction` does not check. This wants a
+  product decision — refuse, allow with a reported overage, or restore
+  read-only — so it is reported rather than invented. The enrolment path cannot
+  reach it, because archived classes refuse enrolment.
+- **Lapsed-subscription read-only enforcement does not exist**, left for a
+  separate review as instructed. Nothing switches off at renewal, and the
+  program page still says so.
+- **Nothing reconciles the entitlement against an actual agreement.** There is no
+  record of what was quoted, ordered or invoiced — only an audit line saying
+  somebody asked. A real deployment needs the vendor side of that.
+- **The cap counts students, and a school could still create unlimited classes,
+  teachers and assignments.** Only the student seat is metered, which is what is
+  sold, but it is worth confirming that is the intended meter.
+- **Twenty-four mission guides have not been read for the real-material defect
+  class** — sprints 37–41. **Twenty-six missions have untraced shared scenes** —
+  sprint 36.
+- **`src/app/(site)/privacy/page.tsx` has two unused-import lint warnings**,
+  unrelated to this work.
 - **Only one previous schema shape is recognised** — sprint 34. No
   down-migrations.
 - **Rollover is one school at a time**; bulk reassignment does not exist.
@@ -137,9 +119,7 @@ evidence, fields, guards and standing constraints untouched.
 - **The limiter is per process** — sprint 30.
 - **The instrument is still unequated with one item per skill** — sprint 24.
 - **Every mission has been read once. None has been read twice.**
-- **Teacher-facing copy promises timelines it cannot support.**
 - **No general guard against factual error exists or can.**
-- **The student "getting the hang of" list is untested with children.**
 
 ### Standing constraints
 

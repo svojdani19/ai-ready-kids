@@ -7,7 +7,15 @@ import {
   DEMO_SCHOOL,
   DEMO_TEACHER,
   playToEnd,
+  setLicensedSeats,
 } from "./helpers";
+import {
+  countActiveRosterStudents,
+  LicenceExceededError,
+  licenceStatus,
+} from "@/lib/repo/entitlement";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   archiveClass,
   createClass,
@@ -50,8 +58,6 @@ import { runScheduledPurge } from "@/lib/domain/purge";
 import { canTeachClass } from "@/lib/auth/access";
 import { classesOwnedBy, setAcademicYear, setBenchmarkWindow } from "@/lib/repo/school";
 import { getClass, reassignClass } from "@/lib/repo/classroom";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 
 let db: Db;
 let cleanup: () => void;
@@ -858,6 +864,266 @@ describe("rolling over into the next school year", () => {
         const c = listClasses(db9, DEMO_SCHOOL, true).find((x) => x.id === row.id)!;
         expect(purgeDateForClass(c, after.retention_months)!.getTime()).toBe(row.due);
       }
+    } finally {
+      cleanup();
+    }
+  });
+});
+
+
+/**
+ * Sprint 42. The subscription was a self-editable label that nothing enforced.
+ *
+ * `requestPlanChangeAction` wrote `schools.plan` and `schools.licensed_students`
+ * straight to the row while the form it served said "Request a quote" and
+ * "records an intent" — so a school could raise its own paid entitlement by
+ * typing a bigger number. And nothing read `licensed_students` back, so a school
+ * could enrol past whatever it displayed. Both halves are needed: the vendor
+ * owns the number, and the number has to bite.
+ */
+describe("licensed student places are the vendor's record and are enforced", () => {
+  let dbL: Db;
+  let cleanupL: () => void;
+  beforeAll(() => {
+    ({ db: dbL, cleanup: cleanupL } = createTestDb());
+  });
+  afterAll(() => cleanupL());
+
+  const freshSchoolWith = (seats: number) => {
+    const { db, cleanup } = createTestDb();
+    // Start from a known roster rather than the demo school's 90.
+    db.prepare("DELETE FROM students").run();
+    setLicensedSeats(db, DEMO_SCHOOL, seats);
+    return { db, cleanup };
+  };
+
+  it("requesting a quote records the request and changes neither plan nor seats", () => {
+    const before = getPrimarySchool(dbL);
+    const src = readFileSync(join(process.cwd(), "src/app/actions/admin.ts"), "utf8");
+    const start = src.indexOf("export async function requestPlanChangeAction");
+    const body = src.slice(start, src.indexOf("\nexport async function", start + 10));
+
+    // The action writes an audit row and nothing else. No UPDATE of the
+    // authoritative columns anywhere in it.
+    expect(body).toContain('action: "plan.change_requested"');
+    expect(body).not.toMatch(/UPDATE schools SET plan/);
+    expect(body).not.toMatch(/licensed_students\s*=/);
+    expect(body).not.toMatch(/setLicensedSeats|setPlan/);
+    // And it tells the administrator the entitlement is unchanged.
+    expect(body).toMatch(/still|unchanged/);
+
+    // Simulating what the action now does leaves the row alone.
+    recordAudit(dbL, {
+      schoolId: DEMO_SCHOOL,
+      actorLabel: "Rosa Delgado",
+      action: "plan.change_requested",
+      detail: "Quote requested: district, 900 licensed students. Current entitlement unchanged.",
+    });
+    const after = getPrimarySchool(dbL);
+    expect(after.plan).toBe(before.plan);
+    expect(after.licensed_students).toBe(before.licensed_students);
+    expect(
+      listAudit(dbL, DEMO_SCHOOL).some((a) => a.action === "plan.change_requested"),
+    ).toBe(true);
+  });
+
+  it("counts students in every active class in the school against one cap", () => {
+    const { db, cleanup } = freshSchoolWith(5);
+    try {
+      const second = createClass(db, {
+        schoolId: DEMO_SCHOOL,
+        teacherId: DEMO_TEACHER,
+        name: "Room 99",
+        grade: 3,
+        schoolYear: "2025-2026",
+        yearEndsOn: "2026-06-19",
+      });
+      createStudent(db, { classId: DEMO_CLASS, displayName: "One A." });
+      createStudent(db, { classId: DEMO_CLASS, displayName: "Two B." });
+      createStudent(db, { classId: second.id, displayName: "Three C." });
+
+      // Three children, two classes, one school total.
+      expect(countActiveRosterStudents(db, DEMO_SCHOOL)).toBe(3);
+      expect(licenceStatus(db, DEMO_SCHOOL)).toEqual({ used: 3, licensed: 5, remaining: 2 });
+
+      // The cap is the school's, not the class's: filling it from the other
+      // class blocks this one.
+      createStudent(db, { classId: second.id, displayName: "Four D." });
+      createStudent(db, { classId: second.id, displayName: "Five E." });
+      expect(() =>
+        createStudent(db, { classId: DEMO_CLASS, displayName: "Six F." }),
+      ).toThrow(LicenceExceededError);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("allows the last licensed place and refuses the next, writing nothing", () => {
+    const { db, cleanup } = freshSchoolWith(3);
+    try {
+      createStudent(db, { classId: DEMO_CLASS, displayName: "Aa A." });
+      createStudent(db, { classId: DEMO_CLASS, displayName: "Bb B." });
+      // The third seat is licensed, so it must succeed — a cap that blocks at
+      // the number sold is a cap that sells one fewer than it says.
+      const last = createStudent(db, { classId: DEMO_CLASS, displayName: "Cc C." });
+      expect(last.id).toBeTruthy();
+      expect(licenceStatus(db, DEMO_SCHOOL).remaining).toBe(0);
+
+      let raised: unknown;
+      try {
+        createStudent(db, { classId: DEMO_CLASS, displayName: "Dd D." });
+      } catch (error) {
+        raised = error;
+      }
+      expect(raised).toBeInstanceOf(LicenceExceededError);
+      expect((raised as LicenceExceededError).used).toBe(3);
+      expect((raised as LicenceExceededError).licensed).toBe(3);
+
+      // No row, and the roster is exactly what it was.
+      expect(listStudents(db, DEMO_CLASS).map((s) => s.display_name)).toEqual([
+        "Aa A.",
+        "Bb B.",
+        "Cc C.",
+      ]);
+      expect(countActiveRosterStudents(db, DEMO_SCHOOL)).toBe(3);
+      // And no success audit was written for the refused enrolment.
+      expect(listAudit(db, DEMO_SCHOOL).filter((a) => a.action === "roster.added")).toHaveLength(0);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("does not charge a new year for cohorts archived for records", () => {
+    const { db, cleanup } = freshSchoolWith(3);
+    try {
+      createStudent(db, { classId: DEMO_CLASS, displayName: "Old A." });
+      createStudent(db, { classId: DEMO_CLASS, displayName: "Old B." });
+      createStudent(db, { classId: DEMO_CLASS, displayName: "Old C." });
+      expect(licenceStatus(db, DEMO_SCHOOL).remaining).toBe(0);
+
+      // Last year's cohort is archived, not deleted: the school keeps it for
+      // its retention period. Those desks are empty now.
+      archiveClass(db, DEMO_CLASS);
+      expect(countActiveRosterStudents(db, DEMO_SCHOOL)).toBe(0);
+      expect(licenceStatus(db, DEMO_SCHOOL).remaining).toBe(3);
+
+      const thisYear = createClass(db, {
+        schoolId: DEMO_SCHOOL,
+        teacherId: DEMO_TEACHER,
+        name: "Room 100",
+        grade: 4,
+        schoolYear: "2026-2027",
+        yearEndsOn: "2027-06-18",
+      });
+      // The full three places are available again, and the records survive.
+      for (const n of ["New A.", "New B.", "New C."]) {
+        createStudent(db, { classId: thisYear.id, displayName: n });
+      }
+      expect(listStudents(db, DEMO_CLASS)).toHaveLength(3);
+      expect(() =>
+        createStudent(db, { classId: thisYear.id, displayName: "New D." }),
+      ).toThrow(LicenceExceededError);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("refuses to enrol into an archived cohort, so archiving is not a way round the cap", () => {
+    const { db, cleanup } = freshSchoolWith(2);
+    try {
+      createStudent(db, { classId: DEMO_CLASS, displayName: "Here A." });
+      archiveClass(db, DEMO_CLASS);
+      // Archived rosters do not consume seats; if they also accepted children,
+      // a school could park a full class and keep enrolling.
+      expect(() =>
+        createStudent(db, { classId: DEMO_CLASS, displayName: "Sneak B." }),
+      ).toThrow(/archived/i);
+      expect(listStudents(db, DEMO_CLASS)).toHaveLength(1);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("counts each school separately", () => {
+    const { db, cleanup } = freshSchoolWith(2);
+    try {
+      db.prepare(
+        `INSERT INTO schools (id, name, slug, district, city, state, monogram, brand_accent,
+           plan, licensed_students, term_starts_on, term_renews_on, academic_year,
+           year_starts_on, year_ends_on, contact_name, contact_email, retention_months, created_at)
+         VALUES ('sch_far','Far Elementary','far','Far District','Farville','TX','FE','denim',
+           'school', 1, '2025-08-01','2026-08-01','2025-2026','2025-08-20','2026-06-19',
+           'Head','head@far.demo', 12, '2025-08-01T00:00:00.000Z')`,
+      ).run();
+      const theirTeacher = createUser(db, {
+        schoolId: "sch_far",
+        role: "teacher",
+        name: "Far Teacher",
+        email: "far.teacher@far.demo",
+        title: "Grade 2",
+      });
+      const theirClass = createClass(db, {
+        schoolId: "sch_far",
+        teacherId: theirTeacher.id,
+        name: "Far Room",
+        grade: 2,
+        schoolYear: "2025-2026",
+        yearEndsOn: "2026-06-19",
+      });
+
+      createStudent(db, { classId: DEMO_CLASS, displayName: "Ours A." });
+      createStudent(db, { classId: DEMO_CLASS, displayName: "Ours B." });
+      // Our school is full. Theirs is untouched by that.
+      expect(licenceStatus(db, DEMO_SCHOOL).remaining).toBe(0);
+      expect(licenceStatus(db, "sch_far")).toEqual({ used: 0, licensed: 1, remaining: 1 });
+
+      createStudent(db, { classId: theirClass.id, displayName: "Theirs A." });
+      expect(countActiveRosterStudents(db, DEMO_SCHOOL)).toBe(2);
+      expect(countActiveRosterStudents(db, "sch_far")).toBe(1);
+      // And their own cap still binds them.
+      expect(() =>
+        createStudent(db, { classId: theirClass.id, displayName: "Theirs B." }),
+      ).toThrow(LicenceExceededError);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("puts the check in the repository, so no action can route around it", () => {
+    const repo = readFileSync(join(process.cwd(), "src/lib/repo/classroom.ts"), "utf8");
+    const start = repo.indexOf("export function createStudent");
+    const body = repo.slice(start, repo.indexOf("\n}", start));
+    // Count and insert inside one write transaction, so two enrolments
+    // arriving together cannot both read the same count and both write.
+    expect(body).toContain("BEGIN IMMEDIATE");
+    expect(body).toContain("licenceStatus(db, owner.school_id)");
+    expect(body).toContain("LicenceExceededError");
+    expect(body).toContain("ROLLBACK");
+
+    // The teacher action catches rather than pre-checks, and names no child in
+    // the school-wide audit it writes for the refusal.
+    const action = readFileSync(join(process.cwd(), "src/app/actions/teacher.ts"), "utf8");
+    const add = action.slice(
+      action.indexOf("export async function addStudentAction"),
+      action.indexOf("\n}", action.indexOf("export async function addStudentAction")),
+    );
+    expect(add).toContain("LicenceExceededError");
+    expect(add).toContain('action: "roster.blocked_by_licence"');
+    const blocked = add.slice(add.indexOf("roster.blocked_by_licence"));
+    expect(blocked.slice(0, blocked.indexOf("});"))).not.toContain("displayName");
+    // The teacher is told the numbers and where to go, without a child's name.
+    expect(add).toMatch(/licensed student places are in use/);
+    expect(add).toMatch(/contact_name/);
+  });
+
+  it("keeps the roster rules it already had", () => {
+    const { db, cleanup } = freshSchoolWith(10);
+    try {
+      // Data minimisation is unchanged: display name and avatar, nothing else.
+      const student = createStudent(db, { classId: DEMO_CLASS, displayName: "Keep K." });
+      expect(Object.keys(student).sort()).toEqual(
+        ["avatar_key", "class_id", "created_at", "display_name", "id"].sort(),
+      );
     } finally {
       cleanup();
     }

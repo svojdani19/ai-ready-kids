@@ -1,4 +1,5 @@
 import "server-only";
+import { LicenceExceededError, licenceStatus } from "@/lib/repo/entitlement";
 import { randomInt } from "node:crypto";
 import { type Db, newId, nowIso, row, rows } from "@/lib/db";
 import type { Assignment, Classroom, Student } from "@/lib/types";
@@ -222,25 +223,61 @@ export function getStudent(db: Db, id: string): Student | undefined {
 
 const AVATARS = ["fox", "owl", "otter", "bear", "frog", "turtle", "crane", "hedgehog", "bee", "whale"];
 
+/**
+ * Enrol a child, against the school's licensed seats.
+ *
+ * The check lives here rather than in the server action on purpose. A server
+ * action is one door; the repository is the only door. Sprint 26 learned the
+ * same lesson about authorization — a rule enforced in the page that renders
+ * the button is not a rule — and a seat limit that a future action could route
+ * around is a seat limit a school buyer cannot rely on.
+ *
+ * Count and insert run inside one `BEGIN IMMEDIATE` write transaction, so two
+ * enrolments arriving together cannot both read the same count and both write.
+ * The last licensed seat is allowed; the one after it raises
+ * `LicenceExceededError` and writes nothing at all.
+ */
 export function createStudent(
   db: Db,
   input: { classId: string; displayName: string; avatarKey?: string },
 ): Student {
+  const owner = db
+    .prepare("SELECT school_id, archived_at FROM classes WHERE id = ?")
+    .get(input.classId) as { school_id: string; archived_at: string | null } | undefined;
+  if (!owner) throw new Error("Unknown class");
+  // An archived cohort does not consume seats, so it must not accept new
+  // children either — otherwise archiving a full class would be a way to keep
+  // enrolling past the licence and restore them all afterwards.
+  if (owner.archived_at) throw new Error("That class is archived. Restore it before adding.");
+
   const id = newId("stu");
-  const count = (
-    db.prepare("SELECT COUNT(*) AS n FROM students WHERE class_id = ?").get(input.classId) as {
-      n: number;
+  // Reuse an outer transaction if there is one; a nested BEGIN is an error.
+  const outer = db.isTransaction;
+  if (!outer) db.exec("BEGIN IMMEDIATE");
+  try {
+    const status = licenceStatus(db, owner.school_id);
+    if (status.remaining < 1) {
+      throw new LicenceExceededError(status.used, status.licensed);
     }
-  ).n;
-  db.prepare(
-    "INSERT INTO students (id, class_id, display_name, avatar_key, created_at) VALUES (?,?,?,?,?)",
-  ).run(
-    id,
-    input.classId,
-    input.displayName.trim(),
-    input.avatarKey ?? AVATARS[count % AVATARS.length],
-    nowIso(),
-  );
+    const count = (
+      db.prepare("SELECT COUNT(*) AS n FROM students WHERE class_id = ?").get(input.classId) as {
+        n: number;
+      }
+    ).n;
+    db.prepare(
+      "INSERT INTO students (id, class_id, display_name, avatar_key, created_at) VALUES (?,?,?,?,?)",
+    ).run(
+      id,
+      input.classId,
+      input.displayName.trim(),
+      input.avatarKey ?? AVATARS[count % AVATARS.length],
+      nowIso(),
+    );
+    if (!outer) db.exec("COMMIT");
+  } catch (error) {
+    if (!outer) db.exec("ROLLBACK");
+    throw error;
+  }
   return getStudent(db, id)!;
 }
 

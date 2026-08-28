@@ -102,20 +102,28 @@ export async function requestPlanChangeAction(
   }
 
   const db = getDb();
-  db.prepare("UPDATE schools SET plan = ?, licensed_students = ? WHERE id = ?").run(
-    plan,
-    seats,
-    user.school_id,
-  );
+  const school = getSchool(db, user.school_id)!;
+  // Deliberately no UPDATE. Until sprint 42 this action wrote plan and
+  // licensed_students straight to the school row while telling the
+  // administrator it was recording an intent, which meant a school could raise
+  // its own paid entitlement by typing a bigger number into a form labelled
+  // "Request a quote". What a school has bought is the vendor's record, not the
+  // school's, and a seat count a customer can edit cannot appear on an invoice.
   recordAudit(db, {
     schoolId: user.school_id,
     actorLabel: user.name,
     action: "plan.change_requested",
-    detail: `Plan intent recorded: ${plan}, ${seats} licensed students. No billing action taken.`,
+    detail:
+      `Quote requested: ${plan}, ${seats} licensed students. ` +
+      `Current entitlement unchanged at ${school.plan}, ${school.licensed_students} seats. ` +
+      "No plan change, no seat change and no billing action.",
   });
   revalidatePath("/admin/program");
   return {
-    ok: "Recorded. Your account contact will follow up with a quote — nothing has been charged.",
+    ok:
+      `Request sent to your account contact. Your plan is still ${school.plan} with ` +
+      `${school.licensed_students} licensed students, and it stays that way until a new ` +
+      "agreement is in place. Nothing has been charged and nothing has changed.",
   };
 }
 

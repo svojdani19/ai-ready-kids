@@ -15,6 +15,12 @@ export function createTestDb(): { db: Db; cleanup: () => void } {
   const dir = mkdtempSync(join(tmpdir(), "airk-test-"));
   const db = openDatabase(join(dir, "test.db"));
   seed(db);
+  // Sprint 42 made enrolment check the school's licensed seats. Almost no test
+  // in this suite is about entitlement, and many enrol far more children than
+  // the demo school buys, so the fixture is licensed generously. Tests that do
+  // mean to exercise the cap call `setLicensedSeats` and say the number out
+  // loud, which is clearer than depending on whatever the seed happened to buy.
+  db.prepare("UPDATE schools SET licensed_students = 100000").run();
   return {
     db,
     cleanup: () => {
@@ -67,4 +73,9 @@ export function playTo(
 export function playToEnd(db: Db, studentId: string, mission: Mission): void {
   playTo(db, studentId, mission, "\u0000never");
   completeAttempt(db, studentId, mission.id);
+}
+
+/** Set a school's licensed seats. For tests that are about the seat cap. */
+export function setLicensedSeats(db: Db, schoolId: string, seats: number): void {
+  db.prepare("UPDATE schools SET licensed_students = ? WHERE id = ?").run(seats, schoolId);
 }

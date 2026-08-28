@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/session";
+import { licenceStatus } from "@/lib/repo/entitlement";
 import { getSchool } from "@/lib/repo/school";
 import { buildSchoolReport } from "@/lib/repo/report";
 import { listBenchmarksForSchool } from "@/lib/repo/progress";
@@ -65,6 +66,13 @@ export default async function AdminProgram() {
     },
   ];
 
+  // Read-only entitlement, computed rather than displayed from a field the
+  // school can edit. Seats in use are children on active rosters; archived
+  // cohorts kept for retention do not consume a new year's places.
+  const licence = licenceStatus(db, school.id);
+  const planLabel =
+    school.plan === "school" ? "Whole school" : school.plan === "district" ? "District" : "Classroom";
+
   return (
     <div>
       <PageHeader
@@ -79,8 +87,13 @@ export default async function AdminProgram() {
       />
 
       <div className="grid gap-3 sm:grid-cols-4">
-        <Stat label="Plan" value={school.plan === "school" ? "Whole school" : school.plan === "district" ? "District" : "Classroom"} />
-        <Stat label="Licensed students" value={school.licensed_students} hint={`${report.totals.students} enrolled`} />
+        <Stat label="Plan" value={planLabel} />
+        <Stat
+          label="Student places"
+          value={`${licence.used} of ${licence.licensed}`}
+          hint={licence.remaining === 0 ? "No places left" : `${licence.remaining} left`}
+          tone={licence.remaining === 0 ? "berry" : "neutral"}
+        />
         <Stat label="Term started" value={formatDate(school.term_starts_on)} />
         <Stat
           label={renewalIn < 0 ? "Renewal overdue" : "Renews"}
@@ -148,9 +161,16 @@ export default async function AdminProgram() {
           </PanelBody>
         </Panel>
 
-        <Panel title="Subscription">
+        <Panel
+          title="Subscription"
+          description="Your entitlement is shown read-only. Requesting a quote does not change it."
+        >
           <PanelBody>
-            <PlanForm plan={school.plan} seats={school.licensed_students} />
+            <PlanForm
+              plan={school.plan}
+              seats={school.licensed_students}
+              planLabel={planLabel}
+            />
           </PanelBody>
         </Panel>
       </div>
