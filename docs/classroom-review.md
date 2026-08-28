@@ -375,6 +375,11 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       hundred words and remove the sourcing, the consent question and the
       exposure at once, and let the clues be graded and one case be a clean
       decoy, which real material never reliably is.
+- [ ] **Accessibility does not inherit across a breakpoint.** A responsive
+      variant is a separate implementation. When a keyboard, focus or labelling
+      fix lands on one side of a media query, check the other: the question is
+      not whether it was in scope, but whether it is now worse by comparison.
+      The same control must not be operable at one width and not at another.
 - [ ] **A dismissal says where focus went.** For anything closable — menu,
       overlay, two-step confirm, dialog — ask not only "is it shut?" but "where
       is the user now?". Escape should return focus to the control that opened

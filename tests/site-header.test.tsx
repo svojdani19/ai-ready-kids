@@ -182,3 +182,158 @@ describe("the marketing menu gives focus back when Escape closes it", () => {
     expect(menu.textContent).not.toMatch(/certif/i);
   });
 });
+
+/**
+ * Sprint 46. Sprint 45 gave the desktop disclosure a keyboard exit and left the
+ * responsive panel without one, so the same navigation escaped differently
+ * depending on how wide the window was. On a tablet that panel covers most of
+ * the screen and the only way out was to find the Menu button again.
+ *
+ * jsdom renders both the desktop and the mobile markup, because the split is a
+ * CSS breakpoint and there is no CSS here. That is useful: it lets these tests
+ * drive the mobile panel directly, and it is also why the viewport-trap guard
+ * cannot be exercised by resizing — it is asserted through the focus-location
+ * rule instead, and checked for real in the browser.
+ */
+describe("the responsive menu escapes the same way the desktop one does", () => {
+  const openMobile = async () => {
+    const user = userEvent.setup();
+    render(<SiteHeader />);
+    const trigger = screen.getByRole("button", { name: /^menu$/i });
+    await user.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    const panel = document.getElementById("site-menu")!;
+    expect(panel.hidden).toBe(false);
+    return { user, trigger, panel };
+  };
+
+  const panelLink = (panel: HTMLElement, label: RegExp) =>
+    within(panel)
+      .getAllByRole("link")
+      .find((a) => label.test(a.textContent ?? ""))!;
+
+  it("closes on Escape and returns visible focus to the Menu trigger", async () => {
+    const { user, trigger, panel } = await openMobile();
+    const curriculum = panelLink(panel, /curriculum/i);
+
+    curriculum.focus();
+    expect(curriculum).toHaveFocus();
+
+    await user.keyboard("{Escape}");
+
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(panel.hidden).toBe(true);
+    expect(trigger).toHaveFocus();
+    expect(curriculum).not.toHaveFocus();
+    expect(curriculum).not.toBeVisible();
+  });
+
+  it("does not steal focus when it has already moved elsewhere", async () => {
+    const user = userEvent.setup();
+    render(
+      <div>
+        <SiteHeader />
+        <button type="button">Somewhere else</button>
+      </div>,
+    );
+    const trigger = screen.getByRole("button", { name: /^menu$/i });
+    await user.click(trigger);
+    const outside = screen.getByRole("button", { name: /somewhere else/i });
+    outside.focus();
+
+    await user.keyboard("{Escape}");
+
+    // The panel may close — that is a safe reset — but focus stays put. This is
+    // also the rule that protects the resize case: at desktop width the panel
+    // is CSS-hidden, so focus cannot be inside it and is never pulled back.
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(outside).toHaveFocus();
+    expect(trigger).not.toHaveFocus();
+  });
+
+  it("does not interfere with Escape while the panel is closed", async () => {
+    const user = userEvent.setup();
+    render(
+      <div>
+        <SiteHeader />
+        <button type="button">Somewhere else</button>
+      </div>,
+    );
+    const trigger = screen.getByRole("button", { name: /^menu$/i });
+    const outside = screen.getByRole("button", { name: /somewhere else/i });
+    outside.focus();
+
+    await user.keyboard("{Escape}");
+
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(outside).toHaveFocus();
+  });
+
+  it("does not pull focus back when a link in the panel is chosen", async () => {
+    const { user, trigger, panel } = await openMobile();
+    const families = panelLink(panel, /families/i);
+
+    await user.click(families);
+
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(trigger).not.toHaveFocus();
+  });
+
+  it("leaves ordinary focus alone when the trigger is toggled closed", async () => {
+    const { user, trigger, panel } = await openMobile();
+    const plans = panelLink(panel, /plans/i);
+    await user.click(trigger);
+
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(panel.hidden).toBe(true);
+    expect(document.activeElement).not.toBe(plans);
+  });
+
+  it("keeps working when the panel is opened again", async () => {
+    const { user, trigger, panel } = await openMobile();
+    panelLink(panel, /curriculum/i).focus();
+    await user.keyboard("{Escape}");
+    expect(trigger).toHaveFocus();
+
+    await user.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    panelLink(panel, /plans/i).focus();
+    await user.keyboard("{Escape}");
+
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(trigger).toHaveFocus();
+  });
+
+  it("does not reopen or double-close on a second Escape", async () => {
+    const { user, trigger, panel } = await openMobile();
+    panelLink(panel, /curriculum/i).focus();
+    await user.keyboard("{Escape}");
+    expect(trigger).toHaveFocus();
+
+    await user.keyboard("{Escape}");
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(trigger).toHaveFocus();
+  });
+
+  it("does not disturb the desktop disclosure", async () => {
+    const { user, trigger, panel } = await openMobile();
+    // The desktop triggers are in the same document here, because the split is
+    // a CSS breakpoint. Closing the panel must leave them exactly as they were.
+    const school = screen.getByRole("button", { name: /for your school/i });
+    expect(school).toHaveAttribute("aria-expanded", "false");
+
+    panelLink(panel, /curriculum/i).focus();
+    await user.keyboard("{Escape}");
+
+    expect(trigger).toHaveFocus();
+    expect(school).toHaveAttribute("aria-expanded", "false");
+    expect(school).not.toHaveFocus();
+
+    // And the desktop menu still escapes on its own terms afterwards.
+    await user.click(school);
+    screen.getByRole("link", { name: /^teachers/i }).focus();
+    await user.keyboard("{Escape}");
+    expect(school).toHaveFocus();
+    expect(school).toHaveAttribute("aria-expanded", "false");
+  });
+});

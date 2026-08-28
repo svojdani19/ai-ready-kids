@@ -178,11 +178,58 @@ function NavMenu({ group }: { group: NavGroup }) {
   );
 }
 
+/**
+ * Is this element actually rendered, as the browser sees it?
+ *
+ * Used to refuse focus to a trigger that CSS has taken away. jsdom does no
+ * layout — `offsetParent` is always null there and `checkVisibility` does not
+ * exist — so when the API is missing this trusts the caller's focus-location
+ * guard rather than reporting everything invisible and disabling the recovery
+ * the tests are checking.
+ */
+function isRenderedVisible(el: HTMLElement | null): boolean {
+  if (!el) return false;
+  const check = (el as HTMLElement & { checkVisibility?: () => boolean }).checkVisibility;
+  return typeof check === "function" ? check.call(el) : true;
+}
+
 export function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const mobileTrigger = useRef<HTMLButtonElement>(null);
+  const mobilePanel = useRef<HTMLDivElement>(null);
   // Closed on the tap that navigates rather than by watching the route, so
   // there is no effect correcting state after the fact.
   const close = () => setMobileOpen(false);
+
+  /**
+   * Escape closes the responsive panel too, and gives focus back.
+   *
+   * Sprint 45 fixed this for the desktop disclosure and left the narrow one
+   * alone, which meant the same navigation had a keyboard exit at one width and
+   * not at another. A keyboard or switch user on a tablet could only close this
+   * panel by finding the Menu button again, and it covers most of the screen.
+   *
+   * Two guards, the same pair the desktop menu uses, plus one more for the
+   * viewport. Focus has to be inside the panel, so Escape never yanks focus
+   * from wherever the user has already moved it. And the trigger has to be
+   * genuinely rendered: this panel and its button are `lg:hidden`, so a state
+   * that survives a resize to desktop leaves both CSS-hidden, and refocusing a
+   * button nobody can see would be the same trap in a new place. The state is
+   * still cleared, which is the safe reset.
+   */
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      const insidePanel = Boolean(mobilePanel.current?.contains(document.activeElement));
+      setMobileOpen(false);
+      if (insidePanel && isRenderedVisible(mobileTrigger.current)) {
+        mobileTrigger.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [mobileOpen]);
 
   return (
     <header className="sticky top-0 z-30 border-b-2 border-ink bg-paper/95 backdrop-blur">
@@ -217,6 +264,7 @@ export function SiteHeader() {
             Educator sign in
           </Link>
           <button
+            ref={mobileTrigger}
             type="button"
             aria-expanded={mobileOpen}
             aria-controls="site-menu"
@@ -231,7 +279,12 @@ export function SiteHeader() {
         </div>
       </div>
 
-      <div id="site-menu" hidden={!mobileOpen} className="border-t-2 border-ink bg-surface lg:hidden">
+      <div
+        ref={mobilePanel}
+        id="site-menu"
+        hidden={!mobileOpen}
+        className="border-t-2 border-ink bg-surface lg:hidden"
+      >
         <div className="mx-auto max-w-6xl px-5 py-4">
           {GROUPS.map((group) => (
             <div key={group.label} className="mb-4 last:mb-0">
