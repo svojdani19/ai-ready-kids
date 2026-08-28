@@ -388,6 +388,12 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       description carries a safety property, read it against the behaviour, not
       the name — and in a multi-step flow give every step its own answer, since
       the gate belongs at the write and not at the entrance.
+- [ ] **Where the output is the interface, reading it is the test.** Verifying
+      that a mechanism holds is not the same as verifying that the program says
+      something coherent about it. Run the command and read every line together:
+      a correct block under an incorrect all-clear is still a lie. A transcript
+      pasted into a review is a claim, and deserves the same scepticism as any
+      other — especially your own.
 - [ ] **Ask which columns feed something irreversible.** The danger of a value
       is not how likely it is to be wrong but what happens when it is. Trace
       every unconstrained field into the operations it drives, and validate

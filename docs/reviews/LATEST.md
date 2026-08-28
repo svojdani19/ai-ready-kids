@@ -7,6 +7,60 @@ likely to be.
 
 ---
 
+## Sprint 55 — correction to sprint 54: the transcript contradicted itself
+
+- **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-28-sprint-54.md`](2026-08-28-sprint-54.md), sprint 55
+  section.
+
+### The defect
+
+`scripts/purge.ts` branched the summary on `classesDeleted === 0` alone, so a
+blocked-only run printed *"Nothing is past its retention date. No records were
+deleted."* **immediately above** the BLOCKED section. For a blocked school
+whether anything is past its retention date is **unknowable** — that is the
+point of the block — so the all-clear is a claim the program cannot make.
+
+Sprint 54 existed to stop an operator mistaking a block for "nothing due", and
+this printed exactly that mistake into the log. **It is in that sprint's own
+verified transcript, which I quoted as proof the requirement was met.**
+
+### The fix
+
+The zero-deletion summary branches on `blocked.length`:
+
+| deletions | blocked | summary |
+|---|---|---|
+| 0 | 0 | *"Nothing is past its retention date. No records were deleted."* |
+| 0 | ≥1 | *"No records were deleted from schools with a recognised retention policy."* |
+| ≥1 | ≥1 | the deletion summary, plus the block |
+
+### Already verified — please do not redo
+
+- Typecheck, lint, **607 tests** (up from 604), Turbopack production build.
+- New `tests/purge-cli.test.ts` **runs the CLI as a subprocess** against seeded
+  temporary databases, because the wording *is* the safety property and reading
+  the source would only re-assert what I already believed. Three cases, one
+  **confirmed to fail against the sprint-54 script**: blocked-only (no all-clear
+  in stdout or stderr, the scoped sentence present, `BLOCKED` naming the school
+  and `-12`, exit **1**); nothing due and nothing blocked (original phrase, no
+  `BLOCKED`, exit **0**); and one school purged while another is blocked (both
+  the deletion summary and the block, still no all-clear, exit **1**).
+- **Real run with `retention_months = -12`**: the scoped sentence, then BLOCKED,
+  exit **1**. Restored to 12: the quiet-success line, exit **0**. Demo intact —
+  4 classes, 90 students, 885 attempts, 16 audit rows.
+- **No other scope touched.**
+
+### Where this is most likely still wrong
+
+- **Output is only guarded where a test reads it.** This is the first test in the
+  suite that runs a CLI and asserts on what it prints; `db:reset`, `seed` and the
+  build scripts are unchecked.
+- Everything under sprint 54 below still stands, including the unconstrained
+  column and `licensed_students` being unaudited.
+
+---
+
 ## Sprint 54 — P1: the retention window that could delete records early
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>

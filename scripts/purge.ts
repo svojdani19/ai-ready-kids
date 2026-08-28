@@ -16,7 +16,13 @@ const target = process.env.AIRK_DB_PATH ? resolve(process.env.AIRK_DB_PATH) : DE
 const db = openDatabase(target);
 const result = runScheduledPurge(db);
 
-if (result.classesDeleted === 0) {
+if (result.classesDeleted === 0 && result.blocked.length > 0) {
+  // Deliberately not "Nothing is past its retention date". For a blocked
+  // school that is unknowable: there is no valid schedule to be past. Claiming
+  // an all-clear and then printing a block underneath is the contradiction
+  // sprint 54 set out to remove and then printed in its own transcript.
+  console.log("No records were deleted from schools with a recognised retention policy.");
+} else if (result.classesDeleted === 0) {
   console.log("Nothing is past its retention date. No records were deleted.");
 } else {
   console.log(
