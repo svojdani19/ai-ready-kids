@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { licenceStatus } from "@/lib/repo/entitlement";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/session";
@@ -27,6 +28,7 @@ export default async function AdminOverview() {
   const db = getDb();
   const now = new Date();
   const report = buildSchoolReport(db, user.school_id, now);
+  const licence = licenceStatus(db, user.school_id);
   const renewalInDays = daysBetween(now, new Date(report.school.termRenewsOn));
 
   return (
@@ -43,7 +45,18 @@ export default async function AdminOverview() {
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Students enrolled" value={report.totals.students} hint={`${report.school.licensedStudents} licensed`} />
+        <Stat
+          label="Students enrolled"
+          value={report.totals.students}
+          // The count of children is always real; what they are licensed
+          // against may not be, and an unrecognised value is not shown as one.
+          hint={
+            licence.recognised
+              ? `${licence.licensed} licensed`
+              : "Seat licence needs configuration — no new students can be enrolled"
+          }
+          tone={licence.recognised ? "neutral" : "berry"}
+        />
         <Stat label="Classes" value={report.totals.classes} hint={`${report.totals.teachers} teachers`} />
         <Stat
           label="Assigned work completed"

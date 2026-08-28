@@ -7,6 +7,12 @@ import { canAdministerClass } from "@/lib/auth/access";
 import {
   ClassroomLimitError,
   classroomLimitRefusal,
+  isRecognisedSeatCount,
+  licenceStatus,
+  LicenceNotRecognisedError,
+  MAX_LICENSED_STUDENTS,
+  MIN_LICENSED_STUDENTS,
+  licenceNotRecognisedRefusal,
   PlanNotRecognisedError,
   planNotRecognisedRefusal,
   RestoreExceedsLicenceError,
@@ -109,8 +115,13 @@ export async function requestPlanChangeAction(
   const seats = Number(formData.get("licensed_students"));
 
   if (!PLANS.includes(plan as (typeof PLANS)[number])) return { error: "Choose a plan." };
-  if (!Number.isInteger(seats) || seats < 1 || seats > 5000) {
-    return { error: "Licensed students must be a whole number between 1 and 5000." };
+  // One source with the domain, so an administrator cannot request a number the
+  // repository would then refuse, and the repository cannot accept one the form
+  // would reject.
+  if (!isRecognisedSeatCount(seats)) {
+    return {
+      error: `Licensed students must be a whole number between ${MIN_LICENSED_STUDENTS} and ${MAX_LICENSED_STUDENTS}.`,
+    };
   }
 
   const db = getDb();
@@ -121,21 +132,31 @@ export async function requestPlanChangeAction(
   // its own paid entitlement by typing a bigger number into a form labelled
   // "Request a quote". What a school has bought is the vendor's record, not the
   // school's, and a seat count a customer can edit cannot appear on an invoice.
+  // The current entitlement is only quoted back when it is a number this
+  // product would sell. Repeating a malformed one — "-5 seats" — states it as
+  // the agreement in an audit trail a school may later rely on.
+  const current = licenceStatus(db, user.school_id);
+  const currentSeats = current.recognised
+    ? `${current.licensed} seats`
+    : "a seat licence that needs configuration";
   recordAudit(db, {
     schoolId: user.school_id,
     actorLabel: user.name,
     action: "plan.change_requested",
     detail:
       `Quote requested: ${plan}, ${seats} licensed students. ` +
-      `Current entitlement unchanged at ${school.plan}, ${school.licensed_students} seats. ` +
+      `Current entitlement unchanged at ${school.plan}, ${currentSeats}. ` +
       "No plan change, no seat change and no billing action.",
   });
   revalidatePath("/admin/program");
   return {
-    ok:
-      `Request sent to your account contact. Your plan is still ${school.plan} with ` +
-      `${school.licensed_students} licensed students, and it stays that way until a new ` +
-      "agreement is in place. Nothing has been charged and nothing has changed.",
+    ok: current.recognised
+      ? `Request sent to your account contact. Your plan is still ${school.plan} with ` +
+        `${current.licensed} licensed students, and it stays that way until a new ` +
+        "agreement is in place. Nothing has been charged and nothing has changed."
+      : "Request sent to your account contact. Your seat licence still needs configuration, " +
+        "and this request has not changed it — nothing has been charged and nothing has " +
+        "changed. Your account contact can correct the licence and quote the new one together.",
   };
 }
 
@@ -515,6 +536,15 @@ export async function restoreClassAction(classId: string): Promise<{ error?: str
           detail: `Restoring ${classroom.name} was declined. ${error.active} of ${error.limit} active classes on the ${error.plan} plan.`,
         });
         return { error: classroomLimitRefusal(error, "restore") };
+      }
+      if (error instanceof LicenceNotRecognisedError) {
+        recordAudit(db, {
+          schoolId: user.school_id,
+          actorLabel: user.name,
+          action: "class.restore_blocked_by_licence_config",
+          detail: `Restoring ${classroom.name} was declined: the school's seat licence is not a recognised number. Nothing was changed.`,
+        });
+        return { error: licenceNotRecognisedRefusal("restore", school.contact_name) };
       }
       if (error instanceof RestoreExceedsLicenceError) {
         // Counts only. Which class and how many children is a fact about the

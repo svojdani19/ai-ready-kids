@@ -394,6 +394,12 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       a correct block under an incorrect all-clear is still a lie. A transcript
       pasted into a review is a claim, and deserves the same scepticism as any
       other — especially your own.
+- [ ] **Make the invalid state unrepresentable, and let the compiler find the
+      callers.** A guard protects the paths you remember; a type protects the
+      ones you do not. Where a stored value can be meaningless, do not hand
+      callers a number with no way to know — discriminate the result so the
+      absent case has no field to read, and follow the type errors. That list is
+      longer and more honest than the one you would have written.
 - [ ] **Ask which columns feed something irreversible.** The danger of a value
       is not how likely it is to be wrong but what happens when it is. Trace
       every unconstrained field into the operations it drives, and validate

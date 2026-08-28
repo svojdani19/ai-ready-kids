@@ -2,6 +2,7 @@ import "server-only";
 import {
   assertRoomForActiveClass,
   LicenceExceededError,
+  LicenceNotRecognisedError,
   licenceStatus,
   RestoreExceedsLicenceError,
 } from "@/lib/repo/entitlement";
@@ -242,6 +243,7 @@ export function restoreClass(db: Db, id: string): void {
       // classroom plan with one class already running hits this first.
       assertRoomForActiveClass(db, classroom.school_id);
       const status = licenceStatus(db, classroom.school_id);
+      if (!status.recognised) throw new LicenceNotRecognisedError();
       const roster = (
         db.prepare("SELECT COUNT(*) AS n FROM students WHERE class_id = ?").get(id) as { n: number }
       ).n;
@@ -322,6 +324,11 @@ export function createStudent(
   if (!outer) db.exec("BEGIN IMMEDIATE");
   try {
     const status = licenceStatus(db, owner.school_id);
+    // Configuration before capacity. A school whose seat licence is not a
+    // recognised contract number has not exceeded anything, and comparing
+    // against the stored value would classify every enrolment as an overage —
+    // which with a negative licence is exactly what happened.
+    if (!status.recognised) throw new LicenceNotRecognisedError();
     if (status.remaining < 1) {
       throw new LicenceExceededError(status.used, status.licensed);
     }

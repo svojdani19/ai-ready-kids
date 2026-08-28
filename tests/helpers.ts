@@ -20,7 +20,11 @@ export function createTestDb(): { db: Db; cleanup: () => void } {
   // the demo school buys, so the fixture is licensed generously. Tests that do
   // mean to exercise the cap call `setLicensedSeats` and say the number out
   // loud, which is clearer than depending on whatever the seed happened to buy.
-  db.prepare("UPDATE schools SET licensed_students = 100000").run();
+  // 5000 is the maximum this product sells, and sprint 56 made anything outside
+  // 1-5000 an unrecognised contract value — including the 100000 this fixture
+  // used to write, which was itself a number no school could buy. Still far
+  // more than any test enrols.
+  db.prepare("UPDATE schools SET licensed_students = 5000").run();
   return {
     db,
     cleanup: () => {

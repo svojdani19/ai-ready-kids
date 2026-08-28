@@ -124,9 +124,18 @@ export default async function AdminProgram() {
         />
         <Stat
           label="Student places"
-          value={`${licence.used} of ${licence.licensed}`}
-          hint={licence.remaining === 0 ? "No places left" : `${licence.remaining} left`}
-          tone={licence.remaining === 0 ? "berry" : "neutral"}
+          // A stored value the product would not sell is never presented as a
+          // purchased entitlement. "90 of -5" and "5001 licensed" both read as
+          // contract facts, and neither was one.
+          value={licence.recognised ? `${licence.used} of ${licence.licensed}` : String(licence.used)}
+          hint={
+            !licence.recognised
+              ? "Seat licence needs configuration — no new students can be enrolled"
+              : licence.remaining === 0
+                ? "No places left"
+                : `${licence.remaining} left`
+          }
+          tone={!licence.recognised || licence.remaining === 0 ? "berry" : "neutral"}
         />
         <Stat label="Term started" value={formatDate(school.term_starts_on)} />
         <Stat
@@ -202,7 +211,7 @@ export default async function AdminProgram() {
           <PanelBody>
             <PlanForm
               plan={school.plan}
-              seats={school.licensed_students}
+              seats={licence.recognised ? licence.licensed : null}
               planLabel={label}
             />
           </PanelBody>

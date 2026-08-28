@@ -197,6 +197,65 @@ export function assertRoomForActiveClass(db: Db, schoolId: string): void {
   }
 }
 
+/**
+ * The seat counts this product recognises as a contract number.
+ *
+ * `schools.licensed_students` is unconstrained, and the column's INTEGER
+ * affinity does not stop SQLite storing a float or text. Until sprint 56 every
+ * value was trusted as a purchased entitlement: `-5` showed a buyer "90 of -5
+ * licensed", told teachers the school had exceeded a negative licence, was
+ * repeated back in quote messages as the current agreement, and misclassified
+ * every enrolment as an overage. `5001` granted capacity outside the range the
+ * product's own quote form accepts, and presented it as bought.
+ *
+ * The range is exactly the one `requestPlanChangeAction` already enforces, and
+ * it lives here so the two cannot drift — an administrator cannot request a
+ * number the domain would then refuse, and the domain cannot accept a number
+ * the form would reject.
+ *
+ * Nothing is coerced. No `Number()`, no clamp, no round, no `Math.max` into
+ * validity, and no falling back to a plan's suggested seats: a malformed vendor
+ * value is not evidence of what a school bought, and inventing an entitlement
+ * is the failure this replaces.
+ */
+export const MIN_LICENSED_STUDENTS = 1;
+export const MAX_LICENSED_STUDENTS = 5000;
+
+export function isRecognisedSeatCount(seats: unknown): seats is number {
+  return (
+    typeof seats === "number" &&
+    Number.isInteger(seats) &&
+    seats >= MIN_LICENSED_STUDENTS &&
+    seats <= MAX_LICENSED_STUDENTS
+  );
+}
+
+/**
+ * Raised when the stored seat count is not a contract number this product
+ * recognises. Distinct from `LicenceExceededError`: the school has not
+ * exceeded anything, its account record is wrong, and telling a teacher they
+ * are over a licence would be false as well as unhelpful.
+ */
+export class LicenceNotRecognisedError extends Error {
+  constructor() {
+    super("The seat licence on this school is not a recognised number.");
+    this.name = "LicenceNotRecognisedError";
+  }
+}
+
+/** Shown to staff. Never repeats the malformed value back to them. */
+export function licenceNotRecognisedRefusal(
+  action: "enrol" | "restore",
+  contactName: string,
+): string {
+  const verb = action === "enrol" ? "Adding a student" : "Restoring this class";
+  return (
+    `This school's seat licence needs configuration, so no new students can be enrolled. ` +
+    `${verb} has been declined and nothing has been changed — every class, roster and record ` +
+    `is exactly as it was. Ask ${contactName} to have the seat licence corrected on the account.`
+  );
+}
+
 /** Raised when an enrolment would take a school past its licensed seats. */
 export class LicenceExceededError extends Error {
   readonly used: number;
@@ -251,20 +310,26 @@ export class RestoreExceedsLicenceError extends LicenceExceededError {
   }
 }
 
-export interface LicenceStatus {
-  used: number;
-  licensed: number;
-  /** Never negative: a school whose licence was cut is at zero, not below it. */
-  remaining: number;
-}
+/**
+ * Seats in use, and — only when the stored number is a recognised contract
+ * value — what was bought and what is left.
+ *
+ * Discriminated on purpose. The old shape returned `licensed` and `remaining`
+ * whatever was stored, so every caller had a number to display and compare
+ * against, and none of them could tell that the number meant nothing. `used` is
+ * always real: it is counted from rosters, not read from the account.
+ */
+export type LicenceStatus =
+  | { recognised: true; used: number; licensed: number; remaining: number }
+  | { recognised: false; used: number };
 
 export function licenceStatus(db: Db, schoolId: string): LicenceStatus {
-  const licensed = (
-    db.prepare("SELECT licensed_students AS n FROM schools WHERE id = ?").get(schoolId) as
-      | { n: number }
-      | undefined
-  )?.n;
-  if (licensed === undefined) throw new Error("Unknown school");
+  const row = db.prepare("SELECT licensed_students AS n FROM schools WHERE id = ?").get(schoolId) as
+    | { n: unknown }
+    | undefined;
+  if (row === undefined) throw new Error("Unknown school");
   const used = countActiveRosterStudents(db, schoolId);
-  return { used, licensed, remaining: Math.max(0, licensed - used) };
+  if (!isRecognisedSeatCount(row.n)) return { recognised: false, used };
+  const licensed = row.n;
+  return { recognised: true, used, licensed, remaining: Math.max(0, licensed - used) };
 }

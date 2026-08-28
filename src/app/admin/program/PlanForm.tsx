@@ -26,7 +26,8 @@ export function PlanForm({
   planLabel,
 }: {
   plan: string;
-  seats: number;
+  /** Null when the stored seat count is not a recognised contract number. */
+  seats: number | null;
   planLabel: string;
 }) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
@@ -41,7 +42,8 @@ export function PlanForm({
           Your current entitlement
         </p>
         <p className="mt-1 text-sm font-semibold text-ink">
-          {planLabel} · {seats} licensed students
+          {planLabel} ·{" "}
+          {seats === null ? "seat licence needs configuration" : `${seats} licensed students`}
         </p>
         <p className="mt-1 text-sm leading-relaxed text-ink-soft">
           Set by your agreement and changed by your account contact, not from this page. The
@@ -68,7 +70,11 @@ export function PlanForm({
           type="number"
           min={1}
           max={5000}
-          defaultValue={seats}
+          // Deliberately empty when the stored value is not recognised.
+          // Prefilling it would offer a malformed number back as if it were
+          // the school's current agreement, and a submitted quote would then
+          // launder it into one.
+          defaultValue={seats ?? undefined}
           className={inputClass}
         />
       </Field>

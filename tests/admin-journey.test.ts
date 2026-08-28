@@ -12,6 +12,11 @@ import {
 import {
   ACTIVE_CLASS_LIMIT,
   ClassroomLimitError,
+  isRecognisedSeatCount,
+  LicenceNotRecognisedError,
+  licenceNotRecognisedRefusal,
+  MAX_LICENSED_STUDENTS,
+  MIN_LICENSED_STUDENTS,
   isKnownPlan,
   PLAN_LABEL,
   planLabel,
@@ -75,6 +80,17 @@ import { runScheduledPurge } from "@/lib/domain/purge";
 import { canTeachClass } from "@/lib/auth/access";
 import { classesOwnedBy, setAcademicYear, setBenchmarkWindow } from "@/lib/repo/school";
 import { getClass, reassignClass } from "@/lib/repo/classroom";
+
+/**
+ * Seats left, for tests that only care about the number. Narrows the
+ * discriminated status so an unrecognised licence fails loudly here rather
+ * than reading as zero.
+ */
+function remainingSeats(db: Db, schoolId: string): number {
+  const status = licenceStatus(db, schoolId);
+  if (!status.recognised) throw new Error(`Seat licence not recognised for ${schoolId}`);
+  return status.remaining;
+}
 
 let db: Db;
 let cleanup: () => void;
@@ -961,7 +977,7 @@ describe("licensed student places are the vendor's record and are enforced", () 
 
       // Three children, two classes, one school total.
       expect(countActiveRosterStudents(db, DEMO_SCHOOL)).toBe(3);
-      expect(licenceStatus(db, DEMO_SCHOOL)).toEqual({ used: 3, licensed: 5, remaining: 2 });
+      expect(licenceStatus(db, DEMO_SCHOOL)).toEqual({ recognised: true, used: 3, licensed: 5, remaining: 2 });
 
       // The cap is the school's, not the class's: filling it from the other
       // class blocks this one.
@@ -984,7 +1000,7 @@ describe("licensed student places are the vendor's record and are enforced", () 
       // the number sold is a cap that sells one fewer than it says.
       const last = createStudent(db, { classId: DEMO_CLASS, displayName: "Cc C." });
       expect(last.id).toBeTruthy();
-      expect(licenceStatus(db, DEMO_SCHOOL).remaining).toBe(0);
+      expect(remainingSeats(db, DEMO_SCHOOL)).toBe(0);
 
       let raised: unknown;
       try {
@@ -1016,13 +1032,13 @@ describe("licensed student places are the vendor's record and are enforced", () 
       createStudent(db, { classId: DEMO_CLASS, displayName: "Old A." });
       createStudent(db, { classId: DEMO_CLASS, displayName: "Old B." });
       createStudent(db, { classId: DEMO_CLASS, displayName: "Old C." });
-      expect(licenceStatus(db, DEMO_SCHOOL).remaining).toBe(0);
+      expect(remainingSeats(db, DEMO_SCHOOL)).toBe(0);
 
       // Last year's cohort is archived, not deleted: the school keeps it for
       // its retention period. Those desks are empty now.
       archiveClass(db, DEMO_CLASS);
       expect(countActiveRosterStudents(db, DEMO_SCHOOL)).toBe(0);
-      expect(licenceStatus(db, DEMO_SCHOOL).remaining).toBe(3);
+      expect(remainingSeats(db, DEMO_SCHOOL)).toBe(3);
 
       const thisYear = createClass(db, {
         schoolId: DEMO_SCHOOL,
@@ -1091,8 +1107,8 @@ describe("licensed student places are the vendor's record and are enforced", () 
       createStudent(db, { classId: DEMO_CLASS, displayName: "Ours A." });
       createStudent(db, { classId: DEMO_CLASS, displayName: "Ours B." });
       // Our school is full. Theirs is untouched by that.
-      expect(licenceStatus(db, DEMO_SCHOOL).remaining).toBe(0);
-      expect(licenceStatus(db, "sch_far")).toEqual({ used: 0, licensed: 1, remaining: 1 });
+      expect(remainingSeats(db, DEMO_SCHOOL)).toBe(0);
+      expect(licenceStatus(db, "sch_far")).toEqual({ recognised: true, used: 0, licensed: 1, remaining: 1 });
 
       createStudent(db, { classId: theirClass.id, displayName: "Theirs A." });
       expect(countActiveRosterStudents(db, DEMO_SCHOOL)).toBe(2);
@@ -1188,7 +1204,7 @@ describe("restoring an archived cohort cannot take a school past its licence", (
       for (const n of ["New A.", "New B.", "New C.", "New D."]) {
         createStudent(db, { classId: thisYear.id, displayName: n });
       }
-      expect(licenceStatus(db, DEMO_SCHOOL)).toEqual({ used: 4, licensed: 4, remaining: 0 });
+      expect(licenceStatus(db, DEMO_SCHOOL)).toEqual({ recognised: true, used: 4, licensed: 4, remaining: 0 });
 
       let raised: unknown;
       try {
@@ -1225,7 +1241,7 @@ describe("restoring an archived cohort cannot take a school past its licence", (
       // 2 active + 2 archived === 4 licensed. The school paid for those seats.
       restoreClass(db, DEMO_CLASS);
       expect(getClass(db, DEMO_CLASS)!.archived_at).toBeNull();
-      expect(licenceStatus(db, DEMO_SCHOOL)).toEqual({ used: 4, licensed: 4, remaining: 0 });
+      expect(licenceStatus(db, DEMO_SCHOOL)).toEqual({ recognised: true, used: 4, licensed: 4, remaining: 0 });
     } finally {
       cleanup();
     }
@@ -1239,7 +1255,7 @@ describe("restoring an archived cohort cannot take a school past its licence", (
       const full = newClass(db, "Room 104");
       createStudent(db, { classId: full.id, displayName: "Full A." });
       createStudent(db, { classId: full.id, displayName: "Full B." });
-      expect(licenceStatus(db, DEMO_SCHOOL).remaining).toBe(0);
+      expect(remainingSeats(db, DEMO_SCHOOL)).toBe(0);
 
       // No children, no seats, no reason to refuse.
       restoreClass(db, empty.id);
@@ -1297,7 +1313,7 @@ describe("restoring an archived cohort cannot take a school past its licence", (
 
       // Our school is full at one seat. That has nothing to do with theirs.
       createStudent(db, { classId: DEMO_CLASS, displayName: "Ours A." });
-      expect(licenceStatus(db, DEMO_SCHOOL).remaining).toBe(0);
+      expect(remainingSeats(db, DEMO_SCHOOL)).toBe(0);
 
       restoreClass(db, theirClass.id);
       expect(getClass(db, theirClass.id)!.archived_at).toBeNull();
@@ -1350,7 +1366,12 @@ describe("restoring an archived cohort cannot take a school past its licence", (
       for (const n of ["Fresh A.", "Fresh B.", "Fresh C."]) {
         createStudent(db, { classId: next.id, displayName: n });
       }
-      expect(licenceStatus(db, DEMO_SCHOOL)).toEqual({ used: 3, licensed: 3, remaining: 0 });
+      expect(licenceStatus(db, DEMO_SCHOOL)).toEqual({
+        recognised: true,
+        used: 3,
+        licensed: 3,
+        remaining: 0,
+      });
       // The archived records are still there to be retained, and restoring is
       // refused rather than deleting them.
       expect(listStudents(db, DEMO_CLASS)).toHaveLength(1);
@@ -2043,5 +2064,222 @@ describe("an unrecognised retention window deletes nothing", () => {
     // Manual deletion stays available: a deliberate admin act, not retention.
     expect(page).toContain('label="Delete now"');
     expect(page).toContain('confirmLabel="Delete permanently"');
+  });
+});
+
+
+/**
+ * Sprint 56. `schools.licensed_students` is unconstrained and was trusted as a
+ * contract number everywhere. `licenceStatus` returned the raw value with
+ * `Math.max` over it, and both write paths compared against it as an ordinary
+ * limit.
+ *
+ * With `-5` a buyer saw "90 of -5 licensed", teachers were told the school had
+ * exceeded a **negative** licence, quote messages repeated `-5` back as the
+ * current agreement, and every enrolment and restore was misclassified as an
+ * overage. With `5001` the repository granted capacity outside the 1-5000 range
+ * the product's own quote form accepts, and the buyer UI presented it as
+ * purchased. SQLite's INTEGER affinity does not stop a float or text either.
+ *
+ * A classroom blocker and a contract-integrity defect at once.
+ */
+describe("an unrecognised seat licence enrols nobody and claims nothing", () => {
+  const MALFORMED = [-12, -5, 0, 2.5, 5001, 1_000_000, Number.NaN, "30", null, undefined, {}];
+  /** What an INTEGER-affinity column will actually hold. */
+  const MALFORMED_STORABLE = [-12, -5, 0, 2.5, 5001, 1_000_000, "thirty"];
+
+  const withSeats = (seats: unknown) => {
+    const { db, cleanup } = createTestDb();
+    db.prepare("UPDATE schools SET licensed_students = ? WHERE id = ?").run(
+      seats as never,
+      DEMO_SCHOOL,
+    );
+    return { db, cleanup };
+  };
+
+  const counts = (db: Db) => ({
+    classes: (db.prepare("SELECT COUNT(*) AS n FROM classes").get() as { n: number }).n,
+    students: (db.prepare("SELECT COUNT(*) AS n FROM students").get() as { n: number }).n,
+    attempts: (db.prepare("SELECT COUNT(*) AS n FROM attempts").get() as { n: number }).n,
+  });
+
+  it("recognises exactly the range the quote form accepts", () => {
+    expect(MIN_LICENSED_STUDENTS).toBe(1);
+    expect(MAX_LICENSED_STUDENTS).toBe(5000);
+    // Boundaries are inclusive and valid.
+    for (const seats of [1, 2, 30, 400, 4999, 5000]) {
+      expect(isRecognisedSeatCount(seats), `${seats}`).toBe(true);
+    }
+    for (const seats of MALFORMED) {
+      expect(isRecognisedSeatCount(seats), JSON.stringify(seats)).toBe(false);
+    }
+    // The action and the domain read from one source, so they cannot drift.
+    const action = readFileSync(join(process.cwd(), "src/app/actions/admin.ts"), "utf8");
+    expect(action).toContain("isRecognisedSeatCount(seats)");
+    expect(action).not.toMatch(/seats\s*<\s*1\s*\|\|\s*seats\s*>\s*5000/);
+  });
+
+  it("exposes seats used but invents no entitlement", () => {
+    for (const seats of MALFORMED_STORABLE) {
+      const { db, cleanup } = withSeats(seats);
+      try {
+        const status = licenceStatus(db, DEMO_SCHOOL);
+        expect(status.recognised, JSON.stringify(seats)).toBe(false);
+        // Used is counted from rosters, so it is always real.
+        expect(status.used, JSON.stringify(seats)).toBeGreaterThan(0);
+        // And there is no licensed or remaining number to display or compare.
+        expect(Object.hasOwn(status, "licensed"), JSON.stringify(seats)).toBe(false);
+        expect(Object.hasOwn(status, "remaining"), JSON.stringify(seats)).toBe(false);
+      } finally {
+        cleanup();
+      }
+    }
+  });
+
+  it("refuses enrolment with a configuration error, not an overage claim", () => {
+    for (const seats of MALFORMED_STORABLE) {
+      const { db, cleanup } = withSeats(seats);
+      try {
+        const before = counts(db);
+        let raised: unknown;
+        try {
+          createStudent(db, { classId: DEMO_CLASS, displayName: "Nope N." });
+        } catch (error) {
+          raised = error;
+        }
+        expect(raised, JSON.stringify(seats)).toBeInstanceOf(LicenceNotRecognisedError);
+        // Emphatically not the overage error: nothing was exceeded.
+        expect(raised, JSON.stringify(seats)).not.toBeInstanceOf(LicenceExceededError);
+        expect(counts(db), JSON.stringify(seats)).toEqual(before);
+      } finally {
+        cleanup();
+      }
+    }
+  });
+
+  it("refuses a restore and leaves the archived class exactly as it was", () => {
+    const { db, cleanup } = withSeats(-5);
+    try {
+      archiveClass(db, DEMO_CLASS);
+      const archivedAt = getClass(db, DEMO_CLASS)!.archived_at;
+      const roster = listStudents(db, DEMO_CLASS).length;
+      const before = counts(db);
+
+      expect(() => restoreClass(db, DEMO_CLASS)).toThrow(LicenceNotRecognisedError);
+      expect(getClass(db, DEMO_CLASS)!.archived_at).toBe(archivedAt);
+      expect(listStudents(db, DEMO_CLASS)).toHaveLength(roster);
+      expect(counts(db)).toEqual(before);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("never shows a teacher the malformed value, and audits it as configuration", () => {
+    const message = licenceNotRecognisedRefusal("enrol", "Rosa Delgado");
+    expect(message).toMatch(/seat licence needs configuration/i);
+    expect(message).toMatch(/no new students can be enrolled/i);
+    expect(message).toMatch(/nothing has been changed/i);
+    expect(message).toMatch(/Rosa Delgado/);
+    // A teacher is not shown the raw number, and is not told they are over.
+    expect(message).not.toMatch(/-?\d/);
+    expect(message).not.toMatch(/exceed|over the licence|places are in use/i);
+
+    const teacher = readFileSync(join(process.cwd(), "src/app/actions/teacher.ts"), "utf8");
+    const admin = readFileSync(join(process.cwd(), "src/app/actions/admin.ts"), "utf8");
+    for (const [src, action] of [
+      [teacher, "roster.blocked_by_licence_config"],
+      [admin, "class.restore_blocked_by_licence_config"],
+    ] as const) {
+      const at = src.indexOf(action);
+      expect(at, action).toBeGreaterThan(-1);
+      const entry = src.slice(at, src.indexOf("});", at));
+      // Distinct from the overage audit, no child named, and the malformed
+      // value is not written into the trail either.
+      expect(entry).not.toMatch(/display_name|displayName|listStudents/);
+      expect(entry).not.toMatch(/licensed_students/);
+      expect(entry).toMatch(/not a recognised number/);
+    }
+  });
+
+  it("never markets a malformed value as purchased entitlement", () => {
+    const program = readFileSync(join(process.cwd(), "src/app/admin/program/page.tsx"), "utf8");
+    const overview = readFileSync(join(process.cwd(), "src/app/admin/page.tsx"), "utf8");
+    const form = readFileSync(join(process.cwd(), "src/app/admin/program/PlanForm.tsx"), "utf8");
+
+    for (const [src, page] of [[program, "program"], [overview, "overview"]] as const) {
+      expect(src, page).toContain("licence.recognised");
+      expect(src, page).toMatch(/Seat licence needs configuration/);
+      expect(src, page).toMatch(/No new students can be enrolled|no new students can be enrolled/);
+      // The raw column is never rendered directly on a buyer surface.
+      expect(src, page).not.toMatch(/\{school\.licensed_students\}/);
+      expect(src, page).not.toMatch(/school\.licensed_students\} licensed/);
+    }
+    // The quote form takes a nullable number and does not prefill a bad one.
+    expect(form).toContain("seats: number | null");
+    expect(form).toContain("defaultValue={seats ?? undefined}");
+    expect(form).toMatch(/seat licence needs configuration/);
+  });
+
+  it("keeps the quote request usable without laundering the bad value", () => {
+    const admin = readFileSync(join(process.cwd(), "src/app/actions/admin.ts"), "utf8");
+    const start = admin.indexOf("export async function requestPlanChangeAction");
+    const body = admin.slice(start, admin.indexOf("\nexport ", start + 10));
+    // A valid desired count is still accepted and validated by the one source.
+    expect(body).toContain("isRecognisedSeatCount(seats)");
+    // Neither the message nor the audit repeats the stored value as an
+    // agreement when it is not one.
+    expect(body).toContain("current.recognised");
+    expect(body).not.toMatch(/school\.licensed_students/);
+    expect(body).toMatch(/seat licence that needs configuration|seat licence still needs configuration/);
+    // And the request still changes nothing, as sprint 42 established.
+    expect(body).not.toMatch(/UPDATE schools SET plan/);
+  });
+
+  it("leaves valid boundaries and ordinary over-cap behaviour alone", () => {
+    // The bottom of the range: one seat, one child, then full.
+    const one = withSeats(1);
+    try {
+      one.db.prepare("DELETE FROM students").run();
+      const status = licenceStatus(one.db, DEMO_SCHOOL);
+      expect(status).toEqual({ recognised: true, used: 0, licensed: 1, remaining: 1 });
+      createStudent(one.db, { classId: DEMO_CLASS, displayName: "Only O." });
+      expect(() =>
+        createStudent(one.db, { classId: DEMO_CLASS, displayName: "Extra E." }),
+      ).toThrow(LicenceExceededError);
+    } finally {
+      one.cleanup();
+    }
+
+    // The top of the range is recognised and has room.
+    const many = withSeats(5000);
+    try {
+      const status = licenceStatus(many.db, DEMO_SCHOOL);
+      expect(status.recognised).toBe(true);
+      expect(status.recognised && status.licensed).toBe(5000);
+      expect(() =>
+        createStudent(many.db, { classId: DEMO_CLASS, displayName: "Fine F." }),
+      ).not.toThrow();
+    } finally {
+      many.cleanup();
+    }
+  });
+
+  it("checks configuration before capacity at both write paths", () => {
+    const repo = readFileSync(join(process.cwd(), "src/lib/repo/classroom.ts"), "utf8");
+    for (const fn of ["createStudent", "restoreClass"]) {
+      const start = repo.indexOf(`export function ${fn}(`);
+      const body = repo.slice(start, repo.indexOf("\n}", start));
+      expect(body, fn).toContain("LicenceNotRecognisedError");
+      const config = body.indexOf("status.recognised");
+      expect(config, fn).toBeGreaterThan(-1);
+      // Before any comparison against a number that may mean nothing.
+      const compare = body.search(/status\.remaining|status\.used \+ roster/);
+      if (compare > -1) expect(config, fn).toBeLessThan(compare);
+    }
+    const entitlement = readFileSync(join(process.cwd(), "src/lib/repo/entitlement.ts"), "utf8");
+    // No coercion anywhere near the stored value.
+    expect(entitlement).not.toMatch(/Number\(\s*row\.n/);
+    expect(entitlement).not.toMatch(/licensed_students\s*\?\?/);
+    expect(entitlement).not.toMatch(/Math\.(min|round)\([^)]*licensed/);
   });
 });

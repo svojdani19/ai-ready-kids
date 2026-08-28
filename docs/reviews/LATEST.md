@@ -7,6 +7,93 @@ likely to be.
 
 ---
 
+## Sprint 56 — P1: the seat count nobody checked
+
+- **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-28-sprint-56.md`](2026-08-28-sprint-56.md)
+- **Review trail:** sprints 01–48 built the curriculum and audited what the
+  product permits, promises and does; 49–51 made the subscription term real;
+  52–53 the classroom-plan limit and its fail-open correction; 54–55 the
+  retention window and its CLI wording. **Sprint 56 closes the
+  unconstrained-column family: `plan`, `retention_months` and now
+  `licensed_students`.**
+
+### What changed
+
+1. **`schools.licensed_students` was trusted as a contract number everywhere.**
+   With `-5` a buyer saw *"90 of -5 licensed"*, teachers were told the school had
+   exceeded a **negative** licence, quote copy repeated `-5` as the current
+   agreement, and **every** enrolment and restore was misclassified as an
+   overage. With `5001` the repository granted capacity outside the 1–5000 range
+   the product's own quote form accepts, presented as purchased.
+2. **One recognised policy**: integer, 1–5000 — **exactly the range
+   `requestPlanChangeAction` already enforced**, now read from one place by both,
+   so the form and the domain cannot drift. **Nothing coerced**: no `Number()`,
+   clamp, round, `Math.max` into validity, or plan-suggestion default.
+3. **`LicenceStatus` is discriminated.** `used` is always real; when the stored
+   number is not a contract value there is **no `licensed` and no `remaining`**
+   to display or compare. Making it unrepresentable surfaced all eleven consumers
+   at compile time — which is how the two buyer pages were found.
+4. **Both write paths fail closed before the capacity comparison**, throwing
+   `LicenceNotRecognisedError` — distinct from `LicenceExceededError`, since
+   nothing was exceeded. Nothing written, nothing removed or changed. Valid
+   1–5000 and legitimate over-cap behaviour unchanged.
+5. **Staff see a configuration message with no digits in it** — asserted — and
+   audits use `*_blocked_by_licence_config`, distinct from the overage actions,
+   with no child named and **the raw value not written into the trail**.
+6. **Buyer surfaces say "Seat licence needs configuration — no new students can
+   be enrolled"** on both Program status and School overview, aggregates intact.
+   **The quote form does not prefill a malformed value**, and the success message
+   and audit no longer repeat it as an entitlement.
+
+### Already verified — please do not redo
+
+- Typecheck, lint, **616 tests** (up from 607), Turbopack production build.
+- Nine cases, **all failing against the previous code** when stashed. Sweep of
+  `-12, -5, 0, 2.5, 5001, 1_000_000, NaN, "30", null, undefined, {}` for the
+  classifier and the storable subset — including text `"thirty"` — through the
+  database: no enrolment, no restore, no class or child mutation with counts
+  compared table by table, no success audit, distinct config audit and refusal,
+  the raw value never marketed as entitlement, and the quote request still usable
+  without changing the stored value. Boundaries **1 and 5000** valid; ordinary
+  over-cap unchanged. Drift guards over classifier, both repository paths
+  (configuration checked *before* capacity), both actions and both buyer pages.
+- **Fixture correction:** `createTestDb` had licensed **100000** seats since
+  sprint 42 — a number no school could buy. Now 5000, the real maximum.
+- **Browser at 1280×800 (`-5`)**: `-5` appears **nowhere** on either buyer page,
+  quote field **empty**, aggregates intact; a quote for 150 succeeded saying the
+  licence still needs configuration, stored value stayed `-5`, audit read *"a
+  seat licence that needs configuration"*; teacher add refused with **no digits
+  in the message**.
+- **Browser at 768×1024 (`5001`)**: both pages show the configuration state with
+  `5001` **nowhere**; admin Restore refused, class still Archived; no overflow.
+- **Recovery**: at 120, Program reads *"90 of 120 | 30 left"* and the quote field
+  prefills `120`.
+- Demo restored: plan school, 120 seats, retention 12, four active classes, 90
+  students, 885 attempts, 16 audit rows.
+- **No schema, billing, child fields, LMS/SIS, chatbot, telemetry or risk
+  scoring.**
+
+### Where this is most likely still wrong — best places to push
+
+- **The column is still unconstrained.** Safe, visible and recoverable; not
+  prevented. A CHECK constraint needs a migration.
+- **The family is closed, but the dates are not.** `term_starts_on`,
+  `term_renews_on`, `year_starts_on` and `year_ends_on` are validated on write
+  and read without defence — sprint 49's `subscriptionState` treats an empty
+  renewal date as never lapsing, but a malformed one (`"soon"`, `"2026-13-45"`)
+  has not been swept.
+- Everything under sprints 49–55 still stands.
+- **Twenty-four mission guides have not been read for the real-material defect
+  class** — sprints 37–41. **Twenty-six missions have untraced shared scenes** —
+  sprint 36.
+- **`src/app/(site)/privacy/page.tsx` has two unused-import lint warnings.**
+- **Only one previous schema shape is recognised** — sprint 34.
+- **The limiter is per process** — sprint 30. **The instrument is unequated** —
+  sprint 24. **Every mission has been read once, none twice.**
+
+---
+
 ## Sprint 55 — correction to sprint 54: the transcript contradicted itself
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>

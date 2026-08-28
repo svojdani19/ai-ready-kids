@@ -22,6 +22,8 @@ import {
   ClassroomLimitError,
   classroomLimitRefusal,
   LicenceExceededError,
+  LicenceNotRecognisedError,
+  licenceNotRecognisedRefusal,
   PlanNotRecognisedError,
   planNotRecognisedRefusal,
 } from "@/lib/repo/entitlement";
@@ -192,7 +194,20 @@ export async function addStudentAction(
     try {
       createStudent(db, { classId, displayName });
     } catch (error) {
-      if (error instanceof LicenceExceededError) {
+      if (error instanceof LicenceNotRecognisedError) {
+      const school = getSchool(db, user.school_id)!;
+      recordAudit(db, {
+        schoolId: user.school_id,
+        actorLabel: user.name,
+        // Not "blocked_by_licence": nothing was exceeded. And the malformed
+        // value is not written here either — an audit is a record of what
+        // happened, and what happened is that the account needs fixing.
+        action: "roster.blocked_by_licence_config",
+        detail: `An enrolment was declined in ${classroom.name}: the school's seat licence is not a recognised number. Nothing was changed.`,
+      });
+      return { error: licenceNotRecognisedRefusal("enrol", school.contact_name) };
+    }
+    if (error instanceof LicenceExceededError) {
         const school = getSchool(db, user.school_id)!;
         // No row was written, and no success audit. The refusal is recorded
         // because a school buyer needs to see that the cap did something, and it
