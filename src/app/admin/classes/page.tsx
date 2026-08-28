@@ -4,6 +4,7 @@ import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/session";
 import { listAssignments, listClasses, listStudents } from "@/lib/repo/classroom";
 import { getSchool, listUsers } from "@/lib/repo/school";
+import { classroomAllowance } from "@/lib/repo/entitlement";
 import {
   archiveClassAction,
   deleteClassDataAction,
@@ -28,6 +29,9 @@ export default async function AdminClasses() {
   // fallback meant every new class was still being created in 2025-2026.
   const schoolYear = school.academic_year;
 
+  // The plan's room allowance, next to the form that would spend it.
+  const rooms = classroomAllowance(db, user.school_id);
+
   const rows = classes.map((c) => ({
     classroom: c,
     students: listStudents(db, c.id).length,
@@ -43,7 +47,14 @@ export default async function AdminClasses() {
         description={`${school.name} · ${schoolYear}. Archiving keeps a finished class out of the way without changing when its records are deleted. Deleting removes its roster and every record immediately.`}
       />
 
-      <Panel title="Create a class">
+      <Panel
+        title="Create a class"
+        description={
+          rooms.limit === null
+            ? `${rooms.active} active. Archived classes are kept and do not count.`
+            : `Active classrooms: ${rooms.active} of ${rooms.limit}. Archived classes are kept and do not count.`
+        }
+      >
         <PanelBody>
           {teachers.length === 0 ? (
             <EmptyState title="Add a teacher first">

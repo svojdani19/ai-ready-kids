@@ -18,7 +18,11 @@ import {
   unassignMission,
 } from "@/lib/repo/classroom";
 import { getSchool, getUser, recordAudit } from "@/lib/repo/school";
-import { LicenceExceededError } from "@/lib/repo/entitlement";
+import {
+  ClassroomLimitError,
+  classroomLimitRefusal,
+  LicenceExceededError,
+} from "@/lib/repo/entitlement";
 import {
   asExpectedError,
   assertSubscriptionActive,
@@ -103,14 +107,28 @@ export async function createClassAction(
   // every new class was still being created in 2025-2026.
   const school = getSchool(db, user.school_id);
   if (!school) return { error: "That school could not be found." };
-  const created = createClass(db, {
-    schoolId: user.school_id,
-    teacherId: owner.id,
-    name,
-    grade,
-    schoolYear: school.academic_year,
-    yearEndsOn: school.year_ends_on,
-  });
+  let created;
+  try {
+    created = createClass(db, {
+      schoolId: user.school_id,
+      teacherId: owner.id,
+      name,
+      grade,
+      schoolYear: school.academic_year,
+      yearEndsOn: school.year_ends_on,
+    });
+  } catch (error) {
+    if (error instanceof ClassroomLimitError) {
+      recordAudit(db, {
+        schoolId: user.school_id,
+        actorLabel: user.name,
+        action: "class.blocked_by_plan",
+        detail: `A new class was declined. ${error.active} of ${error.limit} active classes on the ${error.plan} plan.`,
+      });
+      return { error: classroomLimitRefusal(error, "create") };
+    }
+    throw error;
+  }
   recordAudit(db, {
     schoolId: user.school_id,
     actorLabel: user.name,

@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/session";
 import { canAdministerClass } from "@/lib/auth/access";
-import { RestoreExceedsLicenceError } from "@/lib/repo/entitlement";
+import {
+  ClassroomLimitError,
+  classroomLimitRefusal,
+  RestoreExceedsLicenceError,
+} from "@/lib/repo/entitlement";
 import {
   asExpectedError,
   assertSubscriptionActive,
@@ -490,6 +494,17 @@ export async function restoreClassAction(classId: string): Promise<{ error?: str
     try {
       restoreClass(db, classId);
     } catch (error) {
+      if (error instanceof ClassroomLimitError) {
+        // Configuration facts only: how many rooms and on which plan. No child
+        // is named, and no success audit is written on this path.
+        recordAudit(db, {
+          schoolId: user.school_id,
+          actorLabel: user.name,
+          action: "class.restore_blocked_by_plan",
+          detail: `Restoring ${classroom.name} was declined. ${error.active} of ${error.limit} active classes on the ${error.plan} plan.`,
+        });
+        return { error: classroomLimitRefusal(error, "restore") };
+      }
       if (error instanceof RestoreExceedsLicenceError) {
         // Counts only. Which class and how many children is a fact about the
         // school; who those children are is not the licence's business.

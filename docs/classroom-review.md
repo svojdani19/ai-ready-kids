@@ -388,6 +388,12 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       description carries a safety property, read it against the behaviour, not
       the name — and in a multi-step flow give every step its own answer, since
       the gate belongs at the write and not at the entrance.
+- [ ] **A price with two numbers in it needs two enforcements.** "One classroom,
+      up to thirty students" is a conjunction, and it is easy to enforce only
+      the half that is simple to count. For every public plan claim, name each
+      quantity it promises and find the code that refuses when it is exceeded —
+      then bind the words and the limit together in a test, or one of them will
+      move alone.
 - [ ] **A stored fact that nothing reads means nothing.** For any field the
       product sells on — a term, a seat count, a plan, a window — ask what
       refuses when it is exceeded or expires. If the answer is "a label

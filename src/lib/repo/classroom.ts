@@ -1,5 +1,6 @@
 import "server-only";
 import {
+  assertRoomForActiveClass,
   LicenceExceededError,
   licenceStatus,
   RestoreExceedsLicenceError,
@@ -142,20 +143,31 @@ export function createClass(
     throw new Error("A class must be owned by a teacher at the same school.");
   }
   const id = newId("cls");
-  db.prepare(
-    `INSERT INTO classes (id, school_id, teacher_id, name, grade, join_code, school_year, year_ends_on, created_at, archived_at)
-     VALUES (?,?,?,?,?,?,?,?,?,NULL)`,
-  ).run(
-    id,
-    input.schoolId,
-    input.teacherId,
-    input.name,
-    input.grade,
-    generateJoinCode(db),
-    input.schoolYear,
-    input.yearEndsOn,
-    nowIso(),
-  );
+  // Count and insert in one write transaction, so two creations arriving
+  // together cannot both see the single slot free and both take it.
+  const outer = db.isTransaction;
+  if (!outer) db.exec("BEGIN IMMEDIATE");
+  try {
+    assertRoomForActiveClass(db, input.schoolId);
+    db.prepare(
+      `INSERT INTO classes (id, school_id, teacher_id, name, grade, join_code, school_year, year_ends_on, created_at, archived_at)
+       VALUES (?,?,?,?,?,?,?,?,?,NULL)`,
+    ).run(
+      id,
+      input.schoolId,
+      input.teacherId,
+      input.name,
+      input.grade,
+      generateJoinCode(db),
+      input.schoolYear,
+      input.yearEndsOn,
+      nowIso(),
+    );
+    if (!outer) db.exec("COMMIT");
+  } catch (error) {
+    if (!outer) db.exec("ROLLBACK");
+    throw error;
+  }
   return getClass(db, id)!;
 }
 
@@ -224,8 +236,11 @@ export function restoreClass(db: Db, id: string): void {
     if (!classroom) throw new Error("Unknown class");
 
     // Restoring an already-active class is a no-op, not an overage: its
-    // students are in the active count already.
+    // students are in the active count already, and so is the class itself.
     if (classroom.archived_at) {
+      // The room before the seats. Both can refuse, and a school on the
+      // classroom plan with one class already running hits this first.
+      assertRoomForActiveClass(db, classroom.school_id);
       const status = licenceStatus(db, classroom.school_id);
       const roster = (
         db.prepare("SELECT COUNT(*) AS n FROM students WHERE class_id = ?").get(id) as { n: number }

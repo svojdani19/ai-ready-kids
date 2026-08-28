@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/session";
-import { licenceStatus } from "@/lib/repo/entitlement";
+import { classroomAllowance, licenceStatus } from "@/lib/repo/entitlement";
 import { getSchool } from "@/lib/repo/school";
 import { buildSchoolReport } from "@/lib/repo/report";
 import { listBenchmarksForSchool } from "@/lib/repo/progress";
@@ -70,6 +70,9 @@ export default async function AdminProgram() {
   // school can edit. Seats in use are children on active rosters; archived
   // cohorts kept for retention do not consume a new year's places.
   const licence = licenceStatus(db, school.id);
+  // Shown so an administrator on the classroom plan learns the limit before
+  // filling in the create form, not after.
+  const rooms = classroomAllowance(db, school.id);
   const planLabel =
     school.plan === "school" ? "Whole school" : school.plan === "district" ? "District" : "Classroom";
 
@@ -88,6 +91,18 @@ export default async function AdminProgram() {
 
       <div className="grid gap-3 sm:grid-cols-4">
         <Stat label="Plan" value={planLabel} />
+        <Stat
+          label="Active classrooms"
+          value={rooms.limit === null ? String(rooms.active) : `${rooms.active} of ${rooms.limit}`}
+          hint={
+            rooms.limit === null
+              ? "No limit on this plan"
+              : rooms.active >= rooms.limit
+                ? "Archive one to add another"
+                : "Archived classes do not count"
+          }
+          tone={rooms.limit !== null && rooms.active >= rooms.limit ? "berry" : "neutral"}
+        />
         <Stat
           label="Student places"
           value={`${licence.used} of ${licence.licensed}`}

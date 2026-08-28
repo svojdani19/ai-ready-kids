@@ -10,6 +10,11 @@ import {
   setLicensedSeats,
 } from "./helpers";
 import {
+  ACTIVE_CLASS_LIMIT,
+  ClassroomLimitError,
+  classroomAllowance,
+  classroomLimitRefusal,
+  countActiveClasses,
   countActiveRosterStudents,
   LicenceExceededError,
   licenceStatus,
@@ -1343,6 +1348,269 @@ describe("restoring an archived cohort cannot take a school past its licence", (
       expect(listStudents(db, DEMO_CLASS)).toHaveLength(1);
     } finally {
       cleanup();
+    }
+  });
+});
+
+
+/**
+ * Sprint 52. The public page sells "Single classroom · $390 / year · Up to 30
+ * students", and only the thirty was enforced. A school on the classroom plan
+ * could create any number of classes, split its thirty children across them,
+ * archive one and create another, and restore archived cohorts freely — so the
+ * product sold one classroom and licensed thirty students, which are different
+ * things. A buyer could not tell what $390 bought and the vendor gave away the
+ * difference.
+ */
+describe("the classroom plan includes one active classroom", () => {
+  const onClassroomPlan = (seats = 30) => {
+    const { db, cleanup } = createTestDb();
+    db.prepare("DELETE FROM students").run();
+    db.prepare("DELETE FROM classes").run();
+    db.prepare("UPDATE schools SET plan = 'classroom', licensed_students = ? WHERE id = ?").run(
+      seats,
+      DEMO_SCHOOL,
+    );
+    return { db, cleanup };
+  };
+
+  const makeClass = (db: Db, name: string) =>
+    createClass(db, {
+      schoolId: DEMO_SCHOOL,
+      teacherId: DEMO_TEACHER,
+      name,
+      grade: 3,
+      schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-19",
+    });
+
+  it("allows the first active class and refuses the second, writing nothing", () => {
+    const { db, cleanup } = onClassroomPlan();
+    try {
+      const first = makeClass(db, "Room A");
+      expect(first.id).toBeTruthy();
+      expect(classroomAllowance(db, DEMO_SCHOOL)).toEqual({
+        active: 1,
+        limit: 1,
+        plan: "classroom",
+      });
+
+      const before = listClasses(db, DEMO_SCHOOL, true).length;
+      let raised: unknown;
+      try {
+        makeClass(db, "Room B");
+      } catch (error) {
+        raised = error;
+      }
+      expect(raised).toBeInstanceOf(ClassroomLimitError);
+      expect((raised as ClassroomLimitError).active).toBe(1);
+      expect((raised as ClassroomLimitError).limit).toBe(1);
+      // No class row at all, not even an archived one.
+      expect(listClasses(db, DEMO_SCHOOL, true)).toHaveLength(before);
+      expect(countActiveClasses(db, DEMO_SCHOOL)).toBe(1);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("frees the slot when a class is archived, and keeps its records", () => {
+    const { db, cleanup } = onClassroomPlan();
+    try {
+      const first = makeClass(db, "Room A");
+      createStudent(db, { classId: first.id, displayName: "Kept K." });
+      archiveClass(db, first.id);
+
+      expect(countActiveClasses(db, DEMO_SCHOOL)).toBe(0);
+      const second = makeClass(db, "Room B");
+      expect(second.id).toBeTruthy();
+      // The archived cohort is untouched: kept for records, not consuming the
+      // room, exactly as archived classes do not consume seats.
+      expect(listStudents(db, first.id)).toHaveLength(1);
+      expect(getClass(db, first.id)!.archived_at).toBeTruthy();
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("refuses a restore while another class is active, touching nothing", () => {
+    const { db, cleanup } = onClassroomPlan();
+    try {
+      const old = makeClass(db, "Room A");
+      createStudent(db, { classId: old.id, displayName: "Old O." });
+      archiveClass(db, old.id);
+      const archivedAt = getClass(db, old.id)!.archived_at;
+      const current = makeClass(db, "Room B");
+      createStudent(db, { classId: current.id, displayName: "New N." });
+
+      let raised: unknown;
+      try {
+        restoreClass(db, old.id);
+      } catch (error) {
+        raised = error;
+      }
+      expect(raised).toBeInstanceOf(ClassroomLimitError);
+
+      // Still archived, on the same timestamp, with its records.
+      expect(getClass(db, old.id)!.archived_at).toBe(archivedAt);
+      expect(listStudents(db, old.id)).toHaveLength(1);
+      expect(countActiveClasses(db, DEMO_SCHOOL)).toBe(1);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("allows the restore once the slot is free", () => {
+    const { db, cleanup } = onClassroomPlan();
+    try {
+      const old = makeClass(db, "Room A");
+      archiveClass(db, old.id);
+      const current = makeClass(db, "Room B");
+      expect(() => restoreClass(db, old.id)).toThrow(ClassroomLimitError);
+
+      archiveClass(db, current.id);
+      restoreClass(db, old.id);
+      expect(getClass(db, old.id)!.archived_at).toBeNull();
+      expect(countActiveClasses(db, DEMO_SCHOOL)).toBe(1);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("treats restoring an already-active class as a no-op", () => {
+    const { db, cleanup } = onClassroomPlan();
+    try {
+      const only = makeClass(db, "Room A");
+      // It is already the one active class; restoring it must not count it
+      // twice and refuse a class that changes nothing.
+      expect(() => restoreClass(db, only.id)).not.toThrow();
+      expect(getClass(db, only.id)!.archived_at).toBeNull();
+      expect(countActiveClasses(db, DEMO_SCHOOL)).toBe(1);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("leaves school and district plans alone", () => {
+    for (const plan of ["school", "district"]) {
+      const { db, cleanup } = onClassroomPlan();
+      try {
+        db.prepare("UPDATE schools SET plan = ? WHERE id = ?").run(plan, DEMO_SCHOOL);
+        for (const name of ["Room A", "Room B", "Room C"]) makeClass(db, name);
+        expect(countActiveClasses(db, DEMO_SCHOOL), plan).toBe(3);
+        expect(classroomAllowance(db, DEMO_SCHOOL).limit, plan).toBeNull();
+      } finally {
+        cleanup();
+      }
+    }
+  });
+
+  it("never picks, archives or deletes a class when a school is already over", () => {
+    const { db, cleanup } = onClassroomPlan();
+    try {
+      // A database from before this rule, or after a downgrade: three active
+      // classes on a one-room plan. Nothing may be taken away to fix it.
+      db.prepare("UPDATE schools SET plan = 'school' WHERE id = ?").run(DEMO_SCHOOL);
+      const ids = ["Room A", "Room B", "Room C"].map((n) => makeClass(db, n).id);
+      db.prepare("UPDATE schools SET plan = 'classroom' WHERE id = ?").run(DEMO_SCHOOL);
+
+      expect(classroomAllowance(db, DEMO_SCHOOL)).toEqual({
+        active: 3,
+        limit: 1,
+        plan: "classroom",
+      });
+      // Read-only from here: the next class is refused, and all three survive.
+      expect(() => makeClass(db, "Room D")).toThrow(ClassroomLimitError);
+      for (const id of ids) {
+        expect(getClass(db, id)!.archived_at).toBeNull();
+      }
+      expect(countActiveClasses(db, DEMO_SCHOOL)).toBe(3);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("cannot be oversubscribed by two repository paths racing", () => {
+    const { db, cleanup } = onClassroomPlan();
+    try {
+      const parked = makeClass(db, "Room A");
+      archiveClass(db, parked.id);
+      expect(countActiveClasses(db, DEMO_SCHOOL)).toBe(0);
+
+      // The two ways to take the slot, back to back. Whichever wins, the other
+      // must be refused: the check and the write share one transaction, so a
+      // count read before the first write cannot survive into the second.
+      restoreClass(db, parked.id);
+      expect(() => makeClass(db, "Room B")).toThrow(ClassroomLimitError);
+      expect(countActiveClasses(db, DEMO_SCHOOL)).toBe(1);
+
+      // And the other order.
+      archiveClass(db, parked.id);
+      const fresh = makeClass(db, "Room C");
+      expect(() => restoreClass(db, parked.id)).toThrow(ClassroomLimitError);
+      expect(countActiveClasses(db, DEMO_SCHOOL)).toBe(1);
+      expect(getClass(db, fresh.id)!.archived_at).toBeNull();
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("does the counting and the writing inside one transaction", () => {
+    const repo = readFileSync(join(process.cwd(), "src/lib/repo/classroom.ts"), "utf8");
+    for (const fn of ["createClass", "restoreClass"]) {
+      const start = repo.indexOf(`export function ${fn}(`);
+      const body = repo.slice(start, repo.indexOf("\n}", start));
+      expect(body, fn).toContain("assertRoomForActiveClass");
+      expect(body, fn).toContain("BEGIN IMMEDIATE");
+      expect(body, fn).toContain("ROLLBACK");
+    }
+  });
+
+  it("says what was refused without naming a child, and points somewhere useful", () => {
+    const message = classroomLimitRefusal(new ClassroomLimitError("classroom", 1, 1), "create");
+    expect(message).toMatch(/Single classroom plan includes one active class/);
+    expect(message).toMatch(/Nothing has been changed/);
+    expect(message).toMatch(/archived class and all of its records are still here/);
+    expect(message).toMatch(/Program and plan page/);
+
+    const admin = readFileSync(join(process.cwd(), "src/app/actions/admin.ts"), "utf8");
+    const teacher = readFileSync(join(process.cwd(), "src/app/actions/teacher.ts"), "utf8");
+    // Configuration facts only in the audit, and no success audit on refusal.
+    for (const [src, blockedAction, successAction] of [
+      [admin, "class.restore_blocked_by_plan", "class.restored"],
+      [teacher, "class.blocked_by_plan", "class.created"],
+    ] as const) {
+      const at = src.indexOf(blockedAction);
+      expect(at, blockedAction).toBeGreaterThan(-1);
+      const entry = src.slice(at, src.indexOf("});", at));
+      expect(entry).not.toMatch(/display_name|displayName|listStudents/);
+      expect(entry).not.toContain(successAction);
+    }
+  });
+
+  it("keeps the public wording and the enforced limit from drifting apart", () => {
+    // The words a school buys on, and the number the code enforces, in one
+    // assertion. If either moves without the other, this fails.
+    const publicPlans = readFileSync(
+      join(process.cwd(), "src/app/(site)/plans/page.tsx"),
+      "utf8",
+    );
+    const selector = readFileSync(
+      join(process.cwd(), "src/app/admin/program/PlanForm.tsx"),
+      "utf8",
+    );
+
+    expect(publicPlans).toContain('name: "Single classroom"');
+    expect(publicPlans).toMatch(/unit: "per classroom, per year"/);
+    expect(selector).toContain("Single classroom · $390 / year");
+
+    expect(ACTIVE_CLASS_LIMIT.classroom).toBe(1);
+    // Sold per school and per district, so rooms are not what they are priced
+    // on. `null` and not a large number, so the intent is legible.
+    expect(ACTIVE_CLASS_LIMIT.school).toBeNull();
+    expect(ACTIVE_CLASS_LIMIT.district).toBeNull();
+    // Every plan the selector offers has a decision recorded here.
+    for (const plan of ["classroom", "school", "district"]) {
+      expect(Object.hasOwn(ACTIVE_CLASS_LIMIT, plan), plan).toBe(true);
     }
   });
 });
