@@ -17,17 +17,27 @@ export function AssignToggle({
   assigned: boolean;
 }) {
   const [on, setOn] = useState(assigned);
+  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const toggle = () => {
     const next = !on;
     setOn(next);
+    setError(null);
     startTransition(async () => {
-      await setAssignmentAction({ classId, missionId, assigned: next });
+      const result = await setAssignmentAction({ classId, missionId, assigned: next });
+      // Put the switch back if the server refused. An optimistic toggle that
+      // stays flipped after a refusal tells a teacher a mission is assigned
+      // when it is not, which is worse than the refusal itself.
+      if (result?.error) {
+        setOn(!next);
+        setError(result.error);
+      }
     });
   };
 
   return (
+    <span className="inline-flex flex-col items-start gap-1">
     <button
       type="button"
       role="switch"
@@ -49,5 +59,11 @@ export function AssignToggle({
       />
       {on ? "Assigned" : "Assign"}
     </button>
+    {error && (
+      <span role="alert" className="max-w-[22rem] text-left text-xs font-semibold leading-snug text-berry-deep">
+        {error}
+      </span>
+    )}
+    </span>
   );
 }

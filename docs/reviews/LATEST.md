@@ -7,99 +7,111 @@ likely to be.
 
 ---
 
-## Sprint 48 — P1: the Cancel that could not cancel
+## Sprint 49 — P1: the term that ended and changed nothing
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-28-sprint-48.md`](2026-08-28-sprint-48.md)
+- **Full review:** [`2026-08-28-sprint-49.md`](2026-08-28-sprint-49.md)
 - **Review trail:** sprints 01–25 built and corrected the curriculum, reporting,
   assessment and orientation layers; 26–30 audit what the product permits and
   promises; 31–32 walk ordinary school workflows; 33–34 build the migration path
   and its gate; 35–41 fix teacher-facing and content defects; 42–43 make the paid
-  entitlement the vendor's number and enforce it; 44 removed the last claim that
-  the product certifies teachers; 45–47 gave the shared navigation and Classroom
-  Mode keyboard exits and focus recovery. **Sprint 48 fixes the shared
-  confirmation control — the one that guards deletion.**
+  seat count the vendor's number and enforce it at enrolment and restoration; 44
+  removed the last certification overclaim; 45–48 gave the navigation, Classroom
+  Mode and the shared confirmation control keyboard exits, focus recovery and an
+  honest pending state. **Sprint 49 makes the subscription term itself real — a
+  gap this file had carried as "documented and unbuilt" for three sprints.**
 
 ### What changed
 
-1. **Cancel stayed live after the confirm was pressed, and could not cancel
-   anything.** All it did was collapse the interface; the server action carried
-   on. An administrator could press *Delete permanently*, have a second thought,
-   press *Cancel*, watch the confirmation vanish, reasonably conclude they had
-   stopped it — and find the roster, mission history, evidence and both check-ins
-   gone. **This is false reassurance at the exact moment doubt should be acted
-   on**, and it is worse than no control: without it the user knows they are
-   committed and goes looking for a way to recover.
-2. **Once the request is away there is no Cancel** — non-interactive text,
-   **"Cannot be stopped now"**. Not a disabled button, which still reads as a
-   control that might come back.
-3. **No reopening or re-firing while pending.** The state stays `confirming`, so
-   the launcher does not exist to press again; `disabled` is backed by an
-   `inFlight` ref because `disabled` only applies after a re-render and two
-   clicks can land before one happens. The action runs **at most once**.
-4. **Focus enters the confirmation** — on the confirm button, with the question
-   as its `aria-describedby`, so the consequence is read with the control. Still
-   an **inline two-step, not a modal**.
-5. **Focus comes back on every exit**: pre-submit Cancel (which never calls the
-   action), an expected `{error}` (collapse, preserve and announce the
-   `role="alert"`, focus the launcher so recovery can start), and success — but
-   only if the launcher is **still connected**, since a delete revalidates and
-   may take the row with it. Unmount touches nothing.
-6. **A previous error is cleared on retry**, so a stale alert cannot sit beside a
-   fresh attempt.
+1. **`term_renews_on` changed labels and nothing else.** Every classroom and
+   student write succeeded after it, and Program & plan admitted it: *"Nothing
+   switches off automatically in this build."* An entitlement that never ends is
+   not an entitlement.
+2. **One rule, in `src/lib/domain/subscription.ts`.** The school is active
+   **through** the renewal date and lapsed on the next calendar day, matching the
+   product's own wording. Date-only: `YYYY-MM-DD` compared as strings, `now`
+   injected everywhere and reduced to its **UTC** calendar date, because a
+   deployment that lapses at a different moment depending on the host's `TZ` is a
+   bug nobody can reproduce. An empty renewal date never lapses a school.
+3. **Enforced on the shared resolvers**, not in the pages that render the
+   buttons — `requirePlayableMission`, `requireOpenCheckIn`,
+   `requireOwnActiveClass`, `ownActiveClass`. One door, so a stale tab or a
+   direct server-action call cannot write. Ownership and term stay separate
+   questions: a teacher's own class is still theirs, and they still cannot change
+   it.
+4. **Blocked**: mission start/resume/record, check-in answers and completion,
+   joining by class code, class creation and lifecycle, roster changes, code
+   rotation, assignment changes, check-in windows, year rollover.
+5. **Open, deliberately**: read-only pages, the annual report and all three
+   exports, the renewal request, sign-out, school profile, staff administration,
+   retention settings, the academic dates retention is calculated from,
+   deliberate deletion, and the orientation. **A school still owns its records.**
+6. **Expected errors, not crashes.** The gate throws — a shared resolver can,
+   without every caller remembering — and the actions that render a result catch
+   it and return `{ error }`. Seven actions moved from `void` to
+   `{ error?: string }`; `AssignToggle` also **reverts its optimistic switch**,
+   since a toggle left flipped after a refusal says a mission is assigned when it
+   is not.
+7. **Visible before effort is wasted.** Staff get one `role="status"` notice in
+   the shared shell — a standing condition, not an emergency — naming what is
+   paused, what remains, and where to renew. Children get *"Your class isn't open
+   right now. Ask your teacher."* and nothing about money. **No control lies**:
+   the student home drops "Up next" and the check-in, and mission tiles render as
+   tiles rather than links. The false admission is replaced.
 
 ### Already verified — please do not redo
 
-- Typecheck, lint, **553 tests** (up from 542), Turbopack production build.
-- New `tests/confirm-action.test.tsx`, eleven cases, driven by a **deferred
-  promise the test settles by hand**, so the pending state is inspected while the
-  action is genuinely in flight rather than guessed at with a timer. **Six
-  confirmed to fail against the old component**; five guard what must not
-  regress — single invocation under a double press, no reopening while pending,
-  error clearing, unmount safety, no focus theft on first render.
-- **Admin at 1280×800, archive and restore:** focus entered *Archive class* with
-  the question described and no `role="dialog"`; Cancel returned focus to the
-  exact launcher with the class still active; and on a real confirm a
-  `MutationObserver` watching the row through the transition recorded **"Cannot
-  be stopped now"** and a **disabled "Working…"**, while the marker for a live
-  Cancel coexisting with pending **never fired**.
-- **Teacher at 768×1024, rotate a class code:** focus entered *Change it*;
-  Cancel returned focus to *New code* and **the code did not rotate**; on confirm
-  the pending text appeared with no live Cancel, the code changed, and focus came
-  back to the launcher. No horizontal overflow.
-- **Server actions, entitlement enforcement, retention, audit behaviour,
-  child-data constraints and the inline non-modal design are unchanged.** No
-  caller changed; the `action` contract is untouched.
+- Typecheck, lint, **566 tests** (up from 553), Turbopack production build.
+- Thirteen new cases with **no clock** — every date injected: active on 31 Aug
+  and on the renewal day, lapsed on 2 Sep, 23:59:59 active and 00:00:00 next day
+  not; empty date never lapses; each school measured against its own term.
+- **Zero writes on refusal**, proved by snapshotting every table and comparing
+  after two refused attempts. No audit row, no flag, no counter — a refusal is
+  not an event about a child.
+- **The action inventory test**: every exported action across all four action
+  files must appear in the gated or allowed map with a written reason, failing on
+  an unclassified action *and* on a classified one that no longer exists; then
+  each gated body must reach a guard and each allowed one must not. **A new
+  mutation cannot silently bypass the gate.**
+- Two existing ownership tests now accept the gated resolver names **and
+  additionally assert the gated variant delegates to the ownership one**, so the
+  looser regex cannot be met by a helper that skipped the check.
+- **Browser-checked at 1280×800 and 768×1024** with the demo school lapsed: the
+  notice with a working renewal link and no overflow; code rotation and archiving
+  returning **expected refusals, not error pages**, with the database unchanged
+  and **no audit row written**; a **correct** class code refused at `/join` with
+  the child's sentence; a session opened before the lapse still signed in with 16
+  badges, every finished mission readable, **zero links into the player**; the
+  annual report with Print/CSV/JSON all present and the **renewal request
+  succeeding**. Demo data restored.
+- **Niche and privacy boundary unchanged**: authored grades 2–4 practice, no
+  chatbot, no child free text, no new student fields, no telemetry, no risk
+  scoring, aggregate-only admin reporting. **No schema change.**
 
 ### Where this is most likely still wrong — best places to push
 
-- **A confirmed action still cannot be undone.** This makes the interface honest
-  about that; it does not add an undo. Archive and restore are reversible by
-  their opposite, but `deleteClassDataAction` is protected only by the two-step
-  and its wording. Whether a school product should offer a grace period on
-  permanent deletion is a product decision, not a component one.
-- **Focus after success lands on the launcher element, which may have been
-  relabelled** — on the admin path React reused the node and it went from
-  *Restore* to *Archive*, because the action succeeded and the row changed. That
-  is the right outcome, but "restore focus to the launcher" and "restore focus to
-  a button with the same label" are different things, and only the first is
-  achievable when the action changes what the row offers.
+- **No grace period or warning before the date.** The transition is a cliff on
+  one morning; a real deployment would want "renews in 14 days" escalating in the
+  shell. That is a product decision about tone, not a mechanism.
+- **A lapsed school's teachers can still open Classroom Mode**, which records
+  nothing by design so it is not a write. Arguably correct — teaching from a plan
+  already bought — but it is a judgement call worth a second opinion.
+- **Nothing reconciles the term against an actual agreement** — sprint 42.
+  Renewal is a vendor edit to the row.
+- **The UTC boundary** can sit a few hours off a school's local midnight. Fixing
+  it properly needs a school timezone, which is a new field and was out of scope.
 - **The overlay pattern still has candidates**: the student mission player's
-  full-screen states and the read-aloud control have not been checked for focus
-  containment, return-focus or modal semantics — sprints 45–47.
-- **No general keyboard-only pass exists**, only the surfaces a sprint touched.
-- **Nothing reconciles the entitlement against an actual agreement** — sprint 42.
-  Only enrolment and restoration are metered — sprint 43. **Lapsed-subscription
-  enforcement remains documented and unbuilt.**
-- **The certification guard is a word list on a file list** — sprint 44.
+  full-screen states and the read-aloud control — sprints 45–48.
 - **Twenty-four mission guides have not been read for the real-material defect
   class** — sprints 37–41. **Twenty-six missions have untraced shared scenes** —
   sprint 36.
+- **The certification guard is a word list on a file list** — sprint 44.
 - **`src/app/(site)/privacy/page.tsx` has two unused-import lint warnings**,
   unrelated to this work.
 - **Only one previous schema shape is recognised** — sprint 34. No
   down-migrations.
-- **The route and action inventory is still not complete.**
+- **The route and action inventory is now complete for the lapse gate**, but not
+  for authorization generally.
 - **`enterDemo("student")` writes a student session directly**, and
   **`simulateAttempt` writes seed paths directly**.
 - **The limiter is per process** — sprint 30.

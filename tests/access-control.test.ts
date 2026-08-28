@@ -271,14 +271,21 @@ describe("no surface routes an administrator to a named roster", () => {
 
   it("routes every class mutation through the ownership check", () => {
     const actions = src("src/app/actions/teacher.ts");
-    // Each mutating action takes a classId and must resolve it via
-    // requireOwnClass rather than looking the class up itself.
+    // Each mutating action takes a classId and must resolve it via the shared
+    // ownership resolver rather than looking the class up itself. Sprint 49
+    // added `requireOwnActiveClass`, which delegates to `requireOwnClass` and
+    // then checks the subscription term, so either name satisfies ownership.
     for (const action of ["addStudentAction", "removeStudentAction", "setAssignmentAction"]) {
       const start = actions.indexOf(`export async function ${action}`);
       expect(start, action).toBeGreaterThan(-1);
       const body = actions.slice(start, actions.indexOf("export async function", start + 10));
-      expect(body, action).toContain("requireOwnClass");
+      expect(body, action).toMatch(/requireOwn(Active)?Class/);
     }
+    // And the gated variant really does go through the ownership one, so that
+    // regex cannot be satisfied by a helper that skipped the check.
+    expect(actions).toMatch(
+      /async function requireOwnActiveClass[\s\S]{0,200}await requireOwnClass\(classId\)/,
+    );
     // And the check itself must be ownership, not school membership.
     expect(actions).toContain("canTeachClass(user, classroom)");
     expect(actions).not.toContain("classroom.school_id !== user.school_id");
@@ -871,7 +878,12 @@ describe("an administrator can rotate a class code without deleting anything", (
     const start = src.indexOf("export async function rotateJoinCodeAsAdminAction");
     expect(start).toBeGreaterThan(-1);
     const body = src.slice(start, src.indexOf("\n}", start));
-    expect(body).toContain("await ownClass(classId)");
+    // `ownActiveClass` adds the subscription term on top of the same ownership
+    // resolver; both are the administrator scope check.
+    expect(body).toMatch(/await own(Active)?Class\(classId\)/);
+    expect(src).toMatch(
+      /async function ownActiveClass[\s\S]{0,400}await ownClass\(classId\)/,
+    );
     expect(body).toContain("rotateJoinCode(db, classroom.id)");
     expect(body).toContain('action: "class.code_rotated"');
     // The audit line names the class, never a student.

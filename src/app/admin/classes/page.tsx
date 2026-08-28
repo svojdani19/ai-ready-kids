@@ -116,7 +116,7 @@ export default async function AdminClasses() {
                             question={`Give ${classroom.name} a new code? The old one and anybody halfway through joining with it stop working straight away. The class, its teacher, the roster, assignments, mission history, badges and both check-ins are not touched.`}
                             action={async () => {
                               "use server";
-                              await rotateJoinCodeAsAdminAction(classroom.id);
+                              return rotateJoinCodeAsAdminAction(classroom.id);
                             }}
                           />
                         </div>
@@ -153,7 +153,7 @@ export default async function AdminClasses() {
                               question={`Archive ${classroom.name}? Students can no longer join. Its deletion date does not change.`}
                               action={async () => {
                                 "use server";
-                                await archiveClassAction(classroom.id);
+                                return archiveClassAction(classroom.id);
                               }}
                             />
                           )}

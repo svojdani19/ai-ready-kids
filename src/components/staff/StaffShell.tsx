@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { hasLapsed, LAPSED_STAFF_BODY, LAPSED_STAFF_TITLE } from "@/lib/domain/subscription";
 import { signOut } from "@/app/actions/auth";
 import { LogoMark } from "@/components/Logo";
 import type { School, User } from "@/lib/types";
@@ -82,7 +83,30 @@ export function StaffShell({
       </aside>
 
       <div className="min-w-0 flex-1">
-        <div className="mx-auto max-w-5xl px-5 py-8 lg:py-10">{children}</div>
+        <div className="mx-auto max-w-5xl px-5 py-8 lg:py-10">
+          {/* One notice, in the shell, so it cannot be missed by arriving on a
+              page that happens not to carry it. `role="status"` rather than
+              "alert": it is a standing condition a teacher should be told
+              about, not an emergency interrupting what they are doing. */}
+          {hasLapsed(school, new Date()) && (
+            <div
+              role="status"
+              className="mb-6 rounded-lg border-2 border-berry bg-berry-wash px-4 py-3 text-sm leading-relaxed text-ink"
+            >
+              <p className="font-semibold text-berry-deep">{LAPSED_STAFF_TITLE}</p>
+              <p className="mt-1">{LAPSED_STAFF_BODY}</p>
+              <p className="mt-2">
+                <Link
+                  href="/admin/program"
+                  className="font-semibold text-berry-deep underline underline-offset-2"
+                >
+                  Request renewal on the Program and plan page
+                </Link>
+              </p>
+            </div>
+          )}
+          {children}
+        </div>
       </div>
     </div>
   );

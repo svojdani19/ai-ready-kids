@@ -18,6 +18,7 @@ import {
 import { getClass, listAssignments } from "@/lib/repo/classroom";
 import { getSchool } from "@/lib/repo/school";
 import { canTakeBenchmark, missionAccessFor } from "@/lib/domain/eligibility";
+import { assertClassSubscriptionActive } from "@/lib/auth/subscription-gate";
 
 /**
  * Every mutation re-validates the submitted ids against the shipped content
@@ -39,6 +40,10 @@ async function requireOpenCheckIn(form: string) {
   const classroom = getClass(db, student.class_id);
   const school = classroom ? getSchool(db, classroom.school_id) : undefined;
   if (!school) throw new Error("That check-in is not open.");
+  // The term first. A lapsed school records no new work — but nothing already
+  // written is touched, and the child is told in their own words, not in
+  // billing language, by the surfaces that render this.
+  assertClassSubscriptionActive(db, student.class_id);
   const open = canTakeBenchmark({
     window: school.benchmark_window,
     form: content.form,
@@ -54,6 +59,7 @@ async function requirePlayableMission(slug: string) {
   if (!mission) throw new Error(`Unknown mission: ${slug}`);
   const { student } = await requireStudent();
   const db = getDb();
+  assertClassSubscriptionActive(db, student.class_id);
   const access = missionAccessFor({
     missionId: mission.id,
     assignedMissionIds: listAssignments(db, student.class_id).map((a) => a.mission_id),

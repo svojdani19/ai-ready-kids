@@ -5,6 +5,11 @@ import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/session";
 import { canAdministerClass } from "@/lib/auth/access";
 import { RestoreExceedsLicenceError } from "@/lib/repo/entitlement";
+import {
+  asExpectedError,
+  assertSubscriptionActive,
+  lapsedRefusal,
+} from "@/lib/auth/subscription-gate";
 import { previewRollover } from "@/lib/domain/rollover";
 import {
   archiveClass,
@@ -166,6 +171,11 @@ export async function setBenchmarkWindowAction(
   }
 
   const db = getDb();
+  // Opening a check-in window is a classroom change: it decides whether
+  // children can start a form. Paused with the rest of instruction.
+  const lapsed = lapsedRefusal(db, user.school_id);
+  if (lapsed) return { error: lapsed };
+  
   setBenchmarkWindow(db, user.school_id, window);
   const label =
     window === "closed" ? "closed" : window === "pre" ? "the fall window" : "the spring window";
@@ -224,6 +234,9 @@ export async function reassignClassAction(
 ): Promise<{ error?: string }> {
   const { user } = await requireAdmin();
   const db = getDb();
+  const lapsed = lapsedRefusal(db, user.school_id);
+  if (lapsed) return { error: lapsed };
+  
   const classroom = getClass(db, classId);
   if (!classroom || classroom.school_id !== user.school_id) {
     return { error: "Unknown class." };
@@ -303,6 +316,11 @@ export async function setAcademicDatesAction(
 export async function rolloverYearAction(): Promise<ActionState> {
   const { user } = await requireAdmin();
   const db = getDb();
+  // Rolling over starts a new teaching year, which is the one thing an expired
+  // subscription most clearly does not cover.
+  const lapsed = lapsedRefusal(db, user.school_id);
+  if (lapsed) return { error: lapsed };
+  
   const school = getSchool(db, user.school_id);
   if (!school) return { error: "That school could not be found." };
 
@@ -383,6 +401,21 @@ async function ownClass(classId: string) {
 }
 
 /**
+ * Ownership plus an unexpired term, for the class lifecycle operations.
+ *
+ * Deliberately not used by `deleteClassDataAction`. Deleting a school's own
+ * records is data governance, not instruction: a school that has stopped
+ * subscribing may well want its children's records gone, and refusing that
+ * because an invoice lapsed would be holding data hostage. The same reasoning
+ * keeps retention settings, exports and the annual report open.
+ */
+async function ownActiveClass(classId: string) {
+  const resolved = await ownClass(classId);
+  assertSubscriptionActive(resolved.db, resolved.user.school_id);
+  return resolved;
+}
+
+/**
  * Give a class a new code, keeping the class.
  *
  * This exists because the Classes page used to tell administrators that a code
@@ -398,37 +431,51 @@ async function ownClass(classId: string) {
  * administrator role as sprint 26 drew it: this changes one column and reaches
  * no roster, no name and no evidence.
  */
-export async function rotateJoinCodeAsAdminAction(classId: string): Promise<void> {
-  const { db, user, classroom } = await ownClass(classId);
-  const code = rotateJoinCode(db, classroom.id);
-  if (!code) throw new Error("That class no longer exists.");
-  recordAudit(db, {
-    schoolId: user.school_id,
-    actorLabel: user.name,
-    // No child is named here, and none needs to be: what happened is that a
-    // class credential changed, which is a fact about the class.
-    action: "class.code_rotated",
-    detail: `${classroom.name} has a new class code. The old one stopped working immediately. The roster and all student records are unchanged.`,
-  });
-  revalidatePath("/admin/classes");
-  revalidatePath(`/teacher/class/${classId}`);
+export async function rotateJoinCodeAsAdminAction(classId: string): Promise<{ error?: string }> {
+  try {
+    const { db, user, classroom } = await ownActiveClass(classId);
+    const code = rotateJoinCode(db, classroom.id);
+    if (!code) throw new Error("That class no longer exists.");
+    recordAudit(db, {
+      schoolId: user.school_id,
+      actorLabel: user.name,
+      // No child is named here, and none needs to be: what happened is that a
+      // class credential changed, which is a fact about the class.
+      action: "class.code_rotated",
+      detail: `${classroom.name} has a new class code. The old one stopped working immediately. The roster and all student records are unchanged.`,
+    });
+    revalidatePath("/admin/classes");
+    revalidatePath(`/teacher/class/${classId}`);
+    return {};
+  } catch (error) {
+    const refusal = asExpectedError(error);
+    if (refusal) return refusal;
+    throw error;
+  }
 }
 
-export async function archiveClassAction(classId: string): Promise<void> {
-  const { db, user, classroom } = await ownClass(classId);
-  archiveClass(db, classId);
-  recordAudit(db, {
-    schoolId: user.school_id,
-    actorLabel: user.name,
-    action: "class.archived",
-    detail: `${classroom.name} archived. Its scheduled deletion date is unchanged.`,
-  });
-  revalidatePath("/admin/classes");
-  revalidatePath("/admin/data");
+export async function archiveClassAction(classId: string): Promise<{ error?: string }> {
+  try {
+    const { db, user, classroom } = await ownActiveClass(classId);
+    archiveClass(db, classId);
+    recordAudit(db, {
+      schoolId: user.school_id,
+      actorLabel: user.name,
+      action: "class.archived",
+      detail: `${classroom.name} archived. Its scheduled deletion date is unchanged.`,
+    });
+    revalidatePath("/admin/classes");
+    revalidatePath("/admin/data");
+    return {};
+  } catch (error) {
+    const refusal = asExpectedError(error);
+    if (refusal) return refusal;
+    throw error;
+  }
 }
 
 export async function restoreClassAction(classId: string): Promise<{ error?: string }> {
-  const { db, user, classroom } = await ownClass(classId);
+  const { db, user, classroom } = await ownActiveClass(classId);
   const school = getSchool(db, user.school_id)!;
 
   // Catch rather than pre-check: the rule is in the repository, and asking

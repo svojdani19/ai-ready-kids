@@ -2,6 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { getDb } from "@/lib/db";
+import { schoolHasLapsed } from "@/lib/auth/subscription-gate";
+import { LAPSED_STUDENT_MESSAGE } from "@/lib/domain/subscription";
 import { headers } from "next/headers";
 import {
   getClass,
@@ -80,7 +82,8 @@ export async function findClassByCode(_prev: JoinState, formData: FormData): Pro
     };
   }
 
-  const classroom = getClassByJoinCode(getDb(), code);
+  const db = getDb();
+  const classroom = getClassByJoinCode(db, code);
   if (!classroom || classroom.archived_at) {
     // One message for "no such code" and for "archived", so a wrong guess
     // never tells the guesser which kind of wrong it was.
@@ -88,6 +91,13 @@ export async function findClassByCode(_prev: JoinState, formData: FormData): Pro
     return { error: "That code did not match a class. Check the letters and try again.", code };
   }
   clearAttempts(bucket);
+
+  // A lapsed school takes no new joiners. The code was right, so this is not a
+  // failed guess and is not thrown into the throttle — and the child is told
+  // the class is not open rather than anything about an invoice.
+  if (schoolHasLapsed(db, classroom.school_id)) {
+    return { error: LAPSED_STUDENT_MESSAGE, code };
+  }
 
   // Entering the code is the whole credential, so it has to leave something
   // behind. The code travels with the grant so that rotating it invalidates

@@ -20,6 +20,11 @@ import {
 import { getSchool, getUser, recordAudit } from "@/lib/repo/school";
 import { LicenceExceededError } from "@/lib/repo/entitlement";
 import {
+  asExpectedError,
+  assertSubscriptionActive,
+  lapsedRefusal,
+} from "@/lib/auth/subscription-gate";
+import {
   completeCertification,
   getCertification,
   saveCertificationAnswer,
@@ -50,6 +55,21 @@ async function requireOwnClass(classId: string) {
 }
 
 /**
+ * The same, plus the subscription term.
+ *
+ * Every classroom mutation goes through here rather than through the plain
+ * ownership check, so the gate is on the path and not on the page. Ownership
+ * and entitlement are separate questions and both have to be answered: a
+ * teacher's own class is still their own class after the term ends, and they
+ * still cannot change it.
+ */
+async function requireOwnActiveClass(classId: string) {
+  const resolved = await requireOwnClass(classId);
+  assertSubscriptionActive(resolved.db, resolved.user.school_id);
+  return resolved;
+}
+
+/**
  * Creating a class is an administrator operation, and it is the only place in
  * the product that offers it. It used to accept any staff member, so an
  * ordinary teacher could create classes for themselves through a direct call
@@ -69,6 +89,9 @@ export async function createClassAction(
   if (![2, 3, 4].includes(grade)) return { error: "Choose grade 2, 3 or 4." };
 
   const db = getDb();
+  const lapsed = lapsedRefusal(db, user.school_id);
+  if (lapsed) return { error: lapsed };
+
   const teacherId = String(formData.get("teacherId") ?? "");
   const owner = teacherId ? getUser(db, teacherId) : undefined;
   if (!owner || owner.role !== "teacher" || owner.school_id !== user.school_id) {
@@ -121,53 +144,59 @@ export async function addStudentAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const classId = String(formData.get("classId") ?? "");
-  const displayName = String(formData.get("displayName") ?? "").trim();
-
-  const invalid = validateDisplayName(displayName);
-  if (invalid) return { error: invalid };
-
-  const { db, user, classroom } = await requireOwnClass(classId);
-  const existing = listStudents(db, classId);
-  if (existing.some((s) => s.display_name.toLowerCase() === displayName.toLowerCase())) {
-    return { error: `${displayName} is already on this roster.` };
-  }
-
-  // The licence check lives in the repository, so this is a catch rather than a
-  // pre-check: an action that asked first and inserted afterwards would leave a
-  // window between the two, and would be one door among several.
   try {
-    createStudent(db, { classId, displayName });
-  } catch (error) {
-    if (error instanceof LicenceExceededError) {
-      const school = getSchool(db, user.school_id)!;
-      // No row was written, and no success audit. The refusal is recorded
-      // because a school buyer needs to see that the cap did something, and it
-      // names no child: a licence event is a fact about the school.
-      recordAudit(db, {
-        schoolId: user.school_id,
-        actorLabel: user.name,
-        action: "roster.blocked_by_licence",
-        detail: `An enrolment was declined in ${classroom.name}. ${error.used} of ${error.licensed} licensed students in use.`,
-      });
-      return {
-        error:
-          `${error.used} of ${error.licensed} licensed student places are in use, so this ` +
-          `school cannot enrol anybody else yet. Nothing was added. Ask ${school.contact_name} ` +
-          "to request more places on the Program and plan page.",
-      };
+    const classId = String(formData.get("classId") ?? "");
+    const displayName = String(formData.get("displayName") ?? "").trim();
+
+    const invalid = validateDisplayName(displayName);
+    if (invalid) return { error: invalid };
+
+    const { db, user, classroom } = await requireOwnActiveClass(classId);
+    const existing = listStudents(db, classId);
+    if (existing.some((s) => s.display_name.toLowerCase() === displayName.toLowerCase())) {
+      return { error: `${displayName} is already on this roster.` };
     }
+
+    // The licence check lives in the repository, so this is a catch rather than a
+    // pre-check: an action that asked first and inserted afterwards would leave a
+    // window between the two, and would be one door among several.
+    try {
+      createStudent(db, { classId, displayName });
+    } catch (error) {
+      if (error instanceof LicenceExceededError) {
+        const school = getSchool(db, user.school_id)!;
+        // No row was written, and no success audit. The refusal is recorded
+        // because a school buyer needs to see that the cap did something, and it
+        // names no child: a licence event is a fact about the school.
+        recordAudit(db, {
+          schoolId: user.school_id,
+          actorLabel: user.name,
+          action: "roster.blocked_by_licence",
+          detail: `An enrolment was declined in ${classroom.name}. ${error.used} of ${error.licensed} licensed students in use.`,
+        });
+        return {
+          error:
+            `${error.used} of ${error.licensed} licensed student places are in use, so this ` +
+            `school cannot enrol anybody else yet. Nothing was added. Ask ${school.contact_name} ` +
+            "to request more places on the Program and plan page.",
+        };
+      }
+      throw error;
+    }
+
+    recordAudit(db, {
+      schoolId: user.school_id,
+      actorLabel: user.name,
+      action: "roster.added",
+      detail: `One student added to ${classroom.name}.`,
+    });
+    revalidatePath(`/teacher/class/${classId}`);
+    return { ok: `${displayName} added to ${classroom.name}.` };
+  } catch (error) {
+    const refusal = asExpectedError(error);
+    if (refusal) return refusal;
     throw error;
   }
-
-  recordAudit(db, {
-    schoolId: user.school_id,
-    actorLabel: user.name,
-    action: "roster.added",
-    detail: `One student added to ${classroom.name}.`,
-  });
-  revalidatePath(`/teacher/class/${classId}`);
-  return { ok: `${displayName} added to ${classroom.name}.` };
 }
 
 /**
@@ -187,60 +216,73 @@ export async function renameStudentAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const classId = String(formData.get("classId") ?? "");
-  const studentId = String(formData.get("studentId") ?? "");
-  const displayName = String(formData.get("displayName") ?? "").trim();
+  try {
+    const classId = String(formData.get("classId") ?? "");
+    const studentId = String(formData.get("studentId") ?? "");
+    const displayName = String(formData.get("displayName") ?? "").trim();
 
-  const invalid = validateDisplayName(displayName);
-  if (invalid) return { error: invalid };
+    const invalid = validateDisplayName(displayName);
+    if (invalid) return { error: invalid };
 
-  const { db, user, classroom } = await requireOwnClass(classId);
-  const students = listStudents(db, classId);
-  const target = students.find((s) => s.id === studentId);
-  // Same shape as the delete: authorising the class is not authorising the
-  // child, so the student has to be on this roster.
-  if (!target) return { error: "That student is not on this class's roster." };
+    const { db, user, classroom } = await requireOwnActiveClass(classId);
+    const students = listStudents(db, classId);
+    const target = students.find((s) => s.id === studentId);
+    // Same shape as the delete: authorising the class is not authorising the
+    // child, so the student has to be on this roster.
+    if (!target) return { error: "That student is not on this class's roster." };
 
-  if (target.display_name === displayName) return { ok: "That is already the name." };
-  if (
-    students.some(
-      (s) => s.id !== studentId && s.display_name.toLowerCase() === displayName.toLowerCase(),
-    )
-  ) {
-    return { error: `${displayName} is already on this roster.` };
+    if (target.display_name === displayName) return { ok: "That is already the name." };
+    if (
+      students.some(
+        (s) => s.id !== studentId && s.display_name.toLowerCase() === displayName.toLowerCase(),
+      )
+    ) {
+      return { error: `${displayName} is already on this roster.` };
+    }
+
+    renameStudent(db, studentId, classroom.id, displayName);
+    recordAudit(db, {
+      schoolId: user.school_id,
+      actorLabel: user.name,
+      // No child's name in a school-wide log, before or after.
+      action: "roster.renamed",
+      detail: `A student's display name was corrected in ${classroom.name}. No records changed.`,
+    });
+    revalidatePath(`/teacher/class/${classId}`);
+    return { ok: "Name updated. Everything they have done is still there." };
+  } catch (error) {
+    const refusal = asExpectedError(error);
+    if (refusal) return refusal;
+    throw error;
   }
-
-  renameStudent(db, studentId, classroom.id, displayName);
-  recordAudit(db, {
-    schoolId: user.school_id,
-    actorLabel: user.name,
-    // No child's name in a school-wide log, before or after.
-    action: "roster.renamed",
-    detail: `A student's display name was corrected in ${classroom.name}. No records changed.`,
-  });
-  revalidatePath(`/teacher/class/${classId}`);
-  return { ok: "Name updated. Everything they have done is still there." };
 }
 
-export async function removeStudentAction(classId: string, studentId: string): Promise<void> {
-  const { db, user, classroom } = await requireOwnClass(classId);
+export async function removeStudentAction(classId: string, studentId: string): Promise<{ error?: string }> {
+  try {
+    const { db, user, classroom } = await requireOwnActiveClass(classId);
 
-  // Authorising the class is not authorising the child. The delete is scoped
-  // by both ids and reports whether it actually removed anything, so a
-  // mismatched pair changes nothing and does not leave a success audit behind
-  // claiming it did.
-  const removed = deleteStudentFromClass(db, studentId, classroom.id);
-  if (!removed) {
-    throw new Error("That student is not on this class's roster.");
+    // Authorising the class is not authorising the child. The delete is scoped
+    // by both ids and reports whether it actually removed anything, so a
+    // mismatched pair changes nothing and does not leave a success audit behind
+    // claiming it did.
+    const removed = deleteStudentFromClass(db, studentId, classroom.id);
+    if (!removed) {
+      throw new Error("That student is not on this class's roster.");
+    }
+
+    recordAudit(db, {
+      schoolId: user.school_id,
+      actorLabel: user.name,
+      action: "roster.removed",
+      detail: `One student and all of their records removed from ${classroom.name}.`,
+    });
+    revalidatePath(`/teacher/class/${classId}`);
+    return {};
+  } catch (error) {
+    const refusal = asExpectedError(error);
+    if (refusal) return refusal;
+    throw error;
   }
-
-  recordAudit(db, {
-    schoolId: user.school_id,
-    actorLabel: user.name,
-    action: "roster.removed",
-    detail: `One student and all of their records removed from ${classroom.name}.`,
-  });
-  revalidatePath(`/teacher/class/${classId}`);
 }
 
 /**
@@ -252,47 +294,61 @@ export async function removeStudentAction(classId: string, studentId: string): P
  * invalidates join grants already issued, since a grant carries the code it
  * was granted against.
  */
-export async function rotateJoinCodeAction(classId: string): Promise<void> {
-  const { db, user, classroom } = await requireOwnClass(classId);
-  const code = rotateJoinCode(db, classroom.id);
-  if (!code) throw new Error("That class no longer exists.");
-  recordAudit(db, {
-    schoolId: user.school_id,
-    actorLabel: user.name,
-    action: "class.code_rotated",
-    detail: `${classroom.name} has a new class code. The old one stopped working immediately.`,
-  });
-  revalidatePath(`/teacher/class/${classId}`);
+export async function rotateJoinCodeAction(classId: string): Promise<{ error?: string }> {
+  try {
+    const { db, user, classroom } = await requireOwnActiveClass(classId);
+    const code = rotateJoinCode(db, classroom.id);
+    if (!code) throw new Error("That class no longer exists.");
+    recordAudit(db, {
+      schoolId: user.school_id,
+      actorLabel: user.name,
+      action: "class.code_rotated",
+      detail: `${classroom.name} has a new class code. The old one stopped working immediately.`,
+    });
+    revalidatePath(`/teacher/class/${classId}`);
+    return {};
+  } catch (error) {
+    const refusal = asExpectedError(error);
+    if (refusal) return refusal;
+    throw error;
+  }
 }
 
 export async function setAssignmentAction(input: {
   classId: string;
   missionId: string;
   assigned: boolean;
-}): Promise<void> {
-  const mission = MISSION_BY_ID[input.missionId];
-  if (!mission) throw new Error("Unknown mission.");
-  const { db, user, classroom } = await requireOwnClass(input.classId);
+}): Promise<{ error?: string }> {
+  try {
+    const mission = MISSION_BY_ID[input.missionId];
+    if (!mission) throw new Error("Unknown mission.");
+    const { db, user, classroom } = await requireOwnActiveClass(input.classId);
 
-  if (input.assigned) {
-    assignMission(db, {
-      classId: input.classId,
-      missionId: input.missionId,
-      assignedBy: user.id,
+    if (input.assigned) {
+      assignMission(db, {
+        classId: input.classId,
+        missionId: input.missionId,
+        assignedBy: user.id,
+      });
+    } else {
+      unassignMission(db, input.classId, input.missionId);
+    }
+
+    recordAudit(db, {
+      schoolId: user.school_id,
+      actorLabel: user.name,
+      action: input.assigned ? "mission.assigned" : "mission.unassigned",
+      detail: `${mission.title} ${input.assigned ? "assigned to" : "removed from"} ${classroom.name}.`,
     });
-  } else {
-    unassignMission(db, input.classId, input.missionId);
+    revalidatePath("/teacher/missions");
+    revalidatePath(`/teacher/missions/${mission.slug}`);
+    revalidatePath(`/teacher/class/${input.classId}`);
+    return {};
+  } catch (error) {
+    const refusal = asExpectedError(error);
+    if (refusal) return refusal;
+    throw error;
   }
-
-  recordAudit(db, {
-    schoolId: user.school_id,
-    actorLabel: user.name,
-    action: input.assigned ? "mission.assigned" : "mission.unassigned",
-    detail: `${mission.title} ${input.assigned ? "assigned to" : "removed from"} ${classroom.name}.`,
-  });
-  revalidatePath("/teacher/missions");
-  revalidatePath(`/teacher/missions/${mission.slug}`);
-  revalidatePath(`/teacher/class/${input.classId}`);
 }
 
 export async function answerCertificationAction(

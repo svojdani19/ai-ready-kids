@@ -1,11 +1,18 @@
 import Link from "next/link";
 import { requireStudent } from "@/lib/auth/session";
+import { getDb } from "@/lib/db";
+import { schoolHasLapsed } from "@/lib/auth/subscription-gate";
+import { LAPSED_STUDENT_MESSAGE } from "@/lib/domain/subscription";
 import { signOut } from "@/app/actions/auth";
 import { Avatar } from "@/components/art/Avatar";
 import { LogoMark } from "@/components/Logo";
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
   const { student, classroom } = await requireStudent();
+  // A child keeps their session and can still see their own badges and map.
+  // What stops is starting or recording anything new, and they are told that
+  // in their own words — never in the language of an invoice.
+  const closed = schoolHasLapsed(getDb(), classroom.school_id);
 
   return (
     <div className="flex min-h-dvh flex-col bg-paper">
@@ -50,7 +57,17 @@ export default async function StudentLayout({ children }: { children: React.Reac
         </div>
       </header>
 
-      <main id="main" className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">{children}</main>
+      <main id="main" className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+        {closed && (
+          <p
+            role="status"
+            className="mb-6 rounded-2xl border-2 border-marigold-deep bg-marigold-wash px-5 py-4 text-lg font-semibold leading-snug text-ink"
+          >
+            {LAPSED_STUDENT_MESSAGE}
+          </p>
+        )}
+        {children}
+      </main>
 
       <footer className="border-t border-sand-deep px-4 py-4">
         <p className="mx-auto max-w-5xl text-center text-xs text-ink-faint">

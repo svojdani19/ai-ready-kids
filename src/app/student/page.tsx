@@ -7,6 +7,7 @@ import { listAttemptsForStudent, listBenchmarksForStudent } from "@/lib/repo/pro
 import { summariseStudent } from "@/lib/domain/evidence";
 import { nextBenchmarkFor } from "@/lib/domain/eligibility";
 import { getSchool } from "@/lib/repo/school";
+import { schoolHasLapsed } from "@/lib/auth/subscription-gate";
 import { COMPETENCIES } from "@/content/competencies";
 import { MISSION_BY_ID, MISSIONS } from "@/content/missions";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
@@ -15,6 +16,28 @@ import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/Bits";
 
 export const metadata: Metadata = { title: "Your missions" };
+
+/**
+ * A mission tile that is a link while the class is open and plain markup when
+ * it is not. One shape, so the card's contents cannot drift between the two.
+ */
+function Card({
+  className,
+  children,
+  ...rest
+}: { className: string; children: React.ReactNode } & (
+  | { as: "div" }
+  | { as: "link"; href: string; ariaLabel: string }
+)) {
+  if (rest.as === "link") {
+    return (
+      <Link href={rest.href} aria-label={rest.ariaLabel} className={className}>
+        {children}
+      </Link>
+    );
+  }
+  return <div className={className}>{children}</div>;
+}
 
 const LANE: Record<string, { border: string; wash: string; text: string }> = {
   pine: { border: "border-pine", wash: "bg-pine-wash", text: "text-pine-deep" },
@@ -25,6 +48,11 @@ const LANE: Record<string, { border: string; wash: string; text: string }> = {
 export default async function StudentHome() {
   const { student, classroom } = await requireStudent();
   const db = getDb();
+
+  // When the school's term has ended nothing new can be recorded, so nothing
+  // here offers to start any. The map, the badges and every finished mission
+  // stay exactly as they were — a child keeps what they made.
+  const closed = schoolHasLapsed(db, classroom.school_id);
 
   const assignments = listAssignments(db, classroom.id);
   const assignedIds = new Set(assignments.map((a) => a.mission_id));
@@ -82,7 +110,7 @@ export default async function StudentHome() {
         )}
       </div>
 
-      {upNext && (
+      {upNext && !closed && (
         <section className="mt-7 overflow-hidden rounded-3xl border-4 border-ink bg-marigold-wash">
           <div className="flex flex-wrap items-center justify-between gap-4 p-5 sm:p-6">
             <div className="min-w-0">
@@ -103,7 +131,7 @@ export default async function StudentHome() {
         </section>
       )}
 
-      {nextCheckIn && (
+      {nextCheckIn && !closed && (
         <section className="mt-5 rounded-2xl border-2 border-denim bg-denim-wash p-5">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
@@ -160,13 +188,22 @@ export default async function StudentHome() {
                     const isStarted = inProgress.has(m.id);
                     return (
                       <li key={m.id}>
-                        <Link
-                          href={`/student/play/${m.slug}`}
-                          aria-label={`${
-                            isDone ? "Play again" : isStarted ? "Carry on with" : "Start"
-                          } mission ${m.order}, ${m.title}`}
+                        {/* Closed: a tile, not a link. A card that looks
+                            tappable and then refuses is worse than one that
+                            plainly is not, and everything on it stays
+                            readable either way. */}
+                        <Card
+                          {...(closed
+                            ? { as: "div" as const }
+                            : {
+                                as: "link" as const,
+                                href: `/student/play/${m.slug}`,
+                                ariaLabel: `${
+                                  isDone ? "Play again" : isStarted ? "Carry on with" : "Start"
+                                } mission ${m.order}, ${m.title}`,
+                              })}
                           className={`ark-sticker flex h-full flex-col rounded-2xl border-4 border-ink p-4 transition-colors ${
-                            isDone ? lane.wash : "bg-surface hover:bg-paper-deep"
+                            isDone ? lane.wash : closed ? "bg-surface opacity-80" : "bg-surface hover:bg-paper-deep"
                           }`}
                         >
                           <div className="flex items-start justify-between gap-3">
@@ -187,9 +224,15 @@ export default async function StudentHome() {
                             {m.teaser}
                           </p>
                           <p className={`mt-3 text-sm font-bold ${lane.text}`}>
-                            {isDone ? "Finished ✓" : isStarted ? "Keep going →" : "Start →"}
+                            {isDone
+                              ? "Finished ✓"
+                              : closed
+                                ? "Not open right now"
+                                : isStarted
+                                  ? "Keep going →"
+                                  : "Start →"}
                           </p>
-                        </Link>
+                        </Card>
                       </li>
                     );
                   })}

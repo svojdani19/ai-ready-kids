@@ -18,17 +18,31 @@ export function RemoveStudentButton({
   displayName: string;
 }) {
   const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   if (!confirming) {
     return (
-      <button
-        type="button"
-        onClick={() => setConfirming(true)}
-        className="text-xs font-semibold text-ink-faint underline underline-offset-2 hover:text-berry-deep"
-      >
-        Remove
-      </button>
+      <span className="inline-block">
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          className="text-xs font-semibold text-ink-faint underline underline-offset-2 hover:text-berry-deep"
+        >
+          Remove
+        </button>
+        {/* A refused removal has to say why. Sprint 49 can refuse this when the
+            subscription term has ended, and a button that silently does
+            nothing is the worst of the options. */}
+        {error && (
+          <span
+            role="alert"
+            className="mt-1.5 block max-w-[22rem] text-left text-xs font-semibold leading-snug text-berry-deep"
+          >
+            {error}
+          </span>
+        )}
+      </span>
     );
   }
 
@@ -40,7 +54,9 @@ export function RemoveStudentButton({
         disabled={pending}
         onClick={() =>
           startTransition(async () => {
-            await removeStudentAction(classId, studentId);
+            const result = await removeStudentAction(classId, studentId);
+            if (result?.error) setError(result.error);
+            setConfirming(false);
           })
         }
         className="rounded border border-berry px-2 py-0.5 text-xs font-semibold text-berry-deep hover:bg-berry-wash disabled:opacity-60"

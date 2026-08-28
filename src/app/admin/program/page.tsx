@@ -188,9 +188,12 @@ export default async function AdminProgram() {
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <Note tone="denim" title="What renewal actually changes">
-          Nothing switches off automatically in this build. In a real deployment a lapsed
-          subscription makes classes read-only rather than deleting anything, because the
-          school still owns its records and may need to export them.
+          The day after the renewal date, classroom changes pause: nobody can start or
+          record new work, and rosters, assignments, class codes and check-in windows stop
+          accepting changes. Nothing is deleted and nothing is hidden. Your records,
+          reports, exports, retention settings and staff administration all keep working,
+          because the school owns its records whatever the invoice says. Renewing lifts the
+          pause and every class carries on where it stopped.
         </Note>
         <Note tone="neutral" title="Programme contact">
           {school.contact_name} · {school.contact_email}. Quotes, purchase orders and
