@@ -45,12 +45,14 @@ likely to be.
    street sign strong, a band poster deliberately harmless). Screen 2: the same
    room tidied, **still PREVIEW** — the words did not change when the room did,
    and tidying fixed this frame and not the next. Screen 3: **the same wall,
-   same angle, same everything**, `LIVE — 8 PLAYERS CAN SEE THIS NOW`, with the
-   door starting to open at the edge of frame.
+   same angle, same everything**, `LIVE — 8 PLAYERS CAN SEE THIS NOW`, and
+   **the room unchanged** — the only difference is in the words.
 4. **Screens 2 and 3 are the pair.** The frame is identical, so a child cannot
-   answer by looking harder at the room — only the status line moved. Screen 3's
-   opening door is the little brother from scene `s3`, so activity and story
-   teach the same beat.
+   answer by looking harder at the room — only the status line moved. **A door
+   that could open belongs to the next-moment prompt, never to the picture**: it
+   is the little brother from scene `s3` as something that has not happened yet,
+   so activity and story teach the same beat without handing a child a visible
+   change to blame. *(Corrected in sprint 41 — see below.)*
 5. **Four prompts, kept apart and named in the instructions**, mapping onto the
    mission's four learning goals: what the picture gives away, what the words
    prove about who is receiving it right now, why tidying cannot fix the next
@@ -64,9 +66,34 @@ likely to be.
    format, no second renderer. It sits beside sprint 38's `consent?`, and a test
    asserts which missions carry which rather than leaving it to convention.
 
+### The correction (sprint 41)
+
+Screen 3 claimed *"same wall, same angle, same everything"* and *"the picture
+has not changed at all"* while its description added a door beginning to open at
+the edge of the frame — and the regression test asserted **both** at once, so it
+locked the contradiction in rather than catching it. An opening door is a
+visible change, so a child could blame the thing that moved and never reach the
+lesson: the frame is identical and the `LIVE` label is the only evidence that
+eight people are receiving it.
+
+Screen 3's visible frame is now exactly screen 2's — *"The room has not changed
+at all. One difference, and it is in the words underneath."* The door moved to
+the next-moment line as a hypothetical: *"This frame is fine, and the next one
+is not promised. The door could open a second from now… and because the label
+says LIVE that moment is on eight screens before it is on this one. A live
+moment cannot be checked first."*
+
+The test now enforces the separation from both sides — screen 3's description
+and `suggests` may contain no door, no opening, nobody entering and nothing
+starting or beginning; the `control` line must carry the possible door opening,
+the one-second framing and the cannot-check-first rule. Confirmed to fail
+against the contradictory version. **486 tests.** All other cards, scenes,
+evidence, fields, guards and standing constraints untouched.
+
 ### Already verified — please do not redo
 
-- Typecheck, lint, **485 tests** (up from 478), Turbopack production build.
+- Typecheck, lint, **486 tests** (485 at sprint 40, plus the sprint 41
+  regression), Turbopack production build.
 - 635 words, about five minutes read aloud, leaving five for discussion. No
   device required.
 - **The guard is empty.** The set of missions whose extension asks for a real

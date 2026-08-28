@@ -1212,13 +1212,17 @@ export const whatTheCameraSees: Mission = {
       {
         label: "Screen 3 — the same tidy frame, live",
         description:
-          "The same wall, the same angle, the same everything. One difference, in the words underneath: LIVE — 8 PLAYERS CAN SEE THIS NOW. At the very edge of the frame, the door has started to open.",
+          "The same wall, the same angle, the same everything. The room has not changed at all. One difference, and it is in the words underneath: LIVE — 8 PLAYERS CAN SEE THIS NOW.",
         suggests:
-          "Still nothing, for about one more second. The picture has not changed at all.",
+          "Nothing, exactly as before. This is screen 2's picture, down to the last corner.",
         proves:
           "The words changed and the picture did not. Eight people are receiving this now, and there is no way to see that by looking at the room.",
+        // The door belongs here and nowhere else. Putting it in the picture
+        // would give a child a visible change to blame, and the point of this
+        // card is that there is nothing to see — the label is the only thing
+        // that moved.
         control:
-          "Whoever is coming through that door is on eight screens before they are on this one. A live moment cannot be checked first. Checking is something you do to a preview.",
+          "This frame is fine, and the next one is not promised. The door could open a second from now, or somebody could walk in, and because the label says LIVE that moment is on eight screens before it is on this one. A live moment cannot be checked first. Checking is something you do to a preview.",
         audience:
           "Eight, and the number can go up. This is where turning the feature off is the safer choice, because the alternative is guarding a camera for as long as it stays on.",
       },

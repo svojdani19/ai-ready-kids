@@ -1184,19 +1184,44 @@ describe("the camera extension teaches preview against live, not tidying", () =>
     }
   });
 
+  /**
+   * Sprint 41. Screen 3 used to claim "same wall, same angle, same everything"
+   * and "the picture has not changed at all" while its description added a door
+   * beginning to open — and this test asserted both at once. An opening door is
+   * a visible change, so a child can blame the picture and never learn that the
+   * unchanged frame's LIVE label is the only thing proving eight people are
+   * receiving it. The door now lives in the next-moment line as a hypothetical.
+   */
   it("keeps the frame the same while the status changes", () => {
     const [, two, three] = cards;
     // Screen 3 is screen 2's frame. If the picture changed too, a child could
     // still answer by looking at the room, which is the habit being replaced.
     expect(three.description.toLowerCase()).toMatch(/the same wall, the same angle/);
-    expect(three.description.toLowerCase()).toMatch(/one difference, in the words/);
-    expect(three.suggests.toLowerCase()).toMatch(/the picture has not changed/);
+    expect(three.description.toLowerCase()).toMatch(/the room has not changed at all/);
+    expect(three.description.toLowerCase()).toMatch(/one difference, and it is in the words/);
+    expect(three.suggests.toLowerCase()).toMatch(/nothing, exactly as before/);
     expect(three.proves.toLowerCase()).toMatch(/the words changed and the picture did not/);
-    // And the next moment has started, so "live" is not an abstraction.
-    expect(three.description.toLowerCase()).toMatch(/the door has started to open/);
-    expect(three.control!.toLowerCase()).toMatch(/before they are on this one|cannot be checked first/);
-    // Screen 2 is genuinely clean, which is what makes screen 3 land.
     expect(two.suggests.toLowerCase()).toMatch(/nothing/);
+  });
+
+  it("shows no visible change on screen 3, and puts the door in the next moment", () => {
+    const three = cards[2];
+    const visible = `${three.description} ${three.suggests}`.toLowerCase();
+
+    // Nothing in the frame moves, opens, enters or appears. The label is the
+    // only difference, and the copy must not hand a child anything else.
+    expect(visible).not.toMatch(/door/);
+    expect(visible).not.toMatch(/open/);
+    expect(visible).not.toMatch(/walks? in|walking in|coming through|steps? into/);
+    expect(visible).not.toMatch(/starts? to|has started|begins? to/);
+
+    // The door is a hypothetical about the next moment, not a thing on screen.
+    const next = three.control!.toLowerCase();
+    expect(next).toMatch(/the door could open/);
+    expect(next).toMatch(/a second from now|one second/);
+    // And the reason it matters: live outruns checking.
+    expect(next).toMatch(/cannot be checked first/);
+    expect(next).toMatch(/on eight screens before it is on this one/);
   });
 
   it("says tidying is not sufficient, on the card where the room is tidy", () => {
