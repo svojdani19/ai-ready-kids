@@ -281,6 +281,12 @@ export default async function MissionPreview({
                           <dt className="inline font-semibold text-ink">Proves: </dt>
                           <dd className="inline">{card.proves}</dd>
                         </div>
+                        {card.consent && (
+                          <div>
+                            <dt className="inline font-semibold text-ink">Everyone in it: </dt>
+                            <dd className="inline">{card.consent}</dd>
+                          </div>
+                        )}
                         <div>
                           <dt className="inline font-semibold text-ink">
                             Ready for a big audience?{" "}

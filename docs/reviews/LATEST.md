@@ -7,94 +7,100 @@ likely to be.
 
 ---
 
-## Sprint 37 — P1: the activity contained the hazard
+## Sprint 38 — P1: The Class Photo taught consent by exposing a real room
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-27-sprint-37.md`](2026-08-27-sprint-37.md)
+- **Full review:** [`2026-08-28-sprint-38.md`](2026-08-28-sprint-38.md)
 - **Review trail:** sprints 01–16 in this directory. Sprint 09 tripled the
   curriculum to 27 missions. Sprint 10 fixed two mechanism defects found in it.
-  Sprints 11 to 15 fixed content defects in ten of them, two per sprint.
-  Sprint 16 read the remaining eight. Sprint 17 closed the eight legacy
-  forced-award scenes as a rule in `validateMission`. Sprints 18 to 21 worked
-  through the original nine; every one of the 27 missions has been read, and 26
-  had findings. Sprints 22-23 are the second pass over the reporting layer,
-  sprint 24 the assessment layer, sprint 25 the educator orientation. Sprints
-  26-30 audit what the product permits and promises, 31-32 walk ordinary school
-  workflows, 33-34 build the migration path and its gate, 35 removed an
-  instruction that would have destroyed children's records, 36 traced the first
-  shared scene. **Sprint 37 removes a teacher activity that required projecting
-  photographs of real children in order to teach why that is sensitive.**
+  Sprints 11 to 16 read and fixed the eighteen newer missions. Sprint 17 closed
+  the eight legacy forced-award scenes as a rule in `validateMission`. Sprints
+  18 to 21 worked through the original nine; all 27 have been read, and 26 had
+  findings. Sprints 22-23 are the reporting layer, 24 the assessment layer, 25
+  the educator orientation. Sprints 26-30 audit what the product permits and
+  promises, 31-32 walk ordinary school workflows, 33-34 build the migration path
+  and its gate, 35 removed an instruction that would have destroyed children's
+  records, 36 traced the first shared scene, 37 removed a teacher activity that
+  required projecting photographs of real children. **Sprint 38 clears the
+  second and more direct instance of that defect, which sprint 37 found and left
+  standing.**
 
 ### What changed
 
-1. **The extension for The Filter That Wanted More said "Project three classroom
-   photos you have taken. As a group, list everything in each background that
-   could identify the school."** In a mission about what a picture gives away,
-   that put real children's faces, names on cubbies and work, uniforms,
-   timetables and school signage on a projector — and a projected screen can be
-   photographed off the wall. It also required sourcing and uploading images and
-   sat outside whatever media-consent arrangements a school has with families.
-2. **It is now zero-prep and self-supplying.** Three invented photos are
-   authored in the product as `guide.extensionCards`, described rather than
-   shown, so a teacher reads them aloud or projects them with nothing to source.
-   It works with no device at all, in about ten minutes — 411 words, roughly
-   three minutes read aloud.
-3. **The clues are graded, and the third one is the point.** Photo 1 plants a
-   strong clue (a `BRIGHTWOOD FALL FAIR` banner and a bus route), Photo 2 a weak
-   one (a `CENTRAL LEAGUE U9` shirt), and **Photo 3 is clean and still not
-   ready** — a plain wall, nothing in the background, two children in frame and
-   only one of them asked. Without Photo 3 the activity collapses into
-   background-spotting and teaches that a tidy picture is a safe picture, the
-   exact misconception this mission's guide already warns teachers to head off.
-4. **Every card separates what a picture suggests from what it proves**, and
-   answers a third question about audience. The room replies by hand signal and
-   **nothing is written down about any child**.
-5. **It says not to substitute real photographs, with the reason attached** —
-   "these three exist so that you never have to, and a picture on a projector
-   can be photographed off the wall."
-6. `ExtensionCard` is an **optional** field on `DiscussionGuide`, so the other
-   twenty-six missions are untouched. It renders in the printable guide and the
-   mission detail page.
+1. **`the-class-photo`'s extension said "Take a photo of your own classroom,
+   project it, and have the class hunt the background for anything they would
+   not publish. Names on trays, timetables, a rota with home details."** More
+   direct than sprint 37's defect: that one asked for photographs and left the
+   contents to chance, this one **named the sensitive material as the target**.
+   In a mission about consent and limited audiences it put a real room's actual
+   student and routine information on a shared screen — a family-restricted
+   child's arrangements, who collects whom, a support timetable, a reading-group
+   placement — and a projected screen can be photographed off the wall.
+2. **Three authored cards, staged so the order is the lesson**, reusing sprint
+   37's `ExtensionCard` structure and renderer. Photo 1: a readable chart headed
+   `WHO GOES HOME WITH WHO` — not ready, and *not because of anybody in it*,
+   nobody having been asked yet. Photo 2: same class next morning, chart gone,
+   all twenty-three asked one at a time about the school news page, all twenty-
+   three said yes — ready, for that page, because that is the exact thing they
+   were asked about. Photo 3: **that same clean photo** proposed for a cousin
+   outside the school and a forty-person group chat — not ready.
+3. **Photo 3 is the point. Nothing about the picture changes between 2 and 3 and
+   the answer changes anyway**, so a child cannot resolve it by looking harder
+   at the image. It lands on two misconceptions this guide already lists: "It is
+   already going online, so sending it changes nothing" and "Ravi is not in this
+   one, so I can send it." Card 2 says **"asked, one at a time, and answered"**
+   and explicitly **"Not nobody objected"**.
+4. **Each card keeps four questions apart**: what the background suggests, what
+   it proves, whether everyone in it was asked, and whether it is ready for
+   *this* audience. Hand signals, nothing written down about any child.
+5. **The prohibition names the old target**: not your own room, your students,
+   their families, or your school's real charts, lists and timetables — with the
+   projector-photographing reason attached.
+6. One optional field, `consent?`, added to the existing `ExtensionCard` and
+   rendered as "Everyone in it:". No new format and no second renderer. It is
+   optional because only some missions teach consent as a step separate from
+   background, and a test asserts that split.
 
 ### Already verified — please do not redo
 
-- Typecheck, lint, **471 tests** (up from 463), Turbopack production build.
-- Eight new assertions, all confirmed to **fail against the old extension and
-  pass against the new** by stashing the content and re-running: no instruction
-  to photograph or project one's own classroom and nothing sending a teacher to
-  a camera roll; three cards with every field populated; the read-aloud path;
-  the do-not-substitute rule and its reason; suggests-versus-proves on all three
-  cards with clues of differing strength; a clean-background card still refused
-  on audience and permission grounds; hand signals with nothing recorded; and no
-  real school named.
-- **Browser-checked at 1280×800 and 768×1024**, on the discussion guide and the
-  mission detail page: no horizontal overflow, all three cards inside the
-  content column, nothing clipped, 16px body text.
-- **The mission graph, evidence, scenes and student data are untouched.**
+- Typecheck, lint, **477 tests** (up from 471), Turbopack production build.
+- 502 words, about four minutes read aloud, leaving roughly six for discussion.
+  No device needed.
+- Six new assertions, all confirmed to **fail against the old extension and pass
+  against the new** by stashing the content and re-running: the three stages
+  individually, the no-real-photo rule with its reason, the three questions
+  named and kept apart, hand signals with nothing recorded, and distinctness
+  from the Filter cards.
+- **The guard has shrunk from two missions to one, as required.** The set whose
+  extension asks for a real classroom photograph is now exactly
+  `["what-the-camera-sees"]`.
+- **Browser-checked on both teacher surfaces at 1280×800 and 768×1024**: no
+  horizontal overflow, all three cards inside the content column, nothing
+  clipped, and four definition rows per card at every size, confirming the new
+  consent line renders everywhere.
+- **Mission graph, evidence, scenes and student fields untouched.**
 
-### Where this is most likely still wrong
+### Where this is most likely still wrong — best places to push
 
-- **`the-class-photo` has the same defect, unmitigated, and is not fixed.** Its
-  extension reads "Take a photo of your own classroom, project it, and have the
-  class hunt the background for anything they would not publish. Names on trays,
-  timetables, a rota with home details." This sprint was scoped to one mission.
-  **It should be the next one.** `what-the-camera-sees` is the mitigated case —
-  empty room, before school, never a live feed, never children in frame, a
-  prepared image offered instead — but still asks for a real school interior.
-  Both are now pinned by a test: that set must equal exactly those two, so it
-  can shrink but not grow.
-- **The rest of the 27 guides have not been read for this defect class.** Two of
-  the first three checked had it, which is not a reassuring base rate.
+- **`what-the-camera-sees` is the last case the guard knows about**, and it is
+  the mitigated one: empty room, before school, never a live feed, never
+  children in frame, a prepared image offered instead. It still asks a teacher
+  to photograph a real school interior. Smaller than the two now fixed, but it
+  is the remaining instance.
+- **The other twenty-four guides have not been read for this defect class.**
+  Three of the first three checked had some version of it. That base rate has
+  not improved, and the guard only catches this *shape* of instruction — an
+  activity could ask for real material in wording the regex never sees.
 - **Twenty-six of twenty-seven missions still have untraced shared scenes** —
-  sprint 36.
-- **The new guards are string assertions against authored copy.** They catch
-  this shape of instruction, not every way to ask for a real photograph.
+  sprint 36 traced one and found the defect reached the evidence record.
+- **All the new content guards are string assertions against authored copy.**
+  They pin the fix, not the property.
 - **Prose goes stale silently** — sprint 35.
-- **`src/app/(site)/privacy/page.tsx` has two unused-import lint warnings** that
-  predate sprint 35 and are unrelated to this work.
-- **Only one previous schema shape is recognised** — sprint 34. **No
-  down-migrations.**
-- **Rollover is one school at a time**, and bulk reassignment does not exist.
+- **`src/app/(site)/privacy/page.tsx` has two unused-import lint warnings**
+  predating sprint 35, unrelated to this work.
+- **Only one previous schema shape is recognised** — sprint 34. No
+  down-migrations.
+- **Rollover is one school at a time**; bulk reassignment does not exist.
 - **The route and action inventory is still not complete.**
 - **`enterDemo("student")` writes a student session directly**, and
   **`simulateAttempt` writes seed paths directly**.

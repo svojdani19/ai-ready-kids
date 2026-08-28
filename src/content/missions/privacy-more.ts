@@ -821,8 +821,59 @@ export const theClassPhoto: Mission = {
           "Catch this one, because it sounds like the lesson and is the opposite of it. Ravi's no was his own. The other twenty-two agreed to a school page and were never asked about anything else. Removing the person who objected does not create permission from the people who did not.",
       },
     ],
+    // Sprint 38. This used to read "Take a photo of your own classroom, project
+    // it, and have the class hunt the background for anything they would not
+    // publish. Names on trays, timetables, a rota with home details." It named
+    // the sensitive material as the target: in a mission about consent and
+    // limited audiences, it put a real room's actual student and routine
+    // information on a shared screen. A family-restricted child, a collection
+    // arrangement or a support timetable could be exposed to the whole class,
+    // and a projected screen can be photographed off the wall. The three
+    // invented photos below walk this mission's full rule instead — background,
+    // then everybody's own yes, then the audience that yes was given for — and
+    // the third is the one that matters, because nothing about the picture
+    // changes and the answer changes anyway.
     extension:
-      "Take a photo of your own classroom, project it, and have the class hunt the background for anything they would not publish. Names on trays, timetables, a rota with home details. They will find more than you expect.",
+      "Three invented photos, below, and the order is the lesson: one photo getting fixed, then that same fixed photo going somewhere nobody agreed to. For each one ask the room three questions and keep them apart — what is in the background, was everybody in it actually asked, and where exactly is it going? Take answers as hand signals so nobody is on the spot: thumb up for yes, flat hand for not sure, thumb down for no. Spend your time on Photo 3. Nothing about the picture changed between 2 and 3, and the answer changed anyway. Nothing is written down about any child. Do not use a photo of your own room, your students, their families, or your school's real charts, lists and timetables — these three exist so that you never have to, and a picture on a projector can be photographed off the wall.",
+    extensionCards: [
+      {
+        label: "Photo 1 — the first try",
+        description:
+          "Room 9's class photo, taken on the steps. Twenty-three children, everybody smiling. On the wall behind them a chart is easy to read: reading groups with names down one side, and a column headed WHO GOES HOME WITH WHO.",
+        suggests:
+          "Which children are in which reading group, and how some of them get home.",
+        proves:
+          "That the chart was on that wall on that day. It does not prove the groups are still the same, or that any of it is still true. It is a clue about the room, and it is already too much to put on a page.",
+        consent:
+          "Nobody has been asked yet. That question is coming, and it is a separate question from the chart.",
+        audience:
+          "Not ready, and not because of anybody in it. Take the chart down and take the picture again.",
+      },
+      {
+        label: "Photo 2 — the second try",
+        description:
+          "The same class on the same steps the next morning. The chart is gone; there is a plain brick wall behind them. Every one of the twenty-three was asked, one at a time, whether this photo could go on the school's own news page. All twenty-three said yes.",
+        suggests: "Nothing about the room. The background is genuinely empty now.",
+        proves:
+          "Nothing about the place — and the place was only ever the first question.",
+        consent:
+          "Everybody in it was asked and everybody said yes. Not nobody objected. Asked, one at a time, and answered.",
+        audience:
+          "Ready for the school news page, because the school news page is the exact thing they were asked about.",
+      },
+      {
+        label: "Photo 3 — the same photo, somewhere else",
+        description:
+          "That second photo, the clean one everybody agreed to. Somebody wants to send it to a cousin who does not go to the school, and into a group chat with about forty people in it.",
+        suggests: "Nothing new at all. It is the same picture.",
+        proves:
+          "Nothing has changed about the picture. Everything has changed about where it is going.",
+        consent:
+          "Twenty-three yeses, every one of them to the school news page. Nobody was asked about a cousin. Nobody was asked about a group chat.",
+        audience:
+          "Not ready. A yes to one place is not a yes to everywhere, and a picture being fine is not the same as the destination being fine.",
+      },
+    ],
   },
   family: {
     summary:

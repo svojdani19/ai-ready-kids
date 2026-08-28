@@ -375,6 +375,12 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       hundred words and remove the sourcing, the consent question and the
       exposure at once, and let the clues be graded and one case be a clean
       decoy, which real material never reliably is.
+- [ ] **Specificity about a hazard is not safety from it.** The strongest form
+      of the activity-contains-the-hazard defect looks like the most thorough
+      version of the lesson: an author naming exactly what to look for — "names
+      on trays, timetables, a rota with home details" — reads as rigour and is
+      the sentence that turns the activity into the exposure. Ask what the
+      teacher has to produce, not how carefully the prose describes it.
 - [ ] **A shared scene is checked against every path into it.** List the
       predecessors, then read the scene once per predecessor. Any sentence
       about what has already happened — what an app knows, what the child

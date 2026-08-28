@@ -975,25 +975,124 @@ describe("the photo-reading extension supplies its own pictures", () => {
   });
 
   /**
-   * The same instruction survives in two other extensions. Sprint 37 was scoped
-   * to this mission, so they are pinned rather than fixed: the list may shrink,
-   * and a new mission may not join it.
+   * The same instruction survived in two other extensions. Sprint 37 was scoped
+   * to one mission and sprint 38 cleared the second, so the list has shrunk to
+   * the mitigated case: it may shrink further, and no mission may join it.
    *
-   *   - the-class-photo is the same defect, unmitigated, and it names the
+   *   - the-class-photo was the same defect, unmitigated, and named the
    *     sensitive content as the target: "Names on trays, timetables, a rota
-   *     with home details."
+   *     with home details." Fixed in sprint 38.
    *   - what-the-camera-sees is the mitigated case: empty room, before school,
    *     never a live feed, never children in frame, and a prepared image
-   *     offered as an alternative.
+   *     offered as an alternative. Still outstanding.
    */
   it("leaves no other mission free to ask for a real classroom photograph", () => {
-    const KNOWN = ["the-class-photo", "what-the-camera-sees"];
+    // Sprint 38 removed the-class-photo from this list. Only the mitigated case
+    // remains: what-the-camera-sees photographs an empty room before school,
+    // never a live feed, never children in frame, and offers a prepared image
+    // instead. The list may shrink further; nothing may join it.
+    const KNOWN = ["what-the-camera-sees"];
     const asksForOne = MISSIONS.filter((m) =>
       /(take|project|photograph) [^.]{0,40}\byour (own |empty )*classroom\b|classroom photos you have taken/i.test(
         m.guide.extension,
       ),
     ).map((m) => m.slug);
     expect(asksForOne.sort()).toEqual([...KNOWN].sort());
+  });
+});
+
+/**
+ * Sprint 38. The Class Photo's extension read "Take a photo of your own
+ * classroom, project it, and have the class hunt the background for anything
+ * they would not publish. Names on trays, timetables, a rota with home
+ * details." It named the sensitive material as the target: in a mission about
+ * consent and limited audiences, it put a real room's actual student and
+ * routine information on a shared screen, where a family-restricted child, a
+ * collection arrangement or a support timetable could be exposed to everybody —
+ * and a projected screen can be photographed off the wall.
+ */
+describe("the class-photo extension walks consent instead of exposing a real room", () => {
+  const photo = MISSION_BY_SLUG["the-class-photo"];
+  const cards = photo.guide.extensionCards ?? [];
+  const extension = photo.guide.extension.toLowerCase();
+
+  it("no longer asks for a photograph of the teacher's own room", () => {
+    expect(extension).not.toMatch(/take a photo of your own/);
+    expect(extension).not.toMatch(/photograph your/);
+    // And it does not send them hunting through the real room's paperwork.
+    expect(extension).not.toMatch(/names on trays/);
+    expect(extension).not.toMatch(/rota with home details/);
+  });
+
+  it("carries three authored cards and needs no device", () => {
+    expect(cards).toHaveLength(3);
+    for (const card of cards) {
+      for (const field of [card.description, card.suggests, card.proves, card.audience]) {
+        expect(field.trim().length, card.label).toBeGreaterThan(0);
+      }
+    }
+    expect(extension).toMatch(/hand signals/);
+    expect(extension).toMatch(/nothing is written down about any child/);
+  });
+
+  it("asks about background, each person's own yes, and the audience separately", () => {
+    // The three questions are named in the instructions, and kept apart.
+    expect(extension).toMatch(/background/);
+    expect(extension).toMatch(/was everybody in it actually asked|everybody in it/);
+    expect(extension).toMatch(/where exactly is it going/);
+    expect(extension).toMatch(/keep them apart/);
+    // Every card answers all three, plus suggests-versus-proves.
+    for (const card of cards) {
+      expect(card.consent?.trim().length, `${card.label} consent`).toBeGreaterThan(0);
+      expect(card.suggests.trim().length, `${card.label} suggests`).toBeGreaterThan(0);
+      expect(card.proves.trim().length, `${card.label} proves`).toBeGreaterThan(0);
+      expect(card.audience.trim().length, `${card.label} audience`).toBeGreaterThan(0);
+    }
+  });
+
+  it("stages the cards through the mission's whole rule", () => {
+    const [first, second, third] = cards;
+
+    // 1. Background: a readable private chart, and nobody asked yet.
+    expect(first.description.toLowerCase()).toMatch(/chart/);
+    expect(first.consent!.toLowerCase()).toMatch(/nobody has been asked yet/);
+    expect(first.audience.toLowerCase()).toMatch(/not ready/);
+
+    // 2. Clean, and every fictional child agreed to one named destination.
+    expect(second.suggests.toLowerCase()).toMatch(/nothing about the room/);
+    expect(second.consent!.toLowerCase()).toMatch(/everybody said yes|all twenty-three/);
+    // Asked, not merely unopposed — the distinction the mission turns on.
+    expect(second.consent!.toLowerCase()).toMatch(/not nobody objected/);
+    expect(second.audience.toLowerCase()).toMatch(/school news page/);
+
+    // 3. Same picture, audience nobody agreed to. Nothing about the image
+    //    changed, so a child cannot resolve this one by looking harder at it.
+    expect(third.description.toLowerCase()).toMatch(/that second photo|the clean one/);
+    expect(third.suggests.toLowerCase()).toMatch(/nothing new/);
+    expect(third.proves.toLowerCase()).toMatch(/nothing has changed about the picture/);
+    expect(third.consent!.toLowerCase()).toMatch(/nobody was asked about/);
+    expect(third.audience.toLowerCase()).toMatch(/not ready/);
+    expect(third.audience.toLowerCase()).toMatch(/yes to one place is not a yes to everywhere/);
+  });
+
+  it("forbids real photographs and says why", () => {
+    expect(extension).toMatch(/do not use a photo of your own room/);
+    expect(extension).toMatch(/students/);
+    expect(extension).toMatch(/families/);
+    // The school's real paperwork is named too, because that was the old target.
+    expect(extension).toMatch(/charts, lists and timetables|real charts/);
+    expect(extension).toMatch(/photographed off the wall/);
+  });
+
+  it("is distinct from the filter mission's cards", () => {
+    const filterCards = MISSION_BY_SLUG["the-filter-that-wanted-more"].guide.extensionCards ?? [];
+    const mine = cards.map((c) => c.description);
+    const theirs = filterCards.map((c) => c.description);
+    for (const d of mine) expect(theirs).not.toContain(d);
+    // Different job: that one grades place-clues by strength, this one walks
+    // one photograph through background, consent and audience.
+    expect(filterCards.every((c) => c.consent === undefined)).toBe(true);
+    expect(cards.every((c) => typeof c.consent === "string")).toBe(true);
   });
 });
 

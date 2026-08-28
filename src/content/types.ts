@@ -120,6 +120,12 @@ export interface ExtensionCard {
   suggests: string;
   /** What it would actually take to know, and what stays unknown. */
   proves: string;
+  /**
+   * Whether everybody in the picture was actually asked. Optional, because it
+   * only applies where a mission teaches consent as a separate step from
+   * background — The Class Photo does, The Filter That Wanted More does not.
+   */
+  consent?: string;
   /** Whether this one is ready for a big audience, and why that is separate. */
   audience: string;
 }
