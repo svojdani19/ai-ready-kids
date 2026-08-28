@@ -375,6 +375,12 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       hundred words and remove the sourcing, the consent question and the
       exposure at once, and let the clues be graded and one case be a clean
       decoy, which real material never reliably is.
+- [ ] **A control must be able to do what its label says.** Check every button
+      that stays live during an async operation: can Cancel still cancel, can
+      Undo still undo? A control that cannot is worse than its absence, because
+      it converts the moment a user reconsiders into false reassurance. When an
+      operation becomes uncancellable, say so and take the control away — a
+      disabled button still reads as one that might come back.
 - [ ] **Covering the screen is a visual act; the tab order does not know about
       paint.** Any `fixed inset-0` overlay needs modal semantics, focus kept
       inside it, and focus handed back to whatever opened it. The gap is

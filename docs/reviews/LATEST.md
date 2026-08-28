@@ -7,87 +7,87 @@ likely to be.
 
 ---
 
-## Sprint 47 — P1: the board covered the application but not the tab order
+## Sprint 48 — P1: the Cancel that could not cancel
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-28-sprint-47.md`](2026-08-28-sprint-47.md)
+- **Full review:** [`2026-08-28-sprint-48.md`](2026-08-28-sprint-48.md)
 - **Review trail:** sprints 01–25 built and corrected the curriculum, reporting,
   assessment and orientation layers; 26–30 audit what the product permits and
   promises; 31–32 walk ordinary school workflows; 33–34 build the migration path
   and its gate; 35–41 fix teacher-facing and content defects; 42–43 make the paid
   entitlement the vendor's number and enforce it; 44 removed the last claim that
-  the product certifies teachers; 45–46 gave the shared navigation a keyboard
-  exit at both widths. **Sprint 47 is the same defect class in the place it
-  matters most: the surface a teacher is holding while a class watches.**
+  the product certifies teachers; 45–47 gave the shared navigation and Classroom
+  Mode keyboard exits and focus recovery. **Sprint 48 fixes the shared
+  confirmation control — the one that guards deletion.**
 
 ### What changed
 
-1. **Classroom Mode painted over the application without taking it out of the
-   tab order.** `fixed inset-0`, no modal semantics, no focus containment, and an
-   Exit button that unmounted while focused without restoring the launcher. A
-   teacher driving from the keyboard tabs one stop too far onto a control the
-   projector covers, **nothing on screen changes**, and there is no way to tell
-   what happened — then Exit drops them at the top of the document with the class
-   waiting.
-2. **Both full-screen states are now one labelled modal surface**, present and
-   debrief, each with `role="dialog"`, `aria-modal="true"` and a name. **The plan
-   page is not modal** — reading a lesson plan is ordinary page reading.
-3. **Tab and Shift+Tab stay inside the surface.** Tab is intercepted and wrapped
-   rather than the background being made inert, which keeps the change inside
-   Classroom Mode as scoped. `tabindex="-1"` is excluded, so the stage wrapper
-   stays available for programmatic focus without becoming a stop.
-4. **It contains without trapping**: Exit, ← Back, Next/Go to debrief and Notes
-   are all on screen and all in the cycle, and a test asserts they are visible.
-5. **Exit returns focus to the exact launcher that opened the board.** Which of
-   the two "Put it on the board" buttons was pressed is recorded at launch — a
-   teacher who launched from the foot of the plan and lands back at the top has
-   lost their place, which is the same defect in a smaller form.
-6. **Only Exit restores.** "Finish and open the guide" navigates normally and
-   nothing pulls focus back.
-7. **Every presenter shortcut is untouched** — arrows, space, Page Up/Down, 1–4,
-   N, and Escape still returning from a revealed branch to the choice list.
-   **Escape is not an exit from Classroom Mode**, and the trap ignores it.
+1. **Cancel stayed live after the confirm was pressed, and could not cancel
+   anything.** All it did was collapse the interface; the server action carried
+   on. An administrator could press *Delete permanently*, have a second thought,
+   press *Cancel*, watch the confirmation vanish, reasonably conclude they had
+   stopped it — and find the roster, mission history, evidence and both check-ins
+   gone. **This is false reassurance at the exact moment doubt should be acted
+   on**, and it is worse than no control: without it the user knows they are
+   committed and goes looking for a way to recover.
+2. **Once the request is away there is no Cancel** — non-interactive text,
+   **"Cannot be stopped now"**. Not a disabled button, which still reads as a
+   control that might come back.
+3. **No reopening or re-firing while pending.** The state stays `confirming`, so
+   the launcher does not exist to press again; `disabled` is backed by an
+   `inFlight` ref because `disabled` only applies after a re-render and two
+   clicks can land before one happens. The action runs **at most once**.
+4. **Focus enters the confirmation** — on the confirm button, with the question
+   as its `aria-describedby`, so the consequence is read with the control. Still
+   an **inline two-step, not a modal**.
+5. **Focus comes back on every exit**: pre-submit Cancel (which never calls the
+   action), an expected `{error}` (collapse, preserve and announce the
+   `role="alert"`, focus the launcher so recovery can start), and success — but
+   only if the launcher is **still connected**, since a delete revalidates and
+   may take the row with it. Unmount touches nothing.
+6. **A previous error is cleared on retry**, so a stale alert cannot sit beside a
+   fresh attempt.
 
 ### Already verified — please do not redo
 
-- Typecheck, lint, **542 tests** (up from 531), Turbopack production build.
-- Eleven tests added, twenty-two in the file, **nine confirmed to fail without
-  the fix** by stashing the component. They render the real component **inside
-  the page furniture it covers** — header link, sign-out button, footer link — so
-  "does Tab reach the navigation" is asked rather than assumed. Coverage: modal
-  semantics on both states and none on the plan; forward and reverse containment
-  over thirty stops each, asserting on every iteration that focus is inside and
-  that each underlying control does **not** have it; debrief containment; the
-  visible exits; exact-launcher recovery from **both** buttons; no focus theft on
-  guide navigation; stage-change focus landing on something visible inside the
-  surface; and a shortcut regression covering 1–4, Escape-to-choice-list with the
-  dialog still open, N both ways, and arrows/Page keys forwards and back.
-- **Browser-checked at 1280×800, keyboard only:** launched from the second
-  button; 30 Tabs and 25 Shift+Tabs stayed inside the board; ArrowRight to the
-  debrief, label switches, 12 more Tabs contained; ← Back then Exit → dialog
-  gone, **focus on the second launcher**, visible.
-- **768×1024:** containment over 20 Tabs, all four board controls 44px tall, no
-  horizontal overflow, and Exit from a header launch returned focus to the
-  **header** launcher.
-- **No curriculum, recording, student-data or subscription change**, and no
-  change to what Escape means.
+- Typecheck, lint, **553 tests** (up from 542), Turbopack production build.
+- New `tests/confirm-action.test.tsx`, eleven cases, driven by a **deferred
+  promise the test settles by hand**, so the pending state is inspected while the
+  action is genuinely in flight rather than guessed at with a timer. **Six
+  confirmed to fail against the old component**; five guard what must not
+  regress — single invocation under a double press, no reopening while pending,
+  error clearing, unmount safety, no focus theft on first render.
+- **Admin at 1280×800, archive and restore:** focus entered *Archive class* with
+  the question described and no `role="dialog"`; Cancel returned focus to the
+  exact launcher with the class still active; and on a real confirm a
+  `MutationObserver` watching the row through the transition recorded **"Cannot
+  be stopped now"** and a **disabled "Working…"**, while the marker for a live
+  Cancel coexisting with pending **never fired**.
+- **Teacher at 768×1024, rotate a class code:** focus entered *Change it*;
+  Cancel returned focus to *New code* and **the code did not rotate**; on confirm
+  the pending text appeared with no live Cancel, the code changed, and focus came
+  back to the launcher. No horizontal overflow.
+- **Server actions, entitlement enforcement, retention, audit behaviour,
+  child-data constraints and the inline non-modal design are unchanged.** No
+  caller changed; the `action` contract is untouched.
 
 ### Where this is most likely still wrong — best places to push
 
-- **The background is not `inert`.** Containment is enforced by intercepting Tab,
-  so covered controls remain focusable in principle — a screen-reader virtual
-  cursor or a browser's link list could still surface them, and `aria-modal` is
-  the only thing telling assistive technology to ignore them. Real `inert` would
-  be stronger and means reaching outside this component; worth doing
-  deliberately rather than as a side effect.
-- **The pattern across 45, 46 and 47 is now nameable: this product builds
-  overlays well and finishes them for pointers.** The remaining candidates are
-  the `ConfirmAction` two-step, the student mission player's full-screen states,
-  and the read-aloud control. None has been checked for focus containment,
-  return-focus, or modal semantics.
+- **A confirmed action still cannot be undone.** This makes the interface honest
+  about that; it does not add an undo. Archive and restore are reversible by
+  their opposite, but `deleteClassDataAction` is protected only by the two-step
+  and its wording. Whether a school product should offer a grace period on
+  permanent deletion is a product decision, not a component one.
+- **Focus after success lands on the launcher element, which may have been
+  relabelled** — on the admin path React reused the node and it went from
+  *Restore* to *Archive*, because the action succeeded and the row changed. That
+  is the right outcome, but "restore focus to the launcher" and "restore focus to
+  a button with the same label" are different things, and only the first is
+  achievable when the action changes what the row offers.
+- **The overlay pattern still has candidates**: the student mission player's
+  full-screen states and the read-aloud control have not been checked for focus
+  containment, return-focus or modal semantics — sprints 45–47.
 - **No general keyboard-only pass exists**, only the surfaces a sprint touched.
-- **Mobile panel state survives a resize** — sprint 46. Focus-safe, still a state
-  wrinkle.
 - **Nothing reconciles the entitlement against an actual agreement** — sprint 42.
   Only enrolment and restoration are metered — sprint 43. **Lapsed-subscription
   enforcement remains documented and unbuilt.**
