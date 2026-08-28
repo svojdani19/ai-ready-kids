@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { MISSIONS, MISSION_BY_SLUG } from "@/content/missions";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
 import { CERTIFICATION_MODULES, CERTIFICATION_TITLE } from "@/content/certification";
@@ -1861,6 +1863,98 @@ describe("educator orientation", () => {
     // word cannot creep back into one surface while the checks stay ungated.
     expect(CERTIFICATION_TITLE.toLowerCase()).not.toContain("certif");
     expect(CERTIFICATION_MODULES.length).toBe(5);
+  });
+
+  /**
+   * Sprint 44. The two tests above scan the orientation's own constants, and
+   * the claim that survived was nowhere near them: the shared site header told
+   * buyers teachers could "Preview, assign, discuss, certify". Marketing chrome
+   * is buyer-facing copy, and a guard that only reads the content module cannot
+   * see it. This reads the files a school buyer actually looks at.
+   */
+  describe("buyer-facing copy does not claim the orientation certifies anybody", () => {
+    const MARKETING = [
+      "src/components/SiteHeader.tsx",
+      "src/components/SiteFooter.tsx",
+      "src/app/(site)/page.tsx",
+      "src/app/(site)/for-schools/page.tsx",
+      "src/app/(site)/approach/page.tsx",
+      "src/app/(site)/plans/page.tsx",
+      "src/app/(site)/curriculum/page.tsx",
+      "src/app/(site)/benchmark/page.tsx",
+      "src/app/(site)/privacy/page.tsx",
+    ].filter((f) => existsSync(join(process.cwd(), f)));
+
+    // Accurate uses that must survive the sweep: what the teacher actually
+    // receives, and the explicit denials of a compliance claim.
+    const ALLOWED = [
+      /certificate of completion/gi,
+      /does not (claim|provide) any compliance certification/gi,
+      /does not claim any compliance certification/gi,
+      /not a legal compliance certification/gi,
+      /not a compliance certification/gi,
+      /rather than certifying competence/gi,
+      /does not certify/gi,
+    ];
+
+    it("covers the surfaces a school buyer reads", () => {
+      // The list is only a guard if it is not empty and it holds the header.
+      expect(MARKETING.length).toBeGreaterThanOrEqual(5);
+      expect(MARKETING).toContain("src/components/SiteHeader.tsx");
+    });
+
+    it.each(MARKETING)("%s", (file) => {
+      let copy = readFileSync(join(process.cwd(), file), "utf8");
+      // Comments and imports are not copy. A note explaining why a claim was
+      // removed must not read as the claim returning.
+      copy = copy
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/(^|\s)\/\/[^\n]*/g, "$1")
+        .replace(/^import[^\n]*$/gm, "");
+      // Whitespace is collapsed next, because prose wraps: the privacy page's
+      // "does not claim any compliance certification" spans two source lines,
+      // and a line-by-line scan reads the tail as a bare claim.
+      copy = copy.replace(/\s+/g, " ");
+      // Code identifiers are not buyer-facing copy either.
+      copy = copy
+        .replace(/\/teacher\/certification[\w/]*/g, "")
+        .replace(/CERTIFICATION_[A-Z_]+/g, "")
+        .replace(/\breport\.certification[\w.]*/g, "");
+      // Then the accurate prose, which must not be "fixed" away.
+      for (const ok of ALLOWED) copy = copy.replace(ok, "");
+
+      const claims = copy.match(/.{0,60}certif.{0,60}/gi) ?? [];
+      expect(claims, `${file} still makes a certification claim`).toEqual([]);
+    });
+
+    it("uses plain language in the Teachers navigation blurb", () => {
+      const header = readFileSync(join(process.cwd(), "src/components/SiteHeader.tsx"), "utf8");
+      const blurb = header.match(/label: "Teachers",\s*\n\s*blurb: "([^"]+)"/)?.[1];
+      expect(blurb, "the Teachers nav blurb").toBeDefined();
+      expect(blurb!.toLowerCase()).not.toMatch(/certif/);
+      // And it still describes what the destination section offers.
+      expect(blurb!.toLowerCase()).toMatch(/prepare|orient/);
+      expect(blurb!.toLowerCase()).toContain("preview");
+      expect(blurb!.toLowerCase()).toContain("assign");
+    });
+
+    it("keeps the accurate phrases the sweep must not remove", () => {
+      const forSchools = readFileSync(
+        join(process.cwd(), "src/app/(site)/for-schools/page.tsx"),
+        "utf8",
+      );
+      // What a teacher actually gets is a certificate of completion, and
+      // saying so is accurate — the fix is not to delete the honest phrase.
+      expect(forSchools).toContain("certificate of completion");
+      expect(forSchools).toContain("educator orientation");
+
+      const privacy = readFileSync(
+        join(process.cwd(), "src/app/(site)/privacy/page.tsx"),
+        "utf8",
+      );
+      // The explicit denial of a compliance claim must also survive.
+      expect(privacy.toLowerCase()).toMatch(/does not claim any compliance certification/);
+    });
   });
 
   it("describes the curriculum it actually ships", () => {

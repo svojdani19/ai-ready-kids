@@ -375,6 +375,11 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       hundred words and remove the sourcing, the consent question and the
       exposure at once, and let the clues be graded and one case be a clean
       decoy, which real material never reliably is.
+- [ ] **Shared chrome is copy, and a claim retired in a feature can survive in
+      the navigation.** When a sprint removes a word, sweep the header, footer
+      and marketing pages, not only the module that prompted it — and point the
+      regression test at the surfaces a buyer reads rather than the constants
+      that were already fixed. Desktop-only copy escapes review twice over.
 - [ ] **A limit enforced at creation misses every path that reactivates.**
       Archive/restore, move, merge, transfer and import all put records into an
       active state without creating them. When a rule is added at one of these

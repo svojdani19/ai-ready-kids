@@ -42,7 +42,17 @@ const GROUPS: NavGroup[] = [
   {
     label: "For your school",
     items: [
-      { href: "/for-schools#teachers", label: "Teachers", blurb: "Preview, assign, discuss, certify" },
+      // Sprint 44: this said "certify". Sprint 25 renamed the five modules an
+      // educator orientation precisely because the checks are ungated — a
+      // teacher can answer every one wrong and still finish — so completion
+      // records that pages were read, not that anything was understood. The
+      // destination section calls it an orientation with a certificate of
+      // completion; the navigation promised a principal something else.
+      {
+        href: "/for-schools#teachers",
+        label: "Teachers",
+        blurb: "Preview, assign, discuss, prepare",
+      },
       { href: "/for-schools#administrators", label: "Administrators", blurb: "Aggregate trends and an annual report" },
       { href: "/for-schools#families", label: "Families", blurb: "A printable page per mission, no account" },
       { href: "/plans", label: "Plans", blurb: "Annual subscription, purchase order friendly" },

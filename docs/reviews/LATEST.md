@@ -7,85 +7,88 @@ likely to be.
 
 ---
 
-## Sprint 43 — P1: the roster mutation that did not look like one
+## Sprint 44 — P1: the certification claim that lived in the chrome
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-28-sprint-43.md`](2026-08-28-sprint-43.md)
+- **Full review:** [`2026-08-28-sprint-44.md`](2026-08-28-sprint-44.md)
 - **Review trail:** sprints 01–25 built and corrected the curriculum, reporting,
-  assessment and orientation layers; 26–30 audit what the product permits and
-  promises; 31–32 walk ordinary school workflows; 33–34 build the migration path
-  and its gate; 35–41 fix teacher-facing and content defects, including three
-  activities that required photographs of real children. Sprint 42 made the paid
-  entitlement the vendor's number and enforced it at enrolment, and reported one
-  bypass it did not close. **Sprint 43 closes it.**
+  assessment and orientation layers — 25 is where the five modules were renamed
+  an *educator orientation*; 26–30 audit what the product permits and promises;
+  31–32 walk ordinary school workflows; 33–34 build the migration path and its
+  gate; 35–41 fix teacher-facing and content defects; 42–43 make the paid
+  entitlement the vendor's number and enforce it at both enrolment and
+  restoration. **Sprint 44 removes the last place the product still claimed to
+  certify teachers.**
 
 ### What changed
 
-1. **Restoration bypassed the seat cap.** Sprint 42 excluded archived cohorts
-   from the count — correct, since a class kept for retention is not a class
-   being taught. But archive a full cohort, spend the freed seats on a new one,
-   restore the old class, and the school is over its licence with no child having
-   passed through `createStudent`. **Restoration is a roster mutation that does
-   not look like one**, which is why a check written where children are *created*
-   missed it.
-2. **`restoreClass` now refuses when `used + roster > licensed`.** Enforced in
-   the repository, not the action, so a direct call cannot bypass it; the action
-   catches rather than pre-checks. Read and write share one `BEGIN IMMEDIATE`
-   transaction, so a restore and an enrolment arriving together cannot both see
-   the same free seat, and a refusal rolls back with `archived_at` untouched.
-3. **The class stays archived and every record is kept.** Refusal was chosen over
-   the alternatives deliberately: an overage is a bill nobody agreed to and there
-   is no PO mechanism to charge it; a partial restore would have software
-   choosing which children come back; and deleting to free capacity is the one
-   outcome retention exists to prevent. The administrator's two ordinary moves —
-   archive another cohort, or ask for more places — both stay open.
-4. **Exactly on the cap is allowed**, `>` and never `>=`; a school that bought 90
-   seats can have 90 children. **An empty archived class always restores**, and
-   **re-restoring an active class is a no-op**, not a double-count.
-5. **The refusal names all four numbers and the route out**, and the audit
-   records `class.restore_blocked_by_licence` with the class and counts and **no
-   child's name**. No success audit on the refused path.
-6. **One UI change:** `ConfirmAction` rendered errors inline beside the button. A
-   refusal stating four numbers is a sentence, and a sentence beside a button in
-   a table cell is unreadable, so it is now a block below.
+1. **The shared site header told buyers teachers could "Preview, assign,
+   discuss, certify".** The checks in those five modules are **ungated** — a
+   teacher can answer every one wrong and still receive a certificate of
+   completion — so the only fact held is that pages were opened and questions
+   answered. "Certify" claimed competence the data cannot support, and
+   contradicted the approach page, the annual report and the certificate itself,
+   all of which had already been corrected.
+2. **The blurb now reads "Preview, assign, discuss, prepare"**, matching the
+   destination section's *"5-module educator orientation… with a printable
+   certificate of completion"*.
+3. **A sweep of every buyer-facing surface found nothing else.** The remaining
+   uses are accurate and deliberately kept: "certificate of completion", the
+   compliance denials on the privacy, report and data pages, and the disclaimers
+   "rather than certifying competence" and "does not certify".
+4. **The checks are not gated and the orientation is not broadened.** Gating them
+   to justify a word would be letting marketing copy drive pedagogy; the copy
+   changes to match the product instead.
+
+### Why the guard missed it
+
+The existing test scanned `CERTIFICATION_MODULES` and `CERTIFICATION_TITLE` —
+**the offering's own content constants**, where the word had already been
+removed. The claim was in a shared layout component that no content test had
+reason to open. The blurbs also render **only at desktop width**; the mobile menu
+shows labels without them, so the sentence was invisible at 768px and below.
 
 ### Already verified — please do not redo
 
-- Typecheck, lint, **501 tests** (up from 494), Turbopack production build.
-- Seven tests. The three asserting refusal were confirmed to **fail without the
-  rule** by stashing the source; the rest assert restoration still *succeeds* —
-  exact cap, empty class, re-restore, other schools — because a cap that
-  over-blocks is as much a bug as one that under-blocks. Also covered: the error
-  is both `RestoreExceedsLicenceError` and `LicenceExceededError`; the `>`
-  operator is asserted directly; archiving still frees seats for a new cohort and
-  a refused restore leaves the archived records in place for retention.
-- **Browser-verified at 1280×800** with Room 4 archived (21 students), 69 active,
-  89 seats — one short. Restore refused, message rendered legibly below the
-  button, row still tagged Archived; database confirmed `archived_at` unchanged
-  on its original timestamp, 21 records intact, audit with counts only, and
-  **zero** `class.restored` entries. Raising the licence to exactly 90 let the
-  same restore succeed with a normal audit entry. Demo data restored.
-- **PO/invoice model, named account contact, no payment processor, no billing
-  identifiers, no new student fields, aggregate-only admin reporting and every
-  standing constraint are unchanged.** Sprint 42's enrolment metering and the
-  retention behaviour are covered by tests here to prove they still hold.
+- Typecheck, lint, **513 tests** (up from 501), Turbopack production build.
+- The new guard reads the header, the footer and every page under `(site)`. Per
+  file it strips comments, imports and code identifiers, **collapses whitespace
+  before scanning** (the privacy page's compliance denial wraps across two source
+  lines, and a line-based scan read the tail as a bare claim), removes the allowed
+  accurate phrases, and fails on any `certif` left standing.
+- **The accurate phrases are asserted positively too**, so a future sweep cannot
+  pass by deleting honest copy: "certificate of completion" and "educator
+  orientation" on for-schools, and the compliance denial on privacy.
+- Plus a blurb test: no `certif`, still mentions preview and assign, says prepare
+  or orient. Both the file scan and the blurb test confirmed to **fail against
+  the old header** by stashing it.
+- **Browser-checked at 1280×800:** menu opens, `aria-expanded` toggles, four
+  items with blurbs, Teachers reads correctly, no overflow, nothing clipped, all
+  links tabbable and visible with `focus-visible` styling, Escape closes.
+- **Browser-checked at 768×1024:** mobile menu renders labels without blurbs,
+  grouped correctly, no overflow, nothing clipped, legible.
+- **No child-data or authored-curriculum change.** Nothing here reaches student
+  records.
 
 ### Where this is most likely still wrong — best places to push
 
-- **Restoration was the bypass sprint 42 found. Are there others?** Any path that
-  makes an existing record active without creating it is a candidate — a class
-  move between schools, a bulk import, an un-delete, a future merge. Only
-  `createStudent` and `restoreClass` are metered today. `reassignClass` moves a
-  class between teachers within one school, so it does not cross a licence, but
-  that is the shape to keep checking.
-- **Nothing reconciles the entitlement against an actual agreement.** There is no
-  record of what was quoted, ordered or invoiced — only an audit line saying
-  somebody asked. A real deployment needs the vendor side.
-- **Lapsed-subscription read-only enforcement does not exist**, still deferred.
-  Nothing switches off at renewal and the program page says so.
-- **Only the student seat is metered.** A school can create unlimited classes,
-  teachers and assignments. That matches what is sold, but it is worth
-  confirming it is the intended meter.
+- **Escape leaves focus on a hidden element.** With the desktop menu open and a
+  link focused, Escape closes the menu but focus stays on that link — still in
+  the DOM, no longer visible — so a keyboard user pressing Escape then Tab
+  resumes from somewhere they cannot see. Focus should return to the trigger.
+  Pre-existing and unrelated to the copy defect, so reported rather than folded
+  into a copy-only sprint.
+- **The guard is a word list on a file list.** It catches `certif` on nine
+  surfaces. It cannot catch a different overclaim ("accredited", "validated",
+  "assessed"), and it cannot catch one made in a component not on the list.
+- **No other marketing claim has been checked against product behaviour since
+  sprint 26.** Two of the claims audited then were false; this one survived that
+  audit too.
+- **Lapsed-subscription enforcement remains documented and unbuilt** — it needs a
+  lifecycle decision and an action-inventory audit, not a copy patch. Nothing
+  switches off at renewal and the program page says so.
+- **Nothing reconciles the entitlement against an actual agreement** — sprint 42.
+  Only enrolment and restoration are metered — sprint 43.
 - **Twenty-four mission guides have not been read for the real-material defect
   class** — sprints 37–41. **Twenty-six missions have untraced shared scenes** —
   sprint 36.
@@ -93,14 +96,12 @@ likely to be.
   unrelated to this work.
 - **Only one previous schema shape is recognised** — sprint 34. No
   down-migrations.
-- **Rollover is one school at a time**; bulk reassignment does not exist.
 - **The route and action inventory is still not complete.**
 - **`enterDemo("student")` writes a student session directly**, and
   **`simulateAttempt` writes seed paths directly**.
 - **The limiter is per process** — sprint 30.
 - **The instrument is still unequated with one item per skill** — sprint 24.
 - **Every mission has been read once. None has been read twice.**
-- **No general guard against factual error exists or can.**
 
 ### Standing constraints
 
