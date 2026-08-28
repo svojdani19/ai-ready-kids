@@ -139,7 +139,10 @@ export default async function AdminClasses() {
                               question={`Put ${classroom.name} back in the active list?`}
                               action={async () => {
                                 "use server";
-                                await restoreClassAction(classroom.id);
+                                // Returned, not swallowed: a restore can be
+                                // refused for exceeding the school's licence,
+                                // and the administrator needs to see why.
+                                return restoreClassAction(classroom.id);
                               }}
                             />
                           ) : (

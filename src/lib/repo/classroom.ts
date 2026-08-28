@@ -1,5 +1,9 @@
 import "server-only";
-import { LicenceExceededError, licenceStatus } from "@/lib/repo/entitlement";
+import {
+  LicenceExceededError,
+  licenceStatus,
+  RestoreExceedsLicenceError,
+} from "@/lib/repo/entitlement";
 import { randomInt } from "node:crypto";
 import { type Db, newId, nowIso, row, rows } from "@/lib/db";
 import type { Assignment, Classroom, Student } from "@/lib/types";
@@ -189,8 +193,55 @@ export function archiveClass(db: Db, id: string): void {
   db.prepare("UPDATE classes SET archived_at = ? WHERE id = ?").run(nowIso(), id);
 }
 
+/**
+ * Bring an archived cohort back, if the school has the seats for it.
+ *
+ * Sprint 42 metered enrolment and excluded archived cohorts from the count,
+ * which is right — a class kept for retention is not a class being taught. It
+ * also opened a door this closes: archive a full cohort, spend the freed seats
+ * on a new one, restore the old class, and the school is over its licence
+ * without a single child having passed through `createStudent`.
+ *
+ * The policy is the least surprising one for a school. Restoration is refused
+ * rather than allowed-with-an-overage, because an overage is a bill somebody
+ * did not agree to, and rather than a partial restore, because choosing which
+ * children come back is not a decision software should make. **The class stays
+ * archived and every record in it is untouched.** Nothing is deleted, and the
+ * administrator can free seats or buy more and try again.
+ *
+ * Enforced here rather than in the action, for the reason `createStudent`
+ * gives: the repository is the only door. The read and the write share one
+ * `BEGIN IMMEDIATE` transaction so a restore and an enrolment arriving together
+ * cannot both see the same free seat.
+ */
 export function restoreClass(db: Db, id: string): void {
-  db.prepare("UPDATE classes SET archived_at = NULL WHERE id = ?").run(id);
+  const outer = db.isTransaction;
+  if (!outer) db.exec("BEGIN IMMEDIATE");
+  try {
+    const classroom = db
+      .prepare("SELECT school_id, archived_at FROM classes WHERE id = ?")
+      .get(id) as { school_id: string; archived_at: string | null } | undefined;
+    if (!classroom) throw new Error("Unknown class");
+
+    // Restoring an already-active class is a no-op, not an overage: its
+    // students are in the active count already.
+    if (classroom.archived_at) {
+      const status = licenceStatus(db, classroom.school_id);
+      const roster = (
+        db.prepare("SELECT COUNT(*) AS n FROM students WHERE class_id = ?").get(id) as { n: number }
+      ).n;
+      // Landing exactly on the cap is allowed: the school paid for that seat.
+      if (status.used + roster > status.licensed) {
+        throw new RestoreExceedsLicenceError(status.used, roster, status.licensed);
+      }
+    }
+
+    db.prepare("UPDATE classes SET archived_at = NULL WHERE id = ?").run(id);
+    if (!outer) db.exec("COMMIT");
+  } catch (error) {
+    if (!outer) db.exec("ROLLBACK");
+    throw error;
+  }
 }
 
 /** Removes the class and, by cascade, its roster, attempts and check-ins. */

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/session";
 import { canAdministerClass } from "@/lib/auth/access";
+import { RestoreExceedsLicenceError } from "@/lib/repo/entitlement";
 import { previewRollover } from "@/lib/domain/rollover";
 import {
   archiveClass,
@@ -426,9 +427,36 @@ export async function archiveClassAction(classId: string): Promise<void> {
   revalidatePath("/admin/data");
 }
 
-export async function restoreClassAction(classId: string): Promise<void> {
+export async function restoreClassAction(classId: string): Promise<{ error?: string }> {
   const { db, user, classroom } = await ownClass(classId);
-  restoreClass(db, classId);
+  const school = getSchool(db, user.school_id)!;
+
+  // Catch rather than pre-check: the rule is in the repository, and asking
+  // first would leave a window between the answer and the write.
+  try {
+    restoreClass(db, classId);
+  } catch (error) {
+    if (error instanceof RestoreExceedsLicenceError) {
+      // Counts only. Which class and how many children is a fact about the
+      // school; who those children are is not the licence's business.
+      recordAudit(db, {
+        schoolId: user.school_id,
+        actorLabel: user.name,
+        action: "class.restore_blocked_by_licence",
+        detail: `Restoring ${classroom.name} was declined. ${error.used} of ${error.licensed} licensed students active, ${error.roster} in the archived class.`,
+      });
+      return {
+        error:
+          `${classroom.name} has ${error.roster} students, and ${error.used} of ${error.licensed} ` +
+          "licensed places are already in use, so restoring it would take this school past its " +
+          `licence. The class stays archived and none of its records have changed. Free places by ` +
+          `archiving another class, or ask ${school.contact_name} to request more on the Program ` +
+          "and plan page.",
+      };
+    }
+    throw error;
+  }
+
   recordAudit(db, {
     schoolId: user.school_id,
     actorLabel: user.name,
@@ -437,6 +465,7 @@ export async function restoreClassAction(classId: string): Promise<void> {
   });
   revalidatePath("/admin/classes");
   revalidatePath("/admin/data");
+  return {};
 }
 
 /** Irreversible. Removes the roster, every attempt and every check-in. */

@@ -375,6 +375,11 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       hundred words and remove the sourcing, the consent question and the
       exposure at once, and let the clues be graded and one case be a clean
       decoy, which real material never reliably is.
+- [ ] **A limit enforced at creation misses every path that reactivates.**
+      Archive/restore, move, merge, transfer and import all put records into an
+      active state without creating them. When a rule is added at one of these
+      boundaries, list the others and check each: metering one side of a pair is
+      metering nothing.
 - [ ] **A commercial figure is owned by the vendor and enforced by the code.**
       If a customer can edit it, it cannot go on an invoice; if nothing reads it,
       it is a caption. Ask of any entitlement, quota or plan field: who writes

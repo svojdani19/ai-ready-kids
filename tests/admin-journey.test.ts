@@ -13,6 +13,7 @@ import {
   countActiveRosterStudents,
   LicenceExceededError,
   licenceStatus,
+  RestoreExceedsLicenceError,
 } from "@/lib/repo/entitlement";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -23,6 +24,7 @@ import {
   deleteClass,
   listClasses,
   listStudents,
+  restoreClass,
   assignMission,
 } from "@/lib/repo/classroom";
 import {
@@ -1124,6 +1126,221 @@ describe("licensed student places are the vendor's record and are enforced", () 
       expect(Object.keys(student).sort()).toEqual(
         ["avatar_key", "class_id", "created_at", "display_name", "id"].sort(),
       );
+    } finally {
+      cleanup();
+    }
+  });
+});
+
+
+/**
+ * Sprint 43. Sprint 42 metered enrolment and excluded archived cohorts, which
+ * is right — a class kept for retention is not a class being taught. It also
+ * left a door: archive a full cohort, spend the freed seats on a new one,
+ * restore the old class, and the school is past its licence without a single
+ * child having gone through `createStudent`. Restoration is a roster mutation
+ * that does not look like one.
+ */
+describe("restoring an archived cohort cannot take a school past its licence", () => {
+  const freshSchoolWith = (seats: number) => {
+    const { db, cleanup } = createTestDb();
+    db.prepare("DELETE FROM students").run();
+    setLicensedSeats(db, DEMO_SCHOOL, seats);
+    return { db, cleanup };
+  };
+
+  const newClass = (db: Db, name: string, grade = 3) =>
+    createClass(db, {
+      schoolId: DEMO_SCHOOL,
+      teacherId: DEMO_TEACHER,
+      name,
+      grade,
+      schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-19",
+    });
+
+  it("refuses when the archived roster would not fit, and changes nothing", () => {
+    const { db, cleanup } = freshSchoolWith(4);
+    try {
+      // Two children archived, two enrolled in their place. 2 + 2 = 4, at cap.
+      createStudent(db, { classId: DEMO_CLASS, displayName: "Last A." });
+      createStudent(db, { classId: DEMO_CLASS, displayName: "Last B." });
+      archiveClass(db, DEMO_CLASS);
+      const archivedAt = getClass(db, DEMO_CLASS)!.archived_at;
+      expect(archivedAt).toBeTruthy();
+
+      const thisYear = newClass(db, "Room 101");
+      for (const n of ["New A.", "New B.", "New C.", "New D."]) {
+        createStudent(db, { classId: thisYear.id, displayName: n });
+      }
+      expect(licenceStatus(db, DEMO_SCHOOL)).toEqual({ used: 4, licensed: 4, remaining: 0 });
+
+      let raised: unknown;
+      try {
+        restoreClass(db, DEMO_CLASS);
+      } catch (error) {
+        raised = error;
+      }
+      expect(raised).toBeInstanceOf(RestoreExceedsLicenceError);
+      // It still answers "the licence said no" to a caller that only asks that.
+      expect(raised).toBeInstanceOf(LicenceExceededError);
+      const e = raised as RestoreExceedsLicenceError;
+      expect([e.used, e.roster, e.licensed]).toEqual([4, 2, 4]);
+
+      // The class stays archived, on the same timestamp, with every record.
+      expect(getClass(db, DEMO_CLASS)!.archived_at).toBe(archivedAt);
+      expect(listStudents(db, DEMO_CLASS)).toHaveLength(2);
+      expect(countActiveRosterStudents(db, DEMO_SCHOOL)).toBe(4);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("allows a restore that lands exactly on the cap", () => {
+    const { db, cleanup } = freshSchoolWith(4);
+    try {
+      createStudent(db, { classId: DEMO_CLASS, displayName: "Back A." });
+      createStudent(db, { classId: DEMO_CLASS, displayName: "Back B." });
+      archiveClass(db, DEMO_CLASS);
+
+      const thisYear = newClass(db, "Room 102");
+      createStudent(db, { classId: thisYear.id, displayName: "Here A." });
+      createStudent(db, { classId: thisYear.id, displayName: "Here B." });
+
+      // 2 active + 2 archived === 4 licensed. The school paid for those seats.
+      restoreClass(db, DEMO_CLASS);
+      expect(getClass(db, DEMO_CLASS)!.archived_at).toBeNull();
+      expect(licenceStatus(db, DEMO_SCHOOL)).toEqual({ used: 4, licensed: 4, remaining: 0 });
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("allows an empty archived class back whatever the licence says", () => {
+    const { db, cleanup } = freshSchoolWith(2);
+    try {
+      const empty = newClass(db, "Room 103");
+      archiveClass(db, empty.id);
+      const full = newClass(db, "Room 104");
+      createStudent(db, { classId: full.id, displayName: "Full A." });
+      createStudent(db, { classId: full.id, displayName: "Full B." });
+      expect(licenceStatus(db, DEMO_SCHOOL).remaining).toBe(0);
+
+      // No children, no seats, no reason to refuse.
+      restoreClass(db, empty.id);
+      expect(getClass(db, empty.id)!.archived_at).toBeNull();
+      expect(countActiveRosterStudents(db, DEMO_SCHOOL)).toBe(2);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("re-restoring an active class is a no-op, not an overage", () => {
+    const { db, cleanup } = freshSchoolWith(2);
+    try {
+      createStudent(db, { classId: DEMO_CLASS, displayName: "On A." });
+      createStudent(db, { classId: DEMO_CLASS, displayName: "On B." });
+      // Already active: its students are counted once, and restoring again
+      // must not double-count them into a refusal.
+      expect(() => restoreClass(db, DEMO_CLASS)).not.toThrow();
+      expect(getClass(db, DEMO_CLASS)!.archived_at).toBeNull();
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("measures each school against its own licence", () => {
+    const { db, cleanup } = freshSchoolWith(1);
+    try {
+      db.prepare(
+        `INSERT INTO schools (id, name, slug, district, city, state, monogram, brand_accent,
+           plan, licensed_students, term_starts_on, term_renews_on, academic_year,
+           year_starts_on, year_ends_on, contact_name, contact_email, retention_months, created_at)
+         VALUES ('sch_next','Next Elementary','next','Next District','Nextville','NM','NE','denim',
+           'school', 9, '2025-08-01','2026-08-01','2025-2026','2025-08-20','2026-06-19',
+           'Head','head@next.demo', 12, '2025-08-01T00:00:00.000Z')`,
+      ).run();
+      const theirTeacher = createUser(db, {
+        schoolId: "sch_next",
+        role: "teacher",
+        name: "Next Teacher",
+        email: "next.teacher@next.demo",
+        title: "Grade 4",
+      });
+      const theirClass = createClass(db, {
+        schoolId: "sch_next",
+        teacherId: theirTeacher.id,
+        name: "Next Room",
+        grade: 4,
+        schoolYear: "2025-2026",
+        yearEndsOn: "2026-06-19",
+      });
+      for (const n of ["Th A.", "Th B.", "Th C."]) {
+        createStudent(db, { classId: theirClass.id, displayName: n });
+      }
+      archiveClass(db, theirClass.id);
+
+      // Our school is full at one seat. That has nothing to do with theirs.
+      createStudent(db, { classId: DEMO_CLASS, displayName: "Ours A." });
+      expect(licenceStatus(db, DEMO_SCHOOL).remaining).toBe(0);
+
+      restoreClass(db, theirClass.id);
+      expect(getClass(db, theirClass.id)!.archived_at).toBeNull();
+      expect(countActiveRosterStudents(db, "sch_next")).toBe(3);
+      expect(countActiveRosterStudents(db, DEMO_SCHOOL)).toBe(1);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("puts the rule in the repository, so the action cannot be the only guard", () => {
+    const repo = readFileSync(join(process.cwd(), "src/lib/repo/classroom.ts"), "utf8");
+    const start = repo.indexOf("export function restoreClass");
+    const body = repo.slice(start, repo.indexOf("\n}", start));
+    expect(body).toContain("BEGIN IMMEDIATE");
+    expect(body).toContain("RestoreExceedsLicenceError");
+    expect(body).toContain("ROLLBACK");
+    // Exactly-on-the-cap is allowed, so the comparison is > and never >=.
+    expect(body).toContain("status.used + roster > status.licensed");
+
+    const action = readFileSync(join(process.cwd(), "src/app/actions/admin.ts"), "utf8");
+    const restore = action.slice(
+      action.indexOf("export async function restoreClassAction"),
+      action.indexOf("\n}", action.indexOf("export async function restoreClassAction")),
+    );
+    expect(restore).toContain("RestoreExceedsLicenceError");
+    expect(restore).toContain('action: "class.restore_blocked_by_licence"');
+    // Four facts and a route out, and no child named in the audit.
+    expect(restore).toMatch(/error\.roster/);
+    expect(restore).toMatch(/error\.used/);
+    expect(restore).toMatch(/error\.licensed/);
+    expect(restore).toMatch(/contact_name/);
+    expect(restore).toMatch(/stays archived/);
+    const audit = restore.slice(restore.indexOf("class.restore_blocked_by_licence"));
+    expect(audit.slice(0, audit.indexOf("});"))).not.toMatch(/display_name|displayName/);
+    // And no success audit is written on the refused path.
+    expect(restore.indexOf('action: "class.restored"')).toBeGreaterThan(
+      restore.indexOf("return {"),
+    );
+  });
+
+  it("leaves enrolment and retention behaviour alone", () => {
+    const { db, cleanup } = freshSchoolWith(3);
+    try {
+      createStudent(db, { classId: DEMO_CLASS, displayName: "Keep A." });
+      archiveClass(db, DEMO_CLASS);
+      // Archiving still frees the seat for a new cohort, which is the sprint 42
+      // behaviour this must not have broken.
+      const next = newClass(db, "Room 105");
+      for (const n of ["Fresh A.", "Fresh B.", "Fresh C."]) {
+        createStudent(db, { classId: next.id, displayName: n });
+      }
+      expect(licenceStatus(db, DEMO_SCHOOL)).toEqual({ used: 3, licensed: 3, remaining: 0 });
+      // The archived records are still there to be retained, and restoring is
+      // refused rather than deleting them.
+      expect(listStudents(db, DEMO_CLASS)).toHaveLength(1);
+      expect(() => restoreClass(db, DEMO_CLASS)).toThrow(RestoreExceedsLicenceError);
+      expect(listStudents(db, DEMO_CLASS)).toHaveLength(1);
     } finally {
       cleanup();
     }

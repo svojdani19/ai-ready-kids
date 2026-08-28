@@ -54,6 +54,25 @@ export function countActiveRosterStudents(db: Db, schoolId: string): number {
   return row.n;
 }
 
+/**
+ * Raised when restoring an archived cohort would take a school past its seats.
+ *
+ * Extends `LicenceExceededError` so a caller that only cares "the licence said
+ * no" still catches it, and carries the roster being brought back, because an
+ * administrator cannot act on "you are over" without knowing by how much.
+ */
+export class RestoreExceedsLicenceError extends LicenceExceededError {
+  /** Children on the archived roster that restoring would reactivate. */
+  readonly roster: number;
+
+  constructor(used: number, roster: number, licensed: number) {
+    super(used, licensed);
+    this.name = "RestoreExceedsLicenceError";
+    this.message = `Restoring ${roster} students would take ${used} of ${licensed} past the licence.`;
+    this.roster = roster;
+  }
+}
+
 export interface LicenceStatus {
   used: number;
   licensed: number;

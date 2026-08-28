@@ -30,7 +30,7 @@ export function ConfirmAction({
 
   if (!confirming) {
     return (
-      <span>
+      <span className="inline-block">
         <button
           type="button"
           onClick={() => setConfirming(true)}
@@ -38,8 +38,14 @@ export function ConfirmAction({
         >
           {label}
         </button>
+        {/* A block, not an inline span. A refusal that has to state four
+            numbers and where to go next is a sentence, and a sentence squeezed
+            beside a button in a table cell is unreadable. */}
         {error && (
-          <span role="alert" className="ml-2 text-xs font-semibold text-berry-deep">
+          <span
+            role="alert"
+            className="mt-1.5 block max-w-[22rem] text-left text-xs font-semibold leading-snug text-berry-deep"
+          >
             {error}
           </span>
         )}

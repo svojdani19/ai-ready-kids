@@ -7,104 +7,85 @@ likely to be.
 
 ---
 
-## Sprint 42 — P1: the subscription was a label the customer could edit
+## Sprint 43 — P1: the roster mutation that did not look like one
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-28-sprint-42.md`](2026-08-28-sprint-42.md)
-- **Review trail:** sprints 01–25 read and fixed the curriculum, reporting,
+- **Full review:** [`2026-08-28-sprint-43.md`](2026-08-28-sprint-43.md)
+- **Review trail:** sprints 01–25 built and corrected the curriculum, reporting,
   assessment and orientation layers; 26–30 audit what the product permits and
   promises; 31–32 walk ordinary school workflows; 33–34 build the migration path
-  and its gate; 35 removed an instruction that would have destroyed children's
-  records; 36 traced the first shared scene; 37–41 removed three teacher
-  activities that required photographs of real children and corrected two
-  wording defects in the replacements. **Sprint 42 is the first commercial one:
-  the paid entitlement was self-editable and unenforced.**
-
-### The commercial rationale
-
-Schools buy this on a purchase order — quote, PO, invoice, named account
-contact. There is no card and there should not be one, which makes the
-entitlement record the entire commercial mechanism: the only thing between "what
-we agreed" and "what you are using". It has to be true in both directions. **The
-vendor owns the number**, because a customer-editable seat count cannot appear
-on an invoice and a renewal that opens by disputing it costs more than the seat.
-**The number has to bite**, because an entitlement nothing enforces is how a
-vendor finds at renewal that it has given away a third of its product and how a
-school finds it is being asked for money it never budgeted. Neither half
-restricts schools; both let the two sides point at one figure a year later.
+  and its gate; 35–41 fix teacher-facing and content defects, including three
+  activities that required photographs of real children. Sprint 42 made the paid
+  entitlement the vendor's number and enforced it at enrolment, and reported one
+  bypass it did not close. **Sprint 43 closes it.**
 
 ### What changed
 
-1. **`requestPlanChangeAction` ran `UPDATE schools SET plan = ?,
-   licensed_students = ?`** while the form said *Request a quote* and *records
-   an intent*. Typing 5000 made the school a 5000-seat district customer as far
-   as every screen was concerned. **And `addStudentAction` never read
-   `licensed_students`**, so enrolment was unlimited across all classes. Either
-   alone is a bug; together the seat count was decoration.
-2. **The request now records a request and nothing else.** The `UPDATE` is gone;
-   one audit entry names what was asked for *and what the entitlement still is*,
-   and the message says so plainly.
-3. **The entitlement is read-only in the UI**, in its own block above the request
-   fields, which are relabelled *Plan you would like* / *Student places you would
-   like*. The page stat is now **used of licensed** with the remainder.
-4. **The cap is enforced in `createStudent`, not the action** — the repository is
-   the only door, and the action *catches* rather than pre-checks so there is no
-   window between asking and inserting. Count and insert run in one
-   `BEGIN IMMEDIATE` transaction, so two near-simultaneous enrolments cannot both
-   read the same count and both write; a refusal rolls back and writes nothing.
-5. **Seats in use = children on active rosters.** Archived cohorts are excluded
-   deliberately: a cohort kept for retention is not a child being taught, and
-   charging a new year for it would mean buying the same desk twice and would
-   push administrators toward deleting records early to free capacity.
-6. **The last licensed seat succeeds** — a cap that blocks *at* the number sold
-   sells one fewer than it says. The next is refused with seats used, seats
-   licensed and the contact path, and the school-wide audit records
-   `roster.blocked_by_licence` with **no child's name**.
-7. **Enrolling into an archived class is refused**, so archiving a full cohort is
-   not a way to keep enrolling.
+1. **Restoration bypassed the seat cap.** Sprint 42 excluded archived cohorts
+   from the count — correct, since a class kept for retention is not a class
+   being taught. But archive a full cohort, spend the freed seats on a new one,
+   restore the old class, and the school is over its licence with no child having
+   passed through `createStudent`. **Restoration is a roster mutation that does
+   not look like one**, which is why a check written where children are *created*
+   missed it.
+2. **`restoreClass` now refuses when `used + roster > licensed`.** Enforced in
+   the repository, not the action, so a direct call cannot bypass it; the action
+   catches rather than pre-checks. Read and write share one `BEGIN IMMEDIATE`
+   transaction, so a restore and an enrolment arriving together cannot both see
+   the same free seat, and a refusal rolls back with `archived_at` untouched.
+3. **The class stays archived and every record is kept.** Refusal was chosen over
+   the alternatives deliberately: an overage is a bill nobody agreed to and there
+   is no PO mechanism to charge it; a partial restore would have software
+   choosing which children come back; and deleting to free capacity is the one
+   outcome retention exists to prevent. The administrator's two ordinary moves —
+   archive another cohort, or ask for more places — both stay open.
+4. **Exactly on the cap is allowed**, `>` and never `>=`; a school that bought 90
+   seats can have 90 children. **An empty archived class always restores**, and
+   **re-restoring an active class is a no-op**, not a double-count.
+5. **The refusal names all four numbers and the route out**, and the audit
+   records `class.restore_blocked_by_licence` with the class and counts and **no
+   child's name**. No success audit on the refused path.
+6. **One UI change:** `ConfirmAction` rendered errors inline beside the button. A
+   refusal stating four numbers is a sentence, and a sentence beside a button in
+   a table cell is unreadable, so it is now a block below.
 
 ### Already verified — please do not redo
 
-- Typecheck, lint, **494 tests** (up from 486), Turbopack production build.
-- Eight acceptance tests, all confirmed to **fail without the enforcement** by
-  stashing the changed source and re-running: quote leaves plan and seats
-  unchanged while recording the request; two active classes combine toward one
-  cap; the final seat succeeds and the next fails with **no row and no success
-  audit**; archived cohorts do not consume seats and their records survive;
-  archived classes refuse enrolment; two schools count separately; the check is
-  in the repository with `BEGIN IMMEDIATE`/`ROLLBACK` and the refusal audit
-  carries no display name; and the student record still holds exactly the five
-  existing fields.
-- **Browser-verified at 1280×800** with the dev school temporarily at 91 seats
-  against 90 children: a **district / 5000** request returned the
-  unchanged-entitlement message and left the row at `school` / 91; the 91st child
-  enrolled; the 92nd was refused, **no row was written**, and the audit named the
-  class and numbers only. Demo data restored to 90 students / 120 seats.
-- **No card fields, payment processor or billing identifiers.** Purchase orders,
-  quotes, invoices and the named account contact are untouched.
-- **Student fields, aggregate-only admin reporting, privacy constraints and the
-  authored niche are unchanged.**
-- One harness change: `createTestDb` licenses the fixture generously, since
-  almost no test is about entitlement and many enrol past the demo school's
-  purchase. Cap tests call the new `setLicensedSeats` and state the number.
+- Typecheck, lint, **501 tests** (up from 494), Turbopack production build.
+- Seven tests. The three asserting refusal were confirmed to **fail without the
+  rule** by stashing the source; the rest assert restoration still *succeeds* —
+  exact cap, empty class, re-restore, other schools — because a cap that
+  over-blocks is as much a bug as one that under-blocks. Also covered: the error
+  is both `RestoreExceedsLicenceError` and `LicenceExceededError`; the `>`
+  operator is asserted directly; archiving still frees seats for a new cohort and
+  a refused restore leaves the archived records in place for retention.
+- **Browser-verified at 1280×800** with Room 4 archived (21 students), 69 active,
+  89 seats — one short. Restore refused, message rendered legibly below the
+  button, row still tagged Archived; database confirmed `archived_at` unchanged
+  on its original timestamp, 21 records intact, audit with counts only, and
+  **zero** `class.restored` entries. Raising the licence to exactly 90 let the
+  same restore succeed with a normal audit entry. Demo data restored.
+- **PO/invoice model, named account contact, no payment processor, no billing
+  identifiers, no new student fields, aggregate-only admin reporting and every
+  standing constraint are unchanged.** Sprint 42's enrolment metering and the
+  retention behaviour are covered by tests here to prove they still hold.
 
 ### Where this is most likely still wrong — best places to push
 
-- **Restoring an archived class can cross the cap.** Archiving frees seats, so
-  archive a full cohort, enrol a new one, restore the old one, and the active
-  roster exceeds the licence. `restoreClassAction` does not check. This wants a
-  product decision — refuse, allow with a reported overage, or restore
-  read-only — so it is reported rather than invented. The enrolment path cannot
-  reach it, because archived classes refuse enrolment.
-- **Lapsed-subscription read-only enforcement does not exist**, left for a
-  separate review as instructed. Nothing switches off at renewal, and the
-  program page still says so.
+- **Restoration was the bypass sprint 42 found. Are there others?** Any path that
+  makes an existing record active without creating it is a candidate — a class
+  move between schools, a bulk import, an un-delete, a future merge. Only
+  `createStudent` and `restoreClass` are metered today. `reassignClass` moves a
+  class between teachers within one school, so it does not cross a licence, but
+  that is the shape to keep checking.
 - **Nothing reconciles the entitlement against an actual agreement.** There is no
   record of what was quoted, ordered or invoiced — only an audit line saying
-  somebody asked. A real deployment needs the vendor side of that.
-- **The cap counts students, and a school could still create unlimited classes,
-  teachers and assignments.** Only the student seat is metered, which is what is
-  sold, but it is worth confirming that is the intended meter.
+  somebody asked. A real deployment needs the vendor side.
+- **Lapsed-subscription read-only enforcement does not exist**, still deferred.
+  Nothing switches off at renewal and the program page says so.
+- **Only the student seat is metered.** A school can create unlimited classes,
+  teachers and assignments. That matches what is sold, but it is worth
+  confirming it is the intended meter.
 - **Twenty-four mission guides have not been read for the real-material defect
   class** — sprints 37–41. **Twenty-six missions have untraced shared scenes** —
   sprint 36.
