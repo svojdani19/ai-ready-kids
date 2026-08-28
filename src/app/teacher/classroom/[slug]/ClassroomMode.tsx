@@ -32,6 +32,73 @@ const TONE: Record<string, { label: string; border: string; wash: string; text: 
 
 const LETTERS = ["A", "B", "C", "D"];
 
+/**
+ * Everything a Tab can land on. `tabindex="-1"` is excluded deliberately: the
+ * stage wrapper carries it so scene changes can move focus to the teaching
+ * content programmatically, and it should not become a stop in the cycle.
+ */
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Keep Tab inside the projected surface while it is up.
+ *
+ * Classroom Mode paints `fixed inset-0` over the teacher application, and until
+ * sprint 47 that was all it did: the header, the sidebar and the plan page
+ * underneath stayed in the tab order behind an opaque board. A teacher driving
+ * the lesson from the keyboard could tab straight off the projected surface
+ * into controls the room could not see, with a class waiting — and no way to
+ * tell where they had gone, because the screen does not change when focus
+ * leaves a covered element.
+ *
+ * Tab is intercepted and wrapped rather than the background being made inert,
+ * which keeps the change inside this component. The visible controls stay
+ * exactly as they were: Exit, Back, Next, Notes and the branch buttons are all
+ * in the cycle, so this contains focus without trapping anybody.
+ */
+function useFocusTrap(active: boolean, ref: React.RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    if (!active) return;
+
+    const stops = () => {
+      const root = ref.current;
+      if (!root) return [] as HTMLElement[];
+      return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE));
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      // Escape belongs to the presenter shortcuts and means "back to the
+      // choice list". It is not a way out of Classroom Mode and is untouched.
+      if (event.key !== "Tab") return;
+      const root = ref.current;
+      const items = stops();
+      if (!root || items.length === 0) return;
+
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+
+      // Focus sitting on the stage wrapper, or somewhere outside entirely,
+      // enters the cycle at whichever end the direction implies.
+      if (!active || !root.contains(active) || !items.includes(active)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+        return;
+      }
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [active, ref]);
+}
+
 /** Linear running order, so Next and Back are one predictable step. */
 function runningOrder(mission: Mission): Scene[] {
   const byId = new Map(mission.scenes.map((s) => [s.id, s]));
@@ -64,6 +131,36 @@ export function ClassroomMode({ mission }: { mission: Mission }) {
   const [debriefIndex, setDebriefIndex] = useState(0);
 
   const stageRef = useRef<HTMLDivElement>(null);
+  /** The `fixed inset-0` surface itself, which is what focus is kept inside. */
+  const surfaceRef = useRef<HTMLDivElement>(null);
+  /**
+   * The two "Put it on the board" buttons: one in the sticky plan header, one
+   * at the foot of the plan. Exit has to give focus back to **the one that was
+   * pressed**, not to whichever is convenient — a teacher who launched from the
+   * bottom of the plan and lands at the top has lost their place in front of a
+   * class, which is the same defect in a smaller form.
+   */
+  const headerLaunch = useRef<HTMLButtonElement>(null);
+  const bodyLaunch = useRef<HTMLButtonElement>(null);
+  const launchedFrom = useRef<"header" | "body" | null>(null);
+  /** Set only by Exit, so navigating away never pulls focus back. */
+  const restoreFocus = useRef(false);
+
+  // Refs rather than state: neither is rendered, and both are read by an effect
+  // that already re-runs on the stage change which is the thing that matters.
+  const present = (from: "header" | "body") => {
+    launchedFrom.current = from;
+    setStage("present");
+  };
+
+  const exitToPlan = () => {
+    restoreFocus.current = true;
+    setStage("plan");
+    setIndex(0);
+    setRevealed(null);
+    setTally({});
+  };
+
   const scene = order[index] ?? order[0];
   const decisions = decisionSceneIds(mission);
   const decisionNumber = scene ? decisions.indexOf(scene.id) + 1 : 0;
@@ -92,6 +189,23 @@ export function ClassroomMode({ mission }: { mission: Mission }) {
   useEffect(() => {
     stageRef.current?.focus();
   }, [stage, index, debriefIndex]);
+
+  useFocusTrap(stage !== "plan", surfaceRef);
+
+  /**
+   * Hand focus back to the launcher after Exit unmounts the surface.
+   *
+   * Declared after the stage effect above so it wins on the same commit: that
+   * one focuses `stageRef`, which does not exist on the plan page, so it is a
+   * no-op here. Runs only when Exit set the flag — "Finish and open the guide"
+   * navigates and must not be yanked back.
+   */
+  useEffect(() => {
+    if (stage !== "plan" || !restoreFocus.current) return;
+    restoreFocus.current = false;
+    const target = launchedFrom.current === "body" ? bodyLaunch.current : headerLaunch.current;
+    target?.focus();
+  }, [stage]);
 
   // Presenter keys. A teacher facilitating from the front of a room should
   // never have to find a small button with a mouse.
@@ -150,8 +264,9 @@ export function ClassroomMode({ mission }: { mission: Mission }) {
               </h1>
             </div>
             <button
+              ref={headerLaunch}
               type="button"
-              onClick={() => setStage("present")}
+              onClick={() => present("header")}
               className="min-h-12 shrink-0 rounded-xl border-2 border-pine-deep bg-pine-deep px-5 text-base font-semibold text-white hover:bg-pine"
             >
               Put it on the board
@@ -219,8 +334,9 @@ export function ClassroomMode({ mission }: { mission: Mission }) {
 
         <div className="mt-6 flex flex-wrap gap-3">
           <button
+            ref={bodyLaunch}
             type="button"
-            onClick={() => setStage("present")}
+            onClick={() => present("body")}
             className="min-h-12 rounded-xl border-2 border-pine-deep bg-pine-deep px-6 py-3.5 text-lg font-semibold text-white hover:bg-pine"
           >
             Put it on the board
@@ -240,7 +356,16 @@ export function ClassroomMode({ mission }: { mission: Mission }) {
   if (stage === "debrief") {
     const question = mission.guide.questions[debriefIndex];
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-paper">
+      // The same modal teaching surface as present, in its second state. Both
+      // are one region as far as a screen reader is concerned, because to the
+      // room they are one thing: the board.
+      <div
+        ref={surfaceRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${mission.title} on the board — talk about it`}
+        className="fixed inset-0 z-50 flex flex-col bg-paper"
+      >
         <div
           ref={stageRef}
           tabIndex={-1}
@@ -306,7 +431,16 @@ export function ClassroomMode({ mission }: { mission: Mission }) {
   const revealedChoice: Choice | undefined = scene.choices?.find((c) => c.id === revealed);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-paper">
+    // Labelled and modal: it covers the teacher application completely, so a
+    // screen reader should describe it as the thing in front rather than as
+    // one more region on the page behind it.
+    <div
+      ref={surfaceRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${mission.title} on the board`}
+      className="fixed inset-0 z-50 flex flex-col bg-paper"
+    >
       <div
         ref={stageRef}
         tabIndex={-1}
@@ -574,12 +708,7 @@ export function ClassroomMode({ mission }: { mission: Mission }) {
           </button>
           <button
             type="button"
-            onClick={() => {
-              setStage("plan");
-              setIndex(0);
-              setRevealed(null);
-              setTally({});
-            }}
+            onClick={exitToPlan}
             className="min-h-11 rounded-xl border-2 border-sand-deep bg-surface px-4 text-sm font-semibold text-ink hover:bg-paper-deep"
           >
             Exit

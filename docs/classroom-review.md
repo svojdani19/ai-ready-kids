@@ -375,6 +375,11 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       hundred words and remove the sourcing, the consent question and the
       exposure at once, and let the clues be graded and one case be a clean
       decoy, which real material never reliably is.
+- [ ] **Covering the screen is a visual act; the tab order does not know about
+      paint.** Any `fixed inset-0` overlay needs modal semantics, focus kept
+      inside it, and focus handed back to whatever opened it. The gap is
+      invisible to whoever built it — you cannot see focus land on a control the
+      overlay is covering — so it has to be tested, not looked at.
 - [ ] **Accessibility does not inherit across a breakpoint.** A responsive
       variant is a separate implementation. When a keyboard, focus or labelling
       fix lands on one side of a media query, check the other: the question is

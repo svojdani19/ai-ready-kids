@@ -180,3 +180,234 @@ describe("classroom mode branch comparison", () => {
     expect(vi.mocked(globalThis.fetch ?? (() => {})).mock?.calls ?? []).toHaveLength(0);
   });
 });
+
+
+/**
+ * Sprint 47. Classroom Mode paints `fixed inset-0` over the teacher
+ * application, and until now that was all it did: it was not announced as a
+ * modal region, it did not contain focus, and its Exit button unmounted while
+ * focused without giving focus back. A teacher driving a lesson from the
+ * keyboard could tab off the projected board into the header and sidebar
+ * underneath — invisible, because the screen does not change when focus lands
+ * on a covered control — with a class waiting.
+ *
+ * These render the real component with the surrounding chrome a teacher page
+ * actually has, so "does Tab reach the navigation" is a question the test can
+ * genuinely ask.
+ */
+describe("the board is a modal teaching surface", () => {
+  /** Classroom Mode inside the kind of page furniture it covers. */
+  function withChrome() {
+    return (
+      <div>
+        {/* Fragment hrefs, not page routes: these stand in for the header,
+            sidebar and page controls the board covers, and what matters is
+            that they are focusable, not where they go. */}
+        <header>
+          <a href="#teacher-overview">Teacher overview</a>
+          <button type="button">Sign out</button>
+        </header>
+        <ClassroomMode mission={mission} />
+        <footer>
+          <a href="#mission-library">Mission library</a>
+        </footer>
+      </div>
+    );
+  }
+
+  const launchers = () => screen.getAllByRole("button", { name: "Put it on the board" });
+
+  const board = () => screen.getByRole("dialog");
+
+  const underlying = () => [
+    screen.getByRole("link", { name: "Teacher overview" }),
+    screen.getByRole("button", { name: "Sign out" }),
+    screen.getByRole("link", { name: "Mission library" }),
+  ];
+
+  it("announces itself as a labelled modal, and the plan page does not", async () => {
+    const user = userEvent.setup();
+    render(withChrome());
+
+    // The plan is an ordinary page. Nothing modal about reading a lesson plan.
+    expect(screen.queryByRole("dialog")).toBeNull();
+
+    await user.click(launchers()[0]);
+    const surface = board();
+    expect(surface).toHaveAttribute("aria-modal", "true");
+    expect(surface).toHaveAccessibleName(`${mission.title} on the board`);
+  });
+
+  it("labels the debrief as the same surface in its second state", async () => {
+    const user = userEvent.setup();
+    render(withChrome());
+    await user.click(launchers()[0]);
+
+    for (let i = 0; i < mission.scenes.length + 2; i += 1) {
+      const go = screen.queryByRole("button", { name: /Next →|Go to debrief →/ });
+      if (!go) break;
+      await user.click(go);
+      if (screen.queryByRole("button", { name: "Next question →" })) break;
+    }
+
+    const surface = board();
+    expect(surface).toHaveAttribute("aria-modal", "true");
+    expect(surface).toHaveAccessibleName(`${mission.title} on the board — talk about it`);
+    expect(screen.getByRole("button", { name: "← Back" })).toBeInTheDocument();
+  });
+
+  it("keeps Tab inside the board and away from the covered navigation", async () => {
+    const user = userEvent.setup();
+    render(withChrome());
+    await user.click(launchers()[0]);
+    const surface = board();
+
+    // Twice round the cycle, so wrapping is exercised rather than just the
+    // first few stops. Focus must never leave the surface.
+    for (let i = 0; i < 30; i += 1) {
+      await user.tab();
+      expect(surface.contains(document.activeElement)).toBe(true);
+      for (const el of underlying()) expect(el).not.toHaveFocus();
+    }
+  });
+
+  it("keeps Shift+Tab inside the board too", async () => {
+    const user = userEvent.setup();
+    render(withChrome());
+    await user.click(launchers()[0]);
+    const surface = board();
+
+    for (let i = 0; i < 30; i += 1) {
+      await user.tab({ shift: true });
+      expect(surface.contains(document.activeElement)).toBe(true);
+      for (const el of underlying()) expect(el).not.toHaveFocus();
+    }
+  });
+
+  it("contains focus in the debrief as well", async () => {
+    const user = userEvent.setup();
+    render(withChrome());
+    await user.click(launchers()[0]);
+    for (let i = 0; i < mission.scenes.length + 2; i += 1) {
+      const go = screen.queryByRole("button", { name: /Next →|Go to debrief →/ });
+      if (!go) break;
+      await user.click(go);
+      if (screen.queryByRole("button", { name: "Next question →" })) break;
+    }
+
+    const surface = board();
+    for (let i = 0; i < 12; i += 1) {
+      await user.tab();
+      expect(surface.contains(document.activeElement)).toBe(true);
+      for (const el of underlying()) expect(el).not.toHaveFocus();
+    }
+  });
+
+  it("leaves a visible way out rather than trapping anybody", async () => {
+    const user = userEvent.setup();
+    render(withChrome());
+    await user.click(launchers()[0]);
+
+    // Containment is only defensible because the exits are on screen.
+    expect(screen.getByRole("button", { name: "Exit" })).toBeVisible();
+    expect(screen.getByRole("button", { name: /Next →|Go to debrief →/ })).toBeVisible();
+    expect(screen.getByRole("button", { name: "← Back" })).toBeVisible();
+  });
+
+  it("returns focus to the header launcher that opened it", async () => {
+    const user = userEvent.setup();
+    render(withChrome());
+
+    await user.click(launchers()[0]);
+    await user.click(screen.getByRole("button", { name: "Exit" }));
+
+    // The plan remounts, so the assertion is on position rather than on the
+    // node captured before launch: the header launcher, not the body one.
+    expect(screen.queryByRole("dialog")).toBeNull();
+    const after = launchers();
+    expect(after[0]).toHaveFocus();
+    expect(after[1]).not.toHaveFocus();
+  });
+
+  it("returns focus to the body launcher when that is the one that opened it", async () => {
+    const user = userEvent.setup();
+    render(withChrome());
+    const before = launchers();
+
+    // The second button, at the foot of the plan. A teacher who launched from
+    // there and landed back at the top has lost their place.
+    await user.click(before[1]);
+    await user.click(screen.getByRole("button", { name: "Exit" }));
+
+    const after = launchers();
+    expect(after[1]).toHaveFocus();
+    expect(after[0]).not.toHaveFocus();
+  });
+
+  it("does not pull focus back when the debrief navigates to the guide", async () => {
+    const user = userEvent.setup();
+    render(withChrome());
+    await user.click(launchers()[0]);
+    for (let i = 0; i < mission.scenes.length + 2; i += 1) {
+      const go = screen.queryByRole("button", { name: /Next →|Go to debrief →/ });
+      if (!go) break;
+      await user.click(go);
+      if (screen.queryByRole("button", { name: "Next question →" })) break;
+    }
+    while (screen.queryByRole("button", { name: "Next question →" })) {
+      await user.click(screen.getByRole("button", { name: "Next question →" }));
+    }
+
+    const finish = screen.getByRole("link", { name: "Finish and open the guide" });
+    finish.focus();
+    expect(finish).toHaveFocus();
+    // Leaving through the guide is ordinary navigation: nothing reaches in to
+    // move focus, and no launcher steals it.
+    expect(screen.queryByRole("button", { name: "Put it on the board" })).toBeNull();
+  });
+
+  it("moves focus to the visible stage on a scene change, never to something removed", async () => {
+    const user = userEvent.setup();
+    render(withChrome());
+    await user.click(launchers()[0]);
+    const surface = board();
+
+    await user.click(screen.getByRole("button", { name: /Next →|Go to debrief →/ }));
+    expect(surface.contains(document.activeElement)).toBe(true);
+    expect(document.activeElement).toBeVisible();
+  });
+
+  it("keeps every presenter shortcut doing what it did", async () => {
+    const user = userEvent.setup();
+    render(withChrome());
+    await user.click(launchers()[0]);
+    await user.click(screen.getByRole("button", { name: "Next →" }));
+
+    // 1-4 reveal a branch.
+    await user.keyboard("{1}");
+    expect(screen.getByText(choices[0].feedback.headline)).toBeInTheDocument();
+
+    // Escape returns to the choice list. It is not an exit from the board.
+    await user.keyboard("{Escape}");
+    expect(screen.queryByText(choices[0].feedback.headline)).toBeNull();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    // N toggles the teacher notes.
+    await user.keyboard("{n}");
+    expect(screen.getByRole("button", { name: "Notes" })).toHaveAttribute("aria-pressed", "true");
+    await user.keyboard("{n}");
+    expect(screen.getByRole("button", { name: "Notes" })).toHaveAttribute("aria-pressed", "false");
+
+    // Arrows, space and Page keys still page the running order.
+    const heading = () => screen.getByRole("dialog").textContent ?? "";
+    const atFirstDecision = heading();
+    await user.keyboard("{ArrowRight}");
+    expect(heading()).not.toBe(atFirstDecision);
+    await user.keyboard("{ArrowLeft}");
+    expect(heading()).toBe(atFirstDecision);
+    await user.keyboard("{PageDown}");
+    expect(heading()).not.toBe(atFirstDecision);
+    await user.keyboard("{PageUp}");
+    expect(heading()).toBe(atFirstDecision);
+  });
+});
