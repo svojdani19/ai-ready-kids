@@ -141,6 +141,23 @@ export async function chooseStudent(studentId: string): Promise<void> {
   // cannot be finished with.
   if (normaliseJoinCode(classroom.join_code) !== grant.code) redirect("/join");
 
+  // The term, rechecked here and not only at the code step.
+  //
+  // Sprint 49 gated `findClassByCode` and classified this action as "resumes an
+  // existing session", which is not what it does: it *creates* one. A grant
+  // lasts ten minutes, so a child who typed a correct code minutes before the
+  // term ended still held a valid grant, and this wrote them a fresh session
+  // without asking again. Checking at the first step of a two-step flow is
+  // checking half of it.
+  //
+  // The grant is cleared on the way out, so a refused child is not left holding
+  // a credential that would let them retry the same stale page, and nothing at
+  // all is written — no session, no audit row, no record that a child tried.
+  if (schoolHasLapsed(db, classroom.school_id)) {
+    await clearJoinGrant();
+    redirect("/join?closed=1");
+  }
+
   await clearJoinGrant();
   await writeSession({ kind: "student", studentId: student.id });
   redirect("/student");

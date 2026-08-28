@@ -475,44 +475,56 @@ export async function archiveClassAction(classId: string): Promise<{ error?: str
 }
 
 export async function restoreClassAction(classId: string): Promise<{ error?: string }> {
-  const { db, user, classroom } = await ownActiveClass(classId);
-  const school = getSchool(db, user.school_id)!;
-
-  // Catch rather than pre-check: the rule is in the repository, and asking
-  // first would leave a window between the answer and the write.
+  // The resolver is inside the try, not before it. Sprint 49 gated this
+  // action by swapping in `ownActiveClass` and left the call above the try,
+  // so a lapsed subscription escaped as an unhandled throw and an error page
+  // — while archive and rotate, wrapped whole, returned the sentence. A
+  // guard that turns one refusal into a crash is not a guard the caller can
+  // use, and the two paths have to fail the same way.
   try {
-    restoreClass(db, classId);
-  } catch (error) {
-    if (error instanceof RestoreExceedsLicenceError) {
-      // Counts only. Which class and how many children is a fact about the
-      // school; who those children are is not the licence's business.
-      recordAudit(db, {
-        schoolId: user.school_id,
-        actorLabel: user.name,
-        action: "class.restore_blocked_by_licence",
-        detail: `Restoring ${classroom.name} was declined. ${error.used} of ${error.licensed} licensed students active, ${error.roster} in the archived class.`,
-      });
-      return {
-        error:
-          `${classroom.name} has ${error.roster} students, and ${error.used} of ${error.licensed} ` +
-          "licensed places are already in use, so restoring it would take this school past its " +
-          `licence. The class stays archived and none of its records have changed. Free places by ` +
-          `archiving another class, or ask ${school.contact_name} to request more on the Program ` +
-          "and plan page.",
-      };
+    const { db, user, classroom } = await ownActiveClass(classId);
+    const school = getSchool(db, user.school_id)!;
+
+    // Catch rather than pre-check: the rule is in the repository, and asking
+    // first would leave a window between the answer and the write.
+    try {
+      restoreClass(db, classId);
+    } catch (error) {
+      if (error instanceof RestoreExceedsLicenceError) {
+        // Counts only. Which class and how many children is a fact about the
+        // school; who those children are is not the licence's business.
+        recordAudit(db, {
+          schoolId: user.school_id,
+          actorLabel: user.name,
+          action: "class.restore_blocked_by_licence",
+          detail: `Restoring ${classroom.name} was declined. ${error.used} of ${error.licensed} licensed students active, ${error.roster} in the archived class.`,
+        });
+        return {
+          error:
+            `${classroom.name} has ${error.roster} students, and ${error.used} of ${error.licensed} ` +
+            "licensed places are already in use, so restoring it would take this school past its " +
+            `licence. The class stays archived and none of its records have changed. Free places by ` +
+            `archiving another class, or ask ${school.contact_name} to request more on the Program ` +
+            "and plan page.",
+        };
+      }
+      throw error;
     }
+
+    recordAudit(db, {
+      schoolId: user.school_id,
+      actorLabel: user.name,
+      action: "class.restored",
+      detail: `${classroom.name} restored to active.`,
+    });
+    revalidatePath("/admin/classes");
+    revalidatePath("/admin/data");
+    return {};
+  } catch (error) {
+    const refusal = asExpectedError(error);
+    if (refusal) return refusal;
     throw error;
   }
-
-  recordAudit(db, {
-    schoolId: user.school_id,
-    actorLabel: user.name,
-    action: "class.restored",
-    detail: `${classroom.name} restored to active.`,
-  });
-  revalidatePath("/admin/classes");
-  revalidatePath("/admin/data");
-  return {};
 }
 
 /** Irreversible. Removes the roster, every attempt and every check-in. */

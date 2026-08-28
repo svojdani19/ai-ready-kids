@@ -7,6 +7,79 @@ likely to be.
 
 ---
 
+## Sprint 50 — correction to sprint 49: two acceptance misses
+
+- **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-28-sprint-49.md`](2026-08-28-sprint-49.md), with the
+  sprint 50 correction appended.
+
+### 1. The second half of joining bypassed the gate
+
+`findClassByCode` checked the term; **`chooseStudent` did not** — and my own
+inventory classified it as *"resumes an existing session"*. It does not resume
+one, **it creates one**, from a join grant that lasts ten minutes. A child who
+typed a correct code minutes before the term ended still held a valid grant,
+`/join/[classId]` still rendered the roster by name, and pressing a name wrote a
+fresh session without asking again. **Checking the first step of a two-step flow
+is checking half of it** — and the inventory test that existed to prevent this
+was satisfied, because what it checks is a sentence I wrote and the sentence was
+wrong.
+
+- `chooseStudent` is now **gated**, reclassified with what it does.
+- The term is rechecked **after** the grant, class and code validate — so a
+  refusal cannot leak that a class exists — and **before any session write**. A
+  test asserts that ordering by index, not merely that the call is present.
+- `/join/[classId]` checks **before reading the roster**, not just before
+  rendering it: a closed class does not hand out a class list.
+- Both paths **clear the join grant** on refusal, so a refused child is not left
+  holding a credential to retry the stale page, and redirect to `/join?closed=1`
+  with the child-safe sentence. **No session, no audit row, no record that a
+  child tried**, and the attempt is not fed to the code throttle — it was not a
+  wrong guess.
+
+### 2. Lapsed Restore crashed instead of refusing
+
+`restoreClassAction` resolved the class with `ownActiveClass` **before** its try
+block, so the lapse escaped as an error page while archive and rotate returned
+the sentence. Those two were rewritten by wrapping the whole body; this one
+already had a try for the licence refusal, so the resolver stayed above it. The
+resolver is now inside an encompassing try, the `RestoreExceedsLicenceError`
+handling is preserved unchanged within it, and `asExpectedError` converts the
+lapse. A test asserts the try opens *before* the resolver in **all three**
+actions, so the next one cannot drift.
+
+### Already verified — please do not redo
+
+- Typecheck, lint, **574 tests** (up from 566), Turbopack production build.
+- Eight cases added, twenty-one in the file, **seven confirmed to fail against
+  the sprint-49 code** — including `routes every gated action through the gate`,
+  which now fails for `chooseStudent` as it should have all along.
+- **Stale grant, end to end at 1280×800:** correct code while active → roster
+  with 23 names; school lapsed with the page open; pressing a name landed on
+  `/join?closed=1` with the child's sentence; `/student` then redirected to
+  `/join` — **no session written** — and `/join/cls_room12` redirected with
+  **zero names rendered**.
+- **Lapsed Restore at 1280×800 and 768×1024:** no crash, refusal announced in
+  the row, class still archived, focus visible, **audit count unchanged at 16
+  before and after**, no overflow.
+- Demo data restored: renewal 2026-09-01, four active classes, 16 audit rows.
+- One new assertion tripped on its own first draft by matching the import path
+  `domain/subscription` and a comment containing "renew" — sprint 44's lesson
+  re-learned, so it strips comments and imports before scanning child-facing
+  copy.
+
+### Where this is most likely still wrong
+
+- **The inventory's descriptions are hand-written and carry the safety
+  property.** The test can only check that an action *is* classified, not that
+  the sentence about it is true. That is what failed here, and it can fail
+  again — the descriptions want reading against behaviour, not against names.
+- Everything listed under sprint 49 below still stands: no grace period,
+  Classroom Mode still opens for a lapsed school, the UTC boundary, and nothing
+  reconciling the term against an actual agreement.
+
+---
+
 ## Sprint 49 — P1: the term that ended and changed nothing
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>

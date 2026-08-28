@@ -195,6 +195,8 @@ describe("every server action has a decision about the lapse gate", () => {
     submitCheckInAnswer: "records a check-in answer",
     finishCheckIn: "completes a check-in",
     findClassByCode: "lets a new child into a class",
+    chooseStudent:
+      "writes a new student session from a join grant — it creates one, it does not resume one",
     // Teacher classroom mutations.
     createClassAction: "creates a class",
     addStudentAction: "roster change",
@@ -224,7 +226,6 @@ describe("every server action has a decision about the lapse gate", () => {
     completeCertificationAction: "orientation touches no classroom or child record",
     enterDemo: "sign-in",
     signInWithEmail: "sign-in",
-    chooseStudent: "resumes an existing session; recording is gated separately",
     signOut: "sign-out must always work",
   };
 
@@ -285,6 +286,149 @@ describe("every server action has a decision about the lapse gate", () => {
       expect(body).not.toContain("assertSubscriptionActive");
       expect(body).not.toContain("lapsedRefusal");
       expect(body).not.toContain("ownActiveClass");
+    }
+  });
+});
+
+
+/**
+ * Sprint 50. Sprint 49 gated `findClassByCode` and classified `chooseStudent`
+ * as "resumes an existing session". It does not: it *creates* one, from a join
+ * grant that lasts ten minutes. So a child who typed a correct code minutes
+ * before the term ended still held a valid grant, `/join/[classId]` still
+ * rendered the whole roster by name, and `chooseStudent` cleared the grant and
+ * wrote a fresh student session without asking about the term again.
+ *
+ * Checking the first step of a two-step flow is checking half of it — and the
+ * inventory that was supposed to catch exactly this was satisfied by a
+ * classification I had written down wrongly.
+ */
+describe("a join grant issued before the lapse cannot finish afterwards", () => {
+  const SRC = {
+    auth: readFileSync(join(process.cwd(), "src/app/actions/auth.ts"), "utf8"),
+    roster: readFileSync(join(process.cwd(), "src/app/join/[classId]/page.tsx"), "utf8"),
+    joinPage: readFileSync(join(process.cwd(), "src/app/join/page.tsx"), "utf8"),
+  };
+
+  const bodyOf = (src: string, name: string) => {
+    const start = src.indexOf(`export async function ${name}`);
+    expect(start, name).toBeGreaterThan(-1);
+    const end = src.indexOf("\nexport ", start + 10);
+    return src.slice(start, end === -1 ? undefined : end);
+  };
+
+  it("rechecks the term in chooseStudent, after the grant and before any write", () => {
+    const body = bodyOf(SRC.auth, "chooseStudent");
+    expect(body).toContain("schoolHasLapsed(db, classroom.school_id)");
+
+    // Order matters twice over. The check must come after the grant, class and
+    // code have been validated — so it cannot leak that a class exists — and
+    // before the session is written.
+    const codeCheck = body.indexOf("normaliseJoinCode(classroom.join_code) !== grant.code");
+    const lapseCheck = body.indexOf("schoolHasLapsed");
+    const sessionWrite = body.indexOf("writeSession(");
+    expect(codeCheck).toBeGreaterThan(-1);
+    expect(lapseCheck).toBeGreaterThan(codeCheck);
+    expect(sessionWrite).toBeGreaterThan(lapseCheck);
+  });
+
+  it("writes nothing and drops the grant when it refuses", () => {
+    const body = bodyOf(SRC.auth, "chooseStudent");
+    const refusal = body.slice(body.indexOf("schoolHasLapsed"), body.indexOf("writeSession("));
+    // The grant goes, so a refused child is not left holding a credential that
+    // would let them retry the same stale page.
+    expect(refusal).toContain("clearJoinGrant()");
+    // And no session, no audit, no note that a child tried.
+    expect(refusal).not.toContain("writeSession");
+    expect(refusal).not.toContain("recordAudit");
+    expect(body).not.toContain("recordFailure");
+  });
+
+  it("does not list a single name on a stale granted roster page", () => {
+    // The lapse check has to come before the roster is read, not merely before
+    // it is rendered: a closed class should not be handing out a class list.
+    const lapseCheck = SRC.roster.indexOf("schoolHasLapsed(db, classroom.school_id)");
+    const listNames = SRC.roster.indexOf("listStudents(db, classId)");
+    expect(lapseCheck).toBeGreaterThan(-1);
+    expect(listNames).toBeGreaterThan(-1);
+    expect(lapseCheck).toBeLessThan(listNames);
+    // And the grant is dropped there too, so the page cannot be retried from.
+    expect(SRC.roster).toContain("clearJoinGrant()");
+  });
+
+  it("sends the child to their own words, with no billing anywhere near it", () => {
+    expect(SRC.auth).toContain('redirect("/join?closed=1")');
+    expect(SRC.roster).toContain('redirect("/join?closed=1")');
+    expect(SRC.joinPage).toContain("LAPSED_STUDENT_MESSAGE");
+    // Comments and imports are not copy — sprint 44's lesson, which this
+    // assertion tripped over on its first draft: the module path
+    // `domain/subscription` and a note about renewal are not shown to a child.
+    const copy = SRC.joinPage
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/(^|\s)\/\/[^\n]*/g, "$1")
+      .replace(/^import[^\n]*$/gm, "");
+    for (const word of ["subscription", "renew", "invoice", "licence", "$"]) {
+      expect(copy.toLowerCase()).not.toContain(word);
+    }
+  });
+
+  it("classifies chooseStudent as gated, for what it actually does", () => {
+    // The mis-classification was the defect. Naming it here so the description
+    // has to stay true to the behaviour rather than to a first impression.
+    const inventory = readFileSync(join(process.cwd(), "tests/subscription-lapse.test.ts"), "utf8");
+    const allowedBlock = inventory.slice(
+      inventory.indexOf("const ALLOWED"),
+      inventory.indexOf("};", inventory.indexOf("const ALLOWED")),
+    );
+    expect(allowedBlock).not.toContain("chooseStudent");
+    const gatedBlock = inventory.slice(
+      inventory.indexOf("const GATED"),
+      inventory.indexOf("};", inventory.indexOf("const GATED")),
+    );
+    expect(gatedBlock).toContain("chooseStudent");
+  });
+});
+
+/**
+ * Sprint 50, second half. `restoreClassAction` resolved the class with
+ * `ownActiveClass` *before* its try block, so a lapsed subscription escaped as
+ * an unhandled throw and an error page — while archive and rotate, wrapped
+ * whole, returned the sentence. A guard that turns one refusal into a crash is
+ * not a guard the caller can use.
+ */
+describe("a lapsed restore refuses in the same words as the others", () => {
+  const admin = readFileSync(join(process.cwd(), "src/app/actions/admin.ts"), "utf8");
+  const bodyOf = (name: string) => {
+    const start = admin.indexOf(`export async function ${name}`);
+    const end = admin.indexOf("\nexport ", start + 10);
+    return admin.slice(start, end === -1 ? undefined : end);
+  };
+
+  it("resolves the class inside the try, not before it", () => {
+    const body = bodyOf("restoreClassAction");
+    const tryAt = body.indexOf("try {");
+    const resolve = body.indexOf("await ownActiveClass(classId)");
+    expect(tryAt).toBeGreaterThan(-1);
+    expect(resolve).toBeGreaterThan(tryAt);
+    expect(body).toContain("asExpectedError(error)");
+  });
+
+  it("still handles the licence refusal it already had", () => {
+    const body = bodyOf("restoreClassAction");
+    expect(body).toContain("RestoreExceedsLicenceError");
+    expect(body).toContain('action: "class.restore_blocked_by_licence"');
+    // The success audit is still only on the success path.
+    expect(body).toContain('action: "class.restored"');
+  });
+
+  it("fails the same way as archive and rotate", () => {
+    for (const name of ["archiveClassAction", "rotateJoinCodeAsAdminAction", "restoreClassAction"]) {
+      const body = bodyOf(name);
+      const tryAt = body.indexOf("try {");
+      const resolve = body.search(/await own(Active)?Class\(classId\)/);
+      expect(tryAt, name).toBeGreaterThan(-1);
+      expect(resolve, name).toBeGreaterThan(tryAt);
+      expect(body, name).toContain("asExpectedError(error)");
     }
   });
 });

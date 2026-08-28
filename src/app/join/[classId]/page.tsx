@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { readJoinGrant } from "@/lib/auth/session";
+import { clearJoinGrant, readJoinGrant } from "@/lib/auth/session";
+import { schoolHasLapsed } from "@/lib/auth/subscription-gate";
 import { getDb } from "@/lib/db";
 import { getClass, listStudents, normaliseJoinCode } from "@/lib/repo/classroom";
 import { getUser } from "@/lib/repo/school";
@@ -30,6 +31,17 @@ export default async function ChooseStudentPage({
   if (!classroom || classroom.archived_at) redirect("/join");
   // A rotated code invalidates a grant issued against the old one.
   if (normaliseJoinCode(classroom.join_code) !== grant.code) redirect("/join");
+
+  // And the term. A grant lasts ten minutes, so this page can be reached with a
+  // valid grant issued before the school lapsed. It lists every child in the
+  // class by name, and a closed class should not be handing that out — nor
+  // showing buttons that the action behind them will refuse. Straight back to
+  // the closed message, with the grant dropped so the stale page cannot be
+  // retried from.
+  if (schoolHasLapsed(db, classroom.school_id)) {
+    await clearJoinGrant();
+    redirect("/join?closed=1");
+  }
 
   const teacher = getUser(db, classroom.teacher_id);
   const students = listStudents(db, classId);

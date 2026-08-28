@@ -375,6 +375,12 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       hundred words and remove the sourcing, the consent question and the
       exposure at once, and let the clues be graded and one case be a clean
       decoy, which real material never reliably is.
+- [ ] **An inventory is only as good as its descriptions.** A test that
+      compares a hand-written classification against the code can only check
+      that something was classified, not that the sentence is true. Where a
+      description carries a safety property, read it against the behaviour, not
+      the name — and in a multi-step flow give every step its own answer, since
+      the gate belongs at the write and not at the entrance.
 - [ ] **A stored fact that nothing reads means nothing.** For any field the
       product sells on — a term, a seat count, a plan, a window — ask what
       refuses when it is exceeded or expires. If the answer is "a label
