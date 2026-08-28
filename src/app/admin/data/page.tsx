@@ -4,7 +4,12 @@ import { requireAdmin } from "@/lib/auth/session";
 import { listClasses, listStudents } from "@/lib/repo/classroom";
 import { getSchool, listAudit } from "@/lib/repo/school";
 import { deleteClassDataAction } from "@/app/actions/admin";
-import { formatDate, purgeDateFor, retentionRows } from "@/lib/domain/retention";
+import {
+  formatDate,
+  purgeDateFor,
+  retentionBlock,
+  retentionRows,
+} from "@/lib/domain/retention";
 import { PageHeader, Panel, PanelBody } from "@/components/ui/Panel";
 import { Note, Stat, Tag } from "@/components/ui/Bits";
 import { ConfirmAction } from "@/components/staff/ConfirmAction";
@@ -42,6 +47,9 @@ export default async function AdminData() {
     studentCount: listStudents(db, c.id).length,
   }));
   const rows = retentionRows(school, classes, now);
+  // An unrecognised window stops the schedule for the whole school, so it is
+  // said once at the top rather than repeated on every row.
+  const policyBlocked = retentionBlock(school) !== null;
   const audit = listAudit(db, user.school_id, 25);
   const eligible = rows.filter((r) => r.eligibleNow);
   const totalStudents = classes.reduce((n, c) => n + c.studentCount, 0);
@@ -58,27 +66,35 @@ export default async function AdminData() {
         <Stat label="Student records" value={totalStudents} hint="Display name and avatar only" />
         <Stat
           label="Retention window"
-          value={`${school.retention_months} months`}
+          // A window this product does not sell is not shown as if it were
+          // policy. The number is named as the stored value, not as a rule.
+          value={policyBlocked ? "Needs configuration" : `${school.retention_months} months`}
           hint={
-            school.year_ends_on
-              ? `After a cohort's own school year ends. This year's ends ${formatDate(school.year_ends_on)}.`
-              : "After a cohort's own school year ends — and this school has not recorded when that is."
+            policyBlocked
+              ? `The stored value is ${JSON.stringify(school.retention_months)}, which is not one of the windows below. Automatic purge is blocked until you choose one.`
+              : school.year_ends_on
+                ? `After a cohort's own school year ends. This year's ends ${formatDate(school.year_ends_on)}.`
+                : "After a cohort's own school year ends — and this school has not recorded when that is."
           }
+          tone={policyBlocked ? "berry" : "neutral"}
         />
         <Stat
           label="This year due"
           value={(() => {
+            if (policyBlocked) return "Blocked";
             const due = purgeDateFor(school);
             return due ? formatDate(due) : "Not set";
           })()}
           hint={
-            purgeDateFor(school) === null
-              ? "Record when the school year ends on Program & plan. Nothing is deleted until you do."
-              : eligible.length
-                ? `${eligible.length} classes eligible now`
-                : "Nothing eligible yet"
+            policyBlocked
+              ? "Nothing is deleted automatically while the retention window needs configuration."
+              : purgeDateFor(school) === null
+                ? "Record when the school year ends on Program & plan. Nothing is deleted until you do."
+                : eligible.length
+                  ? `${eligible.length} classes eligible now`
+                  : "Nothing eligible yet"
           }
-          tone={eligible.length ? "berry" : "neutral"}
+          tone={policyBlocked || eligible.length ? "berry" : "neutral"}
         />
       </div>
 
@@ -156,9 +172,18 @@ export default async function AdminData() {
                     <td className="ark-tabular px-3 py-3 text-ink-soft">{row.studentCount}</td>
                     <td className="px-3 py-3">
                       <span className={row.eligibleNow ? "font-semibold text-berry-deep" : "text-ink-soft"}>
-                        {row.purgeOn ? formatDate(row.purgeOn) : "Not set"}
+                        {row.purgeOn
+                          ? formatDate(row.purgeOn)
+                          : row.blockedReason === "unrecognised-policy"
+                            ? "Blocked"
+                            : "Not set"}
                       </span>
-                      {row.purgeOn === null && (
+                      {row.blockedReason === "unrecognised-policy" && (
+                        <span className="block text-xs text-berry-deep">
+                          Retention needs configuration — automatic purge is blocked.
+                        </span>
+                      )}
+                      {row.blockedReason === "no-year-end" && (
                         <span className="block text-xs text-ink-faint">
                           This year has no recorded end date, so nothing here is deleted
                           automatically.

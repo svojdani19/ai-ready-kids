@@ -388,6 +388,12 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       description carries a safety property, read it against the behaviour, not
       the name — and in a multi-step flow give every step its own answer, since
       the gate belongs at the write and not at the entrance.
+- [ ] **Ask which columns feed something irreversible.** The danger of a value
+      is not how likely it is to be wrong but what happens when it is. Trace
+      every unconstrained field into the operations it drives, and validate
+      hardest where the result cannot be undone — deletion, purge, cascade. A
+      wrong number that leaks revenue and a wrong number that destroys a child's
+      records have the same shape and are not the same bug.
 - [ ] **`??` on an entitlement lookup is a grant with a default's syntax.** For
       any limit, quota or permission read from data, ask what an unrecognised
       value produces. A coalescing default answers "when we cannot tell what

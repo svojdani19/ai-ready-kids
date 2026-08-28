@@ -62,8 +62,12 @@ import { MIN_BENCHMARK_GROUP, summariseCohortBenchmark } from "@/lib/domain/benc
 import {
   addMonths,
   formatDate,
+  isRecognisedRetention,
   purgeDateFor,
   purgeDateForClass,
+  RECOGNISED_RETENTION_MONTHS,
+  RETENTION_OPTIONS,
+  retentionBlock,
   retentionRows,
 } from "@/lib/domain/retention";
 import { addYear, nextYearLabel, previewRollover } from "@/lib/domain/rollover";
@@ -1804,5 +1808,240 @@ describe("an unrecognised plan grants nothing and claims nothing", () => {
     } finally {
       cleanup();
     }
+  });
+});
+
+
+/**
+ * Sprint 54. `schools.retention_months` is unconstrained integer data. The form
+ * only writes 3, 12, 24 or 36, but a vendor edit, a migration defect or a stale
+ * value — `-12`, `0`, `7`, `120` — was accepted by the domain and passed
+ * straight to `addMonths`. A **negative** window moves a cohort's deletion date
+ * to before its school year ended, which makes every class immediately eligible
+ * and hands `runScheduledPurge` a licence to permanently delete the class and
+ * cascade every roster, attempt and check-in. There is no restore path.
+ *
+ * Unlike the plan defect, this is not access or revenue. It is a scheduled job
+ * destroying children's education records.
+ */
+describe("an unrecognised retention window deletes nothing", () => {
+  /** Everything the domain must reject, including values only code can produce. */
+  const MALFORMED = [-12, 0, 1, 7, 120, -1, 2.5, Number.NaN];
+  /**
+   * The subset a database can actually hold. `NaN` is not representable —
+   * SQLite rejects it against the NOT NULL column — so it is swept through the
+   * pure functions above and not through the job. Worth stating rather than
+   * quietly dropping: the column's own constraint rules that one out, and the
+   * others it does not.
+   */
+  const MALFORMED_STORABLE = [-12, 0, 1, 7, 120, -1, 2.5];
+
+  const withRetention = (months: number) => {
+    const { db, cleanup } = createTestDb();
+    db.prepare("UPDATE schools SET retention_months = ?, year_ends_on = '2020-06-19' WHERE id = ?").run(
+      months,
+      DEMO_SCHOOL,
+    );
+    // Long past, so a correctly configured school really would purge.
+    db.prepare("UPDATE classes SET year_ends_on = '2020-06-19' WHERE school_id = ?").run(
+      DEMO_SCHOOL,
+    );
+    return { db, cleanup };
+  };
+
+  const snapshot = (db: Db) => ({
+    classes: (db.prepare("SELECT COUNT(*) AS n FROM classes").get() as { n: number }).n,
+    students: (db.prepare("SELECT COUNT(*) AS n FROM students").get() as { n: number }).n,
+    attempts: (db.prepare("SELECT COUNT(*) AS n FROM attempts").get() as { n: number }).n,
+    benchmarks: (db.prepare("SELECT COUNT(*) AS n FROM benchmarks").get() as { n: number }).n,
+  });
+
+  it("recognises exactly the four windows the product sells", () => {
+    expect([...RECOGNISED_RETENTION_MONTHS].sort((a, b) => a - b)).toEqual([3, 12, 24, 36]);
+    // Bound to the options the form offers, so the two cannot drift apart.
+    expect([...RECOGNISED_RETENTION_MONTHS].sort((a, b) => a - b)).toEqual(
+      RETENTION_OPTIONS.map((o) => o.months).sort((a, b) => a - b),
+    );
+    for (const months of [3, 12, 24, 36]) expect(isRecognisedRetention(months), `${months}`).toBe(true);
+    for (const months of MALFORMED) expect(isRecognisedRetention(months), `${months}`).toBe(false);
+    // Non-numbers too, since the column is only integer by convention.
+    for (const value of ["12", null, undefined, {}, []]) {
+      expect(isRecognisedRetention(value), JSON.stringify(value)).toBe(false);
+    }
+  });
+
+  it("calculates no date at all from a malformed window", () => {
+    for (const months of MALFORMED) {
+      const school = {
+        year_ends_on: "2020-06-19",
+        retention_months: months,
+      } as unknown as Parameters<typeof purgeDateFor>[0];
+      expect(purgeDateFor(school), `${months}`).toBeNull();
+      expect(purgeDateForClass({ year_ends_on: "2020-06-19" }, months), `${months}`).toBeNull();
+      expect(retentionBlock({ retention_months: months }), `${months}`).toBe(
+        "unrecognised-policy",
+      );
+    }
+    // And a valid one still calculates, so this is a gate and not a wall.
+    expect(purgeDateForClass({ year_ends_on: "2020-06-19" }, 12)).toBeInstanceOf(Date);
+    expect(retentionBlock({ retention_months: 12 })).toBeNull();
+  });
+
+  it("marks no class eligible, and distinguishes the two reasons", () => {
+    const { db, cleanup } = withRetention(-12);
+    try {
+      const school = getPrimarySchool(db);
+      const classes = listClasses(db, DEMO_SCHOOL, true).map((c) => ({
+        ...c,
+        studentCount: listStudents(db, c.id).length,
+      }));
+      const rows = retentionRows(school, classes, new Date("2026-08-28T00:00:00.000Z"));
+      expect(rows.length).toBeGreaterThan(0);
+      for (const row of rows) {
+        // A negative window would otherwise put the date in 2019 and mark
+        // every one of these as due today.
+        expect(row.eligibleNow, row.className).toBe(false);
+        expect(row.purgeOn, row.className).toBeNull();
+        expect(row.blockedReason, row.className).toBe("unrecognised-policy");
+      }
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("deletes nothing and writes no success audit for a malformed school", () => {
+    for (const months of MALFORMED_STORABLE) {
+      const { db, cleanup } = withRetention(months);
+      try {
+        const before = snapshot(db);
+        expect(before.classes).toBeGreaterThan(0);
+        expect(before.students).toBeGreaterThan(0);
+
+        const result = runScheduledPurge(db, new Date("2026-08-28T00:00:00.000Z"));
+
+        expect(result.classesDeleted, `${months}`).toBe(0);
+        expect(result.studentsDeleted, `${months}`).toBe(0);
+        expect(snapshot(db), `${months}`).toEqual(before);
+        // Reported, so an operator knows the schedule has stopped.
+        expect(result.blocked.map((b) => b.schoolId), `${months}`).toContain(DEMO_SCHOOL);
+        // And no success audit claiming a purge happened.
+        expect(
+          listAudit(db, DEMO_SCHOOL).filter((a) => a.action === "retention.purged"),
+          `${months}`,
+        ).toHaveLength(0);
+      } finally {
+        cleanup();
+      }
+    }
+  });
+
+  it("still purges a correctly configured school in the same run", () => {
+    const { db, cleanup } = withRetention(-12);
+    try {
+      // A second school, properly configured, with a cohort long past due.
+      db.prepare(
+        `INSERT INTO schools (id, name, slug, district, city, state, monogram, brand_accent,
+           plan, licensed_students, term_starts_on, term_renews_on, academic_year,
+           year_starts_on, year_ends_on, contact_name, contact_email, retention_months, created_at)
+         VALUES ('sch_ok','Ok Elementary','ok','Ok District','Okville','IA','OE','denim',
+           'school', 50, '2019-08-01','2030-08-01','2019-2020','2019-08-20','2020-06-19',
+           'Head','head@ok.demo', 3, '2019-08-01T00:00:00.000Z')`,
+      ).run();
+      const teacher = createUser(db, {
+        schoolId: "sch_ok",
+        role: "teacher",
+        name: "Ok Teacher",
+        email: "ok.teacher@ok.demo",
+        title: "Grade 3",
+      });
+      const theirs = createClass(db, {
+        schoolId: "sch_ok",
+        teacherId: teacher.id,
+        name: "Ok Room",
+        grade: 3,
+        schoolYear: "2019-2020",
+        yearEndsOn: "2020-06-19",
+      });
+      createStudent(db, { classId: theirs.id, displayName: "Gone G." });
+
+      const brokenBefore = listClasses(db, DEMO_SCHOOL, true).length;
+      const result = runScheduledPurge(db, new Date("2026-08-28T00:00:00.000Z"));
+
+      // The valid school's overdue cohort went.
+      expect(result.classesDeleted).toBe(1);
+      expect(result.classNames).toEqual(["Ok Room"]);
+      expect(getClass(db, theirs.id)).toBeUndefined();
+      // The malformed school lost nothing, and is named as blocked.
+      expect(listClasses(db, DEMO_SCHOOL, true)).toHaveLength(brokenBefore);
+      expect(result.blocked.map((b) => b.schoolName)).toEqual(["Brightwood Elementary School"]);
+      // The block names a school and a number, and never a child.
+      const blocked = JSON.stringify(result.blocked);
+      expect(blocked).not.toMatch(/display_name|Zaynab|Aisha/);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("resumes purging once a valid window is saved", () => {
+    const { db, cleanup } = withRetention(0);
+    try {
+      const now = new Date("2026-08-28T00:00:00.000Z");
+      expect(runScheduledPurge(db, now).classesDeleted).toBe(0);
+      expect(snapshot(db).classes).toBeGreaterThan(0);
+
+      // Recovery is exactly what the form does: write a recognised value.
+      setRetentionMonths(db, DEMO_SCHOOL, 3);
+      expect(retentionBlock(getPrimarySchool(db))).toBeNull();
+
+      const after = runScheduledPurge(db, now);
+      expect(after.classesDeleted).toBeGreaterThan(0);
+      expect(after.blocked).toEqual([]);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("leaves valid windows behaving exactly as they did", () => {
+    for (const months of [3, 12, 24, 36]) {
+      const { db, cleanup } = withRetention(months);
+      try {
+        const school = getPrimarySchool(db);
+        expect(retentionBlock(school), `${months}`).toBeNull();
+        expect(purgeDateFor(school), `${months}`).toEqual(addMonths("2020-06-19", months));
+        expect(
+          purgeDateForClass({ year_ends_on: "2020-06-19" }, months),
+          `${months}`,
+        ).toEqual(addMonths("2020-06-19", months));
+      } finally {
+        cleanup();
+      }
+    }
+  });
+
+  it("keeps the job, the calculation, the CLI and the page from drifting", () => {
+    const purge = readFileSync(join(process.cwd(), "src/lib/domain/purge.ts"), "utf8");
+    // Fails closed before it reads or writes anything for that school.
+    expect(purge).toContain("isRecognisedRetention(school.retention_months)");
+    expect(purge.indexOf("isRecognisedRetention")).toBeLessThan(purge.indexOf("DELETE FROM classes"));
+    expect(purge).toContain("result.blocked.push");
+
+    const retention = readFileSync(join(process.cwd(), "src/lib/domain/retention.ts"), "utf8");
+    // No coercing, clamping, rounding or defaulting the stored value.
+    expect(retention).not.toMatch(/retention_months\s*\|\|/);
+    expect(retention).not.toMatch(/retention_months\s*\?\?/);
+    expect(retention).not.toMatch(/Math\.(max|min|round)\([^)]*retention/);
+
+    const cli = readFileSync(join(process.cwd(), "scripts/purge.ts"), "utf8");
+    // A safety block must not read as "Nothing is past its retention date".
+    expect(cli).toContain("BLOCKED");
+    expect(cli).toContain("result.blocked.length");
+    expect(cli).toContain("process.exitCode = 1");
+
+    const page = readFileSync(join(process.cwd(), "src/app/admin/data/page.tsx"), "utf8");
+    expect(page).toContain("Retention needs configuration");
+    expect(page).toContain("automatic purge is blocked");
+    // Manual deletion stays available: a deliberate admin act, not retention.
+    expect(page).toContain('label="Delete now"');
+    expect(page).toContain('confirmLabel="Delete permanently"');
   });
 });

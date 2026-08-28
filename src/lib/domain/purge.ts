@@ -1,6 +1,6 @@
 import { type Db, newId, nowIso, rows } from "@/lib/db";
 import type { Classroom, School } from "@/lib/types";
-import { retentionRows } from "./retention";
+import { isRecognisedRetention, retentionRows } from "./retention";
 
 /**
  * The retention purge.
@@ -30,6 +30,12 @@ export interface PurgeResult {
   studentsDeleted: number;
   /** Class names removed, for the audit line and for the caller to print. */
   classNames: string[];
+  /**
+   * Schools skipped entirely because their retention window is not one this
+   * product recognises. Named so an operator can act, with no child named:
+   * which school has a broken account record is not a fact about any pupil.
+   */
+  blocked: { schoolId: string; schoolName: string; retentionMonths: number }[];
 }
 
 /** Midnight UTC on the given date, so eligibility is a day and not an instant. */
@@ -42,10 +48,32 @@ function startOfUtcDay(date: Date): number {
  * Returns what went, and writes one audit entry per school that lost anything.
  */
 export function runScheduledPurge(db: Db, now = new Date()): PurgeResult {
-  const result: PurgeResult = { classesDeleted: 0, studentsDeleted: 0, classNames: [] };
+  const result: PurgeResult = {
+    classesDeleted: 0,
+    studentsDeleted: 0,
+    classNames: [],
+    blocked: [],
+  };
   const schools = rows<School>(db.prepare("SELECT * FROM schools ORDER BY name").all());
 
   for (const school of schools) {
+    // Fail closed, per school. An unrecognised retention window is a broken
+    // account record, and this job's mistake is permanent: it deletes a class
+    // and cascades the roster, every attempt and both check-ins with no
+    // restore path. A negative window would make every cohort look overdue.
+    //
+    // Skipped before anything is read or written, and the loop continues, so
+    // one school's bad configuration never stops a correctly configured
+    // school's records being purged on the date its policy actually says.
+    if (!isRecognisedRetention(school.retention_months)) {
+      result.blocked.push({
+        schoolId: school.id,
+        schoolName: school.name,
+        retentionMonths: school.retention_months,
+      });
+      continue;
+    }
+
     const classes = rows<Classroom>(
       db.prepare("SELECT * FROM classes WHERE school_id = ? ORDER BY grade, name").all(school.id),
     ).map((c) => ({

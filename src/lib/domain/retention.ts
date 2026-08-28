@@ -16,6 +16,41 @@ export const RETENTION_OPTIONS = [
   { months: 36, label: "36 months after the school year ends" },
 ] as const;
 
+/**
+ * The retention windows this product recognises, and nothing else.
+ *
+ * `schools.retention_months` is unconstrained integer data. The form only ever
+ * writes one of the four values above, but a vendor edit, a migration defect or
+ * a stale value — `-12`, `0`, `7`, `120` — is data this code used to accept
+ * without looking. It went straight into `addMonths`, and a **negative** window
+ * moves a cohort's deletion date to before its school year ended, which makes
+ * every class immediately eligible and hands `runScheduledPurge` a licence to
+ * permanently delete the roster, every attempt and both check-ins, with no
+ * restore path.
+ *
+ * So an unrecognised value is classified, never repaired. Not coerced, not
+ * clamped, not rounded, and above all not defaulted to twelve: a guess that
+ * lands early deletes a child's records before the school's own policy said it
+ * would, and a guess that lands late retains them past it. Neither is a
+ * decision this code gets to make on a school's behalf — the same reasoning
+ * sprint 32 applied to a missing year-end date, and the same direction sprints
+ * 34 and 53 settled for unrecognised state.
+ */
+export const RECOGNISED_RETENTION_MONTHS: readonly number[] = RETENTION_OPTIONS.map(
+  (option) => option.months,
+);
+
+export function isRecognisedRetention(months: unknown): months is number {
+  return (
+    typeof months === "number" &&
+    Number.isInteger(months) &&
+    RECOGNISED_RETENTION_MONTHS.includes(months)
+  );
+}
+
+/** Why a cohort has no deletion date. The two reasons are not the same. */
+export type RetentionBlock = "unrecognised-policy" | "no-year-end";
+
 export function addMonths(iso: string, months: number): Date {
   const date = new Date(iso);
   const day = date.getUTCDate();
@@ -36,6 +71,7 @@ export function addMonths(iso: string, months: number): Date {
  * when money changes hands; the school year ends when the children go home.
  */
 export function purgeDateFor(school: School): Date | null {
+  if (!isRecognisedRetention(school.retention_months)) return null;
   if (!school.year_ends_on) return null;
   return addMonths(school.year_ends_on, school.retention_months);
 }
@@ -56,8 +92,23 @@ export function purgeDateForClass(
   // rather than guessed: a guessed date that lands early would delete a
   // child's records before the school's own window had elapsed, and that is
   // not a decision this code gets to make on a school's behalf.
+  // And the policy itself. An unrecognised window produces no date at all,
+  // rather than an arithmetic result nobody asked for — a negative one lands
+  // before the year even ended.
+  if (!isRecognisedRetention(retentionMonths)) return null;
   if (!classroom.year_ends_on) return null;
   return addMonths(classroom.year_ends_on, retentionMonths);
+}
+
+/**
+ * Why this school has no schedule, or null when it has one.
+ *
+ * Distinct from "no date recorded" on purpose: a missing year-end is an
+ * administrator finishing a migration, and an unrecognised window is a broken
+ * account record. They need different sentences and different people.
+ */
+export function retentionBlock(school: Pick<School, "retention_months">): RetentionBlock | null {
+  return isRecognisedRetention(school.retention_months) ? null : "unrecognised-policy";
 }
 
 export interface RetentionRow {
@@ -67,8 +118,14 @@ export interface RetentionRow {
   schoolYear: string;
   studentCount: number;
   archived: boolean;
-  /** Null when this cohort's school-year end has never been recorded. */
+  /** Null when there is no date to show, for either reason below. */
   purgeOn: Date | null;
+  /**
+   * Why there is no date. `"no-year-end"` is a cohort whose school year was
+   * never recorded; `"unrecognised-policy"` is a school whose retention window
+   * is not one this product sells. Null when a date exists.
+   */
+  blockedReason: RetentionBlock | null;
   /** Never true while `purgeOn` is null. Unknown is not the same as due. */
   eligibleNow: boolean;
 }
@@ -97,6 +154,13 @@ export function retentionRows(
     // whole school was the defect: a class created after a rollover would have
     // carried the previous term's date.
     const purgeOn = purgeDateForClass(c, school.retention_months);
+    // The policy is checked first, because a school with a broken window has
+    // no schedule at all regardless of what any individual cohort recorded.
+    const blockedReason: RetentionBlock | null = !isRecognisedRetention(school.retention_months)
+      ? "unrecognised-policy"
+      : c.year_ends_on
+        ? null
+        : "no-year-end";
     return {
       classId: c.id,
       className: c.name,
@@ -105,6 +169,7 @@ export function retentionRows(
       studentCount: c.studentCount,
       archived: Boolean(c.archived_at),
       purgeOn,
+      blockedReason,
       eligibleNow: purgeOn !== null && purgeOn.getTime() <= now.getTime(),
     };
   });
