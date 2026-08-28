@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { clearJoinGrant, readJoinGrant } from "@/lib/auth/session";
+import { readJoinGrant } from "@/lib/auth/session";
 import { schoolHasLapsed } from "@/lib/auth/subscription-gate";
 import { getDb } from "@/lib/db";
 import { getClass, listStudents, normaliseJoinCode } from "@/lib/repo/classroom";
@@ -35,12 +35,15 @@ export default async function ChooseStudentPage({
   // And the term. A grant lasts ten minutes, so this page can be reached with a
   // valid grant issued before the school lapsed. It lists every child in the
   // class by name, and a closed class should not be handing that out — nor
-  // showing buttons that the action behind them will refuse. Straight back to
-  // the closed message, with the grant dropped so the stale page cannot be
-  // retried from.
+  // showing buttons that the action behind them will refuse.
+  //
+  // The grant is dropped by `/join/closed` rather than here: this is a Server
+  // Component, and Next refuses a cookie write outside a Server Action or Route
+  // Handler. Calling it here turned a refresh of a stale roster into a 500 —
+  // the one path the sprint-50 browser check did not walk, because pressing a
+  // name goes through a Server Action where the write is allowed.
   if (schoolHasLapsed(db, classroom.school_id)) {
-    await clearJoinGrant();
-    redirect("/join?closed=1");
+    redirect("/join/closed");
   }
 
   const teacher = getUser(db, classroom.teacher_id);

@@ -7,6 +7,68 @@ likely to be.
 
 ---
 
+## Sprint 51 — correction to sprint 50: a cookie write in a Server Component
+
+- **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-28-sprint-49.md`](2026-08-28-sprint-49.md), sprint 51
+  section.
+
+### The defect
+
+`src/app/join/[classId]/page.tsx` is a Server Component and its lapsed branch
+called `await clearJoinGrant()` → `cookies().delete()`. **Next 16.3.3 refuses a
+cookie write outside a Server Action or Route Handler**, so a child who simply
+**refreshed or revisited** the roster after their school lapsed got a 500
+instead of the sentence written for them.
+
+**Reproduced before fixing:** a plain GET with a valid grant rendered *"This page
+couldn't load"* with `ERROR 2891558010@E1180`, and the dev server logged the
+matching digest at `clearJoinGrant (session.ts:98)` from `ChooseStudentPage
+(join/[classId]/page.tsx:42)`.
+
+**Why my check missed it:** I walked pressing a name — a Server Action, where the
+write *is* allowed — and then a roster request **after the grant was already
+cleared**, so the lapsed branch never ran. The one sequence that mattered, stale
+grant still held plus a plain GET, was exactly the one I did not walk.
+
+### The fix
+
+`src/app/join/closed/route.ts` — a Route Handler that clears the grant and
+redirects to `/join?closed=1`. The page redirects there rather than writing the
+cookie itself; the handler reads no state and makes no decision. `chooseStudent`
+is unchanged and still clears its own grant, because a Server Action may.
+**The sprint-50 restore fix is untouched.**
+
+### Already verified — please do not redo
+
+- Typecheck, lint, **577 tests** (up from 574), Turbopack production build, which
+  lists the new route as `ƒ /join/closed`.
+- Three cases added, twenty-four in the file, **four confirmed to fail against
+  the sprint-50 page**. The first asserts the **property, not the symptom**: no
+  cookie write of any kind in the roster Server Component — not
+  `clearJoinGrant`, not `cookies()`, not a set/delete on the join cookie.
+- **The previously missing sequence, at 1280×800 and again at 768×1024**, from a
+  fresh grant each time: correct code while active → roster with **23 names**;
+  school lapsed with the page open, **no name tapped**; direct navigation to that
+  exact roster URL. Both sizes: **no error page**, landed on `/join?closed=1`,
+  child message shown, **zero names**, **grant cookie gone**, no overflow.
+- Then at desktop: `/student` redirected to `/join` — **no session created** —
+  and `/join/cls_room12` redirected with zero names. **Audit 16 before, 16
+  after**: no audit row, no throttle event.
+- Demo data restored: renewal 2026-09-01, four active classes, 16 audit rows.
+
+### Where this is most likely still wrong
+
+- **Runtime context is not carried by the type system.** `clearJoinGrant()`
+  compiles identically in a page, an action and a handler; only some of them run.
+  The new test covers this one file. No general guard exists against the same
+  mistake elsewhere, and the codebase has other cookie helpers
+  (`writeSession`, `writeJoinGrant`, `clearSession`) that would fail the same way
+  if called from a component.
+- Everything under sprints 49 and 50 below still stands.
+
+---
+
 ## Sprint 50 — correction to sprint 49: two acceptance misses
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>

@@ -375,6 +375,13 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       hundred words and remove the sourcing, the consent question and the
       exposure at once, and let the clues be graded and one case be a clean
       decoy, which real material never reliably is.
+- [ ] **Runtime context is part of an API's contract, and types do not carry
+      it.** A cookie write, a redirect, a revalidation: each is legal in some
+      contexts and not others, and the same call compiles identically in all of
+      them. When moving a call between a Server Action, a Server Component and a
+      Route Handler, check what that context permits — and walk the path that
+      actually runs it, in the state that triggers it. Two passes that both
+      avoid the defect are the same pass twice, not coverage.
 - [ ] **An inventory is only as good as its descriptions.** A test that
       compares a hand-written classification against the code can only check
       that something was classified, not that the sentence is true. Where a

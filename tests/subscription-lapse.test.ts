@@ -344,6 +344,42 @@ describe("a join grant issued before the lapse cannot finish afterwards", () => 
     expect(body).not.toContain("recordFailure");
   });
 
+  /**
+   * Sprint 51. The sprint-50 lapsed branch called `clearJoinGrant()` from the
+   * Server Component, and Next 16 refuses a cookie write outside a Server
+   * Action or Route Handler — so a child who merely *refreshed* the roster
+   * after their school lapsed got a 500 instead of the sentence meant for them.
+   *
+   * The action path was fine, which is exactly why the browser check missed it:
+   * pressing a name runs in a Server Action, where the write is allowed. Only
+   * the plain GET was broken, and only the plain GET was never walked.
+   */
+  it("never writes a cookie from the roster Server Component", () => {
+    // A page component is not a mutation context. This is the property, not
+    // the symptom: any cookie write here fails at runtime, whatever it is for.
+    expect(SRC.roster).not.toMatch(/clearJoinGrant\s*\(/);
+    expect(SRC.roster).not.toMatch(/cookies\s*\(\)/);
+    expect(SRC.roster).not.toMatch(/\.(set|delete)\s*\(\s*["'`]?airk/i);
+  });
+
+  it("clears the grant through a Route Handler instead", () => {
+    const handler = readFileSync(join(process.cwd(), "src/app/join/closed/route.ts"), "utf8");
+    // A Route Handler is a supported mutation context; a page is not.
+    expect(handler).toMatch(/export async function (GET|POST)/);
+    expect(handler).toContain("clearJoinGrant()");
+    expect(handler).toContain("/join?closed=1");
+    // And the page hands off to it rather than doing the write itself.
+    expect(SRC.roster).toContain('redirect("/join/closed")');
+  });
+
+  it("keeps the action path clearing its own grant, where that is allowed", () => {
+    // chooseStudent is a Server Action, so it may write cookies and should
+    // still drop the grant itself rather than bouncing through the handler.
+    const body = bodyOf(SRC.auth, "chooseStudent");
+    expect(body).toContain("clearJoinGrant()");
+    expect(SRC.auth).toContain('"use server"');
+  });
+
   it("does not list a single name on a stale granted roster page", () => {
     // The lapse check has to come before the roster is read, not merely before
     // it is rendered: a closed class should not be handing out a class list.
@@ -352,13 +388,14 @@ describe("a join grant issued before the lapse cannot finish afterwards", () => 
     expect(lapseCheck).toBeGreaterThan(-1);
     expect(listNames).toBeGreaterThan(-1);
     expect(lapseCheck).toBeLessThan(listNames);
-    // And the grant is dropped there too, so the page cannot be retried from.
-    expect(SRC.roster).toContain("clearJoinGrant()");
+    // And the grant is dropped on the way out — by the Route Handler this
+    // redirects to, since a Server Component may not write cookies.
+    expect(SRC.roster).toContain('redirect("/join/closed")');
   });
 
   it("sends the child to their own words, with no billing anywhere near it", () => {
     expect(SRC.auth).toContain('redirect("/join?closed=1")');
-    expect(SRC.roster).toContain('redirect("/join?closed=1")');
+    expect(SRC.roster).toContain('redirect("/join/closed")');
     expect(SRC.joinPage).toContain("LAPSED_STUDENT_MESSAGE");
     // Comments and imports are not copy — sprint 44's lesson, which this
     // assertion tripped over on its first draft: the module path
