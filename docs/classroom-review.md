@@ -771,6 +771,18 @@ one of them has not tested the thing that was built.
       it. Ask what a paused state becomes when it is resumed, not only what it is
       while paused.
 
+- [ ] **Guidance about what to teach is not guidance about how to teach it.**
+      Every session had a discussion guide and none of them said where the
+      minutes go, what the adult does while children play, or what to do when
+      half the class finishes early. A teacher opening the product for the first
+      time needs the routine before they need the content. Write the shape once,
+      share it, and let each session fill in its own numbers.
+- [ ] **Before telling a teacher what a session records, read the code.** The
+      orientation said First Look "records nothing on the roster"; it creates an
+      attempt row and counts toward completed work, and only the skill evidence is
+      absent. Copy about what is stored is a claim about the database, and the
+      database is the only place to check it.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

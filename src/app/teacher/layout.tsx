@@ -6,6 +6,7 @@ import { StaffShell, type NavItem } from "@/components/staff/StaffShell";
 const NAV: NavItem[] = [
   { href: "/teacher", label: "Overview" },
   { href: "/teacher/missions", label: "Mission library" },
+  { href: "/teacher/how-to-run-a-session", label: "Running a session" },
   { href: "/teacher/certification", label: "Orientation" },
 ];
 

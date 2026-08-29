@@ -7,6 +7,93 @@ likely to be.
 
 ---
 
+## Sprint 77 — a teacher's guide to running a session
+
+- **Reviewed against:** HEAD `a12032a`
+- **Repository:** <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-29-sprint-77.md`](2026-08-29-sprint-77.md)
+
+### The gap
+
+Every session shipped a discussion guide — what it teaches, what to watch for,
+debrief questions, misconceptions, an unplugged extension — and nothing that told
+a teacher **how to run the twenty minutes**. The printable guide header has
+asserted *"N minutes independent, 15 minutes debrief"* for many sprints with that
+shape described nowhere.
+
+### What was built
+
+`src/content/session-guide.ts`, one authored source read by three surfaces.
+**Two shapes**, because the product has two kinds of session: a **First Look**
+session led from the board (3/10/5/5, no device needed) and a **core mission**
+played independently then debriefed (3/7–9/3/15), each step saying what *you* do
+and what *they* do. Plus **room setups** (one device each, a rotation, board
+only), **what to do when the room does what rooms do** (the four-minute finisher,
+the stuck child, the upset child, the redo, the argument), **five things not to
+do** — each undoing a deliberate product decision — and **what each kind of
+session leaves behind**.
+
+New page `/teacher/how-to-run-a-session`, in the nav and linked from the
+overview; a **run sheet** on each mission page and on the **printable** guide,
+using that session's own `estimatedMinutes` and picking the shape from its own
+`segment`. The printed header's claim is now explained directly beneath it.
+
+### A false claim it exposed
+
+Writing "what each session records" meant checking. Orientation said *"First Look
+records nothing on the roster."* Traced: a finished First Look **does** create an
+attempt row and **does** raise `missionsCompleted`; it moves **no** competency
+figure. Wrong in the first half, right in the second. Corrected to say First Look
+records **no skill evidence**, while recording that the child opened and finished
+it — and that a board-only run with nobody signed in records nothing about any
+individual.
+
+### Evidence
+
+11 tests tying copy to content and to behaviour: the stated 6 / 27 / `1-2` /
+`3-5` / `2-4` / 7–9 are read from the content, so a content change that breaks
+the prose fails; the 15-minute debrief is asserted against the printed header's
+own source; steps sum within their advertised totals; and **the recording claims
+are checked against a real report build**. Overclaim guards forbid `certifi`,
+`compliance`, `guarantee`, `WCAG`/`fully accessible`, `contact us/support` and
+`evidence-based`/`research shows`/`proven to` across every string and the page.
+
+**Mutation-checked one at a time:** restoring the old orientation sentence fails
+only the orientation test; changing the debrief to 4 minutes fails only the
+header-agreement and sums tests.
+
+```
+typecheck  ✓
+lint       0 errors, 2 pre-existing warnings
+tests      836 passed (28 files)   — up from 825
+build      ✓ Compiled successfully
+```
+
+Browser at both widths, no overflow: both shapes render; the class-photo mission
+shows **8 min** (its own estimate, not the generic 9); a First Look mission shows
+the board-led shape at 10 min; the printable guide carries the run sheet. No demo
+data changed.
+
+### Where to push hardest
+
+1. **The timings are authored judgement, not measured.** Nobody has run a stopwatch
+   on 3/9/3/15 in a real classroom, and the page claims nobody has — but a school
+   will read them as tested.
+2. **No evidence base is cited because none was consulted.** The guidance reflects
+   the product's design and ordinary classroom practice. If a buyer expects
+   research backing, this does not provide it.
+3. **First Look counts toward the completion rate.** This sprint fixed the
+   *description*; whether a board-led comprehension session should count as
+   completed work alongside a core mission is an open product question.
+4. **The run sheet substitutes minutes by step index** (`i === 1`). Reorder or
+   insert a step and that goes stale silently; a named step id would be sturdier.
+5. **Sprint 76's carry-over stands:** only `setAssignmentAction` refuses an
+   archived class; `renameStudentAction`, `removeStudentAction` and
+   `rotateJoinCodeAction` have not been audited for the same parked-then-restored
+   reasoning.
+
+---
+
 ## Sprint 76 — the switch that decides which mission a class may open
 
 - **Reviewed against:** HEAD `2f2d262`

@@ -58,9 +58,14 @@ export default async function TeacherOverview() {
         title={`Good to see you, ${user.name.split(" ")[0]}`}
         description="Completion, and the skills your students have chosen unaided. Nothing here labels a child, and there is no risk score to look for."
         actions={
-          <ButtonLink href="/teacher/missions" variant="secondary">
-            Mission library
-          </ButtonLink>
+          <>
+            <ButtonLink href="/teacher/how-to-run-a-session" variant="secondary">
+              Running a session
+            </ButtonLink>
+            <ButtonLink href="/teacher/missions" variant="secondary">
+              Mission library
+            </ButtonLink>
+          </>
         }
       />
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FOUNDATIONS_BY_TRACK, getMission, MISSIONS } from "@/content/missions";
+import { SESSION_SHAPES } from "@/content/session-guide";
 import { COMPETENCY_BY_ID, SKILL_BY_ID } from "@/content/competencies";
 import { PrintButton } from "@/components/PrintButton";
 import { LogoMark } from "@/components/Logo";
@@ -24,6 +25,9 @@ export default async function PrintableGuide({
   const { slug } = await params;
   const mission = getMission(slug);
   if (!mission) notFound();
+  const shape = SESSION_SHAPES.find((sh) =>
+    mission.segment === "foundation" ? sh.id === "first-look" : sh.id === "core-mission",
+  )!;
   const competency = COMPETENCY_BY_ID[mission.competency];
 
   return (
@@ -64,6 +68,27 @@ export default async function PrintableGuide({
           </div>
           <LogoMark size={40} />
         </header>
+
+        {/* The run sheet, so the printed guide explains the shape its own
+            header has always asserted. Same authored source as the on-screen
+            guidance, with this session's real independent minutes. */}
+        <section className="mt-6">
+          <h2 className="font-display text-lg text-ink">How the time goes</h2>
+          <ol className="mt-2 space-y-1.5">
+            {shape.steps.map((step, i) => (
+              <li key={step.label} className="leading-relaxed text-ink-soft">
+                <strong className="font-semibold text-ink">
+                  {i === 1 && shape.id === "core-mission"
+                    ? mission.estimatedMinutes
+                    : step.minutes}{" "}
+                  min · {step.label}.
+                </strong>{" "}
+                {step.teacher}
+              </li>
+            ))}
+          </ol>
+          <p className="mt-2 leading-relaxed text-ink-soft">{shape.keyPoint}</p>
+        </section>
 
         <section className="mt-6">
           <h2 className="font-display text-lg text-ink">Before you start</h2>

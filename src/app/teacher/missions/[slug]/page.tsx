@@ -5,6 +5,7 @@ import { getDb } from "@/lib/db";
 import { requireStaff } from "@/lib/auth/session";
 import { listClasses, listClassesForTeacher, listAssignments } from "@/lib/repo/classroom";
 import { getMission } from "@/content/missions";
+import { SESSION_SHAPES } from "@/content/session-guide";
 import { COMPETENCY_BY_ID, SKILL_BY_ID } from "@/content/competencies";
 import { SceneArt } from "@/components/art/SceneArt";
 import { PageHeader, Panel, PanelBody } from "@/components/ui/Panel";
@@ -36,6 +37,11 @@ export default async function MissionPreview({
   const { slug } = await params;
   const mission = getMission(slug);
   if (!mission) notFound();
+  // Which of the two session shapes this one is taught with. First Look is led
+  // from the board; a core mission is played independently and debriefed.
+  const shape = SESSION_SHAPES.find((sh) =>
+    mission.segment === "foundation" ? sh.id === "first-look" : sh.id === "core-mission",
+  )!;
 
   const { user } = await requireStaff();
   const db = getDb();
@@ -236,6 +242,46 @@ export default async function MissionPreview({
         <h2 id="guide" className="font-display text-2xl text-ink">
           Discussion guide
         </h2>
+
+        {/* The run sheet for this specific session, from the shared shape, with
+            this mission's own independent minutes rather than a generic figure.
+            The guide below says what to teach; this says how the time goes. */}
+        <div className="mt-4">
+          <Panel
+            title="Running this session"
+            description={`${shape.name} · ${shape.totalMinutes}`}
+            actions={
+              <ButtonLink href="/teacher/how-to-run-a-session" size="sm" variant="secondary">
+                Full guidance
+              </ButtonLink>
+            }
+          >
+            <PanelBody>
+              <ol className="grid gap-3 sm:grid-cols-2">
+                {shape.steps.map((step, i) => (
+                  <li key={step.label} className="flex gap-3">
+                    <span className="ark-tabular shrink-0 rounded-md border border-sand-deep bg-paper px-2 py-1 text-xs font-semibold text-ink-soft">
+                      {i === 1 && shape.id === "core-mission"
+                        ? mission.estimatedMinutes
+                        : step.minutes}{" "}
+                      min
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-ink">{step.label}</span>
+                      <span className="mt-0.5 block text-sm leading-relaxed text-ink-soft">
+                        {step.teacher}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+              <p className="mt-4 border-t border-sand pt-3 text-sm leading-relaxed text-ink">
+                {shape.keyPoint}
+              </p>
+            </PanelBody>
+          </Panel>
+        </div>
+
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <Panel title="Before you assign it">
             <PanelBody>
