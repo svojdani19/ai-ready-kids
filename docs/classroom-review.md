@@ -687,6 +687,17 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       control nothing to render, so every failure becomes an unhandled crash.
       Return the result, and return it from the wrapper too.
 
+- [ ] **Assert the change, not the precondition.** "Still active after rotating
+      the code" is true whether or not the code rotated. For each operation,
+      capture the exact before-state, name the columns it is allowed to change,
+      require each of those to have changed the right way, and require every
+      other column to be byte-identical. Then prove it by replacing the mutation
+      with a no-op: if the test still passes, it was never testing the mutation.
+- [ ] **A test may not write the evidence it then asserts.** Inserting the audit
+      row yourself and checking it exists proves the database works, not that the
+      action writes it — and it passes unchanged after the action stops. Call the
+      real exported path and read back what it produced.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

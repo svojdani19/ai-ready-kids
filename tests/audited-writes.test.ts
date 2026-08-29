@@ -1,5 +1,35 @@
-import { beforeEach, afterEach, describe, expect, it } from "vitest";
-import { createTestDb, DEMO_CLASS, DEMO_SCHOOL, DEMO_TEACHER } from "./helpers";
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
+
+/** The cookie jar a Server Action gets from `next/headers`. */
+const jar = vi.hoisted(() => {
+  const store = new Map<string, string>();
+  return {
+    store,
+    api: {
+      get: (name: string) => (store.has(name) ? { name, value: store.get(name)! } : undefined),
+      set: (name: string, value: string) => {
+        store.set(name, value);
+      },
+      delete: (name: string) => {
+        store.delete(name);
+      },
+    },
+  };
+});
+
+vi.mock("next/headers", () => ({
+  cookies: async () => jar.api,
+  headers: async () => new Map(),
+}));
+vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
+vi.mock("next/navigation", () => ({
+  redirect: (to: string) => {
+    throw new Error(`REDIRECT:${to}`);
+  },
+}));
+import { createTestDb, DEMO_ADMIN, DEMO_CLASS, DEMO_SCHOOL } from "./helpers";
+import { restoreClassAction } from "@/app/actions/admin";
+import { writeSession } from "@/lib/auth/session";
 import type { Db } from "@/lib/db";
 import {
   ARCHIVE_FAILED,
@@ -12,43 +42,81 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   archiveClass,
-  createClass,
   deleteClass,
-  getClass,
   listStudents,
   restoreClass,
   rotateJoinCode,
 } from "@/lib/repo/classroom";
 import { listAudit } from "@/lib/repo/school";
 import { setLicensedSeats } from "./helpers";
-import { RestoreExceedsLicenceError } from "@/lib/repo/entitlement";
 
 let db: Db;
 let cleanup: () => void;
 
 beforeEach(() => {
   ({ db, cleanup } = createTestDb());
+  // `getDb()` inside the action reads this handle.
+  globalThis.__airkDb = db;
 });
-afterEach(() => cleanup());
+afterEach(() => {
+  globalThis.__airkDb = undefined;
+  cleanup();
+});
 
 /**
  * Everything these four operations touch, plus the things they must not.
  * Stringified rows, so a single `toEqual` covers every column.
  */
+const dump = (sql: string) => JSON.stringify(db.prepare(sql).all());
+
 function snapshot() {
-  const dump = (sql: string, ...args: unknown[]) =>
-    JSON.stringify(db.prepare(sql).all(...(args as never[])));
   return {
     classes: dump(
       "SELECT id, name, teacher_id, grade, school_year, year_ends_on, archived_at, join_code FROM classes ORDER BY id",
     ),
+    ...protectedRecords(),
+    audit: dump("SELECT action, detail FROM audit_log ORDER BY created_at, id"),
+  };
+}
+
+/**
+ * Everything none of these four operations may touch — every roster row, every
+ * attempt and check-in, every assignment, the school itself, and every class
+ * other than the one being acted on.
+ */
+function protectedRecords() {
+  return {
     students: dump("SELECT * FROM students ORDER BY id"),
     attempts: dump("SELECT * FROM attempts ORDER BY id"),
     benchmarks: dump("SELECT * FROM benchmarks ORDER BY id"),
     assignments: dump("SELECT * FROM assignments ORDER BY id"),
-    audit: dump("SELECT action, detail FROM audit_log ORDER BY created_at, id"),
     schools: dump("SELECT * FROM schools ORDER BY id"),
+    otherClasses: dump(
+      `SELECT * FROM classes WHERE id != '${DEMO_CLASS}' ORDER BY id`,
+    ),
   };
+}
+
+/** The acted-on class, in full, or null once it is gone. */
+function classRow(): Record<string, unknown> | null {
+  return (
+    (db.prepare("SELECT * FROM classes WHERE id = ?").get(DEMO_CLASS) as Record<
+      string,
+      unknown
+    >) ?? null
+  );
+}
+
+/**
+ * The class row minus the columns an operation is allowed to change. Anything
+ * left must match exactly, which is what stops "it changed something" from
+ * passing for "it changed the right thing".
+ */
+function classExcept(row: Record<string, unknown> | null, ...allowed: string[]) {
+  if (!row) return null;
+  const rest: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(row)) if (!allowed.includes(k)) rest[k] = v;
+  return rest;
 }
 
 /**
@@ -71,6 +139,13 @@ function failAuditFor(action: string): void {
 }
 const removeFailure = () => db.exec("DROP TRIGGER IF EXISTS _fail_audit");
 
+type Snap = {
+  class: Record<string, unknown> | null;
+  records: ReturnType<typeof protectedRecords>;
+};
+
+const capture = (): Snap => ({ class: classRow(), records: protectedRecords() });
+
 /** The four operations, each as the action performs it. */
 const OPERATIONS = [
   {
@@ -88,9 +163,14 @@ const OPERATIONS = [
           detail: "Room 12 permanently deleted.",
         }),
       ),
-    assertDone: () => {
-      expect(getClass(db, DEMO_CLASS)).toBeUndefined();
+    // The class and its cascade are gone; every other class is untouched.
+    assertRetry: (before: Snap) => {
+      expect(classRow()).toBeNull();
       expect(listStudents(db, DEMO_CLASS)).toEqual([]);
+      expect(dump(`SELECT * FROM classes WHERE id != '${DEMO_CLASS}' ORDER BY id`)).toBe(
+        before.records.otherClasses,
+      );
+      expect(dump("SELECT * FROM schools ORDER BY id")).toBe(before.records.schools);
     },
   },
   {
@@ -108,8 +188,20 @@ const OPERATIONS = [
           detail: "Room 12 archived.",
         }),
       ),
-    assertDone: () => {
-      expect(getClass(db, DEMO_CLASS)!.archived_at).toBeTruthy();
+    // Archive is two facts: the timestamp AND the rotated credential. Asserting
+    // only the first would pass if `archiveClass` stopped rotating — half of the
+    // boundary sprint 69 built.
+    assertRetry: (before: Snap) => {
+      const after = classRow()!;
+      expect(after.archived_at).toBeTruthy();
+      expect(before.class!.archived_at).toBeNull();
+      expect(after.join_code).not.toBe(before.class!.join_code);
+      // Nothing else about the class moved: not the teacher, the grade, the
+      // school year or the year-end the deletion date is calculated from.
+      expect(classExcept(after, "archived_at", "join_code")).toEqual(
+        classExcept(before.class, "archived_at", "join_code"),
+      );
+      expect(protectedRecords()).toEqual(before.records);
     },
   },
   {
@@ -127,8 +219,14 @@ const OPERATIONS = [
           detail: "Room 12 has a new class code.",
         }),
       ),
-    assertDone: () => {
-      expect(getClass(db, DEMO_CLASS)!.archived_at).toBeNull();
+    // The code must actually change. `archived_at` staying null is the
+    // precondition, and would hold if `rotateJoinCode` became a no-op.
+    assertRetry: (before: Snap) => {
+      const after = classRow()!;
+      expect(after.join_code).not.toBe(before.class!.join_code);
+      expect(after.archived_at).toBeNull();
+      expect(classExcept(after, "join_code")).toEqual(classExcept(before.class, "join_code"));
+      expect(protectedRecords()).toEqual(before.records);
     },
   },
   {
@@ -147,8 +245,16 @@ const OPERATIONS = [
           detail: "Room 12 restored to active.",
         }),
       ),
-    assertDone: () => {
-      expect(getClass(db, DEMO_CLASS)!.archived_at).toBeNull();
+    // Only the timestamp comes back. Restoring does not un-rotate the code the
+    // archive issued — that is the point of sprint 69's revocation — so the
+    // code must be byte-identical to the archived state.
+    assertRetry: (before: Snap) => {
+      const after = classRow()!;
+      expect(after.archived_at).toBeNull();
+      expect(before.class!.archived_at).toBeTruthy();
+      expect(after.join_code).toBe(before.class!.join_code);
+      expect(classExcept(after, "archived_at")).toEqual(classExcept(before.class, "archived_at"));
+      expect(protectedRecords()).toEqual(before.records);
     },
   },
 ] as const;
@@ -176,9 +282,12 @@ describe("a class operation and its audit entry commit together", () => {
   );
 
   it.each(OPERATIONS.map((o) => [o.name, o] as const))(
-    "%s: succeeds on the retry, with exactly one audit entry",
+    "%s: the retry makes exactly the intended change, and one audit entry",
     (_name, op) => {
       op.prepare();
+      // Captured before the failed attempt, so the comparison spans both.
+      const before = capture();
+
       failAuditFor(op.action);
       expect(() => op.run()).toThrow();
       removeFailure();
@@ -186,9 +295,14 @@ describe("a class operation and its audit entry commit together", () => {
       const auditBefore = listAudit(db, DEMO_SCHOOL, 200).length;
       op.run();
 
-      op.assertDone();
+      // Operation-specific, and capable of failing if the central mutation
+      // becomes a no-op — which is the whole reason this is not one shared
+      // "something changed" assertion.
+      op.assertRetry(before);
+
       const entries = listAudit(db, DEMO_SCHOOL, 200).filter((a) => a.action === op.action);
       expect(entries).toHaveLength(1);
+      // And the failed attempt left no entry of its own.
       expect(listAudit(db, DEMO_SCHOOL, 200).length).toBe(auditBefore + 1);
     },
   );
@@ -232,59 +346,113 @@ describe("a class operation and its audit entry commit together", () => {
   });
 });
 
-describe("restore refusals are unaffected", () => {
-  it("still refuses over the licence, mutates nothing, and keeps its own audit", () => {
+describe("restore refusals go through the real action", () => {
+  /**
+   * The exported Server Action, with a real seeded database and a real
+   * administrator session.
+   *
+   * The first version of this test called `restoreClass` directly, watched it
+   * throw, and then wrote the refusal audit row itself with
+   * `auditedWrite(() => {})`. That is manufacturing the evidence: it would have
+   * passed just as happily if `restoreClassAction` had stopped writing refusal
+   * audits altogether. Nothing below creates an audit row.
+   */
+  async function signInAsAdmin() {
+    jar.store.clear();
+    await writeSession({ kind: "staff", userId: DEMO_ADMIN });
+  }
+
+  const auditsOf = (action: string) =>
+    listAudit(db, DEMO_SCHOOL, 200).filter((a) => a.action === action);
+
+  it("refuses over the licence, changes nothing, and writes only its refusal audit", async () => {
+    await signInAsAdmin();
     archiveClass(db, DEMO_CLASS);
     const roster = listStudents(db, DEMO_CLASS).length;
     expect(roster).toBeGreaterThan(0);
-    // Leave room for everyone except this cohort.
     const active = (
-      db.prepare(
-        "SELECT COUNT(*) AS n FROM students WHERE class_id IN (SELECT id FROM classes WHERE archived_at IS NULL)",
-      ).get() as { n: number }
+      db
+        .prepare(
+          "SELECT COUNT(*) AS n FROM students WHERE class_id IN (SELECT id FROM classes WHERE archived_at IS NULL)",
+        )
+        .get() as { n: number }
     ).n;
+    // One seat short of what restoring would need.
     setLicensedSeats(db, DEMO_SCHOOL, active + roster - 1);
 
-    const before = snapshot();
-    expect(() => restoreClass(db, DEMO_CLASS)).toThrow(RestoreExceedsLicenceError);
+    const before = capture();
+    const auditBefore = listAudit(db, DEMO_SCHOOL, 200).length;
 
-    // The refusal touched nothing, and the class is still archived.
-    expect(snapshot()).toEqual(before);
-    expect(getClass(db, DEMO_CLASS)!.archived_at).toBeTruthy();
+    const result = await restoreClassAction(DEMO_CLASS);
 
-    // The refusal audit is written by the action outside the transaction, so a
-    // rolled-back nothing does not take the record of it with it.
-    auditedWrite(
-      db,
-      () => {},
-      () => ({
-        schoolId: DEMO_SCHOOL,
-        actorLabel: "Rosa Delgado",
-        action: "class.restore_blocked_by_licence",
-        detail: "Restoring Room 12 was declined.",
-      }),
-    );
-    const refusals = listAudit(db, DEMO_SCHOOL, 200).filter(
-      (a) => a.action === "class.restore_blocked_by_licence",
-    );
-    expect(refusals).toHaveLength(1);
-    expect(
-      listAudit(db, DEMO_SCHOOL, 200).some((a) => a.action === "class.restored"),
-    ).toBe(false);
+    // The established inline message, not the operational-failure one.
+    expect(result.error).toMatch(/licensed places are already in use/i);
+    expect(result.error).toMatch(/stays archived and none of its records have changed/i);
+    expect(result.error).not.toMatch(/was not restored\. It is still archived/);
+
+    // Nothing moved, including the code the archive rotated.
+    expect(classRow()).toEqual(before.class);
+    expect(protectedRecords()).toEqual(before.records);
+
+    // Written by the action, not by this test.
+    expect(auditsOf("class.restore_blocked_by_licence")).toHaveLength(1);
+    expect(auditsOf("class.restored")).toHaveLength(0);
+    expect(listAudit(db, DEMO_SCHOOL, 200).length).toBe(auditBefore + 1);
   });
 
-  it("still restores when the school has the seats", () => {
-    const other = createClass(db, {
-      schoolId: DEMO_SCHOOL,
-      teacherId: DEMO_TEACHER,
-      name: "Room 99",
-      grade: 3,
-      schoolYear: "2025-2026",
-      yearEndsOn: "2026-06-12",
-    });
-    archiveClass(db, other.id);
-    expect(() => restoreClass(db, other.id)).not.toThrow();
-    expect(getClass(db, other.id)!.archived_at).toBeNull();
+  it("refuses over the classroom cap, changes nothing, and writes only its refusal audit", async () => {
+    await signInAsAdmin();
+    // The classroom plan allows one active room. Archive this one, leave
+    // another active, and restoring is one room too many.
+    db.prepare("UPDATE schools SET plan = 'classroom' WHERE id = ?").run(DEMO_SCHOOL);
+    archiveClass(db, DEMO_CLASS);
+
+    const before = capture();
+    const auditBefore = listAudit(db, DEMO_SCHOOL, 200).length;
+
+    const result = await restoreClassAction(DEMO_CLASS);
+
+    expect(result.error).toMatch(/classroom plan/i);
+    expect(classRow()).toEqual(before.class);
+    expect(protectedRecords()).toEqual(before.records);
+    expect(auditsOf("class.restore_blocked_by_plan")).toHaveLength(1);
+    expect(auditsOf("class.restored")).toHaveLength(0);
+    expect(listAudit(db, DEMO_SCHOOL, 200).length).toBe(auditBefore + 1);
+  });
+
+  it("refuses an unrecognised plan, changes nothing, and writes only its refusal audit", async () => {
+    await signInAsAdmin();
+    db.prepare("UPDATE schools SET plan = 'enterprise-plus' WHERE id = ?").run(DEMO_SCHOOL);
+    archiveClass(db, DEMO_CLASS);
+
+    const before = capture();
+    const auditBefore = listAudit(db, DEMO_SCHOOL, 200).length;
+
+    const result = await restoreClassAction(DEMO_CLASS);
+
+    expect(result.error).toBeTruthy();
+    // Never echoes the stored value back — sprint 53's rule.
+    expect(result.error).not.toMatch(/enterprise-plus/);
+    expect(classRow()).toEqual(before.class);
+    expect(protectedRecords()).toEqual(before.records);
+    expect(auditsOf("class.restore_blocked_by_plan_config")).toHaveLength(1);
+    expect(auditsOf("class.restored")).toHaveLength(0);
+    expect(listAudit(db, DEMO_SCHOOL, 200).length).toBe(auditBefore + 1);
+  });
+
+  it("restores through the action when the school has the seats", async () => {
+    await signInAsAdmin();
+    archiveClass(db, DEMO_CLASS);
+    const before = capture();
+
+    const result = await restoreClassAction(DEMO_CLASS);
+
+    expect(result.error).toBeUndefined();
+    expect(classRow()!.archived_at).toBeNull();
+    // Restoring does not un-rotate the archive's code.
+    expect(classRow()!.join_code).toBe(before.class!.join_code);
+    expect(protectedRecords()).toEqual(before.records);
+    expect(auditsOf("class.restored")).toHaveLength(1);
   });
 });
 

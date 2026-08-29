@@ -51,7 +51,7 @@ operation — with the delete diff showing 23 children's records gone and
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      752 passed (22 files)   — up from 737
+tests      754 passed (22 files)   — up from 737
 build      ✓ Compiled successfully
 ```
 
@@ -59,6 +59,34 @@ Snapshots are `toEqual` over stringified rows of `classes` (including
 `archived_at` and `join_code`), `students`, `attempts`, `benchmarks`,
 `assignments`, `audit_log` and `schools`, table-driven across all four
 operations both after the injected failure and after the retry.
+
+**Corrected during acceptance — two tests did not prove what they claimed.**
+
+*The retry assertions could not fail on a no-op.* `rotate` asserted only that
+`archived_at` was null — the precondition, true whether or not the code changed
+— and `archive` asserted only the timestamp, not the rotation that is half the
+credential boundary sprint 69 built. Now each operation compares against a state
+captured **before the failed attempt**: rotate requires a changed `join_code`
+with every other column identical; archive requires a non-null `archived_at`
+**and** a changed code; restore requires only `archived_at` back to null with the
+archive's rotated code **byte-identical**; delete keeps the real cascade proof.
+Shown to fail under a deliberate no-op rotation and a deliberate archive that
+skips the rotation — both of which the old assertions passed.
+
+*The refusal test manufactured its own evidence.* It called `restoreClass`
+directly, watched it throw, then wrote `class.restore_blocked_by_licence` itself
+with `auditedWrite(() => {})` and asserted the row it had just inserted existed.
+Replaced by four tests calling the **exported `restoreClassAction`** with a real
+seeded database and administrator session, covering licence, classroom-cap and
+unrecognised-plan refusals plus the success path: each asserts the established
+inline message, an unchanged class row and protected records, exactly one
+matching refusal audit and zero `class.restored`. Nothing in them creates an
+audit row. Shown to fail when the four refusal `recordAudit` calls are stripped
+from the action.
+
+No production change was needed (`git diff --stat src/` empty), and no extraction
+was required — the action was already callable once the Next mocks and the
+database handle were in place.
 
 ### Browser
 
@@ -92,3 +120,12 @@ the retry-success integration test is that evidence.
    source — a text-position proxy that the move into the transaction invalidated.
    It is now a behavioural assertion in the new file. Worth confirming I replaced
    it with something stronger rather than something quieter.
+6. **Four of my last five test-side defects were assertions that could not
+   fail** — sprint 67's cascade query through the rows it had deleted, sprint
+   68's extraction that fell back to the whole file, sprint 69's mutation behind
+   an unreachable branch, and this sprint's pair: a retry check on a
+   precondition, and a refusal check on a row the test inserted itself. Every one
+   passed, and every one was verifying the sprint's own central claim. The
+   recurring shape is an assertion whose subject is produced by the test or
+   derived from the state the fix changes, rather than read back from the code
+   under test.
