@@ -32,11 +32,11 @@ import { getSchool, getUser, recordAudit } from "@/lib/repo/school";
 import {
   ClassroomLimitError,
   classroomLimitRefusal,
-  LicenceExceededError,
-  LicenceNotRecognisedError,
-  licenceNotRecognisedRefusal,
-  PlanNotRecognisedError,
-  planNotRecognisedRefusal,
+  LicenseExceededError,
+  LicenseNotRecognizedError,
+  licenseNotRecognizedRefusal,
+  PlanNotRecognizedError,
+  planNotRecognizedRefusal,
 } from "@/lib/repo/entitlement";
 import {
   asExpectedError,
@@ -92,7 +92,7 @@ async function requireOwnActiveClass(classId: string) {
  * Creating a class is an administrator operation, and it is the only place in
  * the product that offers it. It used to accept any staff member, so an
  * ordinary teacher could create classes for themselves through a direct call
- * even though no authorised screen offers that — a hidden entitlement is still
+ * even though no authorized screen offers that — a hidden entitlement is still
  * an entitlement. And the requested owner was trusted: the foreign key proves
  * a user row exists, not that they teach here.
  */
@@ -148,14 +148,14 @@ export async function createClassAction(
       yearEndsOn: school.year_ends_on,
     });
   } catch (error) {
-    if (error instanceof PlanNotRecognisedError) {
+    if (error instanceof PlanNotRecognizedError) {
       recordAudit(db, {
         schoolId: user.school_id,
         actorLabel: user.name,
         action: "class.blocked_by_plan_config",
-        detail: `A new class was declined: the school's plan value is not recognised. Nothing was changed.`,
+        detail: `A new class was declined: the school's plan value is not recognized. Nothing was changed.`,
       });
-      return { error: planNotRecognisedRefusal("create", school.contact_name) };
+      return { error: planNotRecognizedRefusal("create", school.contact_name) };
     }
     if (error instanceof ClassroomLimitError) {
       recordAudit(db, {
@@ -181,7 +181,7 @@ export async function createClassAction(
 
 /**
  * The one place a roster name is checked, so adding and renaming cannot drift
- * apart. Data minimisation is enforced here, not just documented: a roster
+ * apart. Data minimization is enforced here, not just documented: a roster
  * entry that looks like a full surname is refused with an explanation.
  */
 function validateDisplayName(displayName: string): string | undefined {
@@ -214,35 +214,35 @@ export async function addStudentAction(
       return { error: `${displayName} is already on this roster.` };
     }
 
-    // The licence check lives in the repository, so this is a catch rather than a
+    // The license check lives in the repository, so this is a catch rather than a
     // pre-check: an action that asked first and inserted afterwards would leave a
     // window between the two, and would be one door among several.
     try {
       createStudent(db, { classId, displayName });
     } catch (error) {
-      if (error instanceof LicenceNotRecognisedError) {
+      if (error instanceof LicenseNotRecognizedError) {
       const school = getSchool(db, user.school_id)!;
       recordAudit(db, {
         schoolId: user.school_id,
         actorLabel: user.name,
-        // Not "blocked_by_licence": nothing was exceeded. And the malformed
+        // Not "blocked_by_license": nothing was exceeded. And the malformed
         // value is not written here either — an audit is a record of what
         // happened, and what happened is that the account needs fixing.
-        action: "roster.blocked_by_licence_config",
-        detail: `An enrolment was declined in ${classroom.name}: the school's seat licence is not a recognised number. Nothing was changed.`,
+        action: "roster.blocked_by_license_config",
+        detail: `An enrollment was declined in ${classroom.name}: the school's seat license is not a recognized number. Nothing was changed.`,
       });
-      return { error: licenceNotRecognisedRefusal("enrol", school.contact_name) };
+      return { error: licenseNotRecognizedRefusal("enrol", school.contact_name) };
     }
-    if (error instanceof LicenceExceededError) {
+    if (error instanceof LicenseExceededError) {
         const school = getSchool(db, user.school_id)!;
         // No row was written, and no success audit. The refusal is recorded
         // because a school buyer needs to see that the cap did something, and it
-        // names no child: a licence event is a fact about the school.
+        // names no child: a license event is a fact about the school.
         recordAudit(db, {
           schoolId: user.school_id,
           actorLabel: user.name,
-          action: "roster.blocked_by_licence",
-          detail: `An enrolment was declined in ${classroom.name}. ${error.used} of ${error.licensed} licensed students in use.`,
+          action: "roster.blocked_by_license",
+          detail: `An enrollment was declined in ${classroom.name}. ${error.used} of ${error.licensed} licensed students in use.`,
         });
         return {
           error:
@@ -297,7 +297,7 @@ export async function renameStudentAction(
     const { db, user, classroom } = await requireOwnActiveClass(classId);
     const students = listStudents(db, classId);
     const target = students.find((s) => s.id === studentId);
-    // Same shape as the delete: authorising the class is not authorising the
+    // Same shape as the delete: authorizing the class is not authorizing the
     // child, so the student has to be on this roster.
     if (!target) return { error: "That student is not on this class's roster." };
 
@@ -331,7 +331,7 @@ export async function removeStudentAction(classId: string, studentId: string): P
   try {
     const { db, user, classroom } = await requireOwnActiveClass(classId);
 
-    // Authorising the class is not authorising the child. The delete is scoped
+    // Authorizing the class is not authorizing the child. The delete is scoped
     // by both ids and reports whether it actually removed anything, so a
     // mismatched pair changes nothing and does not leave a success audit behind
     // claiming it did.

@@ -42,7 +42,7 @@ const preForm: BenchmarkFormContent = {
     "This is a check-in, not a test.",
     "You will read nine short stories. For each one, pick what you would do.",
     "Nobody gets a score, and nobody sees your answers.",
-    "Adults at your school only see results for whole groups, to help them decide what a class should practise next.",
+    "Adults at your school only see results for whole groups, to help them decide what a class should practice next.",
   ],
   outro: [
     "That is all nine. Thank you for thinking hard about them.",
@@ -145,10 +145,10 @@ const preForm: BenchmarkFormContent = {
       competency: "ownership",
       skillId: "own.toolchoice",
       scenario:
-        "You are at camp and you cannot remember how to tie the knot you need for your badge. Your counsellor is standing right there.",
+        "You are at camp and you cannot remember how to tie the knot you need for your badge. Your counselor is standing right there.",
       question: "What is the best kind of help here?",
       options: [
-        { id: "a", label: "Ask the counsellor, because they can watch your hands", correct: true },
+        { id: "a", label: "Ask the counselor, because they can watch your hands", correct: true },
         { id: "b", label: "Look up a picture of the knot on a tablet", correct: false },
         { id: "c", label: "Ask an app to explain the knot in words", correct: false },
       ],
@@ -176,7 +176,7 @@ const postForm: BenchmarkFormContent = {
     "This is your end of year check-in.",
     "Nine new stories, none of them from the missions you played.",
     "There is no score, and nobody sees your answers.",
-    "Adults at your school only see results for whole groups, to help them decide what a class should practise next.",
+    "Adults at your school only see results for whole groups, to help them decide what a class should practice next.",
   ],
   outro: [
     "That is all nine. Nice work this year.",
@@ -240,7 +240,7 @@ const postForm: BenchmarkFormContent = {
       competency: "verification",
       skillId: "verify.synthetic",
       scenario:
-        "You get a voice message that sounds exactly like your coach saying practice is cancelled. It came from a number nobody recognises.",
+        "You get a voice message that sounds exactly like your coach saying practice is canceled. It came from a number nobody recognizes.",
       question: "What is the best thing to do?",
       options: [
         { id: "a", label: "Ask a grown-up to call the coach and check", correct: true },
@@ -266,7 +266,7 @@ const postForm: BenchmarkFormContent = {
       competency: "ownership",
       skillId: "own.effort",
       scenario:
-        "You open your maths page and see a Solve For Me button. You have not tried any of the problems yet.",
+        "You open your math page and see a Solve For Me button. You have not tried any of the problems yet.",
       question: "What is the best move?",
       options: [
         { id: "a", label: "Try the first three, then ask for a hint on the one that is hardest", correct: true },

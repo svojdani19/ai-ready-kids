@@ -5,7 +5,7 @@
  * held back", and `/privacy` listed six different things under "Everything we
  * hold about a student". Neither list was the schema. Between them they omitted
  * the class relationship, the per-attempt derived competency evidence, the
- * check-in start and finish timestamps and the roster-enrolment timestamp — so
+ * check-in start and finish timestamps and the roster-enrollment timestamp — so
  * two absolute claims on two buyer-facing surfaces disagreed with each other
  * and with `schema.ts`.
  *
@@ -71,7 +71,7 @@ export const STUDENT_RECORD: InventoryEntry[] = [
   },
   {
     columns: ["attempts.evidence_json"],
-    what: "A derived judgement per skill for that mission — demonstrated or developing — worked out from those choices.",
+    what: "A derived judgment per skill for that mission — demonstrated or developing — worked out from those choices.",
     why: "It is calculated from the choices above, not observed separately, and it is not a score, a band or a prediction.",
   },
   {
@@ -150,7 +150,7 @@ export const NOT_COLLECTED = [
   "Any text a child typed, because a child cannot type anything into this product",
   "Photographs, audio, video, camera access or microphone access",
   "Location, IP-based geolocation or device fingerprints",
-  "Time on task, idle time, keystroke timing or any behavioural telemetry",
+  "Time on task, idle time, keystroke timing or any behavioral telemetry",
   "Risk scores, readiness bands, personality inferences or predictions about a child",
   "Advertising identifiers, third-party analytics or any tracker of any kind",
 ];
@@ -168,7 +168,7 @@ export const CLASS_CODE_BOUNDARY = [
   "A class code is shared classroom access, not proof of who is using it. It is typed by a room, not held by a person.",
   "Anyone with the code can see that class's roster of first names and avatars, choose any child listed on it, and open that child's progress.",
   "It reaches one class. It is not a way into another class, into a teacher's tools or into anything an administrator sees.",
-  "Rotate the code whenever it has travelled further than the class. From then on the old code is rejected on the next request that uses it: nobody can join with it, a half-finished join stops, and a browser already signed in with it is asked to rejoin the next time it loads a page. Nothing else about the class changes, and no records are touched.",
+  "Rotate the code whenever it has ttraveled further than the class. From then on the old code is rejected on the next request that uses it: nobody can join with it, a half-finished join stops, and a browser already signed in with it is asked to rejoin the next time it loads a page. Nothing else about the class changes, and no records are touched.",
   "What rotation cannot do is reach into a page already on a screen. A child looking at a mission they have open keeps looking at it until they navigate; the product signs that browser out on its next request, not before.",
 ];
 

@@ -36,7 +36,7 @@ export const theGuessingMachine: Mission = {
   teaser: "The whole class knows the next word. So does a computer. Find out why.",
   bigIdea: "AI is a computer program that fills in what usually comes next.",
   summary:
-    "The first session of the programme, for a class that has not been told what AI is. Students see that they themselves fill in a familiar word from having heard it often, then meet a program that does the same thing from millions of sentences. It closes on the part that matters most later: the program has never met them.",
+    "The first session of the program, for a class that has not been told what AI is. Students see that they themselves fill in a familiar word from having heard it often, then meet a program that does the same thing from millions of sentences. It closes on the part that matters most later: the program has never met them.",
   learningGoals: [
     "Say in their own words that AI fills in what usually comes next",
     "Explain that it learned that from lots and lots of examples",
@@ -232,7 +232,7 @@ export const theGuessingMachine: Mission = {
   ],
   guide: {
     setup:
-      "Run this before anything else in the programme, including the check-in. It assumes no prior knowledge whatsoever and does not use the word artificial once. The move it makes is to start inside the children's own heads: they complete a familiar phrase, notice why they could, and only then meet a program doing the same thing at a much larger scale. Play it on the board first with the class answering together.",
+      "Run this before anything else in the program, including the check-in. It assumes no prior knowledge whatsoever and does not use the word artificial once. The move it makes is to start inside the children's own heads: they complete a familiar phrase, notice why they could, and only then meet a program doing the same thing at a much larger scale. Play it on the board first with the class answering together.",
     lookFor: [
       "Children who describe the program as alive, awake or watching",
       "Children who assume it must be right because it was fast",
@@ -292,7 +292,7 @@ export const youHaveMetItAlready: Mission = {
   teaser: "Theo thinks AI is a robot with red eyes. Room 12 goes looking for the real thing.",
   bigIdea: "You have already met AI. It is inside things you use every day.",
   summary:
-    "Second First Look session. Students find out that AI is not a robot in a film but something already inside ordinary things: the keyboard that finishes a word, the app that picks the next video, the sticker that puts ears on a face. They practise noticing which things take in a picture or a voice.",
+    "Second First Look session. Students find out that AI is not a robot in a film but something already inside ordinary things: the keyboard that finishes a word, the app that picks the next video, the sticker that puts ears on a face. They practice noticing which things take in a picture or a voice.",
   learningGoals: [
     "Name three everyday things with a guessing machine inside",
     "Say that AI is not the same as a robot in a film",
@@ -544,7 +544,7 @@ export const whoDoesTheThinking: Mission = {
   teaser: "Theo's tower gets built for him. It is a very good tower. Something is missing.",
   bigIdea: "A guessing machine can do a job for you. The learning still has to happen in your head.",
   summary:
-    "Third and last First Look session for grades 1 and 2. Using a block tower rather than schoolwork, students see the difference between a job being finished and a person having learned something. It closes on the two questions the core programme keeps asking: what is this for, and who is doing the thinking.",
+    "Third and last First Look session for grades 1 and 2. Using a block tower rather than schoolwork, students see the difference between a job being finished and a person having learned something. It closes on the two questions the core program keeps asking: what is this for, and who is doing the thinking.",
   learningGoals: [
     "Say that a finished job and a learned skill are not the same thing",
     "Name one time it is fine to be given the answer, and one time it is not",
@@ -648,7 +648,7 @@ export const whoDoesTheThinking: Mission = {
           feedback: {
             tone: "rethink",
             headline: "Your fingers have to do that one",
-            body: "Being told does not tie the shoes. That one only works if you practise. Have another go.",
+            body: "Being told does not tie the shoes. That one only works if you practice. Have another go.",
           },
           next: "s4",
           retry: true,
@@ -770,7 +770,7 @@ export const whoDoesTheThinking: Mission = {
   },
   family: {
     summary:
-      "This week we talked about the difference between a job being finished and a person having learned something. Your child used a block tower to see it, and practised naming which jobs are fine to be told the answer to.",
+      "This week we talked about the difference between a job being finished and a person having learned something. Your child used a block tower to see it, and practiced naming which jobs are fine to be told the answer to.",
     questions: [
       "What is a job you would rather do yourself?",
       "What is a job you are happy to just be told?",

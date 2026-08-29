@@ -29,8 +29,8 @@ import {
 import {
   missionsOfferingSkill,
   nextTeachingFocus,
-  summariseCohort,
-  summariseStudent,
+  summarizeCohort,
+  summarizeStudent,
 } from "@/lib/domain/evidence";
 
 let db: Db;
@@ -101,10 +101,10 @@ describe("teacher manages a class", () => {
 });
 
 describe("teacher sees completion and competency evidence", () => {
-  it("summarises the seeded demo class", () => {
+  it("summarizes the seeded demo class", () => {
     const students = listStudents(db, DEMO_CLASS);
     const assignments = listAssignments(db, DEMO_CLASS);
-    const cohort = summariseCohort({
+    const cohort = summarizeCohort({
       studentIds: students.map((s) => s.id),
       attempts: listAttemptsForClass(db, DEMO_CLASS),
       assignedMissionIds: assignments.map((a) => a.mission_id),
@@ -124,7 +124,7 @@ describe("teacher sees completion and competency evidence", () => {
 
   it("suggests the least demonstrated skill as the next teaching focus", () => {
     const students = listStudents(db, DEMO_CLASS);
-    const cohort = summariseCohort({
+    const cohort = summarizeCohort({
       studentIds: students.map((s) => s.id),
       attempts: listAttemptsForClass(db, DEMO_CLASS),
       assignedMissionIds: listAssignments(db, DEMO_CLASS).map((a) => a.mission_id),
@@ -156,7 +156,7 @@ describe("teacher sees completion and competency evidence", () => {
       schoolYear: "2025-2026",
       yearEndsOn: "2026-06-12",
     });
-    const cohort = summariseCohort({ studentIds: [], attempts: [], assignedMissionIds: [] });
+    const cohort = summarizeCohort({ studentIds: [], attempts: [], assignedMissionIds: [] });
     expect(cohort.completionRate).toBe(0);
     expect(cohort.competencies.every((c) => c.demonstratedRate === 0)).toBe(true);
     expect(listStudents(db, empty.id)).toEqual([]);
@@ -185,7 +185,7 @@ describe("teacher sees completion and competency evidence", () => {
       evidence: choice.evidence,
     });
 
-    const partial = summariseCohort({
+    const partial = summarizeCohort({
       studentIds: [student.id],
       attempts: listAttemptsForClass(db, classroom.id),
       assignedMissionIds: [mission.id],
@@ -196,7 +196,7 @@ describe("teacher sees completion and competency evidence", () => {
 
     // Finishing has to be earned by the path now, so play the rest of it.
     playToEnd(db, student.id, mission);
-    const done = summariseCohort({
+    const done = summarizeCohort({
       studentIds: [student.id],
       attempts: listAttemptsForClass(db, classroom.id),
       assignedMissionIds: [mission.id],
@@ -247,7 +247,7 @@ describe("evidence roll-ups separate lifetime from opportunity", () => {
    * Both problems this covers were live at once. Evidence merges as a lifetime
    * maximum, so one demonstrated result hid every later coached one; and the
    * cohort rate divided by the whole roster, so a skill one student of thirty
-   * had met and shown read as 3% rather than 100% of those who practised it.
+   * had met and shown read as 3% rather than 100% of those who practiced it.
    * The second fed the teaching recommendation, which therefore ranked the
    * least-assigned skill as the class's biggest gap.
    */
@@ -265,14 +265,14 @@ describe("evidence roll-ups separate lifetime from opportunity", () => {
       completed_at: completedAt,
       path: [],
       evidence,
-    } as unknown as Parameters<typeof summariseCohort>[0]["attempts"][number];
+    } as unknown as Parameters<typeof summarizeCohort>[0]["attempts"][number];
   }
 
   const SKILL = "privacy.identity";
   const [first, second] = missionsOfferingSkill(SKILL);
 
   it("keeps a later coached result visible after an earlier success", () => {
-    const summary = summariseStudent([
+    const summary = summarizeStudent([
       attempt("s1", first, { [SKILL]: "demonstrated" }, "2026-01-10"),
       attempt("s1", second, { [SKILL]: "developing" }, "2026-02-10"),
     ]);
@@ -288,11 +288,11 @@ describe("evidence roll-ups separate lifetime from opportunity", () => {
   });
 
   it("tells shown-every-time apart from shown-once-then-coached", () => {
-    const always = summariseStudent([
+    const always = summarizeStudent([
       attempt("a", first, { [SKILL]: "demonstrated" }, "2026-01-10"),
       attempt("a", second, { [SKILL]: "demonstrated" }, "2026-02-10"),
     ]).skills.find((x) => x.skillId === SKILL)!;
-    const once = summariseStudent([
+    const once = summarizeStudent([
       attempt("b", first, { [SKILL]: "demonstrated" }, "2026-01-10"),
       attempt("b", second, { [SKILL]: "developing" }, "2026-02-10"),
     ]).skills.find((x) => x.skillId === SKILL)!;
@@ -305,7 +305,7 @@ describe("evidence roll-ups separate lifetime from opportunity", () => {
   });
 
   it("orders opportunities oldest first, whatever order the rows arrive in", () => {
-    const summary = summariseStudent([
+    const summary = summarizeStudent([
       attempt("s1", second, { [SKILL]: "developing" }, "2026-02-10"),
       attempt("s1", first, { [SKILL]: "demonstrated" }, "2026-01-10"),
     ]);
@@ -316,7 +316,7 @@ describe("evidence roll-ups separate lifetime from opportunity", () => {
 
   it("rates a skill over the students who met it, not over the roster", () => {
     const studentIds = Array.from({ length: 30 }, (_, i) => `st${i}`);
-    const cohort = summariseCohort({
+    const cohort = summarizeCohort({
       studentIds,
       // One student of thirty has met the skill, and showed it unaided.
       attempts: [attempt("st0", first, { [SKILL]: "demonstrated" }, "2026-01-10")],
@@ -333,7 +333,7 @@ describe("evidence roll-ups separate lifetime from opportunity", () => {
 
   it("does not recommend reteaching a skill nobody has reached", () => {
     const studentIds = Array.from({ length: 30 }, (_, i) => `st${i}`);
-    const cohort = summariseCohort({
+    const cohort = summarizeCohort({
       studentIds,
       attempts: [attempt("st0", first, { [SKILL]: "demonstrated" }, "2026-01-10")],
       assignedMissionIds: [first],
@@ -342,10 +342,10 @@ describe("evidence roll-ups separate lifetime from opportunity", () => {
 
     // One student is not a comparable signal, so the card must not make an
     // instructional claim at all.
-    expect(focus.kind).toBe("not-practised");
+    expect(focus.kind).toBe("not-practiced");
     // And it must not be the skill that one student happened to demonstrate.
     expect(focus.skillId).not.toBe(SKILL);
-    if (focus.kind === "not-practised") expect(focus.withOpportunity).toBe(0);
+    if (focus.kind === "not-practiced") expect(focus.withOpportunity).toBe(0);
   });
 
   it("makes an instructional claim once enough students have had a go", () => {
@@ -354,7 +354,7 @@ describe("evidence roll-ups separate lifetime from opportunity", () => {
     const attempts = studentIds.map((id, i) =>
       attempt(id, first, { [SKILL]: i < 6 ? "demonstrated" : "developing" }, "2026-01-10"),
     );
-    const cohort = summariseCohort({ studentIds, attempts, assignedMissionIds: [first] });
+    const cohort = summarizeCohort({ studentIds, attempts, assignedMissionIds: [first] });
     const focus = nextTeachingFocus(cohort)!;
 
     expect(focus.kind).toBe("reteach");
@@ -377,7 +377,7 @@ describe("evidence roll-ups separate lifetime from opportunity", () => {
       attempt(id, m1, { [SKILL]: "demonstrated" }, "2026-01-10"),
       attempt(id, m2, { [SKILL]: "developing" }, "2026-02-10"),
     ]);
-    const cohort = summariseCohort({ studentIds, attempts, assignedMissionIds: [m1, m2] });
+    const cohort = summarizeCohort({ studentIds, attempts, assignedMissionIds: [m1, m2] });
     const stat = cohort.skills.find((x) => x.skillId === SKILL)!;
 
     // Everybody has shown it at least once, so the lifetime view is maxed out.
@@ -395,7 +395,7 @@ describe("evidence roll-ups separate lifetime from opportunity", () => {
 
   it("counts every opportunity for the class, not one per student", () => {
     const studentIds = ["a", "b"];
-    const cohort = summariseCohort({
+    const cohort = summarizeCohort({
       studentIds,
       attempts: [
         attempt("a", first, { [SKILL]: "demonstrated" }, "2026-01-10"),
@@ -504,7 +504,7 @@ describe("a name can be corrected without deleting the child", () => {
     const kept = getAttempt(db, studentId, mission.id)!;
     expect(kept.completed_at).toBe(before.completed_at);
     expect(kept.evidence).toEqual(before.evidence);
-    expect(summariseStudent(listAttemptsForStudent(db, studentId)).badgeIds).toEqual([
+    expect(summarizeStudent(listAttemptsForStudent(db, studentId)).badgeIds).toEqual([
       mission.badge.id,
     ]);
   });
@@ -527,7 +527,7 @@ describe("a name can be corrected without deleting the child", () => {
     }).id;
     const theirs = createStudent(db, { classId: other, displayName: "Nadia B." }).id;
 
-    // Same shape as the delete: authorising the class is not authorising the
+    // Same shape as the delete: authorizing the class is not authorizing the
     // child, so the rename is scoped by both ids.
     expect(renameStudent(db, theirs, classId, "Renamed R.")).toBe(false);
     expect(listStudents(db, other).find((s) => s.id === theirs)!.display_name).toBe("Nadia B.");

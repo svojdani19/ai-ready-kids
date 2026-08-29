@@ -84,7 +84,7 @@ export default async function MissionPreview({
         <Tag>Grades {mission.gradeBand}</Tag>
         <Tag>{mission.scenes.length} scenes</Tag>
         <Tag>{mission.scenes.filter((s) => s.choices?.length).length} decisions</Tag>
-        {/* A First Look session records nothing, so it must not be labelled
+        {/* A First Look session records nothing, so it must not be labeled
             with a primary skill. What it has is a skill it leads into, and
             saying so is the difference between an honest library card and one
             that implies the roster will fill in. */}

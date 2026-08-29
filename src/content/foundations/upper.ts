@@ -12,7 +12,7 @@ import type { Mission } from "../types";
  * Cast: Brightwood Elementary again, but Room 20 rather than Room 12, with
  * Mr. Alvarez teaching and Priya and Dev as classmates. Room 12 is the second
  * to fourth grade room the core missions are set in, and a fifth grader
- * recognising the younger room as not theirs is the point of the split.
+ * recognizing the younger room as not theirs is the point of the split.
  *
  * These sessions record no evidence, for the same reason the early ones do
  * not: they check that an idea landed, and the nine skills are about decisions
@@ -538,7 +538,7 @@ export const spotTheAi: Mission = {
   },
   family: {
     summary:
-      "This week we audited an ordinary school morning and found eleven things with AI inside them, none of which look like robots. Your child practised naming what each tool takes in, not just what it gives back.",
+      "This week we audited an ordinary school morning and found eleven things with AI inside them, none of which look like robots. Your child practiced naming what each tool takes in, not just what it gives back.",
     questions: [
       "How many did your class find in the end?",
       "Pick something we use at home. What goes into it?",
@@ -565,7 +565,7 @@ export const whoIsInChargeHere: Mission = {
   bigIdea:
     "A tool does a job. A person is answerable for the result, decides when it is used, and can stop at any point.",
   summary:
-    "The last First Look session, and the handover into the core programme. Room 20 trials a study tool for a week under three standing questions: what is it for, what goes in, and who checks what comes out. Students practise naming who is answerable for a piece of work and what to do when a tool asks for something a lesson does not need.",
+    "The last First Look session, and the handover into the core program. Room 20 trials a study tool for a week under three standing questions: what is it for, what goes in, and who checks what comes out. Students practice naming who is answerable for a piece of work and what to do when a tool asks for something a lesson does not need.",
   learningGoals: [
     "Name who is answerable for work that a tool helped produce",
     "State the three questions to ask before using a tool for schoolwork",
@@ -638,7 +638,7 @@ export const whoIsInChargeHere: Mission = {
       art: "desk-test",
       narration: [
         "Dev tries it on a science question about why ice floats.",
-        "The answer that comes back is clear, well organised and three paragraphs long.",
+        "The answer that comes back is clear, well oorganized and three paragraphs long.",
         "He copies the middle paragraph onto his page.",
       ],
       next: "s4",
@@ -772,7 +772,7 @@ export const whoIsInChargeHere: Mission = {
   ],
   guide: {
     setup:
-      "The handover session. Everything after this is the core programme, and the three questions on the board are what carry across, so write them somewhere permanent. The one place to slow down is Thursday's science page: students hear answerable as in trouble, and if that lands the rest of the year gets quieter and less honest. Say explicitly that Dev did nothing that makes him a cheat.",
+      "The handover session. Everything after this is the core program, and the three questions on the board are what carry across, so write them somewhere permanent. The one place to slow down is Thursday's science page: students hear answerable as in trouble, and if that lands the rest of the year gets quieter and less honest. Say explicitly that Dev did nothing that makes him a cheat.",
     lookFor: [
       "Students who locate responsibility in the tool rather than in a person",
       "Students who hear answerable as an accusation and go quiet",
@@ -802,11 +802,11 @@ export const whoIsInChargeHere: Mission = {
       },
     ],
     extension:
-      "Unplugged, fifteen minutes. Give groups four short task cards — practise times tables, find the opening hours of the town pool, write a birthday message, learn to spell six words — and have them decide for each whether a tool is the right help, and who would check the result. Do not ask students to describe schoolwork they have actually used a tool for; the point is the decision, not a confession.",
+      "Unplugged, fifteen minutes. Give groups four short task cards — practice times tables, find the opening hours of the town pool, write a birthday message, learn to spell six words — and have them decide for each whether a tool is the right help, and who would check the result. Do not ask students to describe schoolwork they have actually used a tool for; the point is the decision, not a confession.",
   },
   family: {
     summary:
-      "This week we finished the introduction and set up the three questions the class will use all year: what is it for, what goes in, and who checks what comes out. Your child also practised what to do when a tool asks for something the task does not need.",
+      "This week we finished the introduction and set up the three questions the class will use all year: what is it for, what goes in, and who checks what comes out. Your child also practiced what to do when a tool asks for something the task does not need.",
     questions: [
       "What are the three questions on your class board?",
       "If a tool helps with your homework, who is answerable for the page?",

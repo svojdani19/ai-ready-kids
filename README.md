@@ -180,7 +180,7 @@ growth on matched students. Staff and class management, retention controls with
 real deletion, an audit log, a subscription placeholder, and an exportable
 annual report.
 
-**Family.** A one-page take-home per mission: what was practised, three
+**Family.** A one-page take-home per mission: what was practiced, three
 questions to ask, one thing to try, and one sentence worth keeping. Public
 links, no parent account, nothing to submit.
 
@@ -421,7 +421,7 @@ administrator surfaces, with every student-facing control measured against the
   about anybody, and forgets everything on restart. A real deployment does this
   at the edge; a single Node process behind one load balancer is not a rate
   limit. A teacher can rotate a code from the class page. A student
-  session carries the normalised code that authorised it, inside the signed
+  session carries the normalized code that authorized it, inside the signed
   HttpOnly cookie and nowhere else, and `currentStudent` compares it to the
   class's current code — so rotation rejects outstanding join grants *and*
   sessions already issued under the old code, each on its next request. It
@@ -511,7 +511,7 @@ Everything here is a production integration, not a missing feature:
 - **Rate limiting, CSRF hardening, audit export, email.** Standard production
   work, none of it load-bearing for evaluating the product.
 - **Accessibility audit with real users.** The build meets WCAG AA contrast, is
-  keyboard operable, honours reduced motion and has been screen-reader
+  keyboard operable, honors reduced motion and has been screen-reader
   smoke-tested. It has not been tested with children who use assistive
   technology, which is the only test that actually counts.
 
@@ -523,6 +523,6 @@ Everything here is a production integration, not a missing feature:
    district rollup reporting.
 3. Record professional narration for all nine missions and both check-in forms.
 4. Run the accessibility audit with students who use assistive technology, and
-   a reading-level review with a literacy specialist.
+   a reading-level review with a literacy specializt.
 5. Pilot with two or three schools across a full year and publish the benchmark
    growth honestly, including where it did not move.

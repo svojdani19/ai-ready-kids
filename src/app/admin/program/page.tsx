@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/session";
-import { classroomAllowance, licenceStatus, planLabel } from "@/lib/repo/entitlement";
+import { classroomAllowance, licenseStatus, planLabel } from "@/lib/repo/entitlement";
 import { getSchool } from "@/lib/repo/school";
 import { buildSchoolReport } from "@/lib/repo/report";
 import { listBenchmarksForSchool } from "@/lib/repo/progress";
-import { summariseCohortBenchmark } from "@/lib/domain/benchmark";
+import { summarizeCohortBenchmark } from "@/lib/domain/benchmark";
 import { daysBetween, formatDate } from "@/lib/domain/retention";
 import { MISSIONS } from "@/content/missions";
 import { PageHeader, Panel, PanelBody } from "@/components/ui/Panel";
@@ -35,7 +35,7 @@ export default async function AdminProgram() {
   const school = getSchool(db, user.school_id)!;
   const now = new Date();
   const report = buildSchoolReport(db, user.school_id, now);
-  const bench = summariseCohortBenchmark(listBenchmarksForSchool(db, user.school_id));
+  const bench = summarizeCohortBenchmark(listBenchmarksForSchool(db, user.school_id));
   // Only computed for a term that can be read. `new Date("soon")` is Invalid
   // Date, and the difference of two of those is NaN — which is how this page
   // rendered "Invalid Date" and "in NaN days".
@@ -62,7 +62,7 @@ export default async function AdminProgram() {
     },
     {
       // Core only. No school runs both First Look grade tracks, so a check
-      // over the whole catalogue could never be completed.
+      // over the whole catalog could never be completed.
       label: "Every core mission in use",
       done: report.missions.every((m) => m.segment !== "core" || m.assignedTo > 0),
       detail: `${
@@ -87,16 +87,16 @@ export default async function AdminProgram() {
   // Read-only entitlement, computed rather than displayed from a field the
   // school can edit. Seats in use are children on active rosters; archived
   // cohorts kept for retention do not consume a new year's places.
-  const licence = licenceStatus(db, school.id);
+  const license = licenseStatus(db, school.id);
   // Shown so an administrator on the classroom plan learns the limit before
   // filling in the create form, not after.
   const rooms = classroomAllowance(db, school.id);
   // One question for the whole calendar: label, both dates, their order and
   // whether they fall inside the years named.
   const academicOk = hasVerifiableAcademicDates(school);
-  // Not a ternary ending in "Classroom": that labelled every unrecognised
+  // Not a ternary ending in "Classroom": that labeled every unrecognized
   // value as the cheapest plan while the lookup granted the most expensive
-  // behaviour. `planLabel` says so instead.
+  // behavior. `planLabel` says so instead.
   const label = planLabel(school.plan);
 
   return (
@@ -106,10 +106,10 @@ export default async function AdminProgram() {
         title="Program status and plan"
         description={
           academicOk
-            ? `Where ${school.name} is in the ${school.academic_year} programme year, and what happens at renewal.`
+            ? `Where ${school.name} is in the ${school.academic_year} program year, and what happens at renewal.`
             // "before retention can work" was too broad: cohorts with a valid
             // recorded year-end keep their own schedules regardless.
-            : `${school.name}. The programme year needs configuring below before rollover and this year's retention date can be worked out.`
+            : `${school.name}. The program year needs configuring below before rollover and this year's retention date can be worked out.`
         }
         actions={
           <ButtonLink href="/admin/report" variant="secondary">
@@ -122,20 +122,20 @@ export default async function AdminProgram() {
         <Stat
           label="Plan"
           value={label}
-          tone={rooms.recognised ? "neutral" : "berry"}
-          hint={rooms.recognised ? undefined : "Ask your account contact to correct it"}
+          tone={rooms.recognized ? "neutral" : "berry"}
+          hint={rooms.recognized ? undefined : "Ask your account contact to correct it"}
         />
         <Stat
           label="Active classrooms"
           value={
-            !rooms.recognised
+            !rooms.recognized
               ? String(rooms.active)
               : rooms.limit === null
                 ? String(rooms.active)
                 : `${rooms.active} of ${rooms.limit}`
           }
           hint={
-            !rooms.recognised
+            !rooms.recognized
               ? "No new classrooms can be activated"
               : rooms.limit === null
                 ? "No limit on this plan"
@@ -144,7 +144,7 @@ export default async function AdminProgram() {
                   : "Archived classes do not count"
           }
           tone={
-            !rooms.recognised || (rooms.limit !== null && rooms.active >= rooms.limit)
+            !rooms.recognized || (rooms.limit !== null && rooms.active >= rooms.limit)
               ? "berry"
               : "neutral"
           }
@@ -154,15 +154,15 @@ export default async function AdminProgram() {
           // A stored value the product would not sell is never presented as a
           // purchased entitlement. "90 of -5" and "5001 licensed" both read as
           // contract facts, and neither was one.
-          value={licence.recognised ? `${licence.used} of ${licence.licensed}` : String(licence.used)}
+          value={license.recognized ? `${license.used} of ${license.licensed}` : String(license.used)}
           hint={
-            !licence.recognised
-              ? "Seat licence needs configuration — no new students can be enrolled"
-              : licence.remaining === 0
+            !license.recognized
+              ? "Seat license needs configuration — no new students can be enrolled"
+              : license.remaining === 0
                 ? "No places left"
-                : `${licence.remaining} left`
+                : `${license.remaining} left`
           }
-          tone={!licence.recognised || licence.remaining === 0 ? "berry" : "neutral"}
+          tone={!license.recognized || license.remaining === 0 ? "berry" : "neutral"}
         />
         <Stat
           label="Term started"
@@ -200,7 +200,7 @@ export default async function AdminProgram() {
       </div>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-2">
-        <Panel title="Annual programme checklist">
+        <Panel title="Annual program checklist">
           <PanelBody>
             <ul className="space-y-3">
               {checklist.map((item) => (
@@ -274,7 +274,7 @@ export default async function AdminProgram() {
           <PanelBody>
             <PlanForm
               plan={school.plan}
-              seats={licence.recognised ? licence.licensed : null}
+              seats={license.recognized ? license.licensed : null}
               planLabel={label}
             />
           </PanelBody>
@@ -305,7 +305,7 @@ export default async function AdminProgram() {
           this build runs the job on a timer, so due is not yet deleted. Renewing lifts the
           pause and every class carries on where it stopped.
         </Note>
-        <Note tone="neutral" title="Programme contact">
+        <Note tone="neutral" title="Program contact">
           {school.contact_name} · {school.contact_email}. Quotes, purchase orders and
           invoices go through this person.{" "}
           <Tag className="mt-2">No payment data is stored in this product</Tag>

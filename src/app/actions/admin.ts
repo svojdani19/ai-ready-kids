@@ -7,15 +7,15 @@ import { canAdministerClass } from "@/lib/auth/access";
 import {
   ClassroomLimitError,
   classroomLimitRefusal,
-  isRecognisedSeatCount,
-  licenceStatus,
-  LicenceNotRecognisedError,
+  isRecognizedSeatCount,
+  licenseStatus,
+  LicenseNotRecognizedError,
   MAX_LICENSED_STUDENTS,
   MIN_LICENSED_STUDENTS,
-  licenceNotRecognisedRefusal,
-  PlanNotRecognisedError,
-  planNotRecognisedRefusal,
-  RestoreExceedsLicenceError,
+  licenseNotRecognizedRefusal,
+  PlanNotRecognizedError,
+  planNotRecognizedRefusal,
+  RestoreExceedsLicenseError,
 } from "@/lib/repo/entitlement";
 import {
   ACADEMIC_DATES_FAILED,
@@ -85,9 +85,9 @@ export async function updateSchoolAction(
     return { error: "The monogram must be one to three letters." };
   }
   if (!ACCENTS.includes(accent as (typeof ACCENTS)[number])) {
-    return { error: "Pick one of the available accent colours." };
+    return { error: "Pick one of the available accent colors." };
   }
-  if (contactName.length < 2) return { error: "Enter a programme contact name." };
+  if (contactName.length < 2) return { error: "Enter a program contact name." };
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
     return { error: "Enter a valid contact email address." };
   }
@@ -129,7 +129,7 @@ export async function requestPlanChangeAction(
   // One source with the domain, so an administrator cannot request a number the
   // repository would then refuse, and the repository cannot accept one the form
   // would reject.
-  if (!isRecognisedSeatCount(seats)) {
+  if (!isRecognizedSeatCount(seats)) {
     return {
       error: `Licensed students must be a whole number between ${MIN_LICENSED_STUDENTS} and ${MAX_LICENSED_STUDENTS}.`,
     };
@@ -140,16 +140,16 @@ export async function requestPlanChangeAction(
   // Deliberately no UPDATE. Until sprint 42 this action wrote plan and
   // licensed_students straight to the school row while telling the
   // administrator it was recording an intent, which meant a school could raise
-  // its own paid entitlement by typing a bigger number into a form labelled
+  // its own paid entitlement by typing a bigger number into a form labeled
   // "Request a quote". What a school has bought is the vendor's record, not the
   // school's, and a seat count a customer can edit cannot appear on an invoice.
   // The current entitlement is only quoted back when it is a number this
   // product would sell. Repeating a malformed one — "-5 seats" — states it as
   // the agreement in an audit trail a school may later rely on.
-  const current = licenceStatus(db, user.school_id);
-  const currentSeats = current.recognised
+  const current = licenseStatus(db, user.school_id);
+  const currentSeats = current.recognized
     ? `${current.licensed} seats`
-    : "a seat licence that needs configuration";
+    : "a seat license that needs configuration";
   recordAudit(db, {
     schoolId: user.school_id,
     actorLabel: user.name,
@@ -161,13 +161,13 @@ export async function requestPlanChangeAction(
   });
   revalidatePath("/admin/program");
   return {
-    ok: current.recognised
+    ok: current.recognized
       ? `Request sent to your account contact. Your plan is still ${school.plan} with ` +
         `${current.licensed} licensed students, and it stays that way until a new ` +
         "agreement is in place. Nothing has been charged and nothing has changed."
-      : "Request sent to your account contact. Your seat licence still needs configuration, " +
+      : "Request sent to your account contact. Your seat license still needs configuration, " +
         "and this request has not changed it — nothing has been charged and nothing has " +
-        "changed. Your account contact can correct the licence and quote the new one together.",
+        "changed. Your account contact can correct the license and quote the new one together.",
   };
 }
 
@@ -346,7 +346,7 @@ export async function reassignClassAction(
  */
 /**
  * Two separate facts, reported separately. Saying "3 classes repaired" when one
- * was relabelled and two got a date would be one number standing for two
+ * was relabeled and two got a date would be one number standing for two
  * different things, and neither would be checkable.
  *
  * Shared by the audit detail and the on-screen message so the record and what
@@ -354,9 +354,9 @@ export async function reassignClassAction(
  */
 function academicRepairSummary(year: string, repair: AcademicRepair): string {
   const parts: string[] = [];
-  if (repair.relabelled) {
+  if (repair.relabeled) {
     parts.push(
-      `${repair.relabelled} class${repair.relabelled === 1 ? "" : "es"} moved onto ${year} from a school year that could not be read`,
+      `${repair.relabeled} class${repair.relabeled === 1 ? "" : "es"} moved onto ${year} from a school year that could not be read`,
     );
   }
   if (repair.datesRepaired) {
@@ -649,14 +649,14 @@ export async function restoreClassAction(classId: string): Promise<{ error?: str
         }),
       );
     } catch (error) {
-      if (error instanceof PlanNotRecognisedError) {
+      if (error instanceof PlanNotRecognizedError) {
         recordAudit(db, {
           schoolId: user.school_id,
           actorLabel: user.name,
           action: "class.restore_blocked_by_plan_config",
-          detail: `Restoring ${classroom.name} was declined: the school's plan value is not recognised. Nothing was changed.`,
+          detail: `Restoring ${classroom.name} was declined: the school's plan value is not recognized. Nothing was changed.`,
         });
-        return { error: planNotRecognisedRefusal("restore", school.contact_name) };
+        return { error: planNotRecognizedRefusal("restore", school.contact_name) };
       }
       if (error instanceof ClassroomLimitError) {
         // Configuration facts only: how many rooms and on which plan. No child
@@ -669,29 +669,29 @@ export async function restoreClassAction(classId: string): Promise<{ error?: str
         });
         return { error: classroomLimitRefusal(error, "restore") };
       }
-      if (error instanceof LicenceNotRecognisedError) {
+      if (error instanceof LicenseNotRecognizedError) {
         recordAudit(db, {
           schoolId: user.school_id,
           actorLabel: user.name,
-          action: "class.restore_blocked_by_licence_config",
-          detail: `Restoring ${classroom.name} was declined: the school's seat licence is not a recognised number. Nothing was changed.`,
+          action: "class.restore_blocked_by_license_config",
+          detail: `Restoring ${classroom.name} was declined: the school's seat license is not a recognized number. Nothing was changed.`,
         });
-        return { error: licenceNotRecognisedRefusal("restore", school.contact_name) };
+        return { error: licenseNotRecognizedRefusal("restore", school.contact_name) };
       }
-      if (error instanceof RestoreExceedsLicenceError) {
+      if (error instanceof RestoreExceedsLicenseError) {
         // Counts only. Which class and how many children is a fact about the
-        // school; who those children are is not the licence's business.
+        // school; who those children are is not the license's business.
         recordAudit(db, {
           schoolId: user.school_id,
           actorLabel: user.name,
-          action: "class.restore_blocked_by_licence",
+          action: "class.restore_blocked_by_license",
           detail: `Restoring ${classroom.name} was declined. ${error.used} of ${error.licensed} licensed students active, ${error.roster} in the archived class.`,
         });
         return {
           error:
             `${classroom.name} has ${error.roster} students, and ${error.used} of ${error.licensed} ` +
             "licensed places are already in use, so restoring it would take this school past its " +
-            `licence. The class stays archived and none of its records have changed. Free places by ` +
+            `license. The class stays archived and none of its records have changed. Free places by ` +
             `archiving another class, or ask ${school.contact_name} to request more on the Program ` +
             "and plan page.",
         };

@@ -1,10 +1,10 @@
 import "server-only";
 import {
   assertRoomForActiveClass,
-  LicenceExceededError,
-  LicenceNotRecognisedError,
-  licenceStatus,
-  RestoreExceedsLicenceError,
+  LicenseExceededError,
+  LicenseNotRecognizedError,
+  licenseStatus,
+  RestoreExceedsLicenseError,
 } from "@/lib/repo/entitlement";
 import { randomInt } from "node:crypto";
 import { type Db, newId, nowIso, row, rows } from "@/lib/db";
@@ -18,7 +18,7 @@ export function listClasses(db: Db, schoolId: string, includeArchived = false): 
 }
 
 /**
- * Scoped by school as well as by teacher. Defence in depth: a class whose
+ * Scoped by school as well as by teacher. Defense in depth: a class whose
  * owner sits in another school should never have been created, and if one ever
  * is, it must not surface on that person's overview with its name, join code
  * and aggregate evidence on it.
@@ -40,17 +40,17 @@ export function getClass(db: Db, id: string): Classroom | undefined {
 }
 
 /** Join codes are matched case-insensitively and ignoring spaces or dashes. */
-export function normaliseJoinCode(input: string): string {
+export function normalizeJoinCode(input: string): string {
   return input.toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
 
 export function getClassByJoinCode(db: Db, code: string): Classroom | undefined {
-  const target = normaliseJoinCode(code);
+  const target = normalizeJoinCode(code);
   if (!target) return undefined;
   const all = rows<Classroom>(
     db.prepare("SELECT * FROM classes WHERE archived_at IS NULL").all(),
   );
-  return all.find((c) => normaliseJoinCode(c.join_code) === target);
+  return all.find((c) => normalizeJoinCode(c.join_code) === target);
 }
 
 /**
@@ -85,7 +85,7 @@ const CODE_WORDS = [
 export function generateJoinCode(db: Db): string {
   const taken = new Set(
     rows<{ join_code: string }>(db.prepare("SELECT join_code FROM classes").all()).map(
-      (c) => normaliseJoinCode(c.join_code),
+      (c) => normalizeJoinCode(c.join_code),
     ),
   );
   for (let i = 0; i < 500; i += 1) {
@@ -94,7 +94,7 @@ export function generateJoinCode(db: Db): string {
     // Two of the same word reads as a typo and costs a word of entropy.
     while (second === first) second = CODE_WORDS[randomInt(CODE_WORDS.length)];
     const code = `${first}-${second}-${String(randomInt(900) + 100)}`;
-    if (!taken.has(normaliseJoinCode(code))) return code;
+    if (!taken.has(normalizeJoinCode(code))) return code;
   }
   throw new Error("Could not generate a unique class code");
 }
@@ -257,10 +257,10 @@ export function archiveClass(db: Db, id: string): void {
 /**
  * Bring an archived cohort back, if the school has the seats for it.
  *
- * Sprint 42 metered enrolment and excluded archived cohorts from the count,
+ * Sprint 42 metered enrollment and excluded archived cohorts from the count,
  * which is right — a class kept for retention is not a class being taught. It
  * also opened a door this closes: archive a full cohort, spend the freed seats
- * on a new one, restore the old class, and the school is over its licence
+ * on a new one, restore the old class, and the school is over its license
  * without a single child having passed through `createStudent`.
  *
  * The policy is the least surprising one for a school. Restoration is refused
@@ -272,7 +272,7 @@ export function archiveClass(db: Db, id: string): void {
  *
  * Enforced here rather than in the action, for the reason `createStudent`
  * gives: the repository is the only door. The read and the write share one
- * `BEGIN IMMEDIATE` transaction so a restore and an enrolment arriving together
+ * `BEGIN IMMEDIATE` transaction so a restore and an enrollment arriving together
  * cannot both see the same free seat.
  */
 export function restoreClass(db: Db, id: string): void {
@@ -290,14 +290,14 @@ export function restoreClass(db: Db, id: string): void {
       // The room before the seats. Both can refuse, and a school on the
       // classroom plan with one class already running hits this first.
       assertRoomForActiveClass(db, classroom.school_id);
-      const status = licenceStatus(db, classroom.school_id);
-      if (!status.recognised) throw new LicenceNotRecognisedError();
+      const status = licenseStatus(db, classroom.school_id);
+      if (!status.recognized) throw new LicenseNotRecognizedError();
       const roster = (
         db.prepare("SELECT COUNT(*) AS n FROM students WHERE class_id = ?").get(id) as { n: number }
       ).n;
       // Landing exactly on the cap is allowed: the school paid for that seat.
       if (status.used + roster > status.licensed) {
-        throw new RestoreExceedsLicenceError(status.used, roster, status.licensed);
+        throw new RestoreExceedsLicenseError(status.used, roster, status.licensed);
       }
     }
 
@@ -349,9 +349,9 @@ const AVATARS = ["fox", "owl", "otter", "bear", "frog", "turtle", "crane", "hedg
  * around is a seat limit a school buyer cannot rely on.
  *
  * Count and insert run inside one `BEGIN IMMEDIATE` write transaction, so two
- * enrolments arriving together cannot both read the same count and both write.
+ * enrollments arriving together cannot both read the same count and both write.
  * The last licensed seat is allowed; the one after it raises
- * `LicenceExceededError` and writes nothing at all.
+ * `LicenseExceededError` and writes nothing at all.
  */
 export function createStudent(
   db: Db,
@@ -363,7 +363,7 @@ export function createStudent(
   if (!owner) throw new Error("Unknown class");
   // An archived cohort does not consume seats, so it must not accept new
   // children either — otherwise archiving a full class would be a way to keep
-  // enrolling past the licence and restore them all afterwards.
+  // enrolling past the license and restore them all afterwards.
   if (owner.archived_at) throw new Error("That class is archived. Restore it before adding.");
 
   const id = newId("stu");
@@ -371,14 +371,14 @@ export function createStudent(
   const outer = db.isTransaction;
   if (!outer) db.exec("BEGIN IMMEDIATE");
   try {
-    const status = licenceStatus(db, owner.school_id);
-    // Configuration before capacity. A school whose seat licence is not a
-    // recognised contract number has not exceeded anything, and comparing
-    // against the stored value would classify every enrolment as an overage —
-    // which with a negative licence is exactly what happened.
-    if (!status.recognised) throw new LicenceNotRecognisedError();
+    const status = licenseStatus(db, owner.school_id);
+    // Configuration before capacity. A school whose seat license is not a
+    // recognized contract number has not exceeded anything, and comparing
+    // against the stored value would classify every enrollment as an overage —
+    // which with a negative license is exactly what happened.
+    if (!status.recognized) throw new LicenseNotRecognizedError();
     if (status.remaining < 1) {
-      throw new LicenceExceededError(status.used, status.licensed);
+      throw new LicenseExceededError(status.used, status.licensed);
     }
     const count = (
       db.prepare("SELECT COUNT(*) AS n FROM students WHERE class_id = ?").get(input.classId) as {
@@ -406,7 +406,7 @@ export function createStudent(
  * Delete a student, scoped by the class they belong to.
  *
  * Both ids, and the class one is not decoration. `removeStudentAction`
- * authorised the *class* and then deleted the *student* by bare id, so a
+ * authorized the *class* and then deleted the *student* by bare id, so a
  * teacher could pass their own class id alongside any student id they knew and
  * permanently delete that child — from a colleague's class, or another school —
  * with every cascaded attempt and check-in going with them, and an audit entry

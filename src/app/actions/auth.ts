@@ -10,7 +10,7 @@ import {
   getClassByJoinCode,
   getStudent,
   listStudents,
-  normaliseJoinCode,
+  normalizeJoinCode,
 } from "@/lib/repo/classroom";
 import { checkAttempt, clearAttempts, recordFailure } from "@/lib/auth/throttle";
 import { getUserByEmail } from "@/lib/repo/school";
@@ -40,7 +40,7 @@ export async function enterDemo(role: "teacher" | "admin" | "student"): Promise<
     await writeSession({
       kind: "student",
       studentId: student.id,
-      code: normaliseJoinCode(demoClass.join_code),
+      code: normalizeJoinCode(demoClass.join_code),
     });
     redirect("/student");
   }
@@ -61,7 +61,7 @@ export async function signInWithEmail(
   const user = getUserByEmail(getDb(), email);
   if (!user) {
     return {
-      error: "We do not recognise that address at this school. Try a demo account below.",
+      error: "We do not recognize that address at this school. Try a demo account below.",
     };
   }
   await writeSession({ kind: "staff", userId: user.id });
@@ -110,7 +110,7 @@ export async function findClassByCode(_prev: JoinState, formData: FormData): Pro
   // Entering the code is the whole credential, so it has to leave something
   // behind. The code travels with the grant so that rotating it invalidates
   // anything already issued.
-  await writeJoinGrant(classroom.id, normaliseJoinCode(classroom.join_code));
+  await writeJoinGrant(classroom.id, normalizeJoinCode(classroom.join_code));
   redirect(`/join/${classroom.id}`);
 }
 
@@ -147,7 +147,7 @@ export async function chooseStudent(studentId: string): Promise<void> {
   if (!classroom || classroom.archived_at) redirect("/join");
   // And the code must still be the one that was entered, so a rotated code
   // cannot be finished with.
-  if (normaliseJoinCode(classroom.join_code) !== grant.code) redirect("/join");
+  if (normalizeJoinCode(classroom.join_code) !== grant.code) redirect("/join");
 
   // The term, rechecked here and not only at the code step.
   //
@@ -169,7 +169,7 @@ export async function chooseStudent(studentId: string): Promise<void> {
   await clearJoinGrant();
   // The code the grant carried, which the checks above have just confirmed is
   // still the class's current one. Not re-read from the class: the session
-  // records what authorised it.
+  // records what authorized it.
   await writeSession({ kind: "student", studentId: student.id, code: grant.code });
   redirect("/student");
 }

@@ -19,7 +19,7 @@ export const theStoryThatWasNotMine: Mission = {
   estimatedMinutes: 8,
   teaser: "The app wrote a better story than yours. That is the problem, not the good news.",
   summary:
-    "A writing tool produces a polished story from a child's idea. Students practise wanting their own worse version, and learn to ask for help with a stuck part rather than a finished whole.",
+    "A writing tool produces a polished story from a child's idea. Students practice wanting their own worse version, and learn to ask for help with a stuck part rather than a finished whole.",
   learningGoals: [
     "Notice when help has replaced the part you wanted to do",
     "Ask for help with the stuck bit only",
@@ -206,7 +206,7 @@ export const theStoryThatWasNotMine: Mission = {
           feedback: {
             tone: "strong",
             headline: "Four words, and it works for everything",
-            body: "Maths, stories, science, arguments with your sister. A question hands the thinking back. An answer keeps it.",
+            body: "Math, stories, science, arguments with your sister. A question hands the thinking back. An answer keeps it.",
           },
           evidence: { skillId: "own.effort", result: "demonstrated" },
           next: "s7",
@@ -284,7 +284,7 @@ export const theStoryThatWasNotMine: Mission = {
   },
   family: {
     summary:
-      "A writing app produced a better story than your child's from their own idea. We practised asking for questions instead of answers, and finishing it themselves.",
+      "A writing app produced a better story than your child's from their own idea. We practiced asking for questions instead of answers, and finishing it themselves.",
     questions: [
       "Why might a better story still be the wrong thing to hand in?",
       "What could you ask for instead of the whole answer?",
@@ -311,7 +311,7 @@ export const thePracticeThatGotSkipped: Mission = {
     "The quiet version of over-reliance: no dramatic shortcut, just a small one taken every night. Students learn to ask what a task is for before deciding what help is allowed.",
   learningGoals: [
     "Ask what a piece of work is for before starting it",
-    "Recognise that a small shortcut repeated is a large one",
+    "Recognize that a small shortcut repeated is a large one",
     "Choose the slower option when nobody would know",
   ],
   badge: {
@@ -369,7 +369,7 @@ export const thePracticeThatGotSkipped: Mission = {
           feedback: {
             tone: "rethink",
             headline: "That is a question about getting caught",
-            body: "It is not really about the maths at all. Ask something that would give you the same answer even if nobody ever checked. Try again.",
+            body: "It is not really about the math at all. Ask something that would give you the same answer even if nobody ever checked. Try again.",
           },
           next: "s2",
           retry: true,
@@ -470,7 +470,7 @@ export const thePracticeThatGotSkipped: Mission = {
           feedback: {
             tone: "strong",
             headline: "That is the bit most people leave out",
-            body: "Practising and it still being hard is worth saying out loud. Some people need a lot more of it, or a different way in, and she cannot help with what she does not know about.",
+            body: "Practicing and it still being hard is worth saying out loud. Some people need a lot more of it, or a different way in, and she cannot help with what she does not know about.",
           },
           evidence: { skillId: "own.honesty", result: "demonstrated" },
           next: "s6",
@@ -525,7 +525,7 @@ export const thePracticeThatGotSkipped: Mission = {
           label: "Luck",
           feedback: {
             tone: "rethink",
-            headline: "You practised four nights",
+            headline: "You practiced four nights",
             body: "Give yourself the credit. Something specific happened and it was not luck. Have another go.",
           },
           next: "s6",
@@ -545,25 +545,25 @@ export const thePracticeThatGotSkipped: Mission = {
         "Ask what the work is for before you decide what help is allowed.",
         "Getting one wrong is how you find out which one you do not know.",
         "Ten done properly beats twenty that went through a calculator.",
-        "If you practise and it is still hard, tell somebody. That is not a reason to skip it.",
+        "If you practice and it is still hard, tell somebody. That is not a reason to skip it.",
       ],
     },
   ],
   guide: {
     setup:
-      "There is no dramatic moment in this mission on purpose. Over-reliance at this age is usually a small shortcut taken quietly, five nights running, with nobody involved. The question what is this for is the artefact worth keeping.\n\nTwo cautions. First, the story shows one child for whom four nights was enough, and that is a story rather than a promise. Recall speed varies enormously, and a child with dyscalculia, a working-memory difference, ADHD or real anxiety about maths can practise properly for a fortnight and still be slow. If this mission leaves such a child believing that only people who skipped the practice stay slow, it has done them harm. Say out loud that practice makes it better, that how fast is different for everybody, and that still finding it hard after real practice is information for a teacher rather than a verdict. Second, some children have a calculator or another tool by agreement, as an accommodation. This mission is not about them, and it is worth saying so before you start rather than leaving them to work it out.",
+      "There is no dramatic moment in this mission on purpose. Over-reliance at this age is usually a small shortcut taken quietly, five nights running, with nobody involved. The question what is this for is the artefact worth keeping.\n\nTwo cautions. First, the story shows one child for whom four nights was enough, and that is a story rather than a promise. Recall speed varies enormously, and a child with dyscalculia, a working-memory difference, ADHD or real anxiety about math can practice properly for a fortnight and still be slow. If this mission leaves such a child believing that only people who skipped the practice stay slow, it has done them harm. Say out loud that practice makes it better, that how fast is different for everybody, and that still finding it hard after real practice is information for a teacher rather than a verdict. Second, some children have a calculator or another tool by agreement, as an accommodation. This mission is not about them, and it is worth saying so before you start rather than leaving them to work it out.",
     lookFor: [
       "Students who evaluate by whether they would be caught",
       "Whether anyone reads their own slowness as a fixed limit",
       "Students who can accept doing less rather than doing it faster",
-      "Students who practise properly and still find it hard, who need help rather than encouragement",
+      "Students who practice properly and still find it hard, who need help rather than encouragement",
     ],
     questions: [
       "What was this homework for? How could you tell?",
       "Why is getting one wrong useful?",
       "Is ten done slowly better than twenty done fast? Why?",
       "What is the difference between a shortcut and skipping the point?",
-      "If you practise all week and it is still hard, what should you do?",
+      "If you practice all week and it is still hard, what should you do?",
     ],
     misconceptions: [
       {
@@ -574,7 +574,7 @@ export const thePracticeThatGotSkipped: Mission = {
       {
         student: "I am just slow at times tables.",
         response:
-          "Answer it, and answer it privately rather than in front of the class. Nine seconds on night one is not a limit, it is night one, and the belief is what makes the calculator feel reasonable. But listen as well as correcting: a child who says this after genuinely practising may be right that something is harder for them than for the people around them, and that is a thing to look into rather than a thing to talk them out of.",
+          "Answer it, and answer it privately rather than in front of the class. Nine seconds on night one is not a limit, it is night one, and the belief is what makes the calculator feel reasonable. But listen as well as correcting: a child who says this after genuinely practicing may be right that something is harder for them than for the people around them, and that is a thing to look into rather than a thing to talk them out of.",
       },
     ],
     extension:
@@ -582,9 +582,9 @@ export const thePracticeThatGotSkipped: Mission = {
   },
   family: {
     summary:
-      "We practised asking what a piece of homework is for before deciding what help is allowed. If it is practice, the practice has to happen in your child's own head.",
+      "We practiced asking what a piece of homework is for before deciding what help is allowed. If it is practice, the practice has to happen in your child's own head.",
     questions: [
-      "What is your maths homework for?",
+      "What is your math homework for?",
       "Why is getting one wrong actually useful?",
       "Is ten done properly better than twenty done quickly?",
     ],
@@ -606,7 +606,7 @@ export const theGroupProject: Mission = {
   estimatedMinutes: 8,
   teaser: "Four of you, one poster, and somebody suggests the app just does the whole thing.",
   summary:
-    "Choosing how to get help becomes a group decision, where the fastest option is also the one that leaves three people with nothing to do. Students practise routing work to people first.",
+    "Choosing how to get help becomes a group decision, where the fastest option is also the one that leaves three people with nothing to do. Students practice routing work to people first.",
   learningGoals: [
     "Consider what a tool takes away from other people, not just from you",
     "Find a job for everybody in the group, including yourself",
@@ -902,7 +902,7 @@ export const theGroupProject: Mission = {
   },
   family: {
     summary:
-      "In a group project, the fastest option was to let an app make the whole poster. We practised noticing that this would leave three people with nothing to do, and giving work to the person who could do it.",
+      "In a group project, the fastest option was to let an app make the whole poster. We practiced noticing that this would leave three people with nothing to do, and giving work to the person who could do it.",
     questions: [
       "If an app could do the whole group project, what would be lost?",
       "How do you disagree with a group without stopping everything?",
@@ -926,10 +926,10 @@ export const theQuestionWithNoAnswer: Mission = {
   estimatedMinutes: 8,
   teaser: "Some questions do not have an answer waiting somewhere. They have yours.",
   summary:
-    "Students meet questions that no source can settle: what makes a good friend, whether a rule is fair, what they think. They learn to recognise a question that is theirs to answer, and that a confident reply to one is a warning sign.",
+    "Students meet questions that no source can settle: what makes a good friend, whether a rule is fair, what they think. They learn to recognize a question that is theirs to answer, and that a confident reply to one is a warning sign.",
   learningGoals: [
     "Tell a fact question from an opinion question",
-    "Recognise that some questions are yours to answer",
+    "Recognize that some questions are yours to answer",
     "Notice when a tool answers confidently about something it was never told",
   ],
   badge: {
@@ -1176,7 +1176,7 @@ export const theQuestionWithNoAnswer: Mission = {
       {
         student: "It could work it out if it thought harder.",
         response:
-          "There is nothing to work out from. It has no information about your field, your corridors or last winter unless somebody types it in. Adding those facts changes what it can help with, and still does not make the judgement for you.",
+          "There is nothing to work out from. It has no information about your field, your corridors or last winter unless somebody types it in. Adding those facts changes what it can help with, and still does not make the judgment for you.",
       },
       {
         student: "So opinions cannot be wrong.",
@@ -1189,7 +1189,7 @@ export const theQuestionWithNoAnswer: Mission = {
   },
   family: {
     summary:
-      "We practised telling a fact from an opinion. A fact can be checked against evidence, a rule or a record. An opinion has none of those, so it is yours to make — and a tool that sounds sure about your school has been told nothing about it.",
+      "We practiced telling a fact from an opinion. A fact can be checked against evidence, a rule or a record. An opinion has none of those, so it is yours to make — and a tool that sounds sure about your school has been told nothing about it.",
     questions: [
       "What are three ways you could check a fact? A rule, a record, or somebody measuring.",
       "What is a question nobody can look up for you?",
@@ -1213,7 +1213,7 @@ export const theArtShowLabel: Mission = {
   estimatedMinutes: 7,
   teaser: "There is a small card next to every piece. Yours has to say how you made it.",
   summary:
-    "Labelling help becomes ordinary rather than confessional. Students practise describing exactly what assistance they used, discover that everyone used some, and see that an accurate label costs nothing.",
+    "Labeling help becomes ordinary rather than confessional. Students practice describing exactly what assistance they used, discover that everyone used some, and see that an accurate label costs nothing.",
   learningGoals: [
     "Describe help accurately rather than vaguely",
     "Notice that everyone gets help of some kind",
@@ -1472,7 +1472,7 @@ export const theArtShowLabel: Mission = {
   },
   family: {
     summary:
-      "Every piece in the art show had a card saying how it was made. Your child practised describing help exactly, and saw that everybody had used some kind of help.",
+      "Every piece in the art show had a card saying how it was made. Your child practiced describing help exactly, and saw that everybody had used some kind of help.",
     questions: [
       "What would your card say about the last thing you made?",
       "Why is saying what help you used easier when everybody does it?",
@@ -1496,7 +1496,7 @@ export const theReadingLog: Mission = {
   estimatedMinutes: 8,
   teaser: "Twenty minutes a night, signed. Some nights it was twenty. Some nights it was not.",
   summary:
-    "A record that only the child can verify. Students practise being accurate when nobody can check, and learn that a log is a message to somebody who wants to help rather than a score.",
+    "A record that only the child can verify. Students practice being accurate when nobody can check, and learn that a log is a message to somebody who wants to help rather than a score.",
   learningGoals: [
     "Be accurate in a record nobody else can check",
     "Understand who a log is actually for",
@@ -1758,7 +1758,7 @@ export const theReadingLog: Mission = {
   ],
   guide: {
     setup:
-      "Self-reported records are the most common place children practise honesty, and the incentives point the wrong way. The mission's real move is in scene six: a form that has nowhere to put a bad week is a form that will be filled in falsely, and that is a design problem rather than a character one.",
+      "Self-reported records are the most common place children practice honesty, and the incentives point the wrong way. The mission's real move is in scene six: a form that has nowhere to put a bad week is a form that will be filled in falsely, and that is a design problem rather than a character one.",
     lookFor: [
       "Students who average in their head to reach the expected number",
       "Whether anyone can say who the log is for",
@@ -1779,7 +1779,7 @@ export const theReadingLog: Mission = {
       {
         student: "If I write four I will get in trouble.",
         response:
-          "This belief is the cause of every inflated log, and only repeated experience shifts it. Respond to low numbers calmly and privately, when you hand logs back or one to one — never by drawing the class's attention to a particular child's four, however kindly it is meant. Reading minutes track what is happening at home more than they track effort, and a child whose week was hard for reasons they cannot say should not have it noticed out loud. Normalise the range in general terms instead: say that this week's logs have fours and forties in them and that both are useful.",
+          "This belief is the cause of every inflated log, and only repeated experience shifts it. Respond to low numbers calmly and privately, when you hand logs back or one to one — never by drawing the class's attention to a particular child's four, however kindly it is meant. Reading minutes track what is happening at home more than they track effort, and a child whose week was hard for reasons they cannot say should not have it noticed out loud. Normalize the range in general terms instead: say that this week's logs have fours and forties in them and that both are useful.",
       },
     ],
     extension:

@@ -27,7 +27,7 @@ const SECTIONS = [
     // different sixes, each calling itself complete.
     body: STUDENT_RECORD.map((entry) => entry.what),
     footnote:
-      "That is every column in the database that hangs off a student row, enumerated rather than summarised, and a test fails the build if a column is added without appearing here. It is not everything the product stores: a school's own account settings, its staff records and the audit log are not records about a child, and this list does not cover them. There is no free-text field anywhere in the student experience, so there is nothing a child could type that we would then be storing.",
+      "That is every column in the database that hangs off a student row, enumerated rather than summarized, and a test fails the build if a column is added without appearing here. It is not everything the product stores: a school's own account settings, its staff records and the audit log are not records about a child, and this list does not cover them. There is no free-text field anywhere in the student experience, so there is nothing a child could type that we would then be storing.",
   },
   {
     id: "refused",
@@ -36,7 +36,7 @@ const SECTIONS = [
       "Surnames, dates of birth, home addresses, phone numbers or student email addresses.",
       "Photographs, audio or video. The product requests no camera or microphone permission at any point.",
       "Location of any kind, including IP-derived approximations.",
-      "Time on task, idle timers, keystroke timing, mouse movement or any other behavioural telemetry.",
+      "Time on task, idle timers, keystroke timing, mouse movement or any other behavioral telemetry.",
       "Risk scores, readiness bands, personality profiles or predictions about how a child will behave.",
       "Advertising identifiers, third-party analytics, session recording or any tracker.",
     ],
@@ -74,7 +74,7 @@ const SECTIONS = [
       "An administrator sees aggregate figures only. There is no route in the product that shows an administrator a named student's answers.",
       `A figure is shown as "too few to report" unless at least ${MIN_REPORTABLE_GROUP} distinct students contributed to that particular figure, in the product and in every export. Contributing means having actually done the thing being measured, which is usually fewer students than are enrolled: a competency rate counts the children who completed a mission offering the skill, and the check-in change counts the children who completed both windows.`,
       "Individual check-in answers are never displayed to anyone. The check-in produces a cohort measurement, not a record about a child.",
-      "Nothing in the product produces a label, a band or an inference about a child's character or judgement.",
+      "Nothing in the product produces a label, a band or an inference about a child's character or judgment.",
     ],
   },
   {
@@ -95,7 +95,7 @@ const SECTIONS = [
     title: "Families",
     body: [
       "There is no parent account, because creating one would mean collecting a parent.",
-      "Every mission ships with a one-page take-home in plain language: what was practised, three questions to ask, one thing to try.",
+      "Every mission ships with a one-page take-home in plain language: what was practiced, three questions to ask, one thing to try.",
       "Those pages are public links with nothing behind them to sign into and nothing on them to submit.",
     ],
   },

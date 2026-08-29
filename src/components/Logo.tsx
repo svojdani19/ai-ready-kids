@@ -1,6 +1,6 @@
 /**
  * Wordmark. The glyph is a small open book whose pages form a checkmark:
- * the product's whole claim is "practised, and checked", not "protected".
+ * the product's whole claim is "practiced, and checked", not "protected".
  */
 export function LogoMark({ size = 34 }: { size?: number }) {
   return (

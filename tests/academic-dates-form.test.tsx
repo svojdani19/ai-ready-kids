@@ -142,7 +142,7 @@ describe("the academic form tells missing data apart from a broken record", () =
     );
     expect(screen.queryByText(MIGRATION)).toBeNull();
     expect(screen.queryByText(CORRECTION)).toBeNull();
-    // Valid behaviour unchanged: the fields still prefill and still submit.
+    // Valid behavior unchanged: the fields still prefill and still submit.
     expect(screen.getByLabelText(/School year/i)).toHaveValue("2025-2026");
     expect(screen.getByLabelText(/First day/i)).toHaveValue("2025-08-25");
     expect(screen.getByLabelText(/Last day/i)).toHaveValue("2026-06-12");

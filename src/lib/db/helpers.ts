@@ -2,7 +2,7 @@ import type { DatabaseSync } from "node:sqlite";
 
 export type Db = DatabaseSync;
 
-/** node:sqlite returns null-prototype rows; normalise to plain objects. */
+/** node:sqlite returns null-prototype rows; normalize to plain objects. */
 export function rows<T>(value: unknown[]): T[] {
   return value.map((r) => ({ ...(r as object) })) as T[];
 }

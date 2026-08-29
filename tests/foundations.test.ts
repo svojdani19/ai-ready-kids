@@ -12,7 +12,7 @@ import {
 } from "@/content/missions";
 import { ALL_SKILLS, COMPETENCY_IDS } from "@/content/competencies";
 import { validateMission } from "@/lib/domain/missionPath";
-import { missionsOfferingSkill, summariseStudent } from "@/lib/domain/evidence";
+import { missionsOfferingSkill, summarizeStudent } from "@/lib/domain/evidence";
 import { createStudent } from "@/lib/repo/classroom";
 import { listAttemptsForStudent } from "@/lib/repo/progress";
 import type { Mission } from "@/content/types";
@@ -148,7 +148,7 @@ describe("First Look records nothing", () => {
       expect(MISSIONS).not.toContain(mission);
     }
     expect(MISSIONS.every((m) => m.segment === "core")).toBe(true);
-    // But it is playable, so the slug map and the catalogue both carry it.
+    // But it is playable, so the slug map and the catalog both carry it.
     expect(ALL_SESSIONS).toHaveLength(FOUNDATIONS.length + MISSIONS.length);
     for (const mission of FOUNDATIONS) {
       expect(MISSION_BY_SLUG[mission.slug]).toBe(mission);
@@ -315,7 +315,7 @@ describe("a finished First Look session reaches the roster as a badge and nothin
       });
 
       playToEnd(db, student.id, mission);
-      const summary = summariseStudent(listAttemptsForStudent(db, student.id));
+      const summary = summarizeStudent(listAttemptsForStudent(db, student.id));
 
       expect(summary.completedMissionIds).toContain(mission.id);
       expect(summary.badgeIds).toContain(mission.badge.id);

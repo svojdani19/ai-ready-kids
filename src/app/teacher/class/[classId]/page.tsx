@@ -9,8 +9,8 @@ import { canTeachClass } from "@/lib/auth/access";
 import { getClass, listAssignments, listStudents } from "@/lib/repo/classroom";
 import { getUser } from "@/lib/repo/school";
 import { listAttemptsForClass, listBenchmarksForClass } from "@/lib/repo/progress";
-import { summariseCohort, summariseStudent } from "@/lib/domain/evidence";
-import { summariseCohortBenchmark } from "@/lib/domain/benchmark";
+import { summarizeCohort, summarizeStudent } from "@/lib/domain/evidence";
+import { summarizeCohortBenchmark } from "@/lib/domain/benchmark";
 import { COMPETENCIES, COMPETENCY_BY_ID } from "@/content/competencies";
 import { ALL_SESSIONS, FOUNDATIONS_BY_TRACK, MISSIONS, MISSION_BY_ID, trackForGrade } from "@/content/missions";
 import { Avatar } from "@/components/art/Avatar";
@@ -58,12 +58,12 @@ export default async function ClassPage({
   const assignments = listAssignments(db, classId);
   const assignedIds = new Set(assignments.map((a) => a.mission_id));
   const attempts = listAttemptsForClass(db, classId);
-  const cohort = summariseCohort({
+  const cohort = summarizeCohort({
     studentIds: students.map((s) => s.id),
     attempts,
     assignedMissionIds: assignments.map((a) => a.mission_id),
   });
-  const bench = summariseCohortBenchmark(listBenchmarksForClass(db, classId));
+  const bench = summarizeCohortBenchmark(listBenchmarksForClass(db, classId));
 
   const byStudent = new Map(students.map((s) => [s.id, [] as typeof attempts]));
   for (const a of attempts) byStudent.get(a.student_id)?.push(a);
@@ -235,7 +235,7 @@ export default async function ClassPage({
       <div className="mt-6">
         <Panel
           title="Roster"
-          description="One row per student. Green means chosen unaided at least once. Amber means a partly-right choice, or the safe answer reached after a Try again. Grey means no evidence yet."
+          description="One row per student. Green means chosen unaided at least once. Amber means a partly-right choice, or the safe answer reached after a Try again. Gray means no evidence yet."
         >
           {students.length === 0 ? (
             <PanelBody>
@@ -273,7 +273,7 @@ export default async function ClassPage({
                 </thead>
                 <tbody>
                   {students.map((student) => {
-                    const summary = summariseStudent(byStudent.get(student.id) ?? []);
+                    const summary = summarizeStudent(byStudent.get(student.id) ?? []);
                     return (
                       <tr key={student.id} className="border-b border-sand last:border-0">
                         <th scope="row" className="px-5 py-2.5 text-left font-medium text-ink">
@@ -343,7 +343,7 @@ export default async function ClassPage({
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <Note tone="neutral" title="What this page deliberately does not show">
           There is no overall score, no ranking, no risk band and no inference about a
-          child&rsquo;s judgement or character. A grey square means a mission has not been
+          child&rsquo;s judgment or character. A gray square means a mission has not been
           played, not that a student would make an unsafe choice.
         </Note>
         <Note tone="denim" title="Check-in windows">

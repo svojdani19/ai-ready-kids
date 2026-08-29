@@ -45,7 +45,7 @@ export const theQuizThatKeptAsking: Mission = {
       narration: [
         "Indoor recess. Rain is going sideways past the window and the tablet cart is out.",
         "Nia has found a quiz called Which Forest Animal Are You. Half of Room 12 is doing it.",
-        "The first question is what is your favourite weather. You pick snow.",
+        "The first question is what is your favorite weather. You pick snow.",
       ],
       next: "s2",
     },
@@ -54,7 +54,7 @@ export const theQuizThatKeptAsking: Mission = {
       kind: "story",
       art: "tablet",
       narration: [
-        "Question two is whether you would rather climb or swim. Question three is your favourite snack.",
+        "Question two is whether you would rather climb or swim. Question three is your favorite snack.",
         "This is a good quiz. Theo got badger and he is delighted about it.",
       ],
       next: "s3",
@@ -164,7 +164,7 @@ export const theQuizThatKeptAsking: Mission = {
       kind: "decision",
       art: "tablet",
       narration: [
-        "There is a Skip button under the question, small and grey.",
+        "There is a Skip button under the question, small and gray.",
         "There is also a big cheerful one that says Keep Going, 80% done!",
         "Eighty per cent is quite far. You would like to know what animal you are.",
       ],
@@ -241,7 +241,7 @@ export const theQuizThatKeptAsking: Mission = {
       "Students who judge a request by how the app feels rather than by what it asked",
       "Students who treat skipping a field as having solved it",
       "Whether anyone names the sunk-cost pull of the eighty-per-cent button",
-      "Students who can explain why a pet's name matters more than a favourite colour",
+      "Students who can explain why a pet's name matters more than a favorite color",
     ],
     questions: [
       "Which questions were about the quiz, and which were about you?",
@@ -268,7 +268,7 @@ export const theQuizThatKeptAsking: Mission = {
       },
     ],
     extension:
-      "Unplugged, ten minutes, using cards you hand out already written — students do not write these themselves. Six per table: four ordinary quiz questions such as favourite weather or climb or swim, and two spare keys such as the name of a first pet or the street somebody lived on when they were small. Tables sort them into Fun and Spare Key. Say this once, out loud, before you start: we are sorting the questions, and nobody writes or says their own answers to them. If a student volunteers a real pet name anyway, move on without repeating it.",
+      "Unplugged, ten minutes, using cards you hand out already written — students do not write these themselves. Six per table: four ordinary quiz questions such as favorite weather or climb or swim, and two spare keys such as the name of a first pet or the street somebody lived on when they were small. Tables sort them into Fun and Spare Key. Say this once, out loud, before you start: we are sorting the questions, and nobody writes or says their own answers to them. If a student volunteers a real pet name anyway, move on without repeating it.",
   },
   family: {
     summary:
@@ -296,7 +296,7 @@ export const theStudyGroup: Mission = {
   estimatedMinutes: 8,
   teaser: "Everyone in the reading group is friendly. One question is about your bus.",
   summary:
-    "A moderated class study space mixes a helper tool with real classmates. Students practise the difference between facts about them and facts about where they will be, and learn why a routine needs extra care: a school, a route and a finishing time together make a place somebody could wait.",
+    "A moderated class study space mixes a helper tool with real classmates. Students practice the difference between facts about them and facts about where they will be, and learn why a routine needs extra care: a school, a route and a finishing time together make a place somebody could wait.",
   learningGoals: [
     "Tell the difference between a fact about you and a fact about where you will be",
     "Notice that a routine puts a place and a time together",
@@ -326,7 +326,7 @@ export const theStudyGroup: Mission = {
       art: "tablet",
       narration: [
         "Somebody called J has joined from another class. J likes the lighthouse book too and knows a lot about lighthouses.",
-        "J asks what everybody's favourite part was. That is easy. You say the storm chapter.",
+        "J asks what everybody's favorite part was. That is easy. You say the storm chapter.",
       ],
       next: "s3",
     },
@@ -346,7 +346,7 @@ export const theStudyGroup: Mission = {
           feedback: {
             tone: "strong",
             headline: "That is exactly the difference",
-            body: "Your favourite chapter is a fact about you. Your bus is a fact about where you stand, at the same time, every single day. Those are not the same kind of thing.",
+            body: "Your favorite chapter is a fact about you. Your bus is a fact about where you stand, at the same time, every single day. Those are not the same kind of thing.",
           },
           evidence: { skillId: "privacy.identity", result: "demonstrated" },
           next: "s4",
@@ -386,7 +386,7 @@ export const theStudyGroup: Mission = {
       choices: [
         {
           id: "c1",
-          label: "“I am not going to say. What was your favourite part?”",
+          label: "“I am not going to say. What was your favorite part?”",
           feedback: {
             tone: "strong",
             headline: "You said no and kept the conversation",
@@ -565,9 +565,9 @@ export const theStudyGroup: Mission = {
   },
   family: {
     summary:
-      "We practised the difference between a fact about you, like your favourite book, and a fact about where you will be, like which bus you take. Both kinds can be private. The second kind is the one that tells somebody where to wait, and when.",
+      "We practiced the difference between a fact about you, like your favorite book, and a fact about where you will be, like which bus you take. Both kinds can be private. The second kind is the one that tells somebody where to wait, and when.",
     questions: [
-      "What is the difference between telling someone your favourite food and telling them your bus?",
+      "What is the difference between telling someone your favorite food and telling them your bus?",
       "Somebody friendly online asks where you wait after school. What could you say?",
       "If your friend answered first, does that change what you should do?",
     ],
@@ -589,7 +589,7 @@ export const theClassPhoto: Mission = {
   estimatedMinutes: 8,
   teaser: "Room 12 is going on the school website. Ravi does not want to be in it.",
   summary:
-    "A class photo is about to be published. Students practise reading a picture for what it reveals, meet the harder idea that one person can decline something the group wants, and learn that agreeing to one audience is not agreeing to every audience.",
+    "A class photo is about to be published. Students practice reading a picture for what it reveals, meet the harder idea that one person can decline something the group wants, and learn that agreeing to one audience is not agreeing to every audience.",
   learningGoals: [
     "Read a photo for what it shows besides faces",
     "Understand that being in a picture is a choice each person makes",
@@ -880,7 +880,7 @@ export const theClassPhoto: Mission = {
   },
   family: {
     summary:
-      "We looked at a class photo before it was published and practised three things: reading the background for private information, remembering that every person in a picture gets to decide about their own face, and noticing that agreeing to one place is not agreeing to everywhere. A photo cleared for a school page has not been cleared for a group chat.",
+      "We looked at a class photo before it was published and practiced three things: reading the background for private information, remembering that every person in a picture gets to decide about their own face, and noticing that agreeing to one place is not agreeing to everywhere. A photo cleared for a school page has not been cleared for a group chat.",
     questions: [
       "What can somebody learn from the background of a photo?",
       "If one person in a picture says no, what should happen?",
@@ -904,7 +904,7 @@ export const whatTheCameraSees: Mission = {
   estimatedMinutes: 8,
   teaser: "A game wants to show your room to everyone playing. Your room says a lot.",
   summary:
-    "A game reuses a camera permission for a new live feature. Students practise auditing what a space reveals, learn to tell a preview from a live stream by what the screen says, and meet the rule that once a stream is live each new moment reaches viewers before it can be reviewed.",
+    "A game reuses a camera permission for a new live feature. Students practice auditing what a space reveals, learn to tell a preview from a live stream by what the screen says, and meet the rule that once a stream is live each new moment reaches viewers before it can be reviewed.",
   learningGoals: [
     "List what a bedroom or kitchen reveals about a family",
     "Tell a preview apart from a live stream by reading what the screen says",
@@ -1234,7 +1234,7 @@ export const whatTheCameraSees: Mission = {
   },
   family: {
     summary:
-      "We looked at a game feature that shows your room to other players. Your child practised reading a room the way a stranger would, learned to check whether a camera window is a preview or already live, and learned that once it is live each new moment reaches people before you can check it.",
+      "We looked at a game feature that shows your room to other players. Your child practiced reading a room the way a stranger would, learned to check whether a camera window is a preview or already live, and learned that once it is live each new moment reaches people before you can check it.",
     questions: [
       "What could somebody learn from seeing your bedroom?",
       "How can you tell whether a camera is only showing you, or sending to other people?",
@@ -1258,9 +1258,9 @@ export const theSleepoverScreen: Mission = {
   estimatedMinutes: 8,
   teaser: "You are at Sam's house. The tablet there does not have the same rules.",
   summary:
-    "Students practise the hardest version of stopping and asking: doing it in someone else's home, where the rules are different, the grown-up is not yours, and speaking up feels rude. They also practise the whole routine — stop the app, say what already went in, ask for it to be taken out, and get their own grown-up told.",
+    "Students practice the hardest version of stopping and asking: doing it in someone else's home, where the rules are different, the grown-up is not yours, and speaking up feels rude. They also practice the whole routine — stop the app, say what already went in, ask for it to be taken out, and get their own grown-up told.",
   learningGoals: [
-    "Recognise that your rules travel with you",
+    "Recognize that your rules travel with you",
     "Stop an app rather than steering around its next question",
     "Ask the grown-up there to check what it kept and take your part out",
     "Name a trusted grown-up in a house that is not yours",
@@ -1278,7 +1278,7 @@ export const theSleepoverScreen: Mission = {
       kind: "story",
       art: "kitchen",
       narration: [
-        "You are at Sam's house for the first time. It has smelled like toast since you arrived and there is an enormous grey cat.",
+        "You are at Sam's house for the first time. It has smelled like toast since you arrived and there is an enormous gray cat.",
         "Sam's grown-up is called Bea. She has been very nice and has already made you eat two pieces of toast.",
       ],
       next: "s2",
@@ -1561,14 +1561,14 @@ export const theSleepoverScreen: Mission = {
   },
   family: {
     summary:
-      "We practised keeping our own rules in somebody else's house, which is much harder than keeping them at home. Your child practised a polite sentence that still says no, and then the rest of the routine: close the app, say out loud what has already gone in, and ask the grown-up there to take it out and to let us know.",
+      "We practiced keeping our own rules in somebody else's house, which is much harder than keeping them at home. Your child practiced a polite sentence that still says no, and then the rest of the routine: close the app, say out loud what has already gone in, and ask the grown-up there to take it out and to let us know.",
     questions: [
       "If you are at a friend's house and they play something you are not allowed, what could you say?",
       "Whose rules are your rules — yours, or our house's?",
       "If something of yours had already gone into an app at somebody else's house, what would you want to happen?",
     ],
     tryAtHome:
-      "Agree one sentence your child can use at any house, and practise it until it is boring. Something like: I am not allowed that one, can we do something else? Then agree the other half — that they can ask to ring you from anywhere, at any time, without explaining why first.",
+      "Agree one sentence your child can use at any house, and practice it until it is boring. Something like: I am not allowed that one, can we do something else? Then agree the other half — that they can ask to ring you from anywhere, at any time, without explaining why first.",
     familyRule: "Our rules come with us wherever we go.",
   },
 };
@@ -1585,9 +1585,9 @@ export const itHappenedToTheo: Mission = {
   estimatedMinutes: 7,
   teaser: "Nothing happened to you. Theo told you something, and now you have to decide.",
   summary:
-    "The bystander mission. A friend discloses that an app asked them for personal details and asks you not to tell. Students practise the hardest case: acting for somebody else, without betraying them.",
+    "The bystander mission. A friend discloses that an app asked them for personal details and asks you not to tell. Students practice the hardest case: acting for somebody else, without betraying them.",
   learningGoals: [
-    "Recognise that a promise to stay quiet is not always one to keep",
+    "Recognize that a promise to stay quiet is not always one to keep",
     "Bring a friend along rather than reporting behind their back",
     "Say what happened without making a friend feel in trouble",
   ],
@@ -1848,7 +1848,7 @@ export const itHappenedToTheo: Mission = {
   },
   family: {
     summary:
-      "We practised what to do when a friend tells you something worrying and asks you not to tell. Your child practised starting with you are not in trouble, going with a friend to a grown-up instead of behind their back, and remembering that telling somebody is the start: the thing that went in still has to come out.",
+      "We practiced what to do when a friend tells you something worrying and asks you not to tell. Your child practiced starting with you are not in trouble, going with a friend to a grown-up instead of behind their back, and remembering that telling somebody is the start: the thing that went in still has to come out.",
     questions: [
       "If a friend told you something worrying and said do not tell, what would you do?",
       "What is the difference between telling on someone and going with them?",

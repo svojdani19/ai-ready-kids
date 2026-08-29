@@ -412,7 +412,7 @@ export function seed(db: Db): void {
       // The two rates are deliberately modest. A demo showing a fifty point
       // jump would be the first thing an evaluator disbelieved, and rightly
       // so. This lands near 47 percent in the fall and 69 percent in the
-      // spring, which is a strong but arguable programme effect.
+      // spring, which is a strong but arguable program effect.
       const preAbility = Math.min(0.7, Math.max(0.25, ability * 0.55 + 0.1));
       const postAbility = Math.min(0.92, Math.max(0.35, ability * 0.65 + 0.25));
 

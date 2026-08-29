@@ -2,7 +2,7 @@ import type { Classroom, School } from "@/lib/types";
 import { isCalendarDate } from "@/lib/domain/calendar";
 
 /**
- * Retention maths for the administrator's data controls.
+ * Retention math for the administrator's data controls.
  *
  * The product's position is that a school should be able to answer "when does
  * this disappear" with a date, not a policy paragraph. Everything here is a
@@ -18,30 +18,30 @@ export const RETENTION_OPTIONS = [
 ] as const;
 
 /**
- * The retention windows this product recognises, and nothing else.
+ * The retention windows this product recognizes, and nothing else.
  *
  * `schools.retention_months` is unconstrained integer data. The form only ever
  * writes one of the four values above, but a vendor edit, a migration defect or
  * a stale value — `-12`, `0`, `7`, `120` — is data this code used to accept
  * without looking. It went straight into `addMonths`, and a **negative** window
  * moves a cohort's deletion date to before its school year ended, which makes
- * every class immediately eligible and hands `runScheduledPurge` a licence to
+ * every class immediately eligible and hands `runScheduledPurge` a license to
  * permanently delete the roster, every attempt and both check-ins, with no
  * restore path.
  *
- * So an unrecognised value is classified, never repaired. Not coerced, not
+ * So an unrecognized value is classified, never repaired. Not coerced, not
  * clamped, not rounded, and above all not defaulted to twelve: a guess that
  * lands early deletes a child's records before the school's own policy said it
  * would, and a guess that lands late retains them past it. Neither is a
  * decision this code gets to make on a school's behalf — the same reasoning
  * sprint 32 applied to a missing year-end date, and the same direction sprints
- * 34 and 53 settled for unrecognised state.
+ * 34 and 53 settled for unrecognized state.
  */
 export const RECOGNISED_RETENTION_MONTHS: readonly number[] = RETENTION_OPTIONS.map(
   (option) => option.months,
 );
 
-export function isRecognisedRetention(months: unknown): months is number {
+export function isRecognizedRetention(months: unknown): months is number {
   return (
     typeof months === "number" &&
     Number.isInteger(months) &&
@@ -60,7 +60,7 @@ export function isRecognisedRetention(months: unknown): months is number {
  * administrator mid-migration; a malformed one is a broken record that was
  * silently retaining a child's records for ever.
  */
-export type RetentionBlock = "unrecognised-policy" | "no-year-end" | "malformed-year-end";
+export type RetentionBlock = "unrecognized-policy" | "no-year-end" | "malformed-year-end";
 
 export function addMonths(iso: string, months: number): Date {
   const date = new Date(iso);
@@ -82,7 +82,7 @@ export function addMonths(iso: string, months: number): Date {
  * when money changes hands; the school year ends when the children go home.
  */
 export function purgeDateFor(school: School): Date | null {
-  if (!isRecognisedRetention(school.retention_months)) return null;
+  if (!isRecognizedRetention(school.retention_months)) return null;
   // Validated, not merely non-empty. `addMonths` on a malformed string returns
   // an Invalid Date, and an Invalid Date is worse than no date: it renders, it
   // compares false against everything, and it looks like a schedule.
@@ -112,10 +112,10 @@ export function purgeDateForClass(
   // rather than guessed: a guessed date that lands early would delete a
   // child's records before the school's own window had elapsed, and that is
   // not a decision this code gets to make on a school's behalf.
-  // And the policy itself. An unrecognised window produces no date at all,
+  // And the policy itself. An unrecognized window produces no date at all,
   // rather than an arithmetic result nobody asked for — a negative one lands
   // before the year even ended.
-  if (!isRecognisedRetention(retentionMonths)) return null;
+  if (!isRecognizedRetention(retentionMonths)) return null;
   if (!isCalendarDate(classroom.year_ends_on)) return null;
   return addMonths(classroom.year_ends_on, retentionMonths);
 }
@@ -124,11 +124,11 @@ export function purgeDateForClass(
  * Why this school has no schedule, or null when it has one.
  *
  * Distinct from "no date recorded" on purpose: a missing year-end is an
- * administrator finishing a migration, and an unrecognised window is a broken
+ * administrator finishing a migration, and an unrecognized window is a broken
  * account record. They need different sentences and different people.
  */
 export function retentionBlock(school: Pick<School, "retention_months">): RetentionBlock | null {
-  return isRecognisedRetention(school.retention_months) ? null : "unrecognised-policy";
+  return isRecognizedRetention(school.retention_months) ? null : "unrecognized-policy";
 }
 
 export interface RetentionRow {
@@ -142,7 +142,7 @@ export interface RetentionRow {
   purgeOn: Date | null;
   /**
    * Why there is no date. `"no-year-end"` is a cohort whose school year was
-   * never recorded; `"unrecognised-policy"` is a school whose retention window
+   * never recorded; `"unrecognized-policy"` is a school whose retention window
    * is not one this product sells. Null when a date exists.
    */
   blockedReason: RetentionBlock | null;
@@ -161,7 +161,7 @@ export interface RetentionRow {
  * worse in both directions: archiving in March would silently delete a class's
  * records months before the school-wide schedule said they would go, and
  * archiving last year's class in September would push its deletion further out
- * than the policy allows. Archiving is an organisational act; the deletion date
+ * than the policy allows. Archiving is an oorganizational act; the deletion date
  * is a policy the administrator set once.
  */
 export function retentionRows(
@@ -176,8 +176,8 @@ export function retentionRows(
     const purgeOn = purgeDateForClass(c, school.retention_months);
     // The policy is checked first, because a school with a broken window has
     // no schedule at all regardless of what any individual cohort recorded.
-    const blockedReason: RetentionBlock | null = !isRecognisedRetention(school.retention_months)
-      ? "unrecognised-policy"
+    const blockedReason: RetentionBlock | null = !isRecognizedRetention(school.retention_months)
+      ? "unrecognized-policy"
       : !c.year_ends_on
         ? "no-year-end"
         : isCalendarDate(c.year_ends_on)

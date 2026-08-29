@@ -66,9 +66,9 @@ export function openDatabase(path: string): Db {
   // Classify before touching anything. An absent version row is not evidence
   // of a new file — the pre-sprint-33 reset deleted it from databases that were
   // otherwise complete — so the shape is inspected rather than inferred, and
-  // anything unrecognised stops here rather than being stamped.
+  // anything unrecognized stops here rather than being stamped.
   const state = classifySchema(db);
-  if (state.kind === "unrecognised") {
+  if (state.kind === "unrecognized") {
     db.close();
     throw new Error(
       `Refusing to open ${path}: ${state.reason}. Nothing has been changed. ` +
@@ -86,7 +86,7 @@ export function openDatabase(path: string): Db {
     return db;
   }
 
-  // A recognised-but-unstamped database gets the version its shape actually
+  // A recognized-but-unstamped database gets the version its shape actually
   // has, and is then migrated forward like any other.
   const from = state.version;
   if (state.kind === "unversioned") stampVersion(db, from);

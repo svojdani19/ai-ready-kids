@@ -27,7 +27,7 @@ import { previewRollover } from "@/lib/domain/rollover";
  *    preview recomputed from them. The page's preview is informational and can
  *    be seconds stale; the one the mutation acts on is this one.
  *
- * `archiveClass` already honours an outer transaction, so it participates here
+ * `archiveClass` already honors an outer transaction, so it participates here
  * instead of committing around it.
  */
 export type RolloverOutcome =
@@ -43,7 +43,7 @@ export type RolloverOutcome =
  * was.
  *
  * The last clause used to be "if it keeps happening your account contact can
- * look at it", which was not. The programme contact is the school-side person
+ * look at it", which was not. The program contact is the school-side person
  * for quotes, purchase orders and invoices; this product ships no technical
  * support destination, and this sprint deliberately writes no audit row or
  * diagnostic for a failed attempt — so there would be nothing for anyone to

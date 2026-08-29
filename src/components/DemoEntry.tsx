@@ -2,7 +2,7 @@ import { getDb } from "@/lib/db";
 import { getStudent, getClass, listAssignments, listStudents } from "@/lib/repo/classroom";
 import { getUserByEmail } from "@/lib/repo/school";
 import { listAttemptsForStudent } from "@/lib/repo/progress";
-import { summariseStudent } from "@/lib/domain/evidence";
+import { summarizeStudent } from "@/lib/domain/evidence";
 import { DEMO } from "@/lib/db/seed";
 import { enterDemo } from "@/app/actions/auth";
 import { Button } from "./ui/Button";
@@ -18,7 +18,7 @@ export async function DemoEntry({ compact = false }: { compact?: boolean }) {
   const student = getStudent(db, DEMO.studentId) ?? listStudents(db, DEMO.classId)[0];
   const classroom = student ? getClass(db, student.class_id) : undefined;
   const summary = student
-    ? summariseStudent(listAttemptsForStudent(db, student.id))
+    ? summarizeStudent(listAttemptsForStudent(db, student.id))
     : undefined;
 
   const teacher = getUserByEmail(db, DEMO.teacherEmail);

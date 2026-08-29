@@ -21,7 +21,7 @@ Three ways a feature can fail that question while looking finished:
 - **It entertains instead of teaching.** Engaging is necessary; it is not the
   goal. If the fun part and the learning part can be separated, children will
   separate them.
-- **It teaches tool operation instead of judgement.** "Where the settings
+- **It teaches tool operation instead of judgment.** "Where the settings
   button lives" expires in a year. "Ask who would actually know" does not.
 - **It teaches avoidance instead of calibration.** A child who concludes that
   everything on a screen is a lie has not been made safer, only less reachable.
@@ -33,7 +33,7 @@ Run the feature on a projector or interactive board. Stand at the back of the
 room, or at least the back of your office.
 
 - [ ] **Legible from the back.** Body text scales with the viewport, not a
-      fixed pixel size. Read it from roughly four metres away.
+      fixed pixel size. Read it from roughly four meters away.
 - [ ] **Teacher preview and control.** The teacher can see what is coming
       before the class does, and can move at the room's pace rather than the
       software's. No forced timings, no autoplay.
@@ -74,7 +74,7 @@ one of them has not tested the thing that was built.
 - [ ] **Targets are at least 44px.** Including navigation, not just the big
       obvious buttons. Measure; do not eyeball.
 - [ ] **No confusing states.** Every state says what happened and what to do
-      next. No dead ends, no unlabelled spinners, no screen a child can reach
+      next. No dead ends, no unlabeled spinners, no screen a child can reach
       and not leave.
 - [ ] **Nothing consequential happens on one tap.** Anything a child cannot
       undo — recording an answer, finishing a measurement, leaving a screen —
@@ -111,7 +111,7 @@ one of them has not tested the thing that was built.
 - [ ] **No addictive mechanics.** No streaks, countdowns, points-per-second,
       loss framing, leaderboards or anything that rewards returning rather than
       learning.
-- [ ] **Reduced motion is honoured**, and the page is usable at 200% zoom.
+- [ ] **Reduced motion is honored**, and the page is usable at 200% zoom.
 
 ## Part 3 — Applies to every review
 
@@ -137,9 +137,9 @@ one of them has not tested the thing that was built.
       follow literally. Advice to interrupt a belief publicly, or to respond to
       one child's low number in front of the room, singles out a child for
       something that usually tracks a learning difference or what is happening
-      at home. Say it privately, or normalise the range without naming anybody.
+      at home. Say it privately, or normalize the range without naming anybody.
 - [ ] **No promised timelines.** "It stops being hard surprisingly quickly",
-      "the habit sets in within days", "practise four nights and you will know
+      "the habit sets in within days", "practice four nights and you will know
       them" — the content cannot keep these. For the child they fail, the
       promise converts into evidence that something is wrong with them. Say
       what practice does, then say that how much and how fast differ, and give
@@ -256,7 +256,7 @@ one of them has not tested the thing that was built.
       instructional claim, check that the number behind it can fall.
 - [ ] **No activity accumulates a record of children.** Read every extension
       as a thing a teacher will actually run for a week. A tally of who got
-      stuck, how often, and what they reached for is behavioural tracking, and
+      stuck, how often, and what they reached for is behavioral tracking, and
       paper does not make it something else. Noticing in the moment is fine;
       keeping a register is not. Prefer anonymous, teacher-authored sorts and
       votes where nothing is written down.
@@ -276,7 +276,7 @@ one of them has not tested the thing that was built.
       existing database with no version row read identically to a brand-new
       file. Where a value has to distinguish more than two situations, give it
       a type that can, and let the compiler insist every case is handled.
-- [ ] **Unrecognised state fails closed.** Refusing to open a file leaves the
+- [ ] **Unrecognized state fails closed.** Refusing to open a file leaves the
       data where it is and lets a person look at it. Guessing, stamping, or
       half-applying leaves something that claims to be fine and is not. Say
       what was found and what to do about it, starting with taking a copy.
@@ -330,7 +330,7 @@ one of them has not tested the thing that was built.
       same sentence, and the graph will happily let them. Reachability tests
       will not catch it. Trace the branches by hand.
 - [ ] **The verdict is no wider than what was checked.** Where a mission
-      settles one thing, make sure it does not quietly claim the neighbouring
+      settles one thing, make sure it does not quietly claim the neighboring
       thing too. Two artefacts checked to different depths get reported
       separately, in the words that were actually earned, and "we could not
       find out" is a legitimate place for a mission to end.
@@ -351,11 +351,11 @@ one of them has not tested the thing that was built.
 - [ ] **Instructional clarity.** Can a teacher say, in one sentence, what this
       screen teaches? Can a child?
 - [ ] **Technical durability.** Claims about permissions, sources and AI
-      behaviour are scoped to what the child can observe in the scenario. The
+      behavior are scoped to what the child can observe in the scenario. The
       lesson teaches a checkable decision rule, not an absolute that will stop
       being true when an app, device or model changes.
 - [ ] **Privacy.** Did this sprint add a field, a log, a timing, an export or
-      an inference? If so, justify it against data minimisation or remove it.
+      an inference? If so, justify it against data minimization or remove it.
       New columns are the thing to be suspicious of.
 - [ ] **Accessibility.** Contrast at least 4.5:1 for body text, semantic
       headings and landmarks, real labels on every control, live regions for
@@ -390,7 +390,7 @@ one of them has not tested the thing that was built.
 - [ ] **An inventory is only as good as its descriptions.** A test that
       compares a hand-written classification against the code can only check
       that something was classified, not that the sentence is true. Where a
-      description carries a safety property, read it against the behaviour, not
+      description carries a safety property, read it against the behavior, not
       the name — and in a multi-step flow give every step its own answer, since
       the gate belongs at the write and not at the entrance.
 - [ ] **Where the output is the interface, reading it is the test.** Verifying
@@ -459,7 +459,7 @@ one of them has not tested the thing that was built.
       wrong number that leaks revenue and a wrong number that destroys a child's
       records have the same shape and are not the same bug.
 - [ ] **`??` on an entitlement lookup is a grant with a default's syntax.** For
-      any limit, quota or permission read from data, ask what an unrecognised
+      any limit, quota or permission read from data, ask what an unrecognized
       value produces. A coalescing default answers "when we cannot tell what
       you bought, assume the most generous option". Fail closed instead, and use
       a value that cannot be confused with unlimited.
@@ -478,13 +478,13 @@ one of them has not tested the thing that was built.
       product sells on — a term, a seat count, a plan, a window — ask what
       refuses when it is exceeded or expires. If the answer is "a label
       changes", the promise is not real. And an honest admission in the
-      interface is not a substitute for the behaviour: a documented gap becomes
+      interface is not a substitute for the behavior: a documented gap becomes
       furniture faster than a hidden one.
 - [ ] **A control must be able to do what its label says.** Check every button
       that stays live during an async operation: can Cancel still cancel, can
       Undo still undo? A control that cannot is worse than its absence, because
       it converts the moment a user reconsiders into false reassurance. When an
-      operation becomes uncancellable, say so and take the control away — a
+      operation becomes uncancelable, say so and take the control away — a
       disabled button still reads as one that might come back.
 - [ ] **Covering the screen is a visual act; the tab order does not know about
       paint.** Any `fixed inset-0` overlay needs modal semantics, focus kept
@@ -492,7 +492,7 @@ one of them has not tested the thing that was built.
       invisible to whoever built it — you cannot see focus land on a control the
       overlay is covering — so it has to be tested, not looked at.
 - [ ] **Accessibility does not inherit across a breakpoint.** A responsive
-      variant is a separate implementation. When a keyboard, focus or labelling
+      variant is a separate implementation. When a keyboard, focus or labeling
       fix lands on one side of a media query, check the other: the question is
       not whether it was in scope, but whether it is now worse by comparison.
       The same control must not be operable at one width and not at another.
@@ -574,7 +574,7 @@ one of them has not tested the thing that was built.
 
 - [ ] **Removing a risk conclusion means removing it, not narrowing it.** The
       replacement for "nothing worth stealing" was "enough for a supervised
-      pilot where an adult is in the room" — the same judgement with
+      pilot where an adult is in the room" — the same judgment with
       qualifiers, and the qualifiers were not controls. Say what the build is
       and who decides the rest; a deployment posture the vendor grades is still
       a vendor assurance.
@@ -620,7 +620,7 @@ one of them has not tested the thing that was built.
 - [ ] **A flow is verified at a width only if it was driven at that width.**
       Checking a page's copy at 768×1024 and driving its interaction at 1280×800
       is two different pieces of evidence, and reporting them together reads as
-      one. Say which width each run used, and never summarise "checked at both"
+      one. Say which width each run used, and never summarize "checked at both"
       unless both were exercised end to end.
 
 - [ ] **Open the dialog; do not grep for it.** A sweep for "stops working
@@ -632,7 +632,7 @@ one of them has not tested the thing that was built.
 - [ ] **An extraction with a fallback is not an extraction.** `match(...) ?? copy`
       quietly turns a precise assertion into a search of the whole file, and the
       file usually contains the required phrase somewhere honest — a note, a
-      heading, a neighbouring prop — so the test passes while the thing it names
+      heading, a neighboring prop — so the test passes while the thing it names
       has regressed. Anchor to the one string, substitute interpolations, assert
       exactly one match, and let extraction failure fail the test. Character
       classes are where this bites: `[^`"}]*` stops dead at the `}` of a
@@ -643,7 +643,7 @@ one of them has not tested the thing that was built.
       refused new joins, while sessions already issued carried on — so the
       product billed as if the class were closed and behaved as if it were open.
       For every "inactive", "archived" or "suspended" flag, ask which resolver
-      reads it, and check the one that authorises requests, not only the ones
+      reads it, and check the one that authorizes requests, not only the ones
       that build lists.
 - [ ] **Reversing a state must not resurrect the credentials it revoked.**
       Closing access is only closed if reopening does not silently reinstate
@@ -743,7 +743,7 @@ one of them has not tested the thing that was built.
       A helper reading `ORDER BY created_at LIMIT 1` silently measured the
       control school instead of the one under test, and reported no change where
       there was a nine-month one. Read by id in any test that deliberately
-      creates a neighbour.
+      creates a neighbor.
 
 - [ ] **Prove the child-facing consequence through the child-facing endpoint.**
       Asserting that a settings column rolled back says nothing about what a

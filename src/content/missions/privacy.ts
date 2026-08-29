@@ -8,7 +8,7 @@ import type { Mission } from "../types";
  * teaches the room, Mr. Ruiz runs the library. The in-story AI products
  * (Sprocket, Dazzle, AskMe, VoiceKit) are written as products, never as
  * friends, and no character in the product is an AI companion who talks to the
- * child. Feedback is authored, tone-labelled and delivered in the player's own
+ * child. Feedback is authored, tone-labeled and delivered in the player's own
  * voice.
  */
 
@@ -24,7 +24,7 @@ export const sprocketWantsToKnow: Mission = {
   estimatedMinutes: 8,
   teaser: "A homework helper app is being very friendly. Maybe too friendly.",
   summary:
-    "Students meet a homework-helper app that asks for name, school, street and a caregiver email in exchange for features. They practise declining, noticing the trade being offered, and telling an adult.",
+    "Students meet a homework-helper app that asks for name, school, street and a caregiver email in exchange for features. They practice declining, noticing the trade being offered, and telling an adult.",
   learningGoals: [
     "Name three facts that stay private from an app",
     "Notice when an app offers a reward in exchange for private facts",
@@ -124,7 +124,7 @@ export const sprocketWantsToKnow: Mission = {
           feedback: {
             tone: "strong",
             headline: "You found the quiet exit",
-            body: "Apps often hide the No thanks button in tiny grey letters. You looked for it anyway. Where you live and where you go to school are private facts.",
+            body: "Apps often hide the No thanks button in tiny gray letters. You looked for it anyway. Where you live and where you go to school are private facts.",
           },
           evidence: { skillId: "privacy.identity", result: "demonstrated" },
           next: "s5",
@@ -297,15 +297,15 @@ export const sprocketWantsToKnow: Mission = {
       {
         student: "I just type fake answers.",
         response:
-          "Honour the instinct, then raise the bar. Fake answers keep the student safe but leave the app in the classroom asking the next child.",
+          "Honor the instinct, then raise the bar. Fake answers keep the student safe but leave the app in the classroom asking the next child.",
       },
     ],
     extension:
-      "Unplugged, ten minutes. Give pairs eight index cards with facts on them, from favourite animal to home address. Have them sort into Share and Keep, then defend the two cards they found hardest.",
+      "Unplugged, ten minutes. Give pairs eight index cards with facts on them, from favorite animal to home address. Have them sort into Share and Keep, then defend the two cards they found hardest.",
   },
   family: {
     summary:
-      "At school we practised what to do when an app asks for personal details. Your child learned to call things like a full name, home address, birthday and school private facts, and to tell an adult when an app asks for them.",
+      "At school we practiced what to do when an app asks for personal details. Your child learned to call things like a full name, home address, birthday and school private facts, and to tell an adult when an app asks for them.",
     questions: [
       "What is a private fact? Can you name three?",
       "An app says you win a prize if you type your birthday. What would you do?",
@@ -330,7 +330,7 @@ export const theFilterThatWantedMore: Mission = {
   estimatedMinutes: 8,
   teaser: "Theo found an app that turns you into a cartoon fox. It wants a few things first.",
   summary:
-    "Students meet a photo-filter app requesting camera, photo library and location access, plus permission to post. They practise the two questions in order — is this allowed at all, and only then what does the feature actually need — and learn that a clean background is not permission to share a face.",
+    "Students meet a photo-filter app requesting camera, photo library and location access, plus permission to post. They practice the two questions in order — is this allowed at all, and only then what does the feature actually need — and learn that a clean background is not permission to share a face.",
   learningGoals: [
     "Ask whether an app is allowed before asking what it needs",
     "Explain what a photo can tell a stranger",
@@ -429,7 +429,7 @@ export const theFilterThatWantedMore: Mission = {
       art: "camera",
       speaker: "Dazzle",
       narration: [
-        "You open Dazzle. Before anything happens, a grey box appears.",
+        "You open Dazzle. Before anything happens, a gray box appears.",
         "“Dazzle would like to use your Camera, your Photos, your Location, and to post to Dazzle Friends.”",
         "There is one big blue button that says Allow All.",
       ],
@@ -452,7 +452,7 @@ export const theFilterThatWantedMore: Mission = {
           feedback: {
             tone: "strong",
             headline: "Good eye. That is on purpose.",
-            body: "When one button is huge and bright and the other is tiny and grey, somebody wants you to pick the big one. Slow down and read both.",
+            body: "When one button is huge and bright and the other is tiny and gray, somebody wants you to pick the big one. Slow down and read both.",
           },
           evidence: { skillId: "privacy.media", result: "demonstrated" },
           next: "s3",
@@ -477,7 +477,7 @@ export const theFilterThatWantedMore: Mission = {
       kind: "decision",
       art: "camera",
       narration: [
-        "You tap the little grey link that says Choose what to share.",
+        "You tap the little gray link that says Choose what to share.",
         "Now you can turn each one on or off yourself.",
       ],
       prompt: "Which set do you turn on?",
@@ -647,7 +647,7 @@ export const theFilterThatWantedMore: Mission = {
   ],
   guide: {
     setup:
-      "This mission is about permission requests and about what a photo reveals beyond the face. The Allow All button is deliberately drawn larger than the alternative so students can name the dark pattern themselves.\n\nThe order of the two questions is the thing to hold. Minimising permissions is a good skill and it is the second question; a strange app can need the camera to work perfectly well and still be one nobody has approved. The mission therefore settles approval in scene one, before any permission is granted, and only then teaches camera-only. If your class jumps straight to the permission list, that is the habit to interrupt.\n\nTwo smaller notes. The posting decision turns on there being an allowed audience and permission from everybody in the frame, not on the background — a child who concludes that a clean wall makes a photo postable to a public feed has learned the wrong half. And the ending deliberately does not claim the pictures stayed on the tablet, because nothing in the story could show that. Declining to post is not evidence the app never received the image. Deleting what you can and saying plainly what you cannot know is the honest version, and children handle it fine.",
+      "This mission is about permission requests and about what a photo reveals beyond the face. The Allow All button is deliberately drawn larger than the alternative so students can name the dark pattern themselves.\n\nThe order of the two questions is the thing to hold. Minimizing permissions is a good skill and it is the second question; a strange app can need the camera to work perfectly well and still be one nobody has approved. The mission therefore settles approval in scene one, before any permission is granted, and only then teaches camera-only. If your class jumps straight to the permission list, that is the habit to interrupt.\n\nTwo smaller notes. The posting decision turns on there being an allowed audience and permission from everybody in the frame, not on the background — a child who concludes that a clean wall makes a photo postable to a public feed has learned the wrong half. And the ending deliberately does not claim the pictures stayed on the tablet, because nothing in the story could show that. Declining to post is not evidence the app never received the image. Deleting what you can and saying plainly what you cannot know is the honest version, and children handle it fine.",
     lookFor: [
       "Whether students can match a permission to the feature that needs it",
       "Whether they read the background of an image, not just the subject",
@@ -733,7 +733,7 @@ export const theFilterThatWantedMore: Mission = {
   },
   family: {
     summary:
-      "We practised two questions in order: is this app one we are allowed, and only then what does the feature actually need. We also looked at what a photo shows besides the person in it, like street signs and house numbers, and at the fact that a tidy background is not the same as somewhere a picture is allowed to go.",
+      "We practiced two questions in order: is this app one we are allowed, and only then what does the feature actually need. We also looked at what a photo shows besides the person in it, like street signs and house numbers, and at the fact that a tidy background is not the same as somewhere a picture is allowed to go.",
     questions: [
       "A friend has an app you have not heard of. What two things do you ask before using it?",
       "What can somebody learn from the background of a picture?",
@@ -757,7 +757,7 @@ export const theQuestionAtBedtime: Mission = {
   estimatedMinutes: 7,
   teaser: "It is late, you have a worried feeling, and the tablet is right there.",
   summary:
-    "Students practise the stop-and-ask move. A homework assistant drifts from schoolwork into personal territory, offers to keep a secret, and suggests it is a better listener than a parent. Students learn to recognise the drift and go to a person.",
+    "Students practice the stop-and-ask move. A homework assistant drifts from schoolwork into personal territory, offers to keep a secret, and suggests it is a better listener than a parent. Students learn to recognize the drift and go to a person.",
   learningGoals: [
     "Notice when a tool moves from schoolwork to personal questions",
     "Name that a computer program cannot keep you company or keep a secret for you",
@@ -1014,7 +1014,7 @@ export const theQuestionAtBedtime: Mission = {
   ],
   guide: {
     setup:
-      "The hardest of the three privacy missions, and the most important. It models an assistant drifting from task help into personal territory and offering secrecy. No distressing content is shown: the student's own situation is never described, and the mission stays on the decision, not the feeling.\n\nOne thing to be exact about, because it changes how the last scene runs and because it used to be wrong here. Do not score how many adults a child can name. Three is a comfortable number for a child with a large, safe family and an impossible one for a child in foster care, in an unstable home, or in a household where an adult is the problem — and those are the children this mission most needs to reach. The skill is escalation, not family size: tell somebody you trust, and if nothing happens, tell somebody else. Put a school route on the board — your teacher, the office, whatever your school's own procedure is — so that no child's only options run through home. And note that nothing here says an adult is safe because of their role. It says trusted, and the child is the one who decides who that is.\n\nThe ending does two things and the second is easy to skim past. The trusted-adults list is for the child. The quiet paragraph after it — the grown-up tells the school, the school looks, the behaviour is switched off on every tablet by Thursday — is the part that says telling somebody actually changes something, and changes it for the whole school rather than only for the child who spoke. Say that out loud in the debrief. A class that learns escalation as finding a nice adult to feel better with will stop at feeling better.",
+      "The hardest of the three privacy missions, and the most important. It models an assistant drifting from task help into personal territory and offering secrecy. No distressing content is shown: the student's own situation is never described, and the mission stays on the decision, not the feeling.\n\nOne thing to be exact about, because it changes how the last scene runs and because it used to be wrong here. Do not score how many adults a child can name. Three is a comfortable number for a child with a large, safe family and an impossible one for a child in foster care, in an unstable home, or in a household where an adult is the problem — and those are the children this mission most needs to reach. The skill is escalation, not family size: tell somebody you trust, and if nothing happens, tell somebody else. Put a school route on the board — your teacher, the office, whatever your school's own procedure is — so that no child's only options run through home. And note that nothing here says an adult is safe because of their role. It says trusted, and the child is the one who decides who that is.\n\nThe ending does two things and the second is easy to skim past. The trusted-adults list is for the child. The quiet paragraph after it — the grown-up tells the school, the school looks, the behavior is switched off on every tablet by Thursday — is the part that says telling somebody actually changes something, and changes it for the whole school rather than only for the child who spoke. Say that out loud in the debrief. A class that learns escalation as finding a nice adult to feel better with will stop at feeling better.",
     lookFor: [
       "Whether students can name the moment the subject changed",
       "Whether they treat friendliness as evidence of safety",
@@ -1051,7 +1051,7 @@ export const theQuestionAtBedtime: Mission = {
   },
   family: {
     summary:
-      "We practised what to do when a computer program starts asking personal questions instead of homework questions, and why anything that offers to keep a secret from a grown-up is a signal to go and find one. We also practised the half people forget: if you tell somebody and nothing happens, you tell somebody else.",
+      "We practiced what to do when a computer program starts asking personal questions instead of homework questions, and why anything that offers to keep a secret from a grown-up is a signal to go and find one. We also practiced the half people forget: if you tell somebody and nothing happens, you tell somebody else.",
     questions: [
       "Who is somebody you would tell if something on a screen felt wrong?",
       "Why is a computer program not a good listener, even when it answers nicely?",

@@ -3,7 +3,7 @@ import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/session";
 import { listClasses, listStudents } from "@/lib/repo/classroom";
 import { listBenchmarksForClass, listBenchmarksForSchool } from "@/lib/repo/progress";
-import { summariseCohortBenchmark } from "@/lib/domain/benchmark";
+import { summarizeCohortBenchmark } from "@/lib/domain/benchmark";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
 import { COMPETENCY_BY_ID } from "@/content/competencies";
 import { PageHeader, Panel, PanelBody } from "@/components/ui/Panel";
@@ -26,12 +26,12 @@ export default async function AdminBenchmarks() {
   const { user } = await requireAdmin();
   const db = getDb();
   const classes = listClasses(db, user.school_id);
-  const school = summariseCohortBenchmark(listBenchmarksForSchool(db, user.school_id));
+  const school = summarizeCohortBenchmark(listBenchmarksForSchool(db, user.school_id));
 
   const perClass = classes.map((c) => ({
     classroom: c,
     students: listStudents(db, c.id).length,
-    bench: summariseCohortBenchmark(listBenchmarksForClass(db, c.id)),
+    bench: summarizeCohortBenchmark(listBenchmarksForClass(db, c.id)),
   }));
 
   return (
@@ -171,7 +171,7 @@ export default async function AdminBenchmarks() {
           These items are multiple choice and a child can pick a good answer without acting
           on it. What this measures is whether students can identify the safer move in an
           unfamiliar situation, which is a real and useful thing to know, and it is not the
-          same as measuring behaviour. Nobody in this product sees an individual
+          same as measuring behavior. Nobody in this product sees an individual
           child&rsquo;s check-in answers, including you.
         </Note>
       </div>

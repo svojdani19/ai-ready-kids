@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getDb } from "@/lib/db";
 import { requireStudent } from "@/lib/auth/session";
 import { listAttemptsForStudent } from "@/lib/repo/progress";
-import { summariseStudent } from "@/lib/domain/evidence";
+import { summarizeStudent } from "@/lib/domain/evidence";
 import { COMPETENCIES } from "@/content/competencies";
 import { FOUNDATIONS, MISSIONS, foundationsForGrade } from "@/content/missions";
 import { BadgeSticker } from "@/components/art/BadgeSticker";
@@ -18,11 +18,11 @@ const LANE: Record<string, string> = {
 
 export default async function BadgesPage() {
   const { student, classroom } = await requireStudent();
-  const summary = summariseStudent(listAttemptsForStudent(getDb(), student.id));
+  const summary = summarizeStudent(listAttemptsForStudent(getDb(), student.id));
   const earned = new Set(summary.badgeIds);
 
   // Only this class's First Look track, or a grade 1 child would be shown three
-  // greyed-out badges from the grades 3 to 5 sessions they will never be
+  // grayed-out badges from the grades 3 to 5 sessions they will never be
   // offered — a locked row with no way to unlock it, which is exactly what
   // this wall is meant not to be. A session from the other track still appears
   // if their teacher assigned it and they finished it.

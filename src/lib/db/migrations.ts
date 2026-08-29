@@ -150,14 +150,14 @@ function hasNone(db: Db, forbidden: [string, string][]): boolean {
  * claimed to be up to date and failed on the first query touching a new column.
  *
  * So the shape is inspected rather than inferred. Anything this cannot
- * positively recognise fails closed: it is better to refuse to open a database
+ * positively recognize fails closed: it is better to refuse to open a database
  * than to stamp a version onto a file whose contents nobody has established.
  */
 export type SchemaState =
   | { kind: "empty" }
   | { kind: "versioned"; version: number }
   | { kind: "unversioned"; version: number }
-  | { kind: "unrecognised"; reason: string };
+  | { kind: "unrecognized"; reason: string };
 
 export function classifySchema(db: Db): SchemaState {
   const tables = tableNames(db);
@@ -166,7 +166,7 @@ export function classifySchema(db: Db): SchemaState {
   const missing = CORE_TABLES.filter((t) => !tables.includes(t));
   if (missing.length > 0) {
     return {
-      kind: "unrecognised",
+      kind: "unrecognized",
       reason: `the file has tables in it but is missing ${missing.join(", ")}, so it is not a shape this version knows`,
     };
   }
@@ -183,15 +183,15 @@ export function classifySchema(db: Db): SchemaState {
   if (stored !== undefined) {
     // Strict: no decimals, no signs, no whitespace, no "2abc".
     if (!/^\d+$/.test(stored.trim())) {
-      return { kind: "unrecognised", reason: `the recorded schema version is "${stored}", which is not a whole number` };
+      return { kind: "unrecognized", reason: `the recorded schema version is "${stored}", which is not a whole number` };
     }
     const version = Number(stored.trim());
     if (version < 1) {
-      return { kind: "unrecognised", reason: `the recorded schema version is ${version}` };
+      return { kind: "unrecognized", reason: `the recorded schema version is ${version}` };
     }
     if (version > LATEST_VERSION) {
       return {
-        kind: "unrecognised",
+        kind: "unrecognized",
         reason: `the database is at schema version ${version} and this build only understands ${LATEST_VERSION}, so it was written by a newer version of the software`,
       };
     }
@@ -199,7 +199,7 @@ export function classifySchema(db: Db): SchemaState {
     const shapeMatches = version === 1 ? isV1 : version === 2 ? isV2 : false;
     if (!shapeMatches) {
       return {
-        kind: "unrecognised",
+        kind: "unrecognized",
         reason: `the database records schema version ${version} but its tables do not have that shape`,
       };
     }
@@ -210,7 +210,7 @@ export function classifySchema(db: Db): SchemaState {
   if (isV2) return { kind: "unversioned", version: 2 };
   if (isV1) return { kind: "unversioned", version: 1 };
   return {
-    kind: "unrecognised",
+    kind: "unrecognized",
     reason: "the database has no recorded schema version and its shape does not match any version this build knows",
   };
 }

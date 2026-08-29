@@ -181,7 +181,7 @@ describe("a lapsed school is read-only for instruction and nothing else", () => 
 
   it("tells a child nothing about money", () => {
     expect(LAPSED_STUDENT_MESSAGE).toBe("Your class isn't open right now. Ask your teacher.");
-    for (const word of ["subscription", "renew", "invoice", "pay", "licence", "license", "$"]) {
+    for (const word of ["subscription", "renew", "invoice", "pay", "license", "license", "$"]) {
       expect(LAPSED_STUDENT_MESSAGE.toLowerCase()).not.toContain(word);
     }
     // And staff are told the fact and the way out, without being told to panic.
@@ -344,7 +344,7 @@ describe("a join grant issued before the lapse cannot finish afterwards", () => 
     // Order matters twice over. The check must come after the grant, class and
     // code have been validated — so it cannot leak that a class exists — and
     // before the session is written.
-    const codeCheck = body.indexOf("normaliseJoinCode(classroom.join_code) !== grant.code");
+    const codeCheck = body.indexOf("normalizeJoinCode(classroom.join_code) !== grant.code");
     const lapseCheck = body.indexOf("schoolHasLapsed");
     const sessionWrite = body.indexOf("writeSession(");
     expect(codeCheck).toBeGreaterThan(-1);
@@ -424,14 +424,14 @@ describe("a join grant issued before the lapse cannot finish afterwards", () => 
       .replace(/\/\*[\s\S]*?\*\//g, "")
       .replace(/(^|\s)\/\/[^\n]*/g, "$1")
       .replace(/^import[^\n]*$/gm, "");
-    for (const word of ["subscription", "renew", "invoice", "licence", "$"]) {
+    for (const word of ["subscription", "renew", "invoice", "license", "$"]) {
       expect(copy.toLowerCase()).not.toContain(word);
     }
   });
 
   it("classifies chooseStudent as gated, for what it actually does", () => {
     // The mis-classification was the defect. Naming it here so the description
-    // has to stay true to the behaviour rather than to a first impression.
+    // has to stay true to the behavior rather than to a first impression.
     const inventory = readFileSync(join(process.cwd(), "tests/subscription-lapse.test.ts"), "utf8");
     const allowedBlock = inventory.slice(
       inventory.indexOf("const ALLOWED"),
@@ -470,10 +470,10 @@ describe("a lapsed restore refuses in the same words as the others", () => {
     expect(body).toContain("asExpectedError(error)");
   });
 
-  it("still handles the licence refusal it already had", () => {
+  it("still handles the license refusal it already had", () => {
     const body = bodyOf("restoreClassAction");
-    expect(body).toContain("RestoreExceedsLicenceError");
-    expect(body).toContain('action: "class.restore_blocked_by_licence"');
+    expect(body).toContain("RestoreExceedsLicenseError");
+    expect(body).toContain('action: "class.restore_blocked_by_license"');
     // The success audit is still only on the success path.
     expect(body).toContain('action: "class.restored"');
   });
@@ -572,7 +572,7 @@ describe("a term that cannot be read is neither active nor lapsed", () => {
     expect(UNVERIFIED_WRITE_REFUSAL).not.toMatch(/subscription has ended|lapsed|overdue/i);
   });
 
-  it("leaves valid active and lapsed behaviour exactly as it was", () => {
+  it("leaves valid active and lapsed behavior exactly as it was", () => {
     const school = { term_starts_on: "2025-09-01", term_renews_on: "2026-09-01" };
     expect(subscriptionState(school, SEP_01)).toEqual({ kind: "active", renewsOn: "2026-09-01" });
     expect(subscriptionState(school, SEP_02)).toEqual({ kind: "lapsed", renewedOn: "2026-09-01" });
@@ -874,7 +874,7 @@ describe("a paused term does not pause retention, and the copy says so", () => {
       expect(schoolInstructionClosed(db, DEMO_SCHOOL, LAPSED)).not.toBeNull();
       expect(() => assertSubscriptionActive(db, DEMO_SCHOOL, LAPSED)).toThrow();
 
-      // ...and the purge deletes anyway, which is the behaviour sprint 49 chose
+      // ...and the purge deletes anyway, which is the behavior sprint 49 chose
       // and the copy was contradicting.
       const before = (db.prepare("SELECT COUNT(*) AS n FROM classes").get() as { n: number }).n;
       const result = runScheduledPurge(db, LAPSED);

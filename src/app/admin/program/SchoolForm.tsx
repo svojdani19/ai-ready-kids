@@ -43,7 +43,7 @@ export function SchoolForm({ school }: { school: School }) {
           className={`${inputClass} uppercase`}
         />
       </Field>
-      <Field label="Accent colour" htmlFor="brand_accent">
+      <Field label="Accent color" htmlFor="brand_accent">
         <select
           id="brand_accent"
           name="brand_accent"
@@ -57,7 +57,7 @@ export function SchoolForm({ school }: { school: School }) {
           ))}
         </select>
       </Field>
-      <Field label="Programme contact" htmlFor="contact_name">
+      <Field label="Program contact" htmlFor="contact_name">
         <input
           id="contact_name"
           name="contact_name"

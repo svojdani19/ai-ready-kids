@@ -25,7 +25,7 @@ const YEAR_LABEL = /^(\d{4})-(\d{4})$/;
  *
  * The UTC round-trip is what rejects an impossible day: `2026-02-30` parses to
  * March 2nd and does not stringify back to what was written. A real leap day
- * survives it. Non-coercive — no `trim`, no `Date.parse`, no normalising a
+ * survives it. Non-coercive — no `trim`, no `Date.parse`, no normalizing a
  * nearly right value into a right one.
  */
 export function isCalendarDate(value: unknown): value is string {
@@ -66,7 +66,7 @@ export type AcademicDates = { year: string; startsOn: string; endsOn: string };
  * The span check is what makes the label and the dates one fact rather than
  * three fields: a year called 2025-2026 that runs from 2019 to 2031 is not a
  * school year, and every cohort created under it would snapshot a deletion date
- * from a calendar nobody recognises.
+ * from a calendar nobody recognizes.
  */
 export type AcademicProblem =
   | "label"
@@ -158,7 +158,7 @@ export function academicSettingsState(school: {
  * Retention is per cohort and always has been: a class carries its own
  * snapshotted `year_ends_on`, and `runScheduledPurge` deliberately keeps
  * deleting cohorts whose own date is valid and past — that partial-purge
- * behaviour is exactly what sprint 60 built. What an unreadable school calendar
+ * behavior is exactly what sprint 60 built. What an unreadable school calendar
  * blocks is narrower: the rollover preview, and the current-year summary date
  * on the Data page. A cohort without a usable date of its own is blocked too,
  * and stays that way.

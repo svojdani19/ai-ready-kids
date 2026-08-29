@@ -42,7 +42,7 @@ export default function ApproachPage() {
             {
               title: "What you can claim",
               tone: "grape",
-              body: "That your students have practised specific decisions and can name them. Measured in the fall, measured again in the spring, on scenarios no mission uses.",
+              body: "That your students have practiced specific decisions and can name them. Measured in the fall, measured again in the spring, on scenarios no mission uses.",
             },
           ]}
         />

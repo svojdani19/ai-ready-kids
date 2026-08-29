@@ -49,7 +49,7 @@ export default async function AdminReport() {
         <header className="flex items-start justify-between gap-6 border-b-2 border-sand pb-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
-              AI Ready Kids · Annual programme report
+              AI Ready Kids · Annual program report
             </p>
             <h1 className="mt-1.5 font-display text-3xl leading-tight text-ink">
               {report.school.name}
@@ -238,9 +238,9 @@ export default async function AdminReport() {
         </section>
 
         <footer className="mt-8 border-t border-sand pt-4 text-xs leading-relaxed text-ink-faint">
-          AI Ready Kids annual programme report · {report.school.name} ·{" "}
+          AI Ready Kids annual program report · {report.school.name} ·{" "}
           {report.school.schoolYear}. This document describes demonstrated competencies from
-          an authored curriculum. It is not a behavioural assessment of any child and it is
+          an authored curriculum. It is not a behavioral assessment of any child and it is
           not a legal compliance certification.
         </footer>
       </article>

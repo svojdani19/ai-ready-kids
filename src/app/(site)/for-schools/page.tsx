@@ -56,7 +56,7 @@ const ROLES = [
     tone: "grape" as const,
     lede: "One page per mission, in plain language, with nothing to sign up for.",
     points: [
-      `A printable take-home for each of the ${ALL_SESSIONS.length} sessions and missions: what was practised, three questions, one thing to try.`,
+      `A printable take-home for each of the ${ALL_SESSIONS.length} sessions and missions: what was practiced, three questions, one thing to try.`,
       "No parent account, because creating one would mean collecting a parent.",
       "Public links with nothing behind them to log into and nothing on them to submit.",
       "One sentence per mission worth keeping, like “Sounding sure is not the same as being right.”",

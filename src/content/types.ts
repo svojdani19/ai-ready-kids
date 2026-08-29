@@ -175,7 +175,7 @@ export interface FamilyTakeHome {
 }
 
 /**
- * Which half of the programme a session belongs to.
+ * Which half of the program a session belongs to.
  *
  * `core` is the twenty-seven assessed missions: they rehearse a decision and
  * record evidence against one of the nine skills.
@@ -215,7 +215,7 @@ export interface Mission {
    * Core: the competency this mission is assessed against.
    *
    * Foundation: the competency the session opens the door to. Nothing is
-   * assessed, so this is a routing and colour decision, not a claim — it is
+   * assessed, so this is a routing and color decision, not a claim — it is
    * what puts the session in the right lane on the map and gives its badge a
    * glyph from the right family.
    */

@@ -82,7 +82,7 @@ describe("the deletion promise matches the DELETE statements that exist", () => 
   it("cascades a class exactly as far as the copy says, and no further", () => {
     const { db, cleanup } = createTestDb();
     try {
-      // The cascade is a foreign-key behaviour, so the test says out loud that
+      // The cascade is a foreign-key behavior, so the test says out loud that
       // foreign keys are on rather than assuming the connection enabled them.
       const [fk] = db.prepare("PRAGMA foreign_keys").all() as { foreign_keys: number }[];
       expect(fk.foreign_keys).toBe(1);

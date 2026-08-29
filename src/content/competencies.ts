@@ -12,7 +12,7 @@ export const COMPETENCIES: Competency[] = [
     formalName: "Privacy and Personal Information",
     kidBlurb: "Know what to keep to yourself when a computer asks you things.",
     educatorBlurb:
-      "Students recognise requests for identifying information, images and location, and practise declining and escalating to a trusted adult.",
+      "Students recognize requests for identifying information, images and location, and practice declining and escalating to a trusted adult.",
     accent: "pine",
     skills: [
       {

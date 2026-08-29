@@ -5,7 +5,7 @@ import type { Db } from "@/lib/db";
  * What a school has bought, and what it is currently using.
  *
  * Until sprint 42 `schools.licensed_students` was a number an administrator
- * could type into a form labelled "Request a quote" — the action wrote it
+ * could type into a form labeled "Request a quote" — the action wrote it
  * straight to the row — and nothing anywhere read it back. So the seat count
  * was simultaneously self-editable and unenforced: a school could raise its own
  * paid entitlement, and could also enrol past it without either number
@@ -15,7 +15,7 @@ import type { Db } from "@/lib/db";
  *
  * The fix is in two halves and both are needed. The quote request records an
  * intent and nothing else, so the licensed figure is only ever changed by the
- * vendor. And enrolment is checked against it at the point a row is written,
+ * vendor. And enrollment is checked against it at the point a row is written,
  * so the figure means something.
  */
 
@@ -49,11 +49,11 @@ export function isKnownPlan(plan: string): plan is KnownPlan {
  * The plan's name, or an admission that it has none.
  *
  * Sprint 53: the administrator page rendered this as a ternary ending in
- * `: "Classroom"`, so **every** unrecognised value displayed as the Classroom
+ * `: "Classroom"`, so **every** unrecognized value displayed as the Classroom
  * plan. Combined with `ACTIVE_CLASS_LIMIT[plan] ?? null` — which gave the same
  * value no limit at all — a typo like `"classrooms"` from a migration or a
  * vendor edit showed an administrator the cheapest plan while granting the most
- * expensive behaviour. The paid gate failed open exactly where the entitlement
+ * expensive behavior. The paid gate failed open exactly where the entitlement
  * data was malformed, which is the one place it most needs to hold.
  */
 export const PLAN_LABEL: Record<KnownPlan, string> = {
@@ -76,18 +76,18 @@ export function planLabel(plan: string): string {
  * safe direction — no new or restored classrooms — and changes nothing, because
  * a bad plan value is not evidence about which classes a school should have.
  */
-export class PlanNotRecognisedError extends Error {
+export class PlanNotRecognizedError extends Error {
   readonly plan: string;
 
   constructor(plan: string) {
-    super(`Unrecognised plan: ${JSON.stringify(plan)}.`);
-    this.name = "PlanNotRecognisedError";
+    super(`Unrecognized plan: ${JSON.stringify(plan)}.`);
+    this.name = "PlanNotRecognizedError";
     this.plan = plan;
   }
 }
 
 /** Shown when the plan cannot be verified. Never mentions a specific plan. */
-export function planNotRecognisedRefusal(
+export function planNotRecognizedRefusal(
   action: "create" | "restore",
   contactName: string,
 ): string {
@@ -151,7 +151,7 @@ export interface ClassroomAllowance {
   active: number;
   /**
    * `null` means this plan does not limit rooms — and it is only ever reached
-   * for a plan this build recognises. An unknown plan sets `recognised: false`
+   * for a plan this build recognizes. An unknown plan sets `recognized: false`
    * and `limit: 0`, so no lookup miss can be read as "no limit". Deliberately
    * not written with `??`: that operator turns an absent entitlement into an
    * unlimited one, which is the bug this replaced.
@@ -159,7 +159,7 @@ export interface ClassroomAllowance {
   limit: number | null;
   plan: string;
   /** False when `schools.plan` is not a plan this build sells. */
-  recognised: boolean;
+  recognized: boolean;
 }
 
 export function classroomAllowance(db: Db, schoolId: string): ClassroomAllowance {
@@ -172,9 +172,9 @@ export function classroomAllowance(db: Db, schoolId: string): ClassroomAllowance
     // Zero, not null. An unverifiable entitlement grants nothing new, and the
     // existing classes are untouched — `active` is reported as it is, which is
     // how the pages can say "3 active, no new ones" without inventing a plan.
-    return { active, limit: 0, plan: school.plan, recognised: false };
+    return { active, limit: 0, plan: school.plan, recognized: false };
   }
-  return { active, limit: ACTIVE_CLASS_LIMIT[school.plan], plan: school.plan, recognised: true };
+  return { active, limit: ACTIVE_CLASS_LIMIT[school.plan], plan: school.plan, recognized: true };
 }
 
 /**
@@ -186,26 +186,26 @@ export function classroomAllowance(db: Db, schoolId: string): ClassroomAllowance
  * deletes, archives or picks a class; it refuses the next one and says why.
  */
 export function assertRoomForActiveClass(db: Db, schoolId: string): void {
-  const { active, limit, plan, recognised } = classroomAllowance(db, schoolId);
+  const { active, limit, plan, recognized } = classroomAllowance(db, schoolId);
   // An unverifiable plan fails closed. Sprint 34 settled this direction for an
-  // unrecognised database and the reasoning is the same: refusing leaves
+  // unrecognized database and the reasoning is the same: refusing leaves
   // everything readable and recoverable, while guessing grants something
   // nobody agreed to sell.
-  if (!recognised) throw new PlanNotRecognisedError(plan);
+  if (!recognized) throw new PlanNotRecognizedError(plan);
   if (limit !== null && active >= limit) {
     throw new ClassroomLimitError(plan, active, limit);
   }
 }
 
 /**
- * The seat counts this product recognises as a contract number.
+ * The seat counts this product recognizes as a contract number.
  *
  * `schools.licensed_students` is unconstrained, and the column's INTEGER
  * affinity does not stop SQLite storing a float or text. Until sprint 56 every
  * value was trusted as a purchased entitlement: `-5` showed a buyer "90 of -5
- * licensed", told teachers the school had exceeded a negative licence, was
+ * licensed", told teachers the school had exceeded a negative license, was
  * repeated back in quote messages as the current agreement, and misclassified
- * every enrolment as an overage. `5001` granted capacity outside the range the
+ * every enrollment as an overage. `5001` granted capacity outside the range the
  * product's own quote form accepts, and presented it as bought.
  *
  * The range is exactly the one `requestPlanChangeAction` already enforces, and
@@ -221,7 +221,7 @@ export function assertRoomForActiveClass(db: Db, schoolId: string): void {
 export const MIN_LICENSED_STUDENTS = 1;
 export const MAX_LICENSED_STUDENTS = 5000;
 
-export function isRecognisedSeatCount(seats: unknown): seats is number {
+export function isRecognizedSeatCount(seats: unknown): seats is number {
   return (
     typeof seats === "number" &&
     Number.isInteger(seats) &&
@@ -232,38 +232,38 @@ export function isRecognisedSeatCount(seats: unknown): seats is number {
 
 /**
  * Raised when the stored seat count is not a contract number this product
- * recognises. Distinct from `LicenceExceededError`: the school has not
+ * recognizes. Distinct from `LicenseExceededError`: the school has not
  * exceeded anything, its account record is wrong, and telling a teacher they
- * are over a licence would be false as well as unhelpful.
+ * are over a license would be false as well as unhelpful.
  */
-export class LicenceNotRecognisedError extends Error {
+export class LicenseNotRecognizedError extends Error {
   constructor() {
-    super("The seat licence on this school is not a recognised number.");
-    this.name = "LicenceNotRecognisedError";
+    super("The seat license on this school is not a recognized number.");
+    this.name = "LicenseNotRecognizedError";
   }
 }
 
 /** Shown to staff. Never repeats the malformed value back to them. */
-export function licenceNotRecognisedRefusal(
+export function licenseNotRecognizedRefusal(
   action: "enrol" | "restore",
   contactName: string,
 ): string {
   const verb = action === "enrol" ? "Adding a student" : "Restoring this class";
   return (
-    `This school's seat licence needs configuration, so no new students can be enrolled. ` +
+    `This school's seat license needs configuration, so no new students can be enrolled. ` +
     `${verb} has been declined and nothing has been changed — every class, roster and record ` +
-    `is exactly as it was. Ask ${contactName} to have the seat licence corrected on the account.`
+    `is exactly as it was. Ask ${contactName} to have the seat license corrected on the account.`
   );
 }
 
-/** Raised when an enrolment would take a school past its licensed seats. */
-export class LicenceExceededError extends Error {
+/** Raised when an enrollment would take a school past its licensed seats. */
+export class LicenseExceededError extends Error {
   readonly used: number;
   readonly licensed: number;
 
   constructor(used: number, licensed: number) {
     super(`Licensed seats used: ${used} of ${licensed}.`);
-    this.name = "LicenceExceededError";
+    this.name = "LicenseExceededError";
     this.used = used;
     this.licensed = licensed;
   }
@@ -294,24 +294,24 @@ export function countActiveRosterStudents(db: Db, schoolId: string): number {
 /**
  * Raised when restoring an archived cohort would take a school past its seats.
  *
- * Extends `LicenceExceededError` so a caller that only cares "the licence said
+ * Extends `LicenseExceededError` so a caller that only cares "the license said
  * no" still catches it, and carries the roster being brought back, because an
  * administrator cannot act on "you are over" without knowing by how much.
  */
-export class RestoreExceedsLicenceError extends LicenceExceededError {
+export class RestoreExceedsLicenseError extends LicenseExceededError {
   /** Children on the archived roster that restoring would reactivate. */
   readonly roster: number;
 
   constructor(used: number, roster: number, licensed: number) {
     super(used, licensed);
-    this.name = "RestoreExceedsLicenceError";
-    this.message = `Restoring ${roster} students would take ${used} of ${licensed} past the licence.`;
+    this.name = "RestoreExceedsLicenseError";
+    this.message = `Restoring ${roster} students would take ${used} of ${licensed} past the license.`;
     this.roster = roster;
   }
 }
 
 /**
- * Seats in use, and — only when the stored number is a recognised contract
+ * Seats in use, and — only when the stored number is a recognized contract
  * value — what was bought and what is left.
  *
  * Discriminated on purpose. The old shape returned `licensed` and `remaining`
@@ -319,17 +319,17 @@ export class RestoreExceedsLicenceError extends LicenceExceededError {
  * against, and none of them could tell that the number meant nothing. `used` is
  * always real: it is counted from rosters, not read from the account.
  */
-export type LicenceStatus =
-  | { recognised: true; used: number; licensed: number; remaining: number }
-  | { recognised: false; used: number };
+export type LicenseStatus =
+  | { recognized: true; used: number; licensed: number; remaining: number }
+  | { recognized: false; used: number };
 
-export function licenceStatus(db: Db, schoolId: string): LicenceStatus {
+export function licenseStatus(db: Db, schoolId: string): LicenseStatus {
   const row = db.prepare("SELECT licensed_students AS n FROM schools WHERE id = ?").get(schoolId) as
     | { n: unknown }
     | undefined;
   if (row === undefined) throw new Error("Unknown school");
   const used = countActiveRosterStudents(db, schoolId);
-  if (!isRecognisedSeatCount(row.n)) return { recognised: false, used };
+  if (!isRecognizedSeatCount(row.n)) return { recognized: false, used };
   const licensed = row.n;
-  return { recognised: true, used, licensed, remaining: Math.max(0, licensed - used) };
+  return { recognized: true, used, licensed, remaining: Math.max(0, licensed - used) };
 }

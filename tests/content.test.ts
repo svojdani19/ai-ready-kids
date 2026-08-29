@@ -76,7 +76,7 @@ describe("mission content integrity", () => {
 
   it("uses unique slugs, ids, orders and badges", () => {
     const unique = (values: string[]) => new Set(values).size === values.length;
-    // `order` is unique within a segment, not across the catalogue: First Look
+    // `order` is unique within a segment, not across the catalog: First Look
     // session 1 and mission 1 are both called 1 on screen, in different lanes.
     // Slugs, ids and badge ids have to be unique across everything, because
     // the route, the attempt row and the badge wall are all shared.
@@ -441,7 +441,7 @@ describe("permission is scoped, not recalled", () => {
 describe("absence of local evidence is not evidence of absence", () => {
   const book = MISSION_BY_SLUG["the-book-that-was-not-there"];
 
-  it("concludes cannot use it yet from one catalogue, not it does not exist", () => {
+  it("concludes cannot use it yet from one catalog, not it does not exist", () => {
     const decision = book.scenes.find((scene) => scene.id === "s3")!;
     const strong = decision.choices!.filter((c) => c.feedback.tone === "strong");
     const strongCopy = strong.map((c) => c.label).join(" ").toLowerCase();
@@ -484,7 +484,7 @@ describe("absence of local evidence is not evidence of absence", () => {
 
   it("constrains the extension to preverified titles and says what a miss proves", () => {
     const extension = book.guide.extension.toLowerCase();
-    expect(extension).toMatch(/confirmed are in your catalogue|already looked up/);
+    expect(extension).toMatch(/confirmed are in your catalog|already looked up/);
     expect(extension).toMatch(/cannot use it, not that nobody wrote it/);
     // And the family sheet must not claim no library anywhere had it.
     expect(book.family.summary.toLowerCase()).not.toMatch(/no library anywhere/);
@@ -505,10 +505,10 @@ describe("a preview is not a broadcast", () => {
 
   it("shows permission, preview and live as three distinct states", () => {
     // The camera permission already existed and was given for something else,
-    // which is the realistic case and a lesson in its own right.
+    // which is the realiztic case and a lesson in its own right.
     expect(studentCopy).toMatch(/gave it the camera months ago/);
     expect(studentCopy).toMatch(/it already has the camera/);
-    // Both states are labelled on screen, so the test is observable.
+    // Both states are labeled on screen, so the test is observable.
     expect(studentCopy).toMatch(/preview — only you can see this/);
     expect(studentCopy).toMatch(/8 players can see this now/);
   });
@@ -627,7 +627,7 @@ describe("provenance is asked of everybody, never inferred from a person", () =>
     const surprise = notice.choices!.find((c) => /surprising/i.test(c.label))!;
     expect(surprise.feedback.tone).toBe("partial");
     expect(surprise.evidence?.result).toBe("developing");
-    expect(surprise.feedback.body.toLowerCase()).toMatch(/practise at home|get suddenly better/);
+    expect(surprise.feedback.body.toLowerCase()).toMatch(/practice at home|get suddenly better/);
 
     // Concluding she could not have drawn it is the retry.
     const verdict = notice.choices!.find((c) => /could not have drawn/i.test(c.label))!;
@@ -841,7 +841,7 @@ describe("no scene reports mastery for the only way out of it", () => {
     // The distinction is contextual: a fact plus a name, not a public/private
     // list with one obviously-private entry among two obviously-public ones.
     expect(scene.choices!.map((c) => c.label.toLowerCase()).join(" ")).not.toMatch(
-      /favourite colour/,
+      /favorite color/,
     );
     // The downgrade for a coached retry is exercised for real against every
     // mission in tests/evidence-integrity.test.ts, through recordDecision.
@@ -1261,7 +1261,7 @@ describe("the camera extension teaches preview against live, not tidying", () =>
   });
 });
 
-describe("an app must be allowed before its permissions are minimised", () => {
+describe("an app must be allowed before its permissions are minimized", () => {
   const filter = MISSION_BY_SLUG["the-filter-that-wanted-more"];
 
   it("settles approval before any permission is granted", () => {
@@ -1597,7 +1597,7 @@ describe("execution is not verification", () => {
 
 describe("classroom activities do not log children", () => {
   /**
-   * The product keeps no behavioural telemetry — tests/access-control.test.ts
+   * The product keeps no behavioral telemetry — tests/access-control.test.ts
    * asserts that at the schema level. A paper tally of which children got stuck
    * and what they reached for is the same thing with a different storage
    * medium, and it makes asking for help into something that gets watched.

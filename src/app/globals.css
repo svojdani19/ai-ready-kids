@@ -7,7 +7,7 @@
    ------------------------------------------------------------------ */
 @theme {
   /* Warm, high-energy palette for seven to ten year olds.
-     Every `-deep` token is a text colour and clears WCAG AA on paper, white
+     Every `-deep` token is a text color and clears WCAG AA on paper, white
      and its own wash; every bright token is a fill that carries ink text at
      4.5:1 or better. Checked as a pair matrix, not by eye. */
   --color-ink: #231f1c;
@@ -36,7 +36,7 @@
   --color-berry-wash: #ffe6ef;
 
   /* Fourth hue, used for accents and the marketing site rather than for any
-     competency, so the three competency colours stay unambiguous. */
+     competency, so the three competency colors stay unambiguous. */
   --color-grape: #9c6ef0;
   --color-grape-deep: #5a2fa8;
   --color-grape-wash: #f1e9ff;
@@ -114,7 +114,7 @@
   }
 }
 
-/* Honour the OS reduced-motion setting for every animation we ship. */
+/* Honor the OS reduced-motion setting for every animation we ship. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -53,8 +53,8 @@ export function setRetentionMonths(db: Db, id: string, months: number): void {
  * retention starts working for them rather than staying blocked forever.
  */
 export interface AcademicRepair {
-  /** Cohorts moved off an unrecognised label onto the corrected one. */
-  relabelled: number;
+  /** Cohorts moved off an unrecognized label onto the corrected one. */
+  relabeled: number;
   /** Cohorts given a usable year-end date they did not have. */
   datesRepaired: number;
 }
@@ -126,7 +126,7 @@ function applyAcademicDates(
   // moved, and neither may any other year.
   //
   // Which labels this correction covers. Always the new one. Additionally the
-  // previous one **only when it was itself unrecognised** — such a cohort could
+  // previous one **only when it was itself unrecognized** — such a cohort could
   // only exist by copying a broken school label, which is the invariant class
   // creation has always had. A previous label that was a real school year is
   // history and is never rewritten.
@@ -150,22 +150,22 @@ function applyAcademicDates(
   const setDate = db.prepare("UPDATE classes SET year_ends_on = ? WHERE id = ?");
   const setLabel = db.prepare("UPDATE classes SET school_year = ? WHERE id = ?");
 
-  let relabelled = 0;
+  let relabeled = 0;
   let datesRepaired = 0;
   for (const candidate of candidates) {
     if (relabelFrom && candidate.school_year === relabelFrom) {
       setLabel.run(input.year, candidate.id);
-      relabelled += 1;
+      relabeled += 1;
     }
     // Only a date that is not already a real day. A valid snapshot is a
     // deliberate record of when that year ended and is never moved, even for a
-    // cohort being relabelled.
+    // cohort being relabeled.
     if (!isCalendarDate(candidate.year_ends_on)) {
       setDate.run(input.endsOn, candidate.id);
       datesRepaired += 1;
     }
   }
-  return { relabelled, datesRepaired };
+  return { relabeled, datesRepaired };
 }
 
 /** Move the school into a new academic year. Subscription dates untouched. */

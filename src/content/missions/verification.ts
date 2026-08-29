@@ -319,7 +319,7 @@ export const theVerySureAnswer: Mission = {
       },
     ],
     extension:
-      "Give the class a real, harmless myth (bats are blind, we use ten percent of our brains) and race to find one checkable source that settles it. Name the person or organisation responsible for the information.",
+      "Give the class a real, harmless myth (bats are blind, we use ten percent of our brains) and race to find one checkable source that settles it. Name the person or oorganization responsible for the information.",
   },
   family: {
     summary:
@@ -330,7 +330,7 @@ export const theVerySureAnswer: Mission = {
       "Who would have had to get that right, and where would they have written it down?",
     ],
     tryAtHome:
-      "Pick a fact your family is not sure about and find one source that names the person or organisation responsible for the information.",
+      "Pick a fact your family is not sure about and find one source that names the person or oorganization responsible for the information.",
     familyRule: "Sounding sure is not the same as being right.",
   },
 };
@@ -347,7 +347,7 @@ export const thePenguinOnThePlayground: Mission = {
   estimatedMinutes: 9,
   teaser: "There is a photo of a penguin behind the slide. And a voice message that sounds like Ms. Okafor.",
   summary:
-    "Students examine a shared image and an audio clip that may be AI generated. They practise following the trail back to a maker or witness, using odd details as reasons to pause rather than proof, and — hardest of all — reporting exactly what they established, when one of the two turns out to be settled and the other does not.",
+    "Students examine a shared image and an audio clip that may be AI generated. They practice following the trail back to a maker or witness, using odd details as reasons to pause rather than proof, and — hardest of all — reporting exactly what they established, when one of the two turns out to be settled and the other does not.",
   learningGoals: [
     "List questions to ask about a surprising picture",
     "Check a picture against what it actually claims, including when",
@@ -508,7 +508,7 @@ export const thePenguinOnThePlayground: Mission = {
           feedback: {
             tone: "rethink",
             headline: "That is what makes copied voices tricky",
-            body: "You are not bad at recognising her. The copy is genuinely good. That is why the check has to be asking her, not listening harder. Try again.",
+            body: "You are not bad at recognizing her. The copy is genuinely good. That is why the check has to be asking her, not listening harder. Try again.",
             coachNote:
               "Say plainly that being fooled by a good fake is not a failure of attention. Otherwise students conclude they simply need to listen harder.",
           },
@@ -598,7 +598,7 @@ export const thePenguinOnThePlayground: Mission = {
         "Check a picture against what it says about itself. Words underneath it can be wrong on their own.",
         "A voice can be copied. Ask the real person, and check where the message should have come from.",
         "Say exactly what you found out. Unknown is a real answer and it beats a guess.",
-        "Checking it and then staying quiet still leaves it travelling.",
+        "Checking it and then staying quiet still leaves it ttraveling.",
       ],
     },
   ],
@@ -641,7 +641,7 @@ export const thePenguinOnThePlayground: Mission = {
   },
   family: {
     summary:
-      "We looked at a surprising photo with no clear source and a copied voice message. Your child practised asking who made it and who actually saw it, and practised the harder half: the voice message was settled, the picture never was, and saying so exactly is better than deciding.",
+      "We looked at a surprising photo with no clear source and a copied voice message. Your child practiced asking who made it and who actually saw it, and practiced the harder half: the voice message was settled, the picture never was, and saying so exactly is better than deciding.",
     questions: [
       "How could a picture look real but not be real?",
       "If you got a message in a voice you know, how could you check it was really them?",
@@ -776,7 +776,7 @@ export const twoAnswersOneTruth: Mission = {
       kind: "decision",
       art: "library",
       narration: [
-        "Mrs. Delgado in the office keeps the district's building records in a grey cabinet, and she is delighted anybody has asked.",
+        "Mrs. Delgado in the office keeps the district's building records in a gray cabinet, and she is delighted anybody has asked.",
         "Brightwood Elementary opened in 1908, in a wooden building on Cedar Street.",
         "The building you are standing in went up in 1961, after the old one burned down.",
       ],
@@ -844,7 +844,7 @@ export const twoAnswersOneTruth: Mission = {
           feedback: {
             tone: "strong",
             headline: "Now anybody can check you",
-            body: "The office building records, for both dates. Writing down where an answer came from is what makes it useful to other people, and it is the difference between a fact and a rumour.",
+            body: "The office building records, for both dates. Writing down where an answer came from is what makes it useful to other people, and it is the difference between a fact and a rumor.",
           },
           evidence: { skillId: "verify.source", result: "demonstrated" },
           next: "s7",
@@ -878,7 +878,7 @@ export const twoAnswersOneTruth: Mission = {
       kind: "ending",
       art: "hallway",
       narration: [
-        "The poster goes up by the front doors, about two metres from the plaque, which turns out to have been telling the truth about a narrower question than anybody was asking it.",
+        "The poster goes up by the front doors, about two meters from the plaque, which turns out to have been telling the truth about a narrower question than anybody was asking it.",
       ],
       wrapUp: [
         "Work out what the question is before you decide which answer is wrong.",
@@ -903,7 +903,7 @@ export const twoAnswersOneTruth: Mission = {
       "The plaque says ERECTED. What does that word actually claim?",
       "Who was wrong, in the end?",
       "Where would you go for a fact about a building in this district?",
-      "What is the difference between a fact and a rumour?",
+      "What is the difference between a fact and a rumor?",
     ],
     misconceptions: [
       {
@@ -927,7 +927,7 @@ export const twoAnswersOneTruth: Mission = {
   },
   family: {
     summary:
-      "Two answers about our school disagreed — 1908 and 1961 — and it turned out both were right, about different things. We practised working out what a question is actually asking before deciding somebody is wrong, and reading what a source says rather than trusting how official it looks.",
+      "Two answers about our school disagreed — 1908 and 1961 — and it turned out both were right, about different things. We practiced working out what a question is actually asking before deciding somebody is wrong, and reading what a source says rather than trusting how official it looks.",
     questions: [
       "How old is our house? Does that mean the building, or how long we have been here?",
       "If two people give different answers, how could they both be right?",

@@ -1,11 +1,11 @@
 import { type Db, newId, nowIso, rows } from "@/lib/db";
 import type { Classroom, School } from "@/lib/types";
-import { isRecognisedRetention, retentionRows } from "./retention";
+import { isRecognizedRetention, retentionRows } from "./retention";
 
 /**
  * The retention purge.
  *
- * The product showed a date, labelled it a scheduled purge, and told families
+ * The product showed a date, labeled it a scheduled purge, and told families
  * that "deletion is a date". Until sprint 30 the only thing that deleted
  * anything was an administrator clicking Delete now, so records could sit
  * indefinitely past the date the page displayed — `eligibleNow` changed a label
@@ -32,7 +32,7 @@ export interface PurgeResult {
   classNames: string[];
   /**
    * Schools skipped entirely because their retention window is not one this
-   * product recognises. Named so an operator can act, with no child named:
+   * product recognizes. Named so an operator can act, with no child named:
    * which school has a broken account record is not a fact about any pupil.
    */
   blocked: { schoolId: string; schoolName: string; retentionMonths: number }[];
@@ -66,7 +66,7 @@ export function runScheduledPurge(db: Db, now = new Date()): PurgeResult {
   const schools = rows<School>(db.prepare("SELECT * FROM schools ORDER BY name").all());
 
   for (const school of schools) {
-    // Fail closed, per school. An unrecognised retention window is a broken
+    // Fail closed, per school. An unrecognized retention window is a broken
     // account record, and this job's mistake is permanent: it deletes a class
     // and cascades the roster, every attempt and both check-ins with no
     // restore path. A negative window would make every cohort look overdue.
@@ -74,7 +74,7 @@ export function runScheduledPurge(db: Db, now = new Date()): PurgeResult {
     // Skipped before anything is read or written, and the loop continues, so
     // one school's bad configuration never stops a correctly configured
     // school's records being purged on the date its policy actually says.
-    if (!isRecognisedRetention(school.retention_months)) {
+    if (!isRecognizedRetention(school.retention_months)) {
       result.blocked.push({
         schoolId: school.id,
         schoolName: school.name,

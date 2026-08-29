@@ -4,7 +4,7 @@ import { getDb } from "@/lib/db";
 import { requireTeacher } from "@/lib/auth/session";
 import { listAssignments, listClassesForTeacher, listStudents } from "@/lib/repo/classroom";
 import { getCertification, listAttemptsForClass } from "@/lib/repo/progress";
-import { nextTeachingFocus, summariseCohort } from "@/lib/domain/evidence";
+import { nextTeachingFocus, summarizeCohort } from "@/lib/domain/evidence";
 import { COMPETENCY_BY_ID } from "@/content/competencies";
 import { ALL_SESSIONS, MISSION_BY_ID } from "@/content/missions";
 import { CERTIFICATION_MODULES } from "@/content/certification";
@@ -33,7 +33,7 @@ export default async function TeacherOverview() {
   const cards = classes.map((classroom) => {
     const students = listStudents(db, classroom.id);
     const assignments = listAssignments(db, classroom.id);
-    const cohort = summariseCohort({
+    const cohort = summarizeCohort({
       studentIds: students.map((s) => s.id),
       attempts: listAttemptsForClass(db, classroom.id),
       assignedMissionIds: assignments.map((a) => a.mission_id),
@@ -154,7 +154,7 @@ export default async function TeacherOverview() {
 
                 <div className="rounded-lg border border-sand-deep bg-paper p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-faint">
-                    {focus?.kind === "not-practised" ? "Next unpractised skill" : "Suggested next focus"}
+                    {focus?.kind === "not-practiced" ? "Next unpracticed skill" : "Suggested next focus"}
                   </p>
                   {focus ? (
                     <>

@@ -23,7 +23,7 @@ vi.mock("next/headers", () => ({
 }));
 
 // `requireStudent` redirects when `currentStudent` returns null. Next's real
-// redirect throws a framework error; this throws a recognisable one so the
+// redirect throws a framework error; this throws a recognizable one so the
 // tests can tell "the action refused" from "the action blew up".
 vi.mock("next/navigation", () => ({
   redirect: (to: string) => {
@@ -47,10 +47,10 @@ import {
   getClass,
   listAssignments,
   listClasses,
-  normaliseJoinCode,
+  normalizeJoinCode,
   restoreClass,
 } from "@/lib/repo/classroom";
-import { licenceStatus } from "@/lib/repo/entitlement";
+import { licenseStatus } from "@/lib/repo/entitlement";
 import { beginMission, submitCheckInAnswer, submitDecision } from "@/app/actions/student";
 import { getAttempt, startAttempt } from "@/lib/repo/progress";
 import { expectedDecisionSceneId } from "@/lib/domain/missionPath";
@@ -62,7 +62,7 @@ import { join } from "node:path";
 let db: Db;
 let cleanup: () => void;
 
-const codeOf = (classId: string) => normaliseJoinCode(getClass(db, classId)!.join_code);
+const codeOf = (classId: string) => normalizeJoinCode(getClass(db, classId)!.join_code);
 
 /** Every row that must survive archiving, as a comparable snapshot. */
 function snapshot() {
@@ -184,18 +184,18 @@ describe("archiving revokes exactly once", () => {
     // function, so the revocation is not a property of one action.
     const active = listClasses(db, DEMO_SCHOOL, false);
     expect(active.length).toBeGreaterThan(1);
-    const codesBefore = new Map(active.map((c) => [c.id, normaliseJoinCode(c.join_code)]));
+    const codesBefore = new Map(active.map((c) => [c.id, normalizeJoinCode(c.join_code)]));
 
     for (const c of active) archiveClass(db, c.id);
     const afterFirst = new Map(
-      listClasses(db, DEMO_SCHOOL, true).map((c) => [c.id, normaliseJoinCode(c.join_code)]),
+      listClasses(db, DEMO_SCHOOL, true).map((c) => [c.id, normalizeJoinCode(c.join_code)]),
     );
     for (const [id, before] of codesBefore) expect(afterFirst.get(id)).not.toBe(before);
 
     // A second sweep over classes that are already archived changes nothing.
     for (const c of listClasses(db, DEMO_SCHOOL, true)) archiveClass(db, c.id);
     for (const [id, code] of afterFirst) {
-      expect(normaliseJoinCode(getClass(db, id)!.join_code)).toBe(code);
+      expect(normalizeJoinCode(getClass(db, id)!.join_code)).toBe(code);
     }
   });
 });
@@ -221,7 +221,7 @@ describe("archiving changes the credential and nothing else", () => {
   });
 
   it("frees the licensed seats the roster was using", () => {
-    const before = licenceStatus(db, DEMO_SCHOOL);
+    const before = licenseStatus(db, DEMO_SCHOOL);
     const roster = db
       .prepare("SELECT COUNT(*) AS n FROM students WHERE class_id = ?")
       .get(DEMO_CLASS) as { n: number };
@@ -229,7 +229,7 @@ describe("archiving changes the credential and nothing else", () => {
 
     archiveClass(db, DEMO_CLASS);
 
-    expect(licenceStatus(db, DEMO_SCHOOL).used).toBe(before.used - roster.n);
+    expect(licenseStatus(db, DEMO_SCHOOL).used).toBe(before.used - roster.n);
   });
 
   it("refuses the real student actions after archive, and writes nothing", async () => {

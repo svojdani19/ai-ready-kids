@@ -36,7 +36,7 @@ export default async function AdminData() {
     studentCount: listStudents(db, c.id).length,
   }));
   const rows = retentionRows(school, classes, now);
-  // An unrecognised window stops the schedule for the whole school, so it is
+  // An unrecognized window stops the schedule for the whole school, so it is
   // said once at the top rather than repeated on every row.
   const policyBlocked = retentionBlock(school) !== null;
   // The school's own year end, separately from the policy: missing is a
@@ -81,7 +81,7 @@ export default async function AdminData() {
           })()}
           hint={
             // Two different blocks, and only one of them is global. An
-            // unrecognised retention *window* makes `runScheduledPurge` skip
+            // unrecognized retention *window* makes `runScheduledPurge` skip
             // the whole school (sprint 54), so "nothing is deleted" is true
             // there. An unusable academic *date* only costs this summary
             // figure: every cohort still carries its own snapshotted year-end,
@@ -101,7 +101,7 @@ export default async function AdminData() {
       </div>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-2">
-        {/* Enumerated from the schema rather than summarised from memory, and
+        {/* Enumerated from the schema rather than summarized from memory, and
             from the same module the public privacy page reads. The old list
             said "the complete list, nothing held back" over six lines that
             omitted the class relationship, the derived per-attempt evidence and
@@ -203,12 +203,12 @@ export default async function AdminData() {
                       <span className={row.eligibleNow ? "font-semibold text-berry-deep" : "text-ink-soft"}>
                         {row.purgeOn
                           ? formatDate(row.purgeOn)
-                          : row.blockedReason === "unrecognised-policy" ||
+                          : row.blockedReason === "unrecognized-policy" ||
                               row.blockedReason === "malformed-year-end"
                             ? "Blocked"
                             : "Not set"}
                       </span>
-                      {row.blockedReason === "unrecognised-policy" && (
+                      {row.blockedReason === "unrecognized-policy" && (
                         <span className="block text-xs text-berry-deep">
                           Retention needs configuration — automatic purge is blocked.
                         </span>

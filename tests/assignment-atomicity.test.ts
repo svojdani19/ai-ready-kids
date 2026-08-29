@@ -44,7 +44,7 @@ import {
   getClass,
   restoreClass,
   listAssignments,
-  normaliseJoinCode,
+  normalizeJoinCode,
 } from "@/lib/repo/classroom";
 import { getAttempt } from "@/lib/repo/progress";
 import { expectedDecisionSceneId } from "@/lib/domain/missionPath";
@@ -98,7 +98,7 @@ const asChild = async () => {
   await writeSession({
     kind: "student",
     studentId: DEMO_STUDENT,
-    code: normaliseJoinCode(getClass(db, DEMO_CLASS)!.join_code),
+    code: normalizeJoinCode(getClass(db, DEMO_CLASS)!.join_code),
   });
 };
 

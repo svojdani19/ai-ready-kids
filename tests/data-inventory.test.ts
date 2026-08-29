@@ -248,7 +248,7 @@ describe("no surface draws a risk conclusion the product cannot support", () => 
       /question="(Everybody will need the new code[^"]*)"/g,
     );
 
-    // Both extractions found the real thing, not a neighbouring prop.
+    // Both extractions found the real thing, not a neighboring prop.
     expect(admin).toMatch(/^Give Room 4 a new code\?/);
     expect(teacher).toMatch(/^Everybody will need the new code/);
 
@@ -310,7 +310,7 @@ describe("no surface draws a risk conclusion the product cannot support", () => 
       expect(CLASS_CODE_POSTURE).not.toMatch(word);
     }
 
-    // The real-student question is handed to the school, as its judgement.
+    // The real-student question is handed to the school, as its judgment.
     expect(CLASS_CODE_POSTURE).toMatch(/real student records/i);
     expect(CLASS_CODE_POSTURE).toMatch(/the school has to weigh/i);
     expect(CLASS_CODE_POSTURE).toMatch(/decision belongs to the school/i);
@@ -360,7 +360,7 @@ describe("no surface draws a risk conclusion the product cannot support", () => 
     expect(offenders).toEqual([]);
   });
 
-  it("still says plainly that unauthorised access reaches education records", () => {
+  it("still says plainly that unauthorized access reaches education records", () => {
     // The dismissal was load-bearing against this: the same product calls these
     // education records, so "nothing worth stealing" contradicted it.
     expect(copyOf(SURFACES.privacy)).toMatch(/education records under FERPA/i);

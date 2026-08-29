@@ -80,7 +80,7 @@ export default async function CertificatePage() {
         </p>
         <p className="mt-6 text-xs leading-relaxed text-ink-faint">
           A record of professional learning completed within this product. It is not a
-          state licence, an endorsement, or an accredited continuing-education credit.
+          state license, an endorsement, or an accredited continuing-education credit.
           Check with your district about how it counts toward your requirements.
         </p>
       </article>

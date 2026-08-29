@@ -12,7 +12,7 @@ export const theHomeworkThatDidItself: Mission = {
   estimatedMinutes: 8,
   teaser: "You asked for help with one word problem. Sprocket did all six.",
   summary:
-    "Students practise the difference between a hint and an answer. Sprocket over-helps, and students learn to ask for a smaller kind of help and to try first.",
+    "Students practice the difference between a hint and an answer. Sprocket over-helps, and students learn to ask for a smaller kind of help and to try first.",
   learningGoals: [
     "Tell the difference between a hint and an answer",
     "Try a problem before asking for help",
@@ -320,7 +320,7 @@ export const theHomeworkThatDidItself: Mission = {
   ],
   guide: {
     setup:
-      "This mission separates help from answers. The tool over-delivers without being asked, which mirrors real behaviour and keeps blame off the student. The phrase to keep all year is: good help leaves the thinking with you.\n\nThe branch in scene four is deliberate and worth knowing about. A child who clears the page and does everything reports one thing; a child who keeps Sprocket's answer to number two reports another, and the mission sends them to different conversations rather than a shared one. On that second path, calling it a hint is explicitly the partly-there answer. The distinction between a hint and an answer is the entire mission, so a reporting scene that let a kept answer be described as a hint would have taught the opposite in its last five minutes.",
+      "This mission separates help from answers. The tool over-delivers without being asked, which mirrors real behavior and keeps blame off the student. The phrase to keep all year is: good help leaves the thinking with you.\n\nThe branch in scene four is deliberate and worth knowing about. A child who clears the page and does everything reports one thing; a child who keeps Sprocket's answer to number two reports another, and the mission sends them to different conversations rather than a shared one. On that second path, calling it a hint is explicitly the partly-there answer. The distinction between a hint and an answer is the entire mission, so a reporting scene that let a kept answer be described as a hint would have taught the opposite in its last five minutes.",
     lookFor: [
       "Students who see homework as a product to hand in rather than practice",
       "Whether students can request a smaller kind of help unprompted",
@@ -351,7 +351,7 @@ export const theHomeworkThatDidItself: Mission = {
   },
   family: {
     summary:
-      "We practised asking for a hint instead of an answer, and noticing when a tool does too much. The phrase we used was: good help leaves the thinking with you.",
+      "We practiced asking for a hint instead of an answer, and noticing when a tool does too much. The phrase we used was: good help leaves the thinking with you.",
     questions: [
       "What is the difference between a hint and an answer?",
       "What could you say to get help without getting the whole answer?",
@@ -380,7 +380,7 @@ export const fourDoors: Mission = {
     "Name four different ways to get unstuck",
     "Match the help to the situation you are actually in",
     "Use two doors in a row when one leaves you something to check",
-    "Recognise problems where only a person will do",
+    "Recognize problems where only a person will do",
   ],
   badge: {
     id: "badge-own-2",
@@ -398,7 +398,7 @@ export const fourDoors: Mission = {
         "Door one: THINK IT OUT. Door two: LOOK IT UP. Door three: ASK A PERSON. Door four: ASK AN AI TOOL.",
         "“Two things first,” she says. “Door four means the AI tools this school lets us use. Not any old one.”",
         "“And a tool can help you at any of these doors. A book is a tool. So is a calculator, and so is the thing that reads to you. The doors are about where the answer comes from, not about what you are holding.”",
-        "“Every time you get stuck this year, you are picking one of these. Today we practise picking on purpose.”",
+        "“Every time you get stuck this year, you are picking one of these. Today we practice picking on purpose.”",
       ],
       next: "s2",
     },
@@ -703,7 +703,7 @@ export const fourDoors: Mission = {
   },
   family: {
     summary:
-      "We practised choosing between four ways of getting unstuck: think it out, look it up, ask a person, and ask an AI tool the school allows. Each suits a different kind of problem, they can be used one after another, and a tool of some kind can help at any of them.",
+      "We practiced choosing between four ways of getting unstuck: think it out, look it up, ask a person, and ask an AI tool the school allows. Each suits a different kind of problem, they can be used one after another, and a tool of some kind can help at any of them.",
     questions: [
       "What are the four doors? Can you remember all of them?",
       "Which door is right for a problem about a friend?",
@@ -727,7 +727,7 @@ export const theSpellingTestSurprise: Mission = {
   estimatedMinutes: 8,
   teaser: "All week the practice sentences were easy. On Friday there is no tablet.",
   summary:
-    "The consequence mission. A week of AI-written practice sentences leaves the student unable to spell the words on test day, even though they wrote every one of them out. Students learn the difference between copying a word that is in front of them and getting it out of their own head, and practise saying plainly what help they used.",
+    "The consequence mission. A week of AI-written practice sentences leaves the student unable to spell the words on test day, even though they wrote every one of them out. Students learn the difference between copying a word that is in front of them and getting it out of their own head, and practice saying plainly what help they used.",
   learningGoals: [
     "Tell copying a word apart from remembering one",
     "Notice when help has replaced the learning",
@@ -830,7 +830,7 @@ export const theSpellingTestSurprise: Mission = {
       choices: [
         {
           id: "c1",
-          label: "“I had AskMe write the sentences, so I never practised the words.”",
+          label: "“I had AskMe write the sentences, so I never practiced the words.”",
           feedback: {
             tone: "strong",
             headline: "That took some nerve",

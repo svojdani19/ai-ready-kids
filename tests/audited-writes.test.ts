@@ -367,7 +367,7 @@ describe("restore refusals go through the real action", () => {
   const auditsOf = (action: string) =>
     listAudit(db, DEMO_SCHOOL, 200).filter((a) => a.action === action);
 
-  it("refuses over the licence, changes nothing, and writes only its refusal audit", async () => {
+  it("refuses over the license, changes nothing, and writes only its refusal audit", async () => {
     await signInAsAdmin();
     archiveClass(db, DEMO_CLASS);
     const roster = listStudents(db, DEMO_CLASS).length;
@@ -397,7 +397,7 @@ describe("restore refusals go through the real action", () => {
     expect(protectedRecords()).toEqual(before.records);
 
     // Written by the action, not by this test.
-    expect(auditsOf("class.restore_blocked_by_licence")).toHaveLength(1);
+    expect(auditsOf("class.restore_blocked_by_license")).toHaveLength(1);
     expect(auditsOf("class.restored")).toHaveLength(0);
     expect(listAudit(db, DEMO_SCHOOL, 200).length).toBe(auditBefore + 1);
   });
@@ -422,7 +422,7 @@ describe("restore refusals go through the real action", () => {
     expect(listAudit(db, DEMO_SCHOOL, 200).length).toBe(auditBefore + 1);
   });
 
-  it("refuses an unrecognised plan, changes nothing, and writes only its refusal audit", async () => {
+  it("refuses an unrecognized plan, changes nothing, and writes only its refusal audit", async () => {
     await signInAsAdmin();
     db.prepare("UPDATE schools SET plan = 'enterprise-plus' WHERE id = ?").run(DEMO_SCHOOL);
     archiveClass(db, DEMO_CLASS);
@@ -442,13 +442,13 @@ describe("restore refusals go through the real action", () => {
     expect(listAudit(db, DEMO_SCHOOL, 200).length).toBe(auditBefore + 1);
   });
 
-  it("refuses a malformed seat licence, changes nothing, and writes only its refusal audit", async () => {
+  it("refuses a malformed seat license, changes nothing, and writes only its refusal audit", async () => {
     // The fourth refusal handler. It was the one path the first version of this
     // suite left out, while the sprint record claimed all four audit calls were
     // proved — so removing only this `recordAudit` still passed.
     await signInAsAdmin();
     archiveClass(db, DEMO_CLASS);
-    // Outside 1-5000, which sprint 56 made an unrecognised contract value. Not
+    // Outside 1-5000, which sprint 56 made an unrecognized contract value. Not
     // a number this product sells, so it is an account-record problem rather
     // than an overage.
     db.prepare("UPDATE schools SET licensed_students = -7 WHERE id = ?").run(DEMO_SCHOOL);
@@ -458,11 +458,11 @@ describe("restore refusals go through the real action", () => {
 
     const result = await restoreClassAction(DEMO_CLASS);
 
-    // The established configuration refusal, not the over-the-licence one and
+    // The established configuration refusal, not the over-the-license one and
     // not the operational-failure one.
-    expect(result.error).toMatch(/seat licence needs configuration/i);
+    expect(result.error).toMatch(/seat license needs configuration/i);
     expect(result.error).toMatch(/nothing has been changed/i);
-    expect(result.error).toMatch(/have the seat licence corrected on the account/i);
+    expect(result.error).toMatch(/have the seat license corrected on the account/i);
     expect(result.error).not.toMatch(/licensed places are already in use/i);
     expect(result.error).not.toMatch(/was not restored\. It is still archived/);
     // Never repeats the malformed value back — sprint 56's rule.
@@ -472,7 +472,7 @@ describe("restore refusals go through the real action", () => {
     expect(classRow()).toEqual(before.class);
     expect(protectedRecords()).toEqual(before.records);
 
-    expect(auditsOf("class.restore_blocked_by_licence_config")).toHaveLength(1);
+    expect(auditsOf("class.restore_blocked_by_license_config")).toHaveLength(1);
     expect(auditsOf("class.restored")).toHaveLength(0);
     expect(listAudit(db, DEMO_SCHOOL, 200).length).toBe(auditBefore + 1);
   });
@@ -686,7 +686,7 @@ describe("sprint 73: the destructive teacher and staff operations audit atomical
     const victim = listStudents(db, DEMO_CLASS)[0];
     const before = capture();
 
-    // Authorising the class is not authorising the child.
+    // Authorizing the class is not authorizing the child.
     const result = await removeStudentAction(other.id, victim.id);
 
     expect(result.error).toMatch(/not on this class's roster/i);

@@ -130,7 +130,7 @@ describe("a rollover that fails part-way changes nothing", () => {
     expect(ROLLOVER_FAILED).toMatch(/carry on unchanged/i);
 
     // No support channel, diagnostic trail or response time is promised. This
-    // product ships no technical support destination — the programme contact
+    // product ships no technical support destination — the program contact
     // handles quotes and invoices — and a failed attempt writes no audit row,
     // so there would be nothing to inspect even if there were somewhere to
     // send an administrator.

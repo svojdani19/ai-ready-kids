@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { licenceStatus } from "@/lib/repo/entitlement";
+import { licenseStatus } from "@/lib/repo/entitlement";
 import { getSchool } from "@/lib/repo/school";
 import {
   subscriptionState,
@@ -34,7 +34,7 @@ export default async function AdminOverview() {
   const db = getDb();
   const now = new Date();
   const report = buildSchoolReport(db, user.school_id, now);
-  const licence = licenceStatus(db, user.school_id);
+  const license = licenseStatus(db, user.school_id);
   const school = getSchool(db, user.school_id)!;
   const term = subscriptionState(school, now);
   const renewalInDays =
@@ -58,13 +58,13 @@ export default async function AdminOverview() {
           label="Students enrolled"
           value={report.totals.students}
           // The count of children is always real; what they are licensed
-          // against may not be, and an unrecognised value is not shown as one.
+          // against may not be, and an unrecognized value is not shown as one.
           hint={
-            licence.recognised
-              ? `${licence.licensed} licensed`
-              : "Seat licence needs configuration — no new students can be enrolled"
+            license.recognized
+              ? `${license.licensed} licensed`
+              : "Seat license needs configuration — no new students can be enrolled"
           }
-          tone={licence.recognised ? "neutral" : "berry"}
+          tone={license.recognized ? "neutral" : "berry"}
         />
         <Stat label="Classes" value={report.totals.classes} hint={`${report.totals.teachers} teachers`} />
         <Stat

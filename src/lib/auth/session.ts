@@ -10,7 +10,7 @@ import {
   encodeSession,
   type SessionValue,
 } from "./token";
-import { getStudent, getClass, normaliseJoinCode } from "@/lib/repo/classroom";
+import { getStudent, getClass, normalizeJoinCode } from "@/lib/repo/classroom";
 import { getUser } from "@/lib/repo/school";
 import type { Classroom, Student, User } from "@/lib/types";
 
@@ -123,9 +123,9 @@ export async function currentStaff(): Promise<StaffContext | null> {
  * thing the product told them to do. The comparison below is the whole fix:
  * the code carried in the signed cookie against the class's current one.
  *
- * Both sides are normalised. The cookie is written from an already-normalised
- * value, but normalising here too means a stored code that was never
- * normalised cannot fail to match itself.
+ * Both sides are normalized. The cookie is written from an already-normalized
+ * value, but normalizing here too means a stored code that was never
+ * normalized cannot fail to match itself.
  */
 export async function currentStudent(): Promise<StudentContext | null> {
   const session = await readSession();
@@ -141,7 +141,7 @@ export async function currentStudent(): Promise<StudentContext | null> {
   // "finished class" and year rollover did not actually close student access.
   // Both `/join` steps already refused an archived class; the session did not.
   if (classroom.archived_at) return null;
-  if (normaliseJoinCode(classroom.join_code) !== normaliseJoinCode(session.code)) return null;
+  if (normalizeJoinCode(classroom.join_code) !== normalizeJoinCode(session.code)) return null;
   return { student, classroom };
 }
 

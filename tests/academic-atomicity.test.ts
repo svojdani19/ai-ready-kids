@@ -238,7 +238,7 @@ describe("the action commits the repair and its audit together", () => {
     const result = await setAcademicDatesAction({}, form(NEW_YEAR, NEW_START, NEW_END));
 
     expect(result.error).toBeUndefined();
-    // Two relabelled, three given a date (the two plus the already-relabelled
+    // Two relabeled, three given a date (the two plus the already-relabeled
     // ones carrying no readable date) — reported as two separate facts.
     expect(result.ok).toMatch(/moved onto 2026-2027 from a school year that could not be read/);
     expect(result.ok).toMatch(/given a usable deletion date/);

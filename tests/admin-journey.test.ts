@@ -12,24 +12,24 @@ import {
 import {
   ACTIVE_CLASS_LIMIT,
   ClassroomLimitError,
-  isRecognisedSeatCount,
-  LicenceNotRecognisedError,
-  licenceNotRecognisedRefusal,
+  isRecognizedSeatCount,
+  LicenseNotRecognizedError,
+  licenseNotRecognizedRefusal,
   MAX_LICENSED_STUDENTS,
   MIN_LICENSED_STUDENTS,
   isKnownPlan,
   PLAN_LABEL,
   planLabel,
-  PlanNotRecognisedError,
-  planNotRecognisedRefusal,
+  PlanNotRecognizedError,
+  planNotRecognizedRefusal,
   UNRECOGNISED_PLAN_LABEL,
   classroomAllowance,
   classroomLimitRefusal,
   countActiveClasses,
   countActiveRosterStudents,
-  LicenceExceededError,
-  licenceStatus,
-  RestoreExceedsLicenceError,
+  LicenseExceededError,
+  licenseStatus,
+  RestoreExceedsLicenseError,
 } from "@/lib/repo/entitlement";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -63,11 +63,11 @@ import {
 import { buildSchoolReport, MIN_REPORTABLE_GROUP, reportToCsv } from "@/lib/repo/report";
 import { ALL_SESSIONS, MISSIONS } from "@/content/missions";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
-import { MIN_BENCHMARK_GROUP, summariseCohortBenchmark } from "@/lib/domain/benchmark";
+import { MIN_BENCHMARK_GROUP, summarizeCohortBenchmark } from "@/lib/domain/benchmark";
 import {
   addMonths,
   formatDate,
-  isRecognisedRetention,
+  isRecognizedRetention,
   purgeDateFor,
   purgeDateForClass,
   RECOGNISED_RETENTION_MONTHS,
@@ -83,12 +83,12 @@ import { getClass, reassignClass } from "@/lib/repo/classroom";
 
 /**
  * Seats left, for tests that only care about the number. Narrows the
- * discriminated status so an unrecognised licence fails loudly here rather
+ * discriminated status so an unrecognized license fails loudly here rather
  * than reading as zero.
  */
 function remainingSeats(db: Db, schoolId: string): number {
-  const status = licenceStatus(db, schoolId);
-  if (!status.recognised) throw new Error(`Seat licence not recognised for ${schoolId}`);
+  const status = licenseStatus(db, schoolId);
+  if (!status.recognized) throw new Error(`Seat license not recognized for ${schoolId}`);
   return status.remaining;
 }
 
@@ -109,7 +109,7 @@ describe("school overview", () => {
     expect(report.totals.completionRate).toBeGreaterThan(0);
     expect(report.totals.completionRate).toBeLessThanOrEqual(1);
     expect(report.competencies).toHaveLength(3);
-    // Every session in the catalogue, First Look included, each tagged with
+    // Every session in the catalog, First Look included, each tagged with
     // its segment so the "every core mission in use" check can exclude the
     // grade track this school does not run.
     expect(report.missions).toHaveLength(ALL_SESSIONS.length);
@@ -118,7 +118,7 @@ describe("school overview", () => {
   });
 
   it("reports the fall-to-spring difference from matched students only", () => {
-    const bench = summariseCohortBenchmark(listBenchmarksForSchool(db, DEMO_SCHOOL));
+    const bench = summarizeCohortBenchmark(listBenchmarksForSchool(db, DEMO_SCHOOL));
     expect(bench.preCompleted).toBe(90);
     expect(bench.postCompleted).toBeGreaterThan(0);
     expect(bench.matched).toBe(bench.postCompleted);
@@ -129,7 +129,7 @@ describe("school overview", () => {
 
   it("returns null, not a fake zero, before the spring window runs", () => {
     const room4 = listClasses(db, DEMO_SCHOOL).find((c) => c.name === "Room 4")!;
-    const bench = summariseCohortBenchmark(listBenchmarksForClass(db, room4.id));
+    const bench = summarizeCohortBenchmark(listBenchmarksForClass(db, room4.id));
     expect(bench.postCompleted).toBe(0);
     expect(bench.pointsDifference).toBeNull();
     expect(bench.postRate).toBeNull();
@@ -466,7 +466,7 @@ describe("benchmark suppression happens on the object, not in one view", () => {
     record(only, "pre");
     record(only, "post");
 
-    const bench = summariseCohortBenchmark(listBenchmarksForClass(db3, classId));
+    const bench = summarizeCohortBenchmark(listBenchmarksForClass(db3, classId));
     expect(bench.matched).toBe(1);
     expect(bench.preRate).toBeNull();
     expect(bench.postRate).toBeNull();
@@ -506,7 +506,7 @@ describe("benchmark suppression happens on the object, not in one view", () => {
       record(id, "pre");
       record(id, "post");
     }
-    const bench = summariseCohortBenchmark(listBenchmarksForClass(db3, classId));
+    const bench = summarizeCohortBenchmark(listBenchmarksForClass(db3, classId));
     expect(bench.matched).toBe(MIN_BENCHMARK_GROUP);
     expect(bench.preRate).not.toBeNull();
     expect(bench.pointsDifference).not.toBeNull();
@@ -812,7 +812,7 @@ describe("the academic year is not the subscription term", () => {
       schoolYear: "2026-2027",
       yearEndsOn: "2027-06-11",
     });
-    // The old behaviour anchored every class to the renewal date, which for
+    // The old behavior anchored every class to the renewal date, which for
     // this cohort would have been 2027-09-01 — nine months before its own year
     // had even finished its retention window.
     const fromOldTerm = addMonths(s.term_renews_on, s.retention_months);
@@ -820,7 +820,7 @@ describe("the academic year is not the subscription term", () => {
     expect(fromOwnYear.getTime()).toBeGreaterThan(fromOldTerm.getTime());
 
     // A run in the gap between the two dates must leave it alone. This is the
-    // exact window where the old behaviour would have deleted it early.
+    // exact window where the old behavior would have deleted it early.
     const inTheGap = runScheduledPurge(db7, new Date("2027-10-01T00:00:00.000Z"));
     expect(inTheGap.classNames).not.toContain("Next Year");
     expect(listClasses(db7, DEMO_SCHOOL, true).some((c) => c.name === "Next Year")).toBe(true);
@@ -981,7 +981,7 @@ describe("licensed student places are the vendor's record and are enforced", () 
 
       // Three children, two classes, one school total.
       expect(countActiveRosterStudents(db, DEMO_SCHOOL)).toBe(3);
-      expect(licenceStatus(db, DEMO_SCHOOL)).toEqual({ recognised: true, used: 3, licensed: 5, remaining: 2 });
+      expect(licenseStatus(db, DEMO_SCHOOL)).toEqual({ recognized: true, used: 3, licensed: 5, remaining: 2 });
 
       // The cap is the school's, not the class's: filling it from the other
       // class blocks this one.
@@ -989,7 +989,7 @@ describe("licensed student places are the vendor's record and are enforced", () 
       createStudent(db, { classId: second.id, displayName: "Five E." });
       expect(() =>
         createStudent(db, { classId: DEMO_CLASS, displayName: "Six F." }),
-      ).toThrow(LicenceExceededError);
+      ).toThrow(LicenseExceededError);
     } finally {
       cleanup();
     }
@@ -1012,9 +1012,9 @@ describe("licensed student places are the vendor's record and are enforced", () 
       } catch (error) {
         raised = error;
       }
-      expect(raised).toBeInstanceOf(LicenceExceededError);
-      expect((raised as LicenceExceededError).used).toBe(3);
-      expect((raised as LicenceExceededError).licensed).toBe(3);
+      expect(raised).toBeInstanceOf(LicenseExceededError);
+      expect((raised as LicenseExceededError).used).toBe(3);
+      expect((raised as LicenseExceededError).licensed).toBe(3);
 
       // No row, and the roster is exactly what it was.
       expect(listStudents(db, DEMO_CLASS).map((s) => s.display_name)).toEqual([
@@ -1023,7 +1023,7 @@ describe("licensed student places are the vendor's record and are enforced", () 
         "Cc C.",
       ]);
       expect(countActiveRosterStudents(db, DEMO_SCHOOL)).toBe(3);
-      // And no success audit was written for the refused enrolment.
+      // And no success audit was written for the refused enrollment.
       expect(listAudit(db, DEMO_SCHOOL).filter((a) => a.action === "roster.added")).toHaveLength(0);
     } finally {
       cleanup();
@@ -1059,7 +1059,7 @@ describe("licensed student places are the vendor's record and are enforced", () 
       expect(listStudents(db, DEMO_CLASS)).toHaveLength(3);
       expect(() =>
         createStudent(db, { classId: thisYear.id, displayName: "New D." }),
-      ).toThrow(LicenceExceededError);
+      ).toThrow(LicenseExceededError);
     } finally {
       cleanup();
     }
@@ -1112,7 +1112,7 @@ describe("licensed student places are the vendor's record and are enforced", () 
       createStudent(db, { classId: DEMO_CLASS, displayName: "Ours B." });
       // Our school is full. Theirs is untouched by that.
       expect(remainingSeats(db, DEMO_SCHOOL)).toBe(0);
-      expect(licenceStatus(db, "sch_far")).toEqual({ recognised: true, used: 0, licensed: 1, remaining: 1 });
+      expect(licenseStatus(db, "sch_far")).toEqual({ recognized: true, used: 0, licensed: 1, remaining: 1 });
 
       createStudent(db, { classId: theirClass.id, displayName: "Theirs A." });
       expect(countActiveRosterStudents(db, DEMO_SCHOOL)).toBe(2);
@@ -1120,7 +1120,7 @@ describe("licensed student places are the vendor's record and are enforced", () 
       // And their own cap still binds them.
       expect(() =>
         createStudent(db, { classId: theirClass.id, displayName: "Theirs B." }),
-      ).toThrow(LicenceExceededError);
+      ).toThrow(LicenseExceededError);
     } finally {
       cleanup();
     }
@@ -1130,11 +1130,11 @@ describe("licensed student places are the vendor's record and are enforced", () 
     const repo = readFileSync(join(process.cwd(), "src/lib/repo/classroom.ts"), "utf8");
     const start = repo.indexOf("export function createStudent");
     const body = repo.slice(start, repo.indexOf("\n}", start));
-    // Count and insert inside one write transaction, so two enrolments
+    // Count and insert inside one write transaction, so two enrollments
     // arriving together cannot both read the same count and both write.
     expect(body).toContain("BEGIN IMMEDIATE");
-    expect(body).toContain("licenceStatus(db, owner.school_id)");
-    expect(body).toContain("LicenceExceededError");
+    expect(body).toContain("licenseStatus(db, owner.school_id)");
+    expect(body).toContain("LicenseExceededError");
     expect(body).toContain("ROLLBACK");
 
     // The teacher action catches rather than pre-checks, and names no child in
@@ -1144,9 +1144,9 @@ describe("licensed student places are the vendor's record and are enforced", () 
       action.indexOf("export async function addStudentAction"),
       action.indexOf("\n}", action.indexOf("export async function addStudentAction")),
     );
-    expect(add).toContain("LicenceExceededError");
-    expect(add).toContain('action: "roster.blocked_by_licence"');
-    const blocked = add.slice(add.indexOf("roster.blocked_by_licence"));
+    expect(add).toContain("LicenseExceededError");
+    expect(add).toContain('action: "roster.blocked_by_license"');
+    const blocked = add.slice(add.indexOf("roster.blocked_by_license"));
     expect(blocked.slice(0, blocked.indexOf("});"))).not.toContain("displayName");
     // The teacher is told the numbers and where to go, without a child's name.
     expect(add).toMatch(/licensed student places are in use/);
@@ -1156,7 +1156,7 @@ describe("licensed student places are the vendor's record and are enforced", () 
   it("keeps the roster rules it already had", () => {
     const { db, cleanup } = freshSchoolWith(10);
     try {
-      // Data minimisation is unchanged: display name and avatar, nothing else.
+      // Data minimization is unchanged: display name and avatar, nothing else.
       const student = createStudent(db, { classId: DEMO_CLASS, displayName: "Keep K." });
       expect(Object.keys(student).sort()).toEqual(
         ["avatar_key", "class_id", "created_at", "display_name", "id"].sort(),
@@ -1169,14 +1169,14 @@ describe("licensed student places are the vendor's record and are enforced", () 
 
 
 /**
- * Sprint 43. Sprint 42 metered enrolment and excluded archived cohorts, which
+ * Sprint 43. Sprint 42 metered enrollment and excluded archived cohorts, which
  * is right — a class kept for retention is not a class being taught. It also
  * left a door: archive a full cohort, spend the freed seats on a new one,
- * restore the old class, and the school is past its licence without a single
+ * restore the old class, and the school is past its license without a single
  * child having gone through `createStudent`. Restoration is a roster mutation
  * that does not look like one.
  */
-describe("restoring an archived cohort cannot take a school past its licence", () => {
+describe("restoring an archived cohort cannot take a school past its license", () => {
   const freshSchoolWith = (seats: number) => {
     const { db, cleanup } = createTestDb();
     db.prepare("DELETE FROM students").run();
@@ -1208,7 +1208,7 @@ describe("restoring an archived cohort cannot take a school past its licence", (
       for (const n of ["New A.", "New B.", "New C.", "New D."]) {
         createStudent(db, { classId: thisYear.id, displayName: n });
       }
-      expect(licenceStatus(db, DEMO_SCHOOL)).toEqual({ recognised: true, used: 4, licensed: 4, remaining: 0 });
+      expect(licenseStatus(db, DEMO_SCHOOL)).toEqual({ recognized: true, used: 4, licensed: 4, remaining: 0 });
 
       let raised: unknown;
       try {
@@ -1216,10 +1216,10 @@ describe("restoring an archived cohort cannot take a school past its licence", (
       } catch (error) {
         raised = error;
       }
-      expect(raised).toBeInstanceOf(RestoreExceedsLicenceError);
-      // It still answers "the licence said no" to a caller that only asks that.
-      expect(raised).toBeInstanceOf(LicenceExceededError);
-      const e = raised as RestoreExceedsLicenceError;
+      expect(raised).toBeInstanceOf(RestoreExceedsLicenseError);
+      // It still answers "the license said no" to a caller that only asks that.
+      expect(raised).toBeInstanceOf(LicenseExceededError);
+      const e = raised as RestoreExceedsLicenseError;
       expect([e.used, e.roster, e.licensed]).toEqual([4, 2, 4]);
 
       // The class stays archived, on the same timestamp, with every record.
@@ -1245,13 +1245,13 @@ describe("restoring an archived cohort cannot take a school past its licence", (
       // 2 active + 2 archived === 4 licensed. The school paid for those seats.
       restoreClass(db, DEMO_CLASS);
       expect(getClass(db, DEMO_CLASS)!.archived_at).toBeNull();
-      expect(licenceStatus(db, DEMO_SCHOOL)).toEqual({ recognised: true, used: 4, licensed: 4, remaining: 0 });
+      expect(licenseStatus(db, DEMO_SCHOOL)).toEqual({ recognized: true, used: 4, licensed: 4, remaining: 0 });
     } finally {
       cleanup();
     }
   });
 
-  it("allows an empty archived class back whatever the licence says", () => {
+  it("allows an empty archived class back whatever the license says", () => {
     const { db, cleanup } = freshSchoolWith(2);
     try {
       const empty = newClass(db, "Room 103");
@@ -1284,7 +1284,7 @@ describe("restoring an archived cohort cannot take a school past its licence", (
     }
   });
 
-  it("measures each school against its own licence", () => {
+  it("measures each school against its own license", () => {
     const { db, cleanup } = freshSchoolWith(1);
     try {
       db.prepare(
@@ -1333,7 +1333,7 @@ describe("restoring an archived cohort cannot take a school past its licence", (
     const start = repo.indexOf("export function restoreClass");
     const body = repo.slice(start, repo.indexOf("\n}", start));
     expect(body).toContain("BEGIN IMMEDIATE");
-    expect(body).toContain("RestoreExceedsLicenceError");
+    expect(body).toContain("RestoreExceedsLicenseError");
     expect(body).toContain("ROLLBACK");
     // Exactly-on-the-cap is allowed, so the comparison is > and never >=.
     expect(body).toContain("status.used + roster > status.licensed");
@@ -1343,38 +1343,38 @@ describe("restoring an archived cohort cannot take a school past its licence", (
       action.indexOf("export async function restoreClassAction"),
       action.indexOf("\n}", action.indexOf("export async function restoreClassAction")),
     );
-    expect(restore).toContain("RestoreExceedsLicenceError");
-    expect(restore).toContain('action: "class.restore_blocked_by_licence"');
+    expect(restore).toContain("RestoreExceedsLicenseError");
+    expect(restore).toContain('action: "class.restore_blocked_by_license"');
     // Four facts and a route out, and no child named in the audit.
     expect(restore).toMatch(/error\.roster/);
     expect(restore).toMatch(/error\.used/);
     expect(restore).toMatch(/error\.licensed/);
     expect(restore).toMatch(/contact_name/);
     expect(restore).toMatch(/stays archived/);
-    const audit = restore.slice(restore.indexOf("class.restore_blocked_by_licence"));
+    const audit = restore.slice(restore.indexOf("class.restore_blocked_by_license"));
     expect(audit.slice(0, audit.indexOf("});"))).not.toMatch(/display_name|displayName/);
     // And no success audit is written on the refused path. Sprint 71 moved the
     // success audit inside the transaction with the restore itself, so this can
     // no longer be a question about where the string sits in the file — it is a
-    // question about what the transaction commits, asserted behaviourally in
+    // question about what the transaction commits, asserted behaviorally in
     // `tests/audited-writes.test.ts`.
     expect(restore).toContain("auditedWrite");
     expect(restore).toContain('action: "class.restored"');
   });
 
-  it("leaves enrolment and retention behaviour alone", () => {
+  it("leaves enrollment and retention behavior alone", () => {
     const { db, cleanup } = freshSchoolWith(3);
     try {
       createStudent(db, { classId: DEMO_CLASS, displayName: "Keep A." });
       archiveClass(db, DEMO_CLASS);
       // Archiving still frees the seat for a new cohort, which is the sprint 42
-      // behaviour this must not have broken.
+      // behavior this must not have broken.
       const next = newClass(db, "Room 105");
       for (const n of ["Fresh A.", "Fresh B.", "Fresh C."]) {
         createStudent(db, { classId: next.id, displayName: n });
       }
-      expect(licenceStatus(db, DEMO_SCHOOL)).toEqual({
-        recognised: true,
+      expect(licenseStatus(db, DEMO_SCHOOL)).toEqual({
+        recognized: true,
         used: 3,
         licensed: 3,
         remaining: 0,
@@ -1382,7 +1382,7 @@ describe("restoring an archived cohort cannot take a school past its licence", (
       // The archived records are still there to be retained, and restoring is
       // refused rather than deleting them.
       expect(listStudents(db, DEMO_CLASS)).toHaveLength(1);
-      expect(() => restoreClass(db, DEMO_CLASS)).toThrow(RestoreExceedsLicenceError);
+      expect(() => restoreClass(db, DEMO_CLASS)).toThrow(RestoreExceedsLicenseError);
       expect(listStudents(db, DEMO_CLASS)).toHaveLength(1);
     } finally {
       cleanup();
@@ -1431,7 +1431,7 @@ describe("the classroom plan includes one active classroom", () => {
         active: 1,
         limit: 1,
         plan: "classroom",
-        recognised: true,
+        recognized: true,
       });
 
       const before = listClasses(db, DEMO_SCHOOL, true).length;
@@ -1556,7 +1556,7 @@ describe("the classroom plan includes one active classroom", () => {
         active: 3,
         limit: 1,
         plan: "classroom",
-        recognised: true,
+        recognized: true,
       });
       // Read-only from here: the next class is refused, and all three survive.
       expect(() => makeClass(db, "Room D")).toThrow(ClassroomLimitError);
@@ -1658,7 +1658,7 @@ describe("the classroom plan includes one active classroom", () => {
 
 /**
  * Sprint 53. `classroomAllowance` used `ACTIVE_CLASS_LIMIT[school.plan] ?? null`
- * and the administrator page labelled the plan with a ternary ending in
+ * and the administrator page labeled the plan with a ternary ending in
  * `: "Classroom"`. `schools.plan` is unconstrained TEXT set by the vendor
  * outside the UI, so a typo, a migration defect or a stale value like
  * `"classrooms"` was **shown as the Classroom plan while receiving no limit at
@@ -1667,7 +1667,7 @@ describe("the classroom plan includes one active classroom", () => {
  * The paid gate failed open precisely where the entitlement data was malformed,
  * which is the one place it most needs to hold.
  */
-describe("an unrecognised plan grants nothing and claims nothing", () => {
+describe("an unrecognized plan grants nothing and claims nothing", () => {
   const withPlan = (plan: string) => {
     const { db, cleanup } = createTestDb();
     db.prepare("DELETE FROM students").run();
@@ -1694,7 +1694,7 @@ describe("an unrecognised plan grants nothing and claims nothing", () => {
       for (const plan of MALFORMED) {
         db.prepare("UPDATE schools SET plan = ? WHERE id = ?").run(plan, DEMO_SCHOOL);
         const allowance = classroomAllowance(db, DEMO_SCHOOL);
-        expect(allowance.recognised, plan).toBe(false);
+        expect(allowance.recognized, plan).toBe(false);
         // Zero, never null. `null` is "no limit" and must be unreachable here.
         expect(allowance.limit, plan).toBe(0);
         expect(allowance.limit, plan).not.toBeNull();
@@ -1751,8 +1751,8 @@ describe("an unrecognised plan grants nothing and claims nothing", () => {
       } catch (error) {
         raised = error;
       }
-      expect(raised).toBeInstanceOf(PlanNotRecognisedError);
-      expect((raised as PlanNotRecognisedError).plan).toBe("classrooms");
+      expect(raised).toBeInstanceOf(PlanNotRecognizedError);
+      expect((raised as PlanNotRecognizedError).plan).toBe("classrooms");
 
       // Everything that existed still exists, active and archived alike.
       expect(listClasses(db, DEMO_SCHOOL, true)).toHaveLength(before);
@@ -1773,7 +1773,7 @@ describe("an unrecognised plan grants nothing and claims nothing", () => {
       const archivedAt = getClass(db, parked.id)!.archived_at;
       db.prepare("UPDATE schools SET plan = 'premium' WHERE id = ?").run(DEMO_SCHOOL);
 
-      expect(() => restoreClass(db, parked.id)).toThrow(PlanNotRecognisedError);
+      expect(() => restoreClass(db, parked.id)).toThrow(PlanNotRecognizedError);
       expect(getClass(db, parked.id)!.archived_at).toBe(archivedAt);
       expect(listStudents(db, parked.id)).toHaveLength(1);
       expect(countActiveClasses(db, DEMO_SCHOOL)).toBe(0);
@@ -1783,7 +1783,7 @@ describe("an unrecognised plan grants nothing and claims nothing", () => {
   });
 
   it("says the plan cannot be verified, not that it is the classroom plan", () => {
-    const message = planNotRecognisedRefusal("create", "Rosa Delgado");
+    const message = planNotRecognizedRefusal("create", "Rosa Delgado");
     expect(message).toMatch(/plan could not be verified/i);
     expect(message).toMatch(/no new classrooms can be activated/i);
     expect(message).toMatch(/nothing has been changed/i);
@@ -1846,13 +1846,13 @@ describe("an unrecognised plan grants nothing and claims nothing", () => {
  * value — `-12`, `0`, `7`, `120` — was accepted by the domain and passed
  * straight to `addMonths`. A **negative** window moves a cohort's deletion date
  * to before its school year ended, which makes every class immediately eligible
- * and hands `runScheduledPurge` a licence to permanently delete the class and
+ * and hands `runScheduledPurge` a license to permanently delete the class and
  * cascade every roster, attempt and check-in. There is no restore path.
  *
  * Unlike the plan defect, this is not access or revenue. It is a scheduled job
  * destroying children's education records.
  */
-describe("an unrecognised retention window deletes nothing", () => {
+describe("an unrecognized retention window deletes nothing", () => {
   /** Everything the domain must reject, including values only code can produce. */
   const MALFORMED = [-12, 0, 1, 7, 120, -1, 2.5, Number.NaN];
   /**
@@ -1884,17 +1884,17 @@ describe("an unrecognised retention window deletes nothing", () => {
     benchmarks: (db.prepare("SELECT COUNT(*) AS n FROM benchmarks").get() as { n: number }).n,
   });
 
-  it("recognises exactly the four windows the product sells", () => {
+  it("recognizes exactly the four windows the product sells", () => {
     expect([...RECOGNISED_RETENTION_MONTHS].sort((a, b) => a - b)).toEqual([3, 12, 24, 36]);
     // Bound to the options the form offers, so the two cannot drift apart.
     expect([...RECOGNISED_RETENTION_MONTHS].sort((a, b) => a - b)).toEqual(
       RETENTION_OPTIONS.map((o) => o.months).sort((a, b) => a - b),
     );
-    for (const months of [3, 12, 24, 36]) expect(isRecognisedRetention(months), `${months}`).toBe(true);
-    for (const months of MALFORMED) expect(isRecognisedRetention(months), `${months}`).toBe(false);
+    for (const months of [3, 12, 24, 36]) expect(isRecognizedRetention(months), `${months}`).toBe(true);
+    for (const months of MALFORMED) expect(isRecognizedRetention(months), `${months}`).toBe(false);
     // Non-numbers too, since the column is only integer by convention.
     for (const value of ["12", null, undefined, {}, []]) {
-      expect(isRecognisedRetention(value), JSON.stringify(value)).toBe(false);
+      expect(isRecognizedRetention(value), JSON.stringify(value)).toBe(false);
     }
   });
 
@@ -1907,7 +1907,7 @@ describe("an unrecognised retention window deletes nothing", () => {
       expect(purgeDateFor(school), `${months}`).toBeNull();
       expect(purgeDateForClass({ year_ends_on: "2020-06-19" }, months), `${months}`).toBeNull();
       expect(retentionBlock({ retention_months: months }), `${months}`).toBe(
-        "unrecognised-policy",
+        "unrecognized-policy",
       );
     }
     // And a valid one still calculates, so this is a gate and not a wall.
@@ -1930,7 +1930,7 @@ describe("an unrecognised retention window deletes nothing", () => {
         // every one of these as due today.
         expect(row.eligibleNow, row.className).toBe(false);
         expect(row.purgeOn, row.className).toBeNull();
-        expect(row.blockedReason, row.className).toBe("unrecognised-policy");
+        expect(row.blockedReason, row.className).toBe("unrecognized-policy");
       }
     } finally {
       cleanup();
@@ -2017,7 +2017,7 @@ describe("an unrecognised retention window deletes nothing", () => {
       expect(runScheduledPurge(db, now).classesDeleted).toBe(0);
       expect(snapshot(db).classes).toBeGreaterThan(0);
 
-      // Recovery is exactly what the form does: write a recognised value.
+      // Recovery is exactly what the form does: write a recognized value.
       setRetentionMonths(db, DEMO_SCHOOL, 3);
       expect(retentionBlock(getPrimarySchool(db))).toBeNull();
 
@@ -2049,8 +2049,8 @@ describe("an unrecognised retention window deletes nothing", () => {
   it("keeps the job, the calculation, the CLI and the page from drifting", () => {
     const purge = readFileSync(join(process.cwd(), "src/lib/domain/purge.ts"), "utf8");
     // Fails closed before it reads or writes anything for that school.
-    expect(purge).toContain("isRecognisedRetention(school.retention_months)");
-    expect(purge.indexOf("isRecognisedRetention")).toBeLessThan(purge.indexOf("DELETE FROM classes"));
+    expect(purge).toContain("isRecognizedRetention(school.retention_months)");
+    expect(purge.indexOf("isRecognizedRetention")).toBeLessThan(purge.indexOf("DELETE FROM classes"));
     expect(purge).toContain("result.blocked.push");
 
     const retention = readFileSync(join(process.cwd(), "src/lib/domain/retention.ts"), "utf8");
@@ -2077,20 +2077,20 @@ describe("an unrecognised retention window deletes nothing", () => {
 
 /**
  * Sprint 56. `schools.licensed_students` is unconstrained and was trusted as a
- * contract number everywhere. `licenceStatus` returned the raw value with
+ * contract number everywhere. `licenseStatus` returned the raw value with
  * `Math.max` over it, and both write paths compared against it as an ordinary
  * limit.
  *
  * With `-5` a buyer saw "90 of -5 licensed", teachers were told the school had
- * exceeded a **negative** licence, quote messages repeated `-5` back as the
- * current agreement, and every enrolment and restore was misclassified as an
+ * exceeded a **negative** license, quote messages repeated `-5` back as the
+ * current agreement, and every enrollment and restore was misclassified as an
  * overage. With `5001` the repository granted capacity outside the 1-5000 range
  * the product's own quote form accepts, and the buyer UI presented it as
  * purchased. SQLite's INTEGER affinity does not stop a float or text either.
  *
  * A classroom blocker and a contract-integrity defect at once.
  */
-describe("an unrecognised seat licence enrols nobody and claims nothing", () => {
+describe("an unrecognized seat license enrols nobody and claims nothing", () => {
   const MALFORMED = [-12, -5, 0, 2.5, 5001, 1_000_000, Number.NaN, "30", null, undefined, {}];
   /** What an INTEGER-affinity column will actually hold. */
   const MALFORMED_STORABLE = [-12, -5, 0, 2.5, 5001, 1_000_000, "thirty"];
@@ -2110,19 +2110,19 @@ describe("an unrecognised seat licence enrols nobody and claims nothing", () => 
     attempts: (db.prepare("SELECT COUNT(*) AS n FROM attempts").get() as { n: number }).n,
   });
 
-  it("recognises exactly the range the quote form accepts", () => {
+  it("recognizes exactly the range the quote form accepts", () => {
     expect(MIN_LICENSED_STUDENTS).toBe(1);
     expect(MAX_LICENSED_STUDENTS).toBe(5000);
     // Boundaries are inclusive and valid.
     for (const seats of [1, 2, 30, 400, 4999, 5000]) {
-      expect(isRecognisedSeatCount(seats), `${seats}`).toBe(true);
+      expect(isRecognizedSeatCount(seats), `${seats}`).toBe(true);
     }
     for (const seats of MALFORMED) {
-      expect(isRecognisedSeatCount(seats), JSON.stringify(seats)).toBe(false);
+      expect(isRecognizedSeatCount(seats), JSON.stringify(seats)).toBe(false);
     }
     // The action and the domain read from one source, so they cannot drift.
     const action = readFileSync(join(process.cwd(), "src/app/actions/admin.ts"), "utf8");
-    expect(action).toContain("isRecognisedSeatCount(seats)");
+    expect(action).toContain("isRecognizedSeatCount(seats)");
     expect(action).not.toMatch(/seats\s*<\s*1\s*\|\|\s*seats\s*>\s*5000/);
   });
 
@@ -2130,8 +2130,8 @@ describe("an unrecognised seat licence enrols nobody and claims nothing", () => 
     for (const seats of MALFORMED_STORABLE) {
       const { db, cleanup } = withSeats(seats);
       try {
-        const status = licenceStatus(db, DEMO_SCHOOL);
-        expect(status.recognised, JSON.stringify(seats)).toBe(false);
+        const status = licenseStatus(db, DEMO_SCHOOL);
+        expect(status.recognized, JSON.stringify(seats)).toBe(false);
         // Used is counted from rosters, so it is always real.
         expect(status.used, JSON.stringify(seats)).toBeGreaterThan(0);
         // And there is no licensed or remaining number to display or compare.
@@ -2143,7 +2143,7 @@ describe("an unrecognised seat licence enrols nobody and claims nothing", () => 
     }
   });
 
-  it("refuses enrolment with a configuration error, not an overage claim", () => {
+  it("refuses enrollment with a configuration error, not an overage claim", () => {
     for (const seats of MALFORMED_STORABLE) {
       const { db, cleanup } = withSeats(seats);
       try {
@@ -2154,9 +2154,9 @@ describe("an unrecognised seat licence enrols nobody and claims nothing", () => 
         } catch (error) {
           raised = error;
         }
-        expect(raised, JSON.stringify(seats)).toBeInstanceOf(LicenceNotRecognisedError);
+        expect(raised, JSON.stringify(seats)).toBeInstanceOf(LicenseNotRecognizedError);
         // Emphatically not the overage error: nothing was exceeded.
-        expect(raised, JSON.stringify(seats)).not.toBeInstanceOf(LicenceExceededError);
+        expect(raised, JSON.stringify(seats)).not.toBeInstanceOf(LicenseExceededError);
         expect(counts(db), JSON.stringify(seats)).toEqual(before);
       } finally {
         cleanup();
@@ -2172,7 +2172,7 @@ describe("an unrecognised seat licence enrols nobody and claims nothing", () => 
       const roster = listStudents(db, DEMO_CLASS).length;
       const before = counts(db);
 
-      expect(() => restoreClass(db, DEMO_CLASS)).toThrow(LicenceNotRecognisedError);
+      expect(() => restoreClass(db, DEMO_CLASS)).toThrow(LicenseNotRecognizedError);
       expect(getClass(db, DEMO_CLASS)!.archived_at).toBe(archivedAt);
       expect(listStudents(db, DEMO_CLASS)).toHaveLength(roster);
       expect(counts(db)).toEqual(before);
@@ -2182,20 +2182,20 @@ describe("an unrecognised seat licence enrols nobody and claims nothing", () => 
   });
 
   it("never shows a teacher the malformed value, and audits it as configuration", () => {
-    const message = licenceNotRecognisedRefusal("enrol", "Rosa Delgado");
-    expect(message).toMatch(/seat licence needs configuration/i);
+    const message = licenseNotRecognizedRefusal("enrol", "Rosa Delgado");
+    expect(message).toMatch(/seat license needs configuration/i);
     expect(message).toMatch(/no new students can be enrolled/i);
     expect(message).toMatch(/nothing has been changed/i);
     expect(message).toMatch(/Rosa Delgado/);
     // A teacher is not shown the raw number, and is not told they are over.
     expect(message).not.toMatch(/-?\d/);
-    expect(message).not.toMatch(/exceed|over the licence|places are in use/i);
+    expect(message).not.toMatch(/exceed|over the license|places are in use/i);
 
     const teacher = readFileSync(join(process.cwd(), "src/app/actions/teacher.ts"), "utf8");
     const admin = readFileSync(join(process.cwd(), "src/app/actions/admin.ts"), "utf8");
     for (const [src, action] of [
-      [teacher, "roster.blocked_by_licence_config"],
-      [admin, "class.restore_blocked_by_licence_config"],
+      [teacher, "roster.blocked_by_license_config"],
+      [admin, "class.restore_blocked_by_license_config"],
     ] as const) {
       const at = src.indexOf(action);
       expect(at, action).toBeGreaterThan(-1);
@@ -2204,7 +2204,7 @@ describe("an unrecognised seat licence enrols nobody and claims nothing", () => 
       // value is not written into the trail either.
       expect(entry).not.toMatch(/display_name|displayName|listStudents/);
       expect(entry).not.toMatch(/licensed_students/);
-      expect(entry).toMatch(/not a recognised number/);
+      expect(entry).toMatch(/not a recognized number/);
     }
   });
 
@@ -2214,8 +2214,8 @@ describe("an unrecognised seat licence enrols nobody and claims nothing", () => 
     const form = readFileSync(join(process.cwd(), "src/app/admin/program/PlanForm.tsx"), "utf8");
 
     for (const [src, page] of [[program, "program"], [overview, "overview"]] as const) {
-      expect(src, page).toContain("licence.recognised");
-      expect(src, page).toMatch(/Seat licence needs configuration/);
+      expect(src, page).toContain("license.recognized");
+      expect(src, page).toMatch(/Seat license needs configuration/);
       expect(src, page).toMatch(/No new students can be enrolled|no new students can be enrolled/);
       // The raw column is never rendered directly on a buyer surface.
       expect(src, page).not.toMatch(/\{school\.licensed_students\}/);
@@ -2224,7 +2224,7 @@ describe("an unrecognised seat licence enrols nobody and claims nothing", () => 
     // The quote form takes a nullable number and does not prefill a bad one.
     expect(form).toContain("seats: number | null");
     expect(form).toContain("defaultValue={seats ?? undefined}");
-    expect(form).toMatch(/seat licence needs configuration/);
+    expect(form).toMatch(/seat license needs configuration/);
   });
 
   it("keeps the quote request usable without laundering the bad value", () => {
@@ -2232,37 +2232,37 @@ describe("an unrecognised seat licence enrols nobody and claims nothing", () => 
     const start = admin.indexOf("export async function requestPlanChangeAction");
     const body = admin.slice(start, admin.indexOf("\nexport ", start + 10));
     // A valid desired count is still accepted and validated by the one source.
-    expect(body).toContain("isRecognisedSeatCount(seats)");
+    expect(body).toContain("isRecognizedSeatCount(seats)");
     // Neither the message nor the audit repeats the stored value as an
     // agreement when it is not one.
-    expect(body).toContain("current.recognised");
+    expect(body).toContain("current.recognized");
     expect(body).not.toMatch(/school\.licensed_students/);
-    expect(body).toMatch(/seat licence that needs configuration|seat licence still needs configuration/);
+    expect(body).toMatch(/seat license that needs configuration|seat license still needs configuration/);
     // And the request still changes nothing, as sprint 42 established.
     expect(body).not.toMatch(/UPDATE schools SET plan/);
   });
 
-  it("leaves valid boundaries and ordinary over-cap behaviour alone", () => {
+  it("leaves valid boundaries and ordinary over-cap behavior alone", () => {
     // The bottom of the range: one seat, one child, then full.
     const one = withSeats(1);
     try {
       one.db.prepare("DELETE FROM students").run();
-      const status = licenceStatus(one.db, DEMO_SCHOOL);
-      expect(status).toEqual({ recognised: true, used: 0, licensed: 1, remaining: 1 });
+      const status = licenseStatus(one.db, DEMO_SCHOOL);
+      expect(status).toEqual({ recognized: true, used: 0, licensed: 1, remaining: 1 });
       createStudent(one.db, { classId: DEMO_CLASS, displayName: "Only O." });
       expect(() =>
         createStudent(one.db, { classId: DEMO_CLASS, displayName: "Extra E." }),
-      ).toThrow(LicenceExceededError);
+      ).toThrow(LicenseExceededError);
     } finally {
       one.cleanup();
     }
 
-    // The top of the range is recognised and has room.
+    // The top of the range is recognized and has room.
     const many = withSeats(5000);
     try {
-      const status = licenceStatus(many.db, DEMO_SCHOOL);
-      expect(status.recognised).toBe(true);
-      expect(status.recognised && status.licensed).toBe(5000);
+      const status = licenseStatus(many.db, DEMO_SCHOOL);
+      expect(status.recognized).toBe(true);
+      expect(status.recognized && status.licensed).toBe(5000);
       expect(() =>
         createStudent(many.db, { classId: DEMO_CLASS, displayName: "Fine F." }),
       ).not.toThrow();
@@ -2276,8 +2276,8 @@ describe("an unrecognised seat licence enrols nobody and claims nothing", () => 
     for (const fn of ["createStudent", "restoreClass"]) {
       const start = repo.indexOf(`export function ${fn}(`);
       const body = repo.slice(start, repo.indexOf("\n}", start));
-      expect(body, fn).toContain("LicenceNotRecognisedError");
-      const config = body.indexOf("status.recognised");
+      expect(body, fn).toContain("LicenseNotRecognizedError");
+      const config = body.indexOf("status.recognized");
       expect(config, fn).toBeGreaterThan(-1);
       // Before any comparison against a number that may mean nothing.
       const compare = body.search(/status\.remaining|status\.used \+ roster/);
@@ -2352,7 +2352,7 @@ describe("the annual report exports no malformed account value", () => {
     }
   });
 
-  it("keeps a recognised retention window as a number", () => {
+  it("keeps a recognized retention window as a number", () => {
     const { db, cleanup } = createTestDb();
     try {
       db.prepare("UPDATE schools SET retention_months = 24 WHERE id = ?").run(DEMO_SCHOOL);

@@ -34,7 +34,7 @@ import { encodeSession, signPayload } from "@/lib/auth/token";
 import {
   createClass,
   getClass,
-  normaliseJoinCode,
+  normalizeJoinCode,
   rotateJoinCode,
 } from "@/lib/repo/classroom";
 import { DEMO_SCHOOL } from "./helpers";
@@ -59,7 +59,7 @@ function signingKey(): Buffer {
   return key;
 }
 
-const codeOf = (classId: string) => normaliseJoinCode(getClass(db, classId)!.join_code);
+const codeOf = (classId: string) => normalizeJoinCode(getClass(db, classId)!.join_code);
 
 beforeEach(() => {
   ({ db, cleanup } = createTestDb());
@@ -82,7 +82,7 @@ describe("a student session dies with the code that issued it", () => {
       code: codeOf(DEMO_CLASS),
     });
 
-    // Through the real authorisation path, not a helper.
+    // Through the real authorization path, not a helper.
     const before = await currentStudent();
     expect(before?.student.id).toBe(DEMO_STUDENT);
     expect(before?.classroom.id).toBe(DEMO_CLASS);
@@ -91,7 +91,7 @@ describe("a student session dies with the code that issued it", () => {
     const issuedUnder = codeOf(DEMO_CLASS);
     const fresh = rotateJoinCode(db, DEMO_CLASS);
     expect(fresh).toBeTruthy();
-    expect(normaliseJoinCode(fresh!)).not.toBe(issuedUnder);
+    expect(normalizeJoinCode(fresh!)).not.toBe(issuedUnder);
 
     // FAILING-BEFORE: this returned the student and their classroom, because
     // the session said only `{ kind, studentId }` and nothing compared it to

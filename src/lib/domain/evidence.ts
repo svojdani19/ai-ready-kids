@@ -110,7 +110,7 @@ export function mergeEvidence(maps: EvidenceMap[]): EvidenceMap {
   return merged;
 }
 
-export function summariseStudent(attempts: Attempt[]): StudentSummary {
+export function summarizeStudent(attempts: Attempt[]): StudentSummary {
   // Oldest first, so the per-opportunity sequence reads in the order the child
   // actually met the skill rather than in whatever order the rows came back.
   const completed = attempts
@@ -181,7 +181,7 @@ export interface CohortSkillStat {
   /**
    * Demonstrated over `withOpportunity` — never over the whole roster. A skill
    * one student of thirty has met and shown is 100% of the students who
-   * practised it, not 3% of the class. Zero when nobody has had a go.
+   * practiced it, not 3% of the class. Zero when nobody has had a go.
    */
   demonstratedRate: number;
   /** Every recorded opportunity across the class, for the transfer view. */
@@ -223,7 +223,7 @@ export interface CohortSummary {
   }[];
 }
 
-export function summariseCohort(input: {
+export function summarizeCohort(input: {
   studentIds: string[];
   attempts: Attempt[];
   assignedMissionIds: string[];
@@ -236,7 +236,7 @@ export function summariseCohort(input: {
     if (list) list.push(a);
   }
 
-  const summaries = studentIds.map((id) => summariseStudent(byStudent.get(id) ?? []));
+  const summaries = studentIds.map((id) => summarizeStudent(byStudent.get(id) ?? []));
 
   const skills: CohortSkillStat[] = COMPETENCIES.flatMap((c) =>
     c.skills.map((s) => {
@@ -326,7 +326,7 @@ export function summariseCohort(input: {
  * that only ever goes up cannot say what needs teaching this week. How often a
  * skill is chosen first go, across every time it has come up, can.
  *
- * `not-practised` is a coverage observation, not a judgement about
+ * `not-practiced` is a coverage observation, not a judgment about
  * understanding. A skill nobody has reached is not a weakness, and the earlier
  * version of this function ranked exactly that as the class's biggest gap:
  * dividing by the whole roster meant the least-assigned skill always scored
@@ -348,7 +348,7 @@ export type TeachingFocus =
       rate: number;
     }
   | {
-      kind: "not-practised";
+      kind: "not-practiced";
       skillId: string;
       label: string;
       mission: Mission | undefined;
@@ -379,16 +379,16 @@ export function nextTeachingFocus(cohort: CohortSummary): TeachingFocus | undefi
     };
   }
 
-  // Nothing has comparable coverage. Say what has been practised least, and
+  // Nothing has comparable coverage. Say what has been practiced least, and
   // say it as coverage rather than as a competency gap.
-  const leastPractised = [...cohort.skills].sort(
+  const leastPracticed = [...cohort.skills].sort(
     (a, b) => a.withOpportunity - b.withOpportunity || a.skillId.localeCompare(b.skillId),
   )[0];
   return {
-    kind: "not-practised",
-    skillId: leastPractised.skillId,
-    label: leastPractised.educatorLabel,
-    mission: MISSIONS.find((m) => m.primarySkillId === leastPractised.skillId),
-    withOpportunity: leastPractised.withOpportunity,
+    kind: "not-practiced",
+    skillId: leastPracticed.skillId,
+    label: leastPracticed.educatorLabel,
+    mission: MISSIONS.find((m) => m.primarySkillId === leastPracticed.skillId),
+    withOpportunity: leastPracticed.withOpportunity,
   };
 }

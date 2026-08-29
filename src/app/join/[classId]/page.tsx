@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { readJoinGrant } from "@/lib/auth/session";
 import { schoolHasLapsed } from "@/lib/auth/subscription-gate";
 import { getDb } from "@/lib/db";
-import { getClass, listStudents, normaliseJoinCode } from "@/lib/repo/classroom";
+import { getClass, listStudents, normalizeJoinCode } from "@/lib/repo/classroom";
 import { getUser } from "@/lib/repo/school";
 import { chooseStudent } from "@/app/actions/auth";
 import { Avatar, avatarLabel } from "@/components/art/Avatar";
@@ -30,7 +30,7 @@ export default async function ChooseStudentPage({
   const classroom = getClass(db, classId);
   if (!classroom || classroom.archived_at) redirect("/join");
   // A rotated code invalidates a grant issued against the old one.
-  if (normaliseJoinCode(classroom.join_code) !== grant.code) redirect("/join");
+  if (normalizeJoinCode(classroom.join_code) !== grant.code) redirect("/join");
 
   // And the term. A grant lasts ten minutes, so this page can be reached with a
   // valid grant issued before the school lapsed. It lists every child in the

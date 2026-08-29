@@ -6,7 +6,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  */
 
 /**
- * A student session carries the class code that authorised it.
+ * A student session carries the class code that authorized it.
  *
  * Rotation used to invalidate new joins and half-finished grants but not a
  * session already issued: `{ kind: "student", studentId }` said nothing about
@@ -15,7 +15,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  * survived rotation for the rest of its twelve hours — while the product told
  * administrators the old code "stops working immediately".
  *
- * `code` is the normalised join code, which is exactly the marker the grant
+ * `code` is the normalized join code, which is exactly the marker the grant
  * already carried. It is not persisted anywhere: it lives only inside the
  * signed, HttpOnly cookie, and no screen shows it.
  *
@@ -40,7 +40,7 @@ export interface JoinGrant {
   kind: "join";
   classId: string;
   /**
-   * The code that was actually entered, normalised. Carried so that rotating a
+   * The code that was actually entered, normalized. Carried so that rotating a
    * class code invalidates grants already issued against the old one — without
    * it, a code that leaked stayed usable for anybody mid-flow.
    */

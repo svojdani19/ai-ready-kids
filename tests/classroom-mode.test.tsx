@@ -225,7 +225,7 @@ describe("the board is a modal teaching surface", () => {
     screen.getByRole("link", { name: "Mission library" }),
   ];
 
-  it("announces itself as a labelled modal, and the plan page does not", async () => {
+  it("announces itself as a labeled modal, and the plan page does not", async () => {
     const user = userEvent.setup();
     render(withChrome());
 

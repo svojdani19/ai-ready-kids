@@ -47,7 +47,7 @@ const PLANS = [
     // database, with email-only sign-in and manually entered rosters. Listing
     // these beside the working features let an evaluator conclude a district
     // subscription includes integrations that do not exist, so they are
-    // labelled rather than sold.
+    // labeled rather than sold.
     planned: [
       "Roster sync via Clever or ClassLink",
       "District-level rollup reporting",

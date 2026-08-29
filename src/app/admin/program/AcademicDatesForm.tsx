@@ -27,7 +27,7 @@ export function AcademicDatesForm({
   endsOn,
   settingsState,
 }: {
-  /** Null when the stored value is not one this product recognises. */
+  /** Null when the stored value is not one this product recognizes. */
   academicYear: string | null;
   startsOn: string | null;
   endsOn: string | null;

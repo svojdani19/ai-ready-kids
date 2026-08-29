@@ -123,7 +123,7 @@ export async function finishMission(slug: string): Promise<void> {
  *
  * Replay now means what the copy says: the completed attempt is loaded and
  * every write refuses. `resetAttempt` survives in the repository for tests and
- * for any future support tool, which would need to be an authorised adult
+ * for any future support tool, which would need to be an authorized adult
  * operation with confirmation and an audit entry — not something a child's
  * browser can invoke.
  */

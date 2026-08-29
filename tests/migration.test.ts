@@ -293,7 +293,7 @@ describe("an existing database with no recorded version", () => {
    * a new column. Its own upgrade test always inserted version 1, so it never
    * saw this.
    */
-  it("is recognised as version 1 by its shape, not assumed to be new", () => {
+  it("is recognized as version 1 by its shape, not assumed to be new", () => {
     const path = makeLegacyDatabase(null);
     const raw = new DatabaseSync(path);
     // Precondition: complete v1 data, no version row.
@@ -346,7 +346,7 @@ describe("an existing database with no recorded version", () => {
     db.close();
   });
 
-  it("recognises an unversioned database that is already current", () => {
+  it("recognizes an unversioned database that is already current", () => {
     // The other way the old reset produced this: a sprint 32 database, which
     // had the v2 shape while `SCHEMA_VERSION` still said "1", reset before
     // sprint 33 landed.
@@ -367,7 +367,7 @@ describe("an existing database with no recorded version", () => {
   });
 });
 
-describe("anything unrecognised fails closed", () => {
+describe("anything unrecognized fails closed", () => {
   /**
    * Stamping a version onto a file whose contents nobody has established is
    * how sprint 33's defect worked. Refusing to open is the safe direction: the
@@ -405,7 +405,7 @@ describe("anything unrecognised fails closed", () => {
     db.close();
   });
 
-  it("refuses a partial schema it does not recognise", () => {
+  it("refuses a partial schema it does not recognize", () => {
     const path = fileWith(
       `CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
        CREATE TABLE schools (id TEXT PRIMARY KEY, name TEXT NOT NULL);`,

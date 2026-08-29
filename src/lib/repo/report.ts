@@ -1,14 +1,14 @@
 import "server-only";
-import { isRecognisedRetention } from "@/lib/domain/retention";
+import { isRecognizedRetention } from "@/lib/domain/retention";
 import { isAcademicYearLabel } from "@/lib/domain/calendar";
 import type { Db } from "@/lib/db";
 import { COMPETENCY_BY_ID, COMPETENCY_IDS } from "@/content/competencies";
 import { ALL_SESSIONS, MISSION_BY_ID } from "@/content/missions";
 import { CERTIFICATION_MODULES } from "@/content/certification";
-import { summariseCohort } from "@/lib/domain/evidence";
+import { summarizeCohort } from "@/lib/domain/evidence";
 import {
   MIN_BENCHMARK_GROUP,
-  summariseCohortBenchmark,
+  summarizeCohortBenchmark,
   type CohortBenchmark,
 } from "@/lib/domain/benchmark";
 import { listAssignments, listClasses, listStudents } from "./classroom";
@@ -84,7 +84,7 @@ export interface SchoolReport {
     contributors: number;
   }[];
   /**
-   * Every session in the catalogue, First Look and core. `segment` is here so
+   * Every session in the catalog, First Look and core. `segment` is here so
    * a reader can separate the two: an administrator's "every mission in use"
    * check applies to the core curriculum, since no school runs both First Look
    * grade tracks.
@@ -131,7 +131,7 @@ export function buildSchoolReport(db: Db, schoolId: string, now = new Date()): S
   const perClass = classes.map((classroom) => {
     const students = listStudents(db, classroom.id);
     const assignments = listAssignments(db, classroom.id);
-    const cohort = summariseCohort({
+    const cohort = summarizeCohort({
       studentIds: students.map((s) => s.id),
       attempts: listAttemptsForClass(db, classroom.id),
       assignedMissionIds: assignments.map((a) => a.mission_id),
@@ -200,7 +200,7 @@ export function buildSchoolReport(db: Db, schoolId: string, now = new Date()): S
     };
   });
 
-  const benchmark = summariseCohortBenchmark(
+  const benchmark = summarizeCohortBenchmark(
     classes.flatMap((c) => listBenchmarksForClass(db, c.id)),
   );
 
@@ -212,14 +212,14 @@ export function buildSchoolReport(db: Db, schoolId: string, now = new Date()): S
       city: school.city,
       state: school.state,
       // The school's deliberate current year. Taking it from whichever class
-      // sorted first meant a mixed-cohort school got labelled by an accident
+      // sorted first meant a mixed-cohort school got labeled by an accident
       // of ordering.
       // A shaped-but-wrong label like "2025-2027" is not a reporting period,
       // and this object is serialised into a district-office download.
       schoolYear: isAcademicYearLabel(school.academic_year)
         ? school.academic_year
         : "Needs configuration",
-      retention: isRecognisedRetention(school.retention_months)
+      retention: isRecognizedRetention(school.retention_months)
         ? { status: "configured", months: school.retention_months }
         : { status: "needs-configuration" },
     },
@@ -262,7 +262,7 @@ export function buildSchoolReport(db: Db, schoolId: string, now = new Date()): S
       `Every competency figure reads "too few to report" unless at least ${MIN_REPORTABLE_GROUP} distinct students contributed to that particular figure. Contributing means having completed a mission that offered the skill, which is usually fewer students than are enrolled.`,
       `Check-in rates read "too few to report" unless at least ${MIN_BENCHMARK_GROUP} students completed that window. The fall-to-spring change is withheld unless at least ${MIN_BENCHMARK_GROUP} students completed both windows, and the same threshold applies to every per-competency figure.`,
       "Completion rates are the one figure calculated over everybody assigned, because there the contributing group is the whole class by definition. They are suppressed on class size.",
-      "Figures describe demonstrated competencies from authored choices. They are not risk scores, behavioural predictions or psychological assessments.",
+      "Figures describe demonstrated competencies from authored choices. They are not risk scores, behavioral predictions or psychological assessments.",
       "Check-in results are reported only in aggregate. No individual student's answers appear anywhere in this export.",
     ],
   };

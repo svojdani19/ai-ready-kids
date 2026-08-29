@@ -74,7 +74,7 @@ export const SESSION_SHAPES: SessionShape[] = [
         label: "Name the one idea",
         teacher:
           "Close with the single idea the session carries, in your own words, and leave it visible for the week.",
-        children: "Hearing it said plainly once, not summarised five ways.",
+        children: "Hearing it said plainly once, not summarized five ways.",
       },
     ],
     keyPoint:
@@ -92,7 +92,7 @@ export const SESSION_SHAPES: SessionShape[] = [
         label: "Set the situation, not the answer",
         teacher:
           "Read the mission's setup line from the guide. Say what the child in the story is about to face. Do not tell the class what the right choice is, and do not warn them that there is a trick.",
-        children: "Listening. They should go in genuinely unsure, because a child who has been told the answer practises nothing.",
+        children: "Listening. They should go in genuinely unsure, because a child who has been told the answer practices nothing.",
       },
       {
         minutes: 9,
@@ -136,7 +136,7 @@ export const ROOM_SETUPS = [
   {
     setup: "One board and no devices",
     guidance:
-      "Run any session in Classroom Mode as a whole-class decision. Children still practise choosing and justifying; what is lost is the individual record, so nothing appears on the roster for that session.",
+      "Run any session in Classroom Mode as a whole-class decision. Children still practice choosing and justifying; what is lost is the individual record, so nothing appears on the roster for that session.",
   },
 ];
 
@@ -201,7 +201,7 @@ export const WHAT_IS_RECORDED = [
   {
     shape: "A core mission",
     recorded:
-      "Which authored choices the child tapped, and a per-skill judgement of demonstrated or developing worked out from those choices. That is the evidence on your roster and in the family take-home.",
+      "Which authored choices the child tapped, and a per-skill judgment of demonstrated or developing worked out from those choices. That is the evidence on your roster and in the family take-home.",
   },
   {
     shape: "Any session run on the board only",

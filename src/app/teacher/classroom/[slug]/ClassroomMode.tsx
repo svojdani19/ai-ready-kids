@@ -182,7 +182,7 @@ export function ClassroomMode({ mission }: { mission: Mission }) {
 
   // Selecting a branch sets it rather than toggling, because the switcher
   // below stays on screen and a toggle would make tapping the active button
-  // do something different from tapping its neighbours.
+  // do something different from tapping its neighbors.
   const reveal = (choiceId: string) => setRevealed(choiceId);
   const showChoiceList = () => setRevealed(null);
 
@@ -432,7 +432,7 @@ export function ClassroomMode({ mission }: { mission: Mission }) {
   const revealedChoice: Choice | undefined = scene.choices?.find((c) => c.id === revealed);
 
   return (
-    // Labelled and modal: it covers the teacher application completely, so a
+    // Labeled and modal: it covers the teacher application completely, so a
     // screen reader should describe it as the thing in front rather than as
     // one more region on the page behind it.
     <div
@@ -533,7 +533,7 @@ export function ClassroomMode({ mission }: { mission: Mission }) {
                 Without this, revealing a choice replaced the list and the only
                 way back to B or C was a number key — fine on a laptop, useless
                 on a touch-only interactive board. It is deliberately styled and
-                labelled apart from the hands-up tally in the bar below: this
+                labeled apart from the hands-up tally in the bar below: this
                 changes what the room is looking at, that counts votes. */}
             {revealedChoice && scene.choices && (
               <div className="mt-[1.5vh]">

@@ -25,7 +25,7 @@ if (result.classesDeleted === 0 && anyBlock) {
   // school that is unknowable: there is no valid schedule to be past. Claiming
   // an all-clear and then printing a block underneath is the contradiction
   // sprint 54 set out to remove and then printed in its own transcript.
-  console.log("No records were deleted from schools with a recognised retention policy.");
+  console.log("No records were deleted from schools with a recognized retention policy.");
 } else if (result.classesDeleted === 0) {
   console.log("Nothing is past its retention date. No records were deleted.");
 } else {
@@ -44,7 +44,7 @@ if (result.classesDeleted === 0 && anyBlock) {
 if (result.blocked.length > 0) {
   console.error(
     `\nBLOCKED: ${result.blocked.length} school${result.blocked.length === 1 ? "" : "s"} ` +
-      "skipped because the retention window is not one this product recognises. " +
+      "skipped because the retention window is not one this product recognizes. " +
       "No records were deleted for them, and nothing has been changed.",
   );
   for (const school of result.blocked) {

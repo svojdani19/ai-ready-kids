@@ -29,7 +29,7 @@ import {
   getClass,
   listClassesForTeacher,
   listStudents,
-  normaliseJoinCode,
+  normalizeJoinCode,
   rotateJoinCode,
 } from "@/lib/repo/classroom";
 import {
@@ -57,7 +57,7 @@ describe("session cookies", () => {
       kind: "staff",
       userId: "usr_1",
     });
-    // Sprint 68: a student session carries the class code that authorised it,
+    // Sprint 68: a student session carries the class code that authorized it,
     // so the round-trip has to preserve the binding, not just the id.
     expect(
       decodeSession(
@@ -204,7 +204,7 @@ describe("the student record holds nothing it should not", () => {
     }
   });
 
-  it("has no table for behavioural telemetry or risk scoring", () => {
+  it("has no table for behavioral telemetry or risk scoring", () => {
     const tables = db
       .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
       .all()
@@ -393,7 +393,7 @@ describe("the join surfaces check the grant themselves", () => {
     expect(page).toContain("readJoinGrant()");
     expect(page).toContain("grant?.classId !== classId");
     // And a rotated code invalidates a grant issued against the old one.
-    expect(page).toContain("normaliseJoinCode(classroom.join_code) !== grant.code");
+    expect(page).toContain("normalizeJoinCode(classroom.join_code) !== grant.code");
   });
 
   it("verifies the grant in the action rather than trusting the page", () => {
@@ -403,7 +403,7 @@ describe("the join surfaces check the grant themselves", () => {
     const body = actions.slice(start);
     expect(body).toContain("readJoinGrant()");
     expect(body).toContain("student.class_id !== grant.classId");
-    expect(body).toContain("normaliseJoinCode(classroom.join_code) !== grant.code");
+    expect(body).toContain("normalizeJoinCode(classroom.join_code) !== grant.code");
     expect(body).toContain("classroom.archived_at");
     // And the grant is spent, not left lying around.
     expect(body).toContain("clearJoinGrant()");
@@ -477,9 +477,9 @@ describe("what a student may open is a rule, not a rendered card", () => {
   });
 });
 
-describe("deleting a child is scoped to the class that authorised it", () => {
+describe("deleting a child is scoped to the class that authorized it", () => {
   /**
-   * `removeStudentAction` authorised the *class* and then deleted the
+   * `removeStudentAction` authorized the *class* and then deleted the
    * *student* by bare id. A teacher could pass their own legitimate class id
    * alongside any student id they knew and permanently delete that child —
    * from a colleague's class, or another school — taking every cascaded
@@ -530,7 +530,7 @@ describe("deleting a child is scoped to the class that authorised it", () => {
     // Sprint 73 put the removal and its audit in one transaction, so the audit
     // call is no longer a string in this action's body and the source-position
     // version of this test could only ever have gone stale. The property it
-    // stood for is behavioural and is asserted in
+    // stood for is behavioral and is asserted in
     // `tests/audited-writes.test.ts`: a mismatched pair throws before the audit
     // insert, and the transaction rolls back both.
     const src = readFileSync(join(process.cwd(), "src/app/actions/teacher.ts"), "utf8");
@@ -604,7 +604,7 @@ describe("a class is owned by a teacher at the same school", () => {
   });
 
   it("never lists a class from another school on a teacher's overview", () => {
-    // Defence in depth: even if a cross-school class existed, it must not
+    // Defense in depth: even if a cross-school class existed, it must not
     // surface here with its join code and evidence attached.
     const mine = listClassesForTeacher(db2, DEMO_TEACHER, DEMO_SCHOOL);
     expect(listClassesForTeacher(db2, DEMO_TEACHER, "sch_elsewhere")).toHaveLength(0);
@@ -710,8 +710,8 @@ describe("a class code is a credential, not a friendly identifier", () => {
     const code = generateJoinCode(db3);
     expect(code.split("-")).toHaveLength(3);
     expect(code.length).toBeLessThanOrEqual(24);
-    expect(normaliseJoinCode(code.toLowerCase().replace(/-/g, " "))).toBe(
-      normaliseJoinCode(code),
+    expect(normalizeJoinCode(code.toLowerCase().replace(/-/g, " "))).toBe(
+      normalizeJoinCode(code),
     );
   });
 });
@@ -793,7 +793,7 @@ describe("rotating a class code invalidates what it granted", () => {
     const rotated = rotateJoinCode(db4, DEMO_CLASS);
 
     expect(rotated).toBeDefined();
-    expect(normaliseJoinCode(rotated!)).not.toBe(normaliseJoinCode(before.join_code));
+    expect(normalizeJoinCode(rotated!)).not.toBe(normalizeJoinCode(before.join_code));
     // The class survives, which is the point — the old way was delete and rebuild.
     expect(getClass(db4, DEMO_CLASS)!.id).toBe(before.id);
     expect(listStudents(db4, DEMO_CLASS)).toHaveLength(students);
@@ -811,7 +811,7 @@ describe("rotating a class code invalidates what it granted", () => {
     const decoded = decodeJoinGrant(key, stale, now)!;
     // The grant itself is still valid; what fails is the code comparison the
     // page and the action both make against the class's current code.
-    expect(decoded.code).not.toBe(normaliseJoinCode(getClass(db4, DEMO_CLASS)!.join_code));
+    expect(decoded.code).not.toBe(normalizeJoinCode(getClass(db4, DEMO_CLASS)!.join_code));
   });
 
   it("refuses to rotate a class that does not exist", () => {
@@ -874,8 +874,8 @@ describe("an administrator can rotate a class code without deleting anything", (
     expect(code).toBeDefined();
 
     const after = linkedRecords();
-    expect(normaliseJoinCode(after.classRow.join_code)).not.toBe(
-      normaliseJoinCode(before.classRow.join_code),
+    expect(normalizeJoinCode(after.classRow.join_code)).not.toBe(
+      normalizeJoinCode(before.classRow.join_code),
     );
     // Every other column of the class row, compared field by field rather than
     // by spot-check, so a future change that quietly clears one fails here.
@@ -892,7 +892,7 @@ describe("an administrator can rotate a class code without deleting anything", (
   it("leaves a grant issued against the superseded code unusable", () => {
     const key = randomBytes(32);
     const now = 1_760_000_000;
-    const stale = normaliseJoinCode(getClass(db5, DEMO_CLASS)!.join_code);
+    const stale = normalizeJoinCode(getClass(db5, DEMO_CLASS)!.join_code);
     const token = encodeJoinGrant(key, {
       kind: "join",
       classId: DEMO_CLASS,
@@ -903,7 +903,7 @@ describe("an administrator can rotate a class code without deleting anything", (
     expect(decodeJoinGrant(key, token, now)!.code).toBe(stale);
     rotateJoinCode(db5, DEMO_CLASS);
     expect(decodeJoinGrant(key, token, now)!.code).not.toBe(
-      normaliseJoinCode(getClass(db5, DEMO_CLASS)!.join_code),
+      normalizeJoinCode(getClass(db5, DEMO_CLASS)!.join_code),
     );
   });
 

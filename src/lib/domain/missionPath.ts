@@ -32,7 +32,7 @@ export function nextSceneAfter(scene: Scene, choice: Choice): string {
 
 /**
  * Replay a stored path to work out which scene a returning student is on.
- * Unrecognised steps stop the replay rather than throwing, so a content edit
+ * Unrecognized steps stop the replay rather than throwing, so a content edit
  * that removes a scene degrades to "start again" instead of a crash.
  */
 export function resumeSceneId(mission: Mission, path: PathStep[]): string {

@@ -62,7 +62,7 @@ export const theBookThatWasNotThere: Mission = {
       art: "library",
       narration: [
         "Mr. Ruiz types the title into the library computer. Nothing.",
-        "He tries the author. Nothing. He tries the whole district catalogue, which has about four hundred thousand books in it. Nothing.",
+        "He tries the author. Nothing. He tries the whole district catalog, which has about four hundred thousand books in it. Nothing.",
       ],
       prompt: "What do you know so far?",
       choices: [
@@ -185,18 +185,18 @@ export const theBookThatWasNotThere: Mission = {
           feedback: {
             tone: "strong",
             headline: "The cheapest check in the building",
-            body: "He walks four metres and comes back with two. You can hold them. They have barcodes. Sometimes the check that costs nothing is a person you can see.",
+            body: "He walks four meters and comes back with two. You can hold them. They have barcodes. Sometimes the check that costs nothing is a person you can see.",
           },
           evidence: { skillId: "verify.source", result: "demonstrated" },
           next: "s6",
         },
         {
           id: "c2",
-          label: "Search the library catalogue for octopus yourself",
+          label: "Search the library catalog for octopus yourself",
           feedback: {
             tone: "strong",
             headline: "Also real, also fast",
-            body: "Everything the catalogue lists is a book the library actually holds. A list of things that exist beats a suggestion of things that might.",
+            body: "Everything the catalog lists is a book the library actually holds. A list of things that exist beats a suggestion of things that might.",
           },
           evidence: { skillId: "verify.source", result: "demonstrated" },
           next: "s6",
@@ -243,7 +243,7 @@ export const theBookThatWasNotThere: Mission = {
           feedback: {
             tone: "rethink",
             headline: "Too big a rule",
-            body: "That one would stop you using the library catalogue, which is also a computer and was right. The rule is about checking, not about distrusting everything. Try again.",
+            body: "That one would stop you using the library catalog, which is also a computer and was right. The rule is about checking, not about distrusting everything. Try again.",
             coachNote:
               "The slide into blanket cynicism is the failure mode at this age. Correct it every time it appears.",
           },
@@ -282,12 +282,12 @@ export const theBookThatWasNotThere: Mission = {
   ],
   guide: {
     setup:
-      "Invented citations are the clearest possible demonstration that fluency is not knowledge, and a library makes the check concrete. Watch the step in the middle, because it is the one most classes want to skip: an empty local search means the book cannot be used, not that it does not exist. Real books go missing from local catalogues all the time — new, self-published, digital, out of print, or simply never bought here. Calling something invented takes a second, wider check, which is what Mr. Ruiz does next. Keep the tone curious rather than alarmed. Nobody is fooled because they were careless.",
+      "Invented citations are the clearest possible demonstration that fluency is not knowledge, and a library makes the check concrete. Watch the step in the middle, because it is the one most classes want to skip: an empty local search means the book cannot be used, not that it does not exist. Real books go missing from local catalogs all the time — new, self-published, digital, out of print, or simply never bought here. Calling something invented takes a second, wider check, which is what Mr. Ruiz does next. Keep the tone curious rather than alarmed. Nobody is fooled because they were careless.",
     lookFor: [
       "Students who read specificity as credibility",
       "Whether anyone tries a second query instead of a different kind of source",
       "Students sliding into never trust computers, which is the wrong lesson",
-      "Students who jump from the catalogue finding nothing straight to it does not exist",
+      "Students who jump from the catalog finding nothing straight to it does not exist",
     ],
     questions: [
       "What made the book sound real?",
@@ -315,11 +315,11 @@ export const theBookThatWasNotThere: Mission = {
       },
     ],
     extension:
-      "Give pairs three book titles: two you have already looked up and confirmed are in your catalogue, and one you invented with a plausible author and page count. Confirming the two beforehand matters, because a real book your library happens not to stock would look exactly like the invented one. Have them check rather than guess, and time it — under a minute each. Then ask what an empty result proved: that they cannot use it, not that nobody wrote it.",
+      "Give pairs three book titles: two you have already looked up and confirmed are in your catalog, and one you invented with a plausible author and page count. Confirming the two beforehand matters, because a real book your library happens not to stock would look exactly like the invented one. Have them check rather than guess, and time it — under a minute each. Then ask what an empty result proved: that they cannot use it, not that nobody wrote it.",
   },
   family: {
     summary:
-      "We saw a tool invent a book, complete with an author, a page count and a year. The school library could not find it, which meant it could not be used — and then a wider search of publisher records showed nobody had written it at all. We practised the difference between those two things.",
+      "We saw a tool invent a book, complete with an author, a page count and a year. The school library could not find it, which meant it could not be used — and then a wider search of publisher records showed nobody had written it at all. We practiced the difference between those two things.",
     questions: [
       "How could something made up sound so real?",
       "Why did the page count make it more believable?",
@@ -343,7 +343,7 @@ export const theHelperAndTheTeacher: Mission = {
   estimatedMinutes: 8,
   teaser: "The app says one thing. Ms. Okafor says another. Somebody has to be wrong.",
   summary:
-    "A tool contradicts a teacher on a maths method. Students practise disagreeing usefully: testing both methods, treating matching examples as evidence rather than proof, and asking why each method works.",
+    "A tool contradicts a teacher on a math method. Students practice disagreeing usefully: testing both methods, treating matching examples as evidence rather than proof, and asking why each method works.",
   learningGoals: [
     "Ask how somebody knows, instead of choosing who to believe",
     "Treat matching examples as evidence, then ask why a method works",
@@ -414,7 +414,7 @@ export const theHelperAndTheTeacher: Mission = {
           feedback: {
             tone: "rethink",
             headline: "That is picking a side, not checking",
-            body: "You are choosing between two people instead of looking at the maths, and the maths is sitting right there on your page. Have another go.",
+            body: "You are choosing between two people instead of looking at the math, and the math is sitting right there on your page. Have another go.",
           },
           next: "s3",
           retry: true,
@@ -502,7 +502,7 @@ export const theHelperAndTheTeacher: Mission = {
           feedback: {
             tone: "rethink",
             headline: "You just let it decide",
-            body: "You already worked out that both methods give the same answers. Changing because a confident sentence told you to is the thing we are practising not doing. Try again.",
+            body: "You already worked out that both methods give the same answers. Changing because a confident sentence told you to is the thing we are practicing not doing. Try again.",
           },
           next: "s5",
           retry: true,
@@ -587,9 +587,9 @@ export const theHelperAndTheTeacher: Mission = {
     ],
     misconceptions: [
       {
-        student: "The app has seen more maths than my teacher.",
+        student: "The app has seen more math than my teacher.",
         response:
-          "Grant the scale and then ask what it did with it. Seeing a method more often is a fact about popularity. Ms. Okafor can show why it works, which is a fact about the maths.",
+          "Grant the scale and then ask what it did with it. Seeing a method more often is a fact about popularity. Ms. Okafor can show why it works, which is a fact about the math.",
       },
       {
         student: "One of them has to be wrong.",
@@ -607,7 +607,7 @@ export const theHelperAndTheTeacher: Mission = {
   },
   family: {
     summary:
-      "An app told your child their teacher's maths method was incorrect. We practised testing it — do both ways reach the same answer? — instead of choosing who to believe, and then asking why each method works.",
+      "An app told your child their teacher's math method was incorrect. We practiced testing it — do both ways reach the same answer? — instead of choosing who to believe, and then asking why each method works.",
     questions: [
       "What is the difference between a different way and a wrong way?",
       "If an app and your teacher disagree, how could you find out for yourself?",
@@ -631,7 +631,7 @@ export const theVideoOfMrRuiz: Mission = {
   estimatedMinutes: 9,
   teaser: "A ten-second video of the librarian doing something he would never do.",
   summary:
-    "A short clip shows a familiar adult behaving out of character. Students practise treating that as a reason to stop rather than a verdict, following the trail to whoever made it, handing anything harmful to an adult who can check it, and meeting the idea that a fake about a person is a thing done to that person.",
+    "A short clip shows a familiar adult behaving out of character. Students practice treating that as a reason to stop rather than a verdict, following the trail to whoever made it, handing anything harmful to an adult who can check it, and meeting the idea that a fake about a person is a thing done to that person.",
   learningGoals: [
     "Follow a shared clip back to whoever made it",
     "Treat out of character as a reason to pause, never as proof either way",
@@ -748,7 +748,7 @@ export const theVideoOfMrRuiz: Mission = {
           feedback: {
             tone: "partial",
             headline: "Tempting, and not your job",
-            body: "Finding the maker matters, and it is a thing grown-ups can do and you cannot. Meanwhile the video is still travelling, and that part you can affect.",
+            body: "Finding the maker matters, and it is a thing grown-ups can do and you cannot. Meanwhile the video is still ttraveling, and that part you can affect.",
           },
           evidence: { skillId: "verify.source", result: "developing" },
           next: "s5",
@@ -794,7 +794,7 @@ export const theVideoOfMrRuiz: Mission = {
             headline: "You watched him not laugh",
             body: "You were standing there. You know how it landed. Have another go at answering her.",
             coachNote:
-              "It is only a joke is the most common defence at this age and it needs a reply students can actually say to a peer, not a principle.",
+              "It is only a joke is the most common defense at this age and it needs a reply students can actually say to a peer, not a principle.",
           },
           next: "s5",
           retry: true,
@@ -905,7 +905,7 @@ export const theVideoOfMrRuiz: Mission = {
   },
   family: {
     summary:
-      "A fake video of a teacher went round school. Your child practised stopping when something looked out of character rather than deciding on it, tracing the clip back towards whoever made it, handing it to an adult who could check properly, and telling the people who sent it to stop passing it on.",
+      "A fake video of a teacher went round school. Your child practiced stopping when something looked out of character rather than deciding on it, tracing the clip back towards whoever made it, handing it to an adult who could check properly, and telling the people who sent it to stop passing it on.",
     questions: [
       "A video looks wrong for somebody you know. What does that tell you to do?",
       "If someone says it is only a joke, what would you say?",
@@ -929,12 +929,12 @@ export const thePerfectDrawing: Mission = {
   estimatedMinutes: 8,
   teaser: "Nia's dragon is astonishing. Nia has never drawn a dragon before.",
   summary:
-    "A generated picture nearly goes into an art competition without a label. Students learn that the check is a question every entrant answers about their own process, not a judgement about which classmate seems capable of what.",
+    "A generated picture nearly goes into an art competition without a label. Students learn that the check is a question every entrant answers about their own process, not a judgment about which classmate seems capable of what.",
   learningGoals: [
     "Ask how something was made rather than whether it looks real",
-    "Recognise that process, not appearance, settles authorship",
+    "Recognize that process, not appearance, settles authorship",
     "Ask everybody the same question instead of deciding who to suspect",
-    "Notice a surprise without turning it into a judgement about a person",
+    "Notice a surprise without turning it into a judgment about a person",
   ],
   badge: {
     id: "badge-verify-7",
@@ -983,7 +983,7 @@ export const thePerfectDrawing: Mission = {
           feedback: {
             tone: "partial",
             headline: "Being surprised is allowed",
-            body: "People do get suddenly better. They practise at home, or watch somebody, or find a pen that suits them. Surprising is a thing to be curious about, not a thing that tells you anything.",
+            body: "People do get suddenly better. They practice at home, or watch somebody, or find a pen that suits them. Surprising is a thing to be curious about, not a thing that tells you anything.",
           },
           evidence: { skillId: "verify.synthetic", result: "developing" },
           next: "s3",
@@ -1164,7 +1164,7 @@ export const thePerfectDrawing: Mission = {
   ],
   guide: {
     setup:
-      "This mission sits across verification and honesty on purpose. Nia is sympathetic throughout and never punished, and she is never actually caught: she answers the question everybody answers. The transferable artefact is the entry-form question, which many classes adopt for real.\n\nThe thing to guard is what the class does with a surprise. An unexpectedly good piece of work is not evidence of anything, and a mission that rewards spotting one teaches children to appraise each other. Children get suddenly better all the time. They practise privately, watch a video, switch to a medium that suits them, get legitimate help, or use a tool the school has given them. Work arrives with no rough copies behind it because it was done on a screen, or done once, or the rough copies went in the bin. And a child who is shy, who finds talking hard, who is still learning English, or whose hands do not do what they are told may be unable to demonstrate a technique on request even when the work is entirely their own. None of that is evidence. The question is asked of everybody, which is what makes it fair and what makes it work.",
+      "This mission sits across verification and honesty on purpose. Nia is sympathetic throughout and never punished, and she is never actually caught: she answers the question everybody answers. The transferable artefact is the entry-form question, which many classes adopt for real.\n\nThe thing to guard is what the class does with a surprise. An unexpectedly good piece of work is not evidence of anything, and a mission that rewards spotting one teaches children to appraise each other. Children get suddenly better all the time. They practice privately, watch a video, switch to a medium that suits them, get legitimate help, or use a tool the school has given them. Work arrives with no rough copies behind it because it was done on a screen, or done once, or the rough copies went in the bin. And a child who is shy, who finds talking hard, who is still learning English, or whose hands do not do what they are told may be unable to demonstrate a technique on request even when the work is entirely their own. None of that is evidence. The question is asked of everybody, which is what makes it fair and what makes it work.",
     lookFor: [
       "Students who decide from what they know about a classmate rather than from what the entrant said",
       "Whether anyone can phrase a question that is not an accusation",
@@ -1195,11 +1195,11 @@ export const thePerfectDrawing: Mission = {
       },
     ],
     extension:
-      "Add how did you make this to a real piece of class work this term. Ask every child, not the ones whose work surprised you — asking only the surprising ones is the whole problem in miniature. Accept every honest answer without comment, including used an app, and let the class see that honest labelling costs nothing.",
+      "Add how did you make this to a real piece of class work this term. Ask every child, not the ones whose work surprised you — asking only the surprising ones is the whole problem in miniature. Accept every honest answer without comment, including used an app, and let the class see that honest labeling costs nothing.",
   },
   family: {
     summary:
-      "A friend brought in a picture made by an app and had not said so yet. We practised asking how something was made rather than guessing who could have made it, and learned that using a tool is fine as long as you say so on the form.",
+      "A friend brought in a picture made by an app and had not said so yet. We practiced asking how something was made rather than guessing who could have made it, and learned that using a tool is fine as long as you say so on the form.",
     questions: [
       "Why is asking how something was made better than guessing who could have made it?",
       "What is a kind way to ask how somebody made something?",
@@ -1483,7 +1483,7 @@ export const theScienceFairFact: Mission = {
   },
   family: {
     summary:
-      "Your child had a fact on a poster that came from three sources, all of which turned out to be copying one old book. We practised asking each source where it got it, rather than counting how many agree.",
+      "Your child had a fact on a poster that came from three sources, all of which turned out to be copying one old book. We practiced asking each source where it got it, rather than counting how many agree.",
     questions: [
       "If three places say the same thing, does that make it true?",
       "What would you ask a website to find out if it really knows?",
@@ -1507,7 +1507,7 @@ export const theWeatherArgument: Mission = {
   estimatedMinutes: 7,
   teaser: "The app says sunny. You are looking out of the window at rain.",
   summary:
-    "The simplest verification mission and the most immediately useful: a screen contradicts what a child can see with their own eyes. Students practise trusting first-hand observation without concluding that all tools are useless.",
+    "The simplest verification mission and the most immediately useful: a screen contradicts what a child can see with their own eyes. Students practice trusting first-hand observation without concluding that all tools are useless.",
   learningGoals: [
     "Trust your own observation when a screen contradicts it",
     "Say what a tool is actually good for",
@@ -1703,7 +1703,7 @@ export const theWeatherArgument: Mission = {
           feedback: {
             tone: "strong",
             headline: "Go and look at Captain",
-            body: "He is on the gravel. Whether he is asleep is a much harder question, because fish have no eyelids to close. Where he is, though, is four metres away.",
+            body: "He is on the gravel. Whether he is asleep is a much harder question, because fish have no eyelids to close. Where he is, though, is four meters away.",
           },
           evidence: { skillId: "verify.source", result: "demonstrated" },
           next: "s6",
@@ -1757,7 +1757,7 @@ export const theWeatherArgument: Mission = {
   },
   family: {
     summary:
-      "The weather app said sunny while it was visibly raining. We practised trusting what you can see for yourself, and noticing that a tool being wrong once does not make it useless.",
+      "The weather app said sunny while it was visibly raining. We practiced trusting what you can see for yourself, and noticing that a tool being wrong once does not make it useless.",
     questions: [
       "What can you check yourself without any screen at all?",
       "What is the difference between out of date and wrong?",

@@ -50,7 +50,7 @@ export default async function AdminClasses() {
       <Panel
         title="Create a class"
         description={
-          !rooms.recognised
+          !rooms.recognized
             ? `Plan needs configuration — no new classrooms can be activated. ${rooms.active} active, and every class and record is unchanged.`
             : rooms.limit === null
               ? `${rooms.active} active. Archived classes are kept and do not count.`
@@ -159,7 +159,7 @@ export default async function AdminClasses() {
                               action={async () => {
                                 "use server";
                                 // Returned, not swallowed: a restore can be
-                                // refused for exceeding the school's licence,
+                                // refused for exceeding the school's license,
                                 // and the administrator needs to see why.
                                 return restoreClassAction(classroom.id);
                               }}
@@ -207,7 +207,7 @@ export default async function AdminClasses() {
           holding it can see that class&rsquo;s roster of first names and avatars, choose
           any child on it, and open that child&rsquo;s progress. Codes get read aloud and
           photographed off whiteboards, so choose <strong>New code</strong> above whenever
-          one has travelled further than the class. From then on the old code is rejected
+          one has ttraveled further than the class. From then on the old code is rejected
           on the next request that uses it: nobody can join with it, a half-finished join
           stops, and a browser already signed in with it is asked to rejoin the next time
           it loads a page. It does not close a page that is already open &mdash; a child

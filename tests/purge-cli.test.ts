@@ -69,7 +69,7 @@ describe("the purge CLI never reports a safety block as nothing due", () => {
     expect(all).not.toContain(ALL_CLEAR);
     // Replaced by something true and scoped to the schools it can speak for.
     expect(stdout).toContain(
-      "No records were deleted from schools with a recognised retention policy.",
+      "No records were deleted from schools with a recognized retention policy.",
     );
     // And the block itself, on stderr, naming the school and the value.
     expect(stderr).toContain("BLOCKED");
@@ -79,7 +79,7 @@ describe("the purge CLI never reports a safety block as nothing due", () => {
   }, 60_000);
 
   it("keeps the quiet-success line when nothing is due and nothing is blocked", () => {
-    // A recognised window whose date has not arrived: genuinely nothing due.
+    // A recognized window whose date has not arrived: genuinely nothing due.
     const { stdout, stderr, status } = runCli(database(36, "2030-06-19"));
     expect(stdout).toContain(ALL_CLEAR);
     expect(stderr).not.toContain("BLOCKED");

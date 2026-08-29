@@ -145,7 +145,7 @@ describe("nothing downstream throws, calculates or exports from a bad calendar",
    * Sprint 64. The Data page has two blocking branches and they are not the
    * same kind of block.
    *
-   * An unrecognised retention **window** makes `runScheduledPurge` skip the
+   * An unrecognized retention **window** makes `runScheduledPurge` skip the
    * whole school (sprint 54), so "nothing is deleted automatically" is true
    * there. An unusable academic **date** only costs the school-level summary
    * figure: every cohort still carries its own snapshotted year-end, and the
@@ -281,7 +281,7 @@ describe("an administrator can always recover, and only what is broken is repair
     const valid = mk("Valid", "2025-2026", "2026-06-30");
     const otherYear = mk("Other", "2024-2025", "");
 
-    // The school already calls this year 2025-2026, so nothing is relabelled.
+    // The school already calls this year 2025-2026, so nothing is relabeled.
     db.prepare("UPDATE schools SET academic_year = '2025-2026' WHERE id = ?").run(DEMO_SCHOOL);
     const repaired = setAcademicDates(db, DEMO_SCHOOL, {
       year: "2025-2026",
@@ -289,7 +289,7 @@ describe("an administrator can always recover, and only what is broken is repair
       endsOn: "2026-06-12",
     });
 
-    expect(repaired).toEqual({ relabelled: 0, datesRepaired: 2 });
+    expect(repaired).toEqual({ relabeled: 0, datesRepaired: 2 });
     expect(getClass(db, empty)!.year_ends_on).toBe("2026-06-12");
     expect(getClass(db, malformed)!.year_ends_on).toBe("2026-06-12");
     expect(getClass(db, valid)!.year_ends_on).toBe("2026-06-30");
@@ -377,7 +377,7 @@ describe("an administrator can always recover, and only what is broken is repair
    *
    * A class created while the school said "2025-2027" copied **that** label
    * along with the broken date. `setAcademicDates` updated the school first and
-   * then looked for classes labelled "2025-2026" — so the affected cohort stayed
+   * then looked for classes labeled "2025-2026" — so the affected cohort stayed
    * under "2025-2027" with an unreadable date. Data still said Blocked, the
    * purge still exited 1, and there was no correction path from anywhere. The
    * sprint claimed a recovery path it did not have.
@@ -400,7 +400,7 @@ describe("an administrator can always recover, and only what is broken is repair
 
     // The legacy cohort: it copied the broken label and the broken date.
     const stranded = mk("Stranded", "2025-2027", "2026-13-45");
-    // A control under the same broken label but with a usable date: relabelled,
+    // A control under the same broken label but with a usable date: relabeled,
     // date kept, because a valid snapshot records when that year really ended.
     const datedOk = mk("Dated", "2025-2027", "2026-06-30");
     // And a real historical year, which is history and is never rewritten.
@@ -412,7 +412,7 @@ describe("an administrator can always recover, and only what is broken is repair
       endsOn: "2026-06-12",
     });
 
-    expect(repair).toEqual({ relabelled: 2, datesRepaired: 1 });
+    expect(repair).toEqual({ relabeled: 2, datesRepaired: 1 });
     expect(getClass(db, stranded)!.school_year).toBe("2025-2026");
     expect(getClass(db, stranded)!.year_ends_on).toBe("2026-06-12");
     expect(getClass(db, datedOk)!.school_year).toBe("2025-2026");
@@ -458,7 +458,7 @@ describe("an administrator can always recover, and only what is broken is repair
       startsOn: "2025-08-25",
       endsOn: "2026-06-12",
     });
-    expect(repair).toEqual({ relabelled: 0, datesRepaired: 0 });
+    expect(repair).toEqual({ relabeled: 0, datesRepaired: 0 });
     expect(getClass(db, lastYear)!.school_year).toBe("2024-2025");
     expect(getClass(db, lastYear)!.year_ends_on).toBe("");
   });
@@ -469,7 +469,7 @@ describe("an administrator can always recover, and only what is broken is repair
     // administrator actually receives — see `tests/academic-atomicity.test.ts`
     // for the same wording read back from the audit row the action wrote.
     const action = readFileSync(join(process.cwd(), "src/app/actions/admin.ts"), "utf8");
-    expect(action).toMatch(/relabelled} class\$\{repair\.relabelled === 1[^}]*} moved onto \$\{year} from a school year that could not be read/);
+    expect(action).toMatch(/relabeled} class\$\{repair\.relabeled === 1[^}]*} moved onto \$\{year} from a school year that could not be read/);
     expect(action).toMatch(/given a usable deletion date/);
     expect(action).toMatch(/Classes with a valid deletion date kept it/);
     expect(action).toMatch(/other school years were not touched/);

@@ -9,7 +9,7 @@
  *    the product does not need, because a column that exists eventually gets
  *    filled in.
  *
- * 2. There is no table for behavioural signals: no time-on-task, no idle
+ * 2. There is no table for behavioral signals: no time-on-task, no idle
  *    timers, no keystroke counts, no risk scores. `attempts` records which
  *    authored choices a student selected, which is the evidence teachers act
  *    on, and nothing that supports psychological inference.

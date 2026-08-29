@@ -3,7 +3,7 @@ import type { CertificationModule } from "../types";
 /**
  * "AI Ready Educator: Foundations" — a five module, roughly forty minute
  * orientation for classroom teachers. It is deliberately short, text-only and
- * printable, because the realistic slot for this is a staff meeting or a prep
+ * printable, because the realiztic slot for this is a staff meeting or a prep
  * period, not a summer institute.
  *
  * Called an orientation rather than a certification, everywhere, on purpose.
@@ -131,24 +131,24 @@ export const CERTIFICATION_MODULES: CertificationModule[] = [
     title: "Talking with families",
     minutes: 7,
     body: [
-      "Families arrive at this topic from very different places. Some are worried and want the school to ban everything. Some use these tools daily at work and find the worry overblown. Both groups respond well to the same thing: a specific description of what their child practised, and one question to ask at dinner.",
+      "Families arrive at this topic from very different places. Some are worried and want the school to ban everything. Some use these tools daily at work and find the worry overblown. Both groups respond well to the same thing: a specific description of what their child practiced, and one question to ask at dinner.",
       "That is why every mission in this program ships with a one page take-home in plain language, and why none of them require a parent account. Adding an account is a data collection decision, and for a take-home sheet it is not a trade worth making.",
-      "One caution on wording. Avoid telling families the school will keep their child safe from AI, which is a promise no school can keep. What the school can say honestly is that their child has practised specific decisions and can name what to do. That claim is true, it is checkable, and it holds up at a board meeting.",
+      "One caution on wording. Avoid telling families the school will keep their child safe from AI, which is a promise no school can keep. What the school can say honestly is that their child has practiced specific decisions and can name what to do. That claim is true, it is checkable, and it holds up at a board meeting.",
     ],
     keyPoints: [
-      "Lead with what the child practised and one question to ask",
+      "Lead with what the child practiced and one question to ask",
       "No parent account required, because collecting one is not worth the trade",
-      "Promise practised decisions, never protection",
+      "Promise practiced decisions, never protection",
     ],
     check: {
       question: "A caregiver asks whether this program will keep their child safe from AI. What is the most honest answer?",
       options: [
         { id: "a", label: "Yes, students who complete every mission are protected", correct: false },
         { id: "b", label: "No, and the school should not be responsible for this at all", correct: false },
-        { id: "c", label: "No school can promise that, but your child has practised specific decisions and can tell you what they are", correct: true },
+        { id: "c", label: "No school can promise that, but your child has practiced specific decisions and can tell you what they are", correct: true },
       ],
       explanation:
-        "Safety guarantees are unkeepable and cost credibility the first time something happens. A claim about practised, demonstrable decisions is both accurate and more reassuring, because families can verify it themselves at home.",
+        "Safety guarantees are unkeepable and cost credibility the first time something happens. A claim about practiced, demonstrable decisions is both accurate and more reassuring, because families can verify it themselves at home.",
     },
   },
 ];

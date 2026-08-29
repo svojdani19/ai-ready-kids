@@ -14,7 +14,7 @@ import { formatDate } from "./retention";
  * class sorted first and fell back to a hard-coded "2025-2026", the create form
  * hid it in a hidden field, and the action had the same literal as its default
  * — so on 27 August 2026 every new class was still being created in the
- * previous year. Nothing anywhere moved the term dates. The annual programme
+ * previous year. Nothing anywhere moved the term dates. The annual program
  * could not survive its first renewal.
  *
  * This is a pure preview so an administrator can see exactly what will happen

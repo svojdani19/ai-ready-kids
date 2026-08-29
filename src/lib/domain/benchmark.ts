@@ -74,7 +74,7 @@ export interface CohortBenchmark {
   }[];
 }
 
-export function summariseCohortBenchmark(records: BenchmarkRecord[]): CohortBenchmark {
+export function summarizeCohortBenchmark(records: BenchmarkRecord[]): CohortBenchmark {
   const completed = records.filter((r) => r.completed_at);
   const pre = completed.filter((r) => r.form === "pre");
   const post = completed.filter((r) => r.form === "post");

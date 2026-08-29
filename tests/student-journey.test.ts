@@ -3,7 +3,7 @@ import type { Db } from "@/lib/db";
 import { createTestDb, DEMO_CLASS } from "./helpers";
 import { ALL_SESSIONS, getMission } from "@/content/missions";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
-import { createStudent, getClassByJoinCode, listStudents, normaliseJoinCode } from "@/lib/repo/classroom";
+import { createStudent, getClassByJoinCode, listStudents, normalizeJoinCode } from "@/lib/repo/classroom";
 import {
   completeAttempt,
   completeBenchmark,
@@ -16,7 +16,7 @@ import {
   saveBenchmarkResponse,
   startAttempt,
 } from "@/lib/repo/progress";
-import { summariseStudent } from "@/lib/domain/evidence";
+import { summarizeStudent } from "@/lib/domain/evidence";
 import { scoreForm } from "@/lib/domain/benchmark";
 import { canTakeBenchmark, nextBenchmarkFor } from "@/lib/domain/eligibility";
 import { findScene, nextSceneAfter, resumeSceneId } from "@/lib/domain/missionPath";
@@ -49,8 +49,8 @@ describe("student joins a class", () => {
     expect(getClassByJoinCode(db, "   ")).toBeUndefined();
   });
 
-  it("normalises consistently", () => {
-    expect(normaliseJoinCode("maple-317")).toBe("MAPLE317");
+  it("normalizes consistently", () => {
+    expect(normalizeJoinCode("maple-317")).toBe("MAPLE317");
   });
 
   it("lists a roster of display names only", () => {
@@ -121,13 +121,13 @@ describe("student plays a mission end to end", () => {
   });
 
   it("awards the badge and the evidence only once completed", () => {
-    const before = summariseStudent(listAttemptsForStudent(db, studentId));
+    const before = summarizeStudent(listAttemptsForStudent(db, studentId));
     expect(before.badgeIds).toHaveLength(0);
     expect(before.skillsDemonstrated).toBe(0);
 
     completeAttempt(db, studentId, mission.id);
 
-    const after = summariseStudent(listAttemptsForStudent(db, studentId));
+    const after = summarizeStudent(listAttemptsForStudent(db, studentId));
     expect(after.badgeIds).toEqual([mission.badge.id]);
     expect(after.completedMissionIds).toEqual([mission.id]);
     expect(after.skillsDemonstrated).toBeGreaterThan(0);
@@ -179,7 +179,7 @@ describe("student plays a mission end to end", () => {
   it("lets a student replay from scratch", () => {
     resetAttempt(db, studentId, mission.id);
     expect(getAttempt(db, studentId, mission.id)).toBeUndefined();
-    expect(summariseStudent(listAttemptsForStudent(db, studentId)).badgeIds).toHaveLength(0);
+    expect(summarizeStudent(listAttemptsForStudent(db, studentId)).badgeIds).toHaveLength(0);
   });
 });
 
@@ -294,7 +294,7 @@ describe("student check-in", () => {
 
 describe("student-facing reporting", () => {
   it("never produces an overall score for a child", () => {
-    const summary = summariseStudent(listAttemptsForStudent(db, "stu_room12_02"));
+    const summary = summarizeStudent(listAttemptsForStudent(db, "stu_room12_02"));
     expect(Object.keys(summary)).not.toContain("score");
     expect(Object.keys(summary)).not.toContain("risk");
     expect(summary.skillsTotal).toBe(9);
@@ -302,7 +302,7 @@ describe("student-facing reporting", () => {
 
   it("counts a badge for every mission a student has completed", () => {
     const attempts = listAttemptsForStudent(db, "stu_room12_02");
-    const summary = summariseStudent(attempts);
+    const summary = summarizeStudent(attempts);
     expect(summary.badgeIds).toHaveLength(summary.completedMissionIds.length);
     expect(summary.badgeIds.every((b) => ALL_SESSIONS.some((m) => m.badge.id === b))).toBe(true);
   });

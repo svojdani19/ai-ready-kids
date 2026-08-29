@@ -4,7 +4,7 @@ import { getDb } from "@/lib/db";
 import { requireStudent } from "@/lib/auth/session";
 import { listAssignments } from "@/lib/repo/classroom";
 import { listAttemptsForStudent, listBenchmarksForStudent } from "@/lib/repo/progress";
-import { summariseStudent } from "@/lib/domain/evidence";
+import { summarizeStudent } from "@/lib/domain/evidence";
 import { nextBenchmarkFor } from "@/lib/domain/eligibility";
 import { getSchool } from "@/lib/repo/school";
 import { schoolHasLapsed } from "@/lib/auth/subscription-gate";
@@ -58,7 +58,7 @@ export default async function StudentHome() {
   const assignments = listAssignments(db, classroom.id);
   const assignedIds = new Set(assignments.map((a) => a.mission_id));
   const attempts = listAttemptsForStudent(db, student.id);
-  const summary = summariseStudent(attempts);
+  const summary = summarizeStudent(attempts);
   const inProgress = new Set(summary.inProgressMissionIds);
   const completed = new Set(summary.completedMissionIds);
 
@@ -149,7 +149,7 @@ export default async function StudentHome() {
               </h2>
               <p className="mt-1 max-w-xl text-[0.95rem] leading-relaxed text-ink-soft">
                 Nine short stories. There is no score and no wrong-answer buzzer. It just
-                helps your teacher know what the class should practise.
+                helps your teacher know what the class should practice.
               </p>
             </div>
             <ButtonLink href={`/student/checkin/${nextCheckIn.form}`} variant="secondary">

@@ -16,7 +16,7 @@ afterEach(cleanup);
  * closes gives focus back somewhere findable.
  *
  * These run against the real component in jsdom rather than asserting on the
- * source, because focus is behaviour: the question is where the browser puts it,
+ * source, because focus is behavior: the question is where the browser puts it,
  * not which line of code was written.
  */
 describe("the marketing menu gives focus back when Escape closes it", () => {
@@ -168,7 +168,7 @@ describe("the marketing menu gives focus back when Escape closes it", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("leaves every link reachable and labelled while the menu is open", async () => {
+  it("leaves every link reachable and labeled while the menu is open", async () => {
     const { trigger } = await openSchoolMenu();
     const menu = document.getElementById(trigger.getAttribute("aria-controls")!)!;
     const links = within(menu).getAllByRole("link");

@@ -79,7 +79,7 @@ export default function LandingPage() {
       <section className="border-b-2 border-ink bg-surface">
         <div className="mx-auto max-w-6xl px-5 py-12">
           <div className="flex flex-wrap items-end justify-between gap-3">
-            <h2 className="font-display text-3xl text-ink">Three things, practised nine ways</h2>
+            <h2 className="font-display text-3xl text-ink">Three things, practiced nine ways</h2>
             <Link
               href="/curriculum"
               className="text-[0.95rem] font-bold text-grape-deep underline underline-offset-4"
@@ -121,7 +121,7 @@ export default function LandingPage() {
                 What your school can show
               </h2>
               <p className="mt-3 max-w-xl text-[1.05rem] leading-relaxed text-ink-soft">
-                That your students have practised specific decisions and can name them.
+                That your students have practiced specific decisions and can name them.
                 That they were measured in the fall and again in the spring, on situations
                 the lessons never used. That is a claim you can take to a board meeting
                 with a report behind it.

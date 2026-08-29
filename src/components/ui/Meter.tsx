@@ -7,9 +7,9 @@ const TRACK_FILL: Record<string, string> = {
 };
 
 /**
- * A labelled proportion bar. The visible label always carries the numbers, so
+ * A labeled proportion bar. The visible label always carries the numbers, so
  * the bar is decorative reinforcement rather than the only channel — this
- * keeps it readable without colour perception and at any contrast setting.
+ * keeps it readable without color perception and at any contrast setting.
  */
 export function Meter({
   label,

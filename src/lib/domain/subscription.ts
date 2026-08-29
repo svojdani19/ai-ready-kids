@@ -32,7 +32,7 @@ export function calendarDate(now: Date): string {
 }
 
 /**
- * A contract date this product recognises: exactly `YYYY-MM-DD`, and a real
+ * A contract date this product recognizes: exactly `YYYY-MM-DD`, and a real
  * day in the calendar.
  *
  * `term_starts_on` and `term_renews_on` are unconstrained text, and sprint 49
@@ -46,7 +46,7 @@ export function calendarDate(now: Date): string {
  * March 2nd, which does not stringify back to what was written. A real leap day
  * survives it — `2024-02-29` round-trips exactly.
  *
- * Non-coercive throughout. No `trim`, no `Date.parse`, no normalising a nearly
+ * Non-coercive throughout. No `trim`, no `Date.parse`, no normalizing a nearly
  * right value into a right one: a malformed date is not evidence of when a term
  * begins or ends, and guessing sets a commercial deadline nobody agreed to.
  */
@@ -215,7 +215,7 @@ export function subscriptionNotice(
       body: UNVERIFIED_STAFF_BODY,
       link:
         role === "admin"
-          ? // Honestly labelled: the page shows the account details, it does
+          ? // Honestly labeled: the page shows the account details, it does
             // not correct them. Offered because it is the only surface an
             // administrator has for this, not because it fixes anything.
             { href: "/admin/program", label: "See your account details on the Program and plan page" }

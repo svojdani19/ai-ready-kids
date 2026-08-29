@@ -43,7 +43,7 @@ export default function BenchmarkPage() {
       <Section
         tone="paper"
         title="A sample item from each window"
-        lede="Nothing here rewards remembering a mission. Every item is a situation a child has not practised."
+        lede="Nothing here rewards remembering a mission. Every item is a situation a child has not practiced."
       >
         <div className="grid gap-5 lg:grid-cols-2">
           {[pre, post].map((form) => {
@@ -76,7 +76,7 @@ export default function BenchmarkPage() {
           These items are multiple choice, and a child can pick a good answer without
           acting on it. What this measures is whether students can identify the safer move
           in an unfamiliar situation. That is a real and useful thing to know, and it is
-          not the same as measuring behaviour. The difference is calculated only across students
+          not the same as measuring behavior. The difference is calculated only across students
           who completed both windows, which is the only fair denominator.
         </p>
         <p className="mt-4 max-w-3xl text-[1.05rem] leading-relaxed text-ink">

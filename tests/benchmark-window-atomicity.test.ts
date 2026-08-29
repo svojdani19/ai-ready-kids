@@ -39,7 +39,7 @@ import { submitCheckInAnswer } from "@/app/actions/student";
 import { writeSession } from "@/lib/auth/session";
 import { getSchool, listAudit } from "@/lib/repo/school";
 import { listBenchmarksForStudent } from "@/lib/repo/progress";
-import { getClass, normaliseJoinCode } from "@/lib/repo/classroom";
+import { getClass, normalizeJoinCode } from "@/lib/repo/classroom";
 import { canTakeBenchmark, nextBenchmarkFor } from "@/lib/domain/eligibility";
 import { BENCHMARK_WINDOW_FAILED } from "@/lib/repo/audited";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
@@ -121,7 +121,7 @@ const signInAsStudent = async (studentId: string) => {
   await writeSession({
     kind: "student",
     studentId,
-    code: normaliseJoinCode(getClass(db, DEMO_CLASS)!.join_code),
+    code: normalizeJoinCode(getClass(db, DEMO_CLASS)!.join_code),
   });
 };
 
