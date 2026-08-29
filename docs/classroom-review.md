@@ -592,6 +592,14 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       where a column must stay, say it is unused and that an older database may
       hold values, rather than promising what its contents will be.
 
+- [ ] **A test that queries through the thing it deleted proves nothing.**
+      Counting child rows with `WHERE parent_id IN (SELECT id FROM parents
+      WHERE ...)` after the parent is gone returns zero by construction, so an
+      orphan survives the cascade *and* the assertion. Capture the ids before
+      the destructive call and query against those literals, and assert the
+      before-state is non-zero so the test cannot pass by deleting nothing from
+      nothing.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

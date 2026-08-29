@@ -2,7 +2,13 @@ import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { createTestDb, DEMO_CLASS, DEMO_SCHOOL, DEMO_TEACHER } from "./helpers";
-import { assignMission, deleteClass, listAssignments, listStudents } from "@/lib/repo/classroom";
+import {
+  assignMission,
+  deleteClass,
+  getClass,
+  listAssignments,
+  listStudents,
+} from "@/lib/repo/classroom";
 import { listAudit } from "@/lib/repo/school";
 import { DELETION_SCOPE, SURROUNDING_RECORD } from "@/content/data-inventory";
 import { MISSIONS } from "@/content/missions";
@@ -76,14 +82,111 @@ describe("the deletion promise matches the DELETE statements that exist", () => 
   it("cascades a class exactly as far as the copy says, and no further", () => {
     const { db, cleanup } = createTestDb();
     try {
+      // The cascade is a foreign-key behaviour, so the test says out loud that
+      // foreign keys are on rather than assuming the connection enabled them.
+      const [fk] = db.prepare("PRAGMA foreign_keys").all() as { foreign_keys: number }[];
+      expect(fk.foreign_keys).toBe(1);
+
       assignMission(db, {
         classId: DEMO_CLASS,
         missionId: MISSIONS[0].id,
         assignedBy: DEMO_TEACHER,
       });
-      const students = listStudents(db, DEMO_CLASS);
-      expect(students.length).toBeGreaterThan(0);
+
+      // Captured BEFORE the delete. The first version of this test counted
+      // attempts `WHERE student_id IN (SELECT id FROM students WHERE class_id
+      // = ?)` *after* deleting the class — by which point the inner select was
+      // empty, so the count was zero whether or not an orphan survived. It
+      // proved nothing about the claim it existed to check.
+      const studentIds = listStudents(db, DEMO_CLASS).map((s) => s.id);
+      expect(studentIds.length).toBeGreaterThan(0);
+
+      const countBy = (table: string, ids: string[]) =>
+        (
+          db
+            .prepare(
+              `SELECT COUNT(*) AS n FROM ${table} WHERE student_id IN (${ids
+                .map(() => "?")
+                .join(",")})`,
+            )
+            .get(...ids) as { n: number }
+        ).n;
+
+      expect(countBy("attempts", studentIds)).toBeGreaterThan(0);
+      expect(countBy("benchmarks", studentIds)).toBeGreaterThan(0);
+      const assignmentsBefore = listAssignments(db, DEMO_CLASS).length;
+      expect(assignmentsBefore).toBeGreaterThan(0);
+
+      const auditBefore = listAudit(db, DEMO_SCHOOL, 100).length;
+      const staffBefore = (db.prepare("SELECT COUNT(*) AS n FROM users").get() as { n: number })
+        .n;
+
+      deleteClass(db, DEMO_CLASS);
+
+      // Gone, checked against the ids those rows actually carry, so an orphan
+      // left behind by a missing cascade fails here.
+      expect(countBy("attempts", studentIds)).toBe(0);
+      expect(countBy("benchmarks", studentIds)).toBe(0);
+      const survivingStudents = (
+        db
+          .prepare(
+            `SELECT COUNT(*) AS n FROM students WHERE id IN (${studentIds
+              .map(() => "?")
+              .join(",")})`,
+          )
+          .get(...studentIds) as { n: number }
+      ).n;
+      expect(survivingStudents).toBe(0);
+
+      // The class row itself and its assignments.
+      expect(getClass(db, DEMO_CLASS)).toBeUndefined();
+      expect(
+        (
+          db
+            .prepare("SELECT COUNT(*) AS n FROM assignments WHERE class_id = ?")
+            .get(DEMO_CLASS) as { n: number }
+        ).n,
+      ).toBe(0);
+
+      // Still here, which is exactly what the copy now admits.
+      expect(listAudit(db, DEMO_SCHOOL, 100).length).toBe(auditBefore);
+      expect((db.prepare("SELECT COUNT(*) AS n FROM users").get() as { n: number }).n).toBe(
+        staffBefore,
+      );
+      expect((db.prepare("SELECT COUNT(*) AS n FROM schools").get() as { n: number }).n).toBe(
+        1,
+      );
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("catches an orphan the old query would have missed", () => {
+    // Failing-before for the *test logic*, not for the product. The scenario
+    // is built in a throwaway database with foreign keys switched off on that
+    // connection only: students are removed while their attempts stay, which
+    // is the exact state a broken cascade would leave. Production foreign keys
+    // are untouched — `SCHEMA_SQL` still sets the pragma, and the previous
+    // test asserts it is on in an ordinary fixture.
+    const { db, cleanup } = createTestDb();
+    try {
+      const studentIds = listStudents(db, DEMO_CLASS).map((s) => s.id);
+      const placeholders = studentIds.map(() => "?").join(",");
       const attemptsBefore = (
+        db
+          .prepare(`SELECT COUNT(*) AS n FROM attempts WHERE student_id IN (${placeholders})`)
+          .get(...studentIds) as { n: number }
+      ).n;
+      expect(attemptsBefore).toBeGreaterThan(0);
+
+      db.exec("PRAGMA foreign_keys = OFF");
+      db.prepare("DELETE FROM students WHERE class_id = ?").run(DEMO_CLASS);
+      db.prepare("DELETE FROM classes WHERE id = ?").run(DEMO_CLASS);
+      db.exec("PRAGMA foreign_keys = ON");
+
+      // The query the first version used: the inner select is empty, so it
+      // reports zero and the assertion would have passed.
+      const oldStyle = (
         db
           .prepare(
             `SELECT COUNT(*) AS n FROM attempts WHERE student_id IN
@@ -91,37 +194,16 @@ describe("the deletion promise matches the DELETE statements that exist", () => 
           )
           .get(DEMO_CLASS) as { n: number }
       ).n;
-      expect(attemptsBefore).toBeGreaterThan(0);
-      const auditBefore = listAudit(db, DEMO_SCHOOL, 100).length;
-      const staffBefore = (
-        db.prepare("SELECT COUNT(*) AS n FROM users").get() as { n: number }
+      expect(oldStyle).toBe(0);
+
+      // The corrected query, against ids captured beforehand, sees the orphans.
+      const corrected = (
+        db
+          .prepare(`SELECT COUNT(*) AS n FROM attempts WHERE student_id IN (${placeholders})`)
+          .get(...studentIds) as { n: number }
       ).n;
-
-      deleteClass(db, DEMO_CLASS);
-
-      // Gone, as promised.
-      expect(listStudents(db, DEMO_CLASS)).toEqual([]);
-      expect(listAssignments(db, DEMO_CLASS)).toEqual([]);
-      for (const table of ["attempts", "benchmarks"]) {
-        const left = (
-          db
-            .prepare(
-              `SELECT COUNT(*) AS n FROM ${table} WHERE student_id IN
-               (SELECT id FROM students WHERE class_id = ?)`,
-            )
-            .get(DEMO_CLASS) as { n: number }
-        ).n;
-        expect(left).toBe(0);
-      }
-
-      // Still here, which is exactly what the copy now admits.
-      expect(listAudit(db, DEMO_SCHOOL, 100).length).toBe(auditBefore);
-      expect((db.prepare("SELECT COUNT(*) AS n FROM users").get() as { n: number }).n).toBe(
-        staffBefore,
-      );
-      expect(
-        (db.prepare("SELECT COUNT(*) AS n FROM schools").get() as { n: number }).n,
-      ).toBe(1);
+      expect(corrected).toBe(attemptsBefore);
+      expect(corrected).toBeGreaterThan(0);
     } finally {
       cleanup();
     }

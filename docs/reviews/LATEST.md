@@ -55,7 +55,7 @@ the student experience at all.
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      705 passed (18 files)   — up from 693
+tests      706 passed (18 files)   — up from 693
 build      ✓ Compiled successfully
 against ab5d258 → 8 of 12 new tests fail (both defects)
 ```
@@ -63,8 +63,33 @@ against ab5d258 → 8 of 12 new tests fail (both defects)
 Two tests are grounded in statements rather than prose: one parses every
 `DELETE FROM` in `src/` and `scripts/` and asserts the table set is exactly
 `{assignments, attempts, classes, students, users}`; the other deletes a demo
-class and asserts roster, attempts, benchmarks and assignments are gone while
-the audit log, staff rows and school row are untouched.
+class and asserts roster, attempts, benchmarks, the class row and its
+assignments are gone while the audit log, staff rows and school row are
+untouched.
+
+### Correction during acceptance — the cascade test could not fail
+
+The second of those counted survivors **after** the delete with
+`WHERE student_id IN (SELECT id FROM students WHERE class_id = ?)`. The cascade
+removes the students first, so the inner select was empty and the count was zero
+whether or not orphaned attempt or benchmark rows survived. The claim most in
+need of evidence had a verification path guaranteed to agree with it.
+
+Corrected: student ids are **captured before** `deleteClass` and the
+after-queries run against those literal ids; the before-state is asserted
+non-zero so the test cannot pass by deleting nothing from nothing; the class row
+and its assignments are asserted gone; and `PRAGMA foreign_keys` is asserted to
+be `1` rather than assumed.
+
+Failing-before for the *test logic*: a second test builds the orphan state in a
+throwaway fixture — foreign keys off **on that connection only**, students and
+class row deleted directly, attempts left behind — and shows the old query
+returns **0** while the corrected query returns the full before-count.
+Production foreign keys are untouched.
+
+**The stronger test found nothing.** It passes against unchanged code, so the
+cascade does remove attempts and benchmarks; no deletion behaviour and no buyer
+copy changed. The defect was in the evidence, not the product.
 
 Browser on :3210 — `/privacy` and `/admin/data` at 1280×800 and 768×1024. All
 four: banned claims absent, cascade/staff/no-erasure lines present, unused-column
@@ -76,11 +101,12 @@ No migration added, no other row touched.
 
 ### Where to push hardest
 
-1. **Four of the twelve new tests pass before the fix, and I say so.** The
+1. **Four of the thirteen new tests pass before the fix, and I say so.** The
    `DELETE FROM` inventory, the `resetDatabase` containment check, the cascade
    test and null-after-write pin code that was already correct — the copy was
    what disagreed. They exist so a future change to the delete surface has to
-   confront the copy in the same commit.
+   confront the copy in the same commit. The cascade test in that list is the
+   corrected one; its first version could not have failed at all.
 2. **The `DELETE FROM` parser is a regex over source text.** It would miss a
    deletion expressed another way — a raw `db.exec` built by string
    concatenation, an `ON DELETE CASCADE` reaching further than expected, or a
