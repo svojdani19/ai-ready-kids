@@ -396,15 +396,29 @@ export function listAssignments(db: Db, classId: string): Assignment[] {
   );
 }
 
+/**
+ * Assigning writes no free text.
+ *
+ * This took a `note` and wrote it into an unconstrained TEXT column. No caller
+ * ever passed one and no screen ever rendered one, so the only thing the
+ * parameter did was keep open a path for arbitrary staff text — including a
+ * child's name — beside an inventory that promised "nothing here names a
+ * student". A promise nothing enforces is not a property of the product, so the
+ * parameter is gone rather than documented.
+ *
+ * `due_on` was already always NULL and stays that way. Both columns remain in
+ * the schema: dropping them is a migration, and a migration that erases values
+ * an existing database may hold is not something to do in passing.
+ */
 export function assignMission(
   db: Db,
-  input: { classId: string; missionId: string; assignedBy: string; note?: string | null },
+  input: { classId: string; missionId: string; assignedBy: string },
 ): void {
   db.prepare(
     `INSERT INTO assignments (id, class_id, mission_id, assigned_by, assigned_at, due_on, note)
-     VALUES (?,?,?,?,?,NULL,?)
-     ON CONFLICT (class_id, mission_id) DO UPDATE SET note = excluded.note`,
-  ).run(newId("asg"), input.classId, input.missionId, input.assignedBy, nowIso(), input.note ?? null);
+     VALUES (?,?,?,?,?,NULL,NULL)
+     ON CONFLICT (class_id, mission_id) DO NOTHING`,
+  ).run(newId("asg"), input.classId, input.missionId, input.assignedBy, nowIso());
 }
 
 export function unassignMission(db: Db, classId: string, missionId: string): void {

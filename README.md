@@ -241,9 +241,17 @@ Other load-bearing decisions:
   export, the way state report cards handle small cells.
 - **Deletion is a date, not a paragraph.** The admin sets a retention window and
   sees the resulting deletion date per class before clicking anything. Deleting
-  removes the roster, every attempt and both check-ins in one operation; rows are
-  removed, not flagged. Every configuration change and deletion writes an audit
-  entry.
+  removes the roster, every attempt, both check-ins and that class's assignments
+  in one operation; rows are removed, not flagged. Every configuration change and
+  deletion writes an audit entry.
+- **That class cascade, plus removing a staff member who owns no classes, is the
+  whole self-service deletion surface.** Nothing in this build deletes the school
+  record, the remaining staff accounts and their orientation answers, or the
+  audit log, and there is no account-erasure workflow. `npm run reset-db` is a
+  developer script that empties the tables and re-seeds demo data; it is not
+  reachable from the product and is not an erasure path. The privacy page used
+  to say a school could "delete everything at any time", which was never true of
+  this code.
 - **Reporting shows demonstrated competencies, never labels.** There is no
   overall score for a child anywhere in the product.
 

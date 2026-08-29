@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { isAcademicYearLabel } from "@/lib/domain/calendar";
 import {
+  DELETION_SCOPE,
   NOT_COLLECTED,
   STUDENT_RECORD,
   SURROUNDING_RECORD,
@@ -290,10 +291,21 @@ export default async function AdminData() {
           a description of how the product is built. It is not a legal opinion and it is not
           a compliance certification.
         </Note>
-        <Note tone="neutral" title="Deletion in this build">
-          Deletion is immediate and real: the rows are removed from the database, not
-          flagged. There is no soft-delete table and no backup restore path in a local MVP,
-          so treat these buttons as final.
+        {/* What the controls reach, and what they do not. The public page made
+            a whole-school promise this build has no control for; saying it in
+            one place means the administrator's page cannot drift from it. */}
+        <Note tone="neutral" title="What deleting reaches, and what it does not">
+          <span className="block space-y-2">
+            {DELETION_SCOPE.map((line) => (
+              <span key={line} className="block">
+                {line}
+              </span>
+            ))}
+            <span className="block">
+              There is no backup restore path in a local MVP, so treat these buttons as
+              final.
+            </span>
+          </span>
         </Note>
         <Note tone="neutral" title="What runs the purge">
           The date above is when a class becomes <strong>due</strong> for deletion, and the

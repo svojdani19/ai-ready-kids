@@ -110,14 +110,39 @@ export const SURROUNDING_RECORD: InventoryEntry[] = [
   },
   {
     columns: ["assignments"],
-    what: "Per class: which missions a teacher has opened, when, and an optional due date and note.",
-    why: "Assigned to a class, not to a child. Nothing here names a student.",
+    what: "Per class: which missions a teacher has opened and when. The table also has a due-date and a note column, both unused: nothing in the product writes them and no screen shows them.",
+    // Not "Nothing here names a student", which was an assurance about content
+    // rather than a fact about the schema. `note` is an unconstrained TEXT
+    // column; `assignMission` used to accept arbitrary text for it and the demo
+    // seed wrote a sentence into it. Nothing enforced the promise. Sprint 67
+    // removed both write paths rather than leaving a claim propped up by the
+    // absence of a form.
+    why: "Assigned to a class, never to a child. No control in this product writes the note or the due date, so nothing new goes into them; a database carried over from an older build may still hold a staff-typed note in that column. A child cannot put text there or anywhere else — there is no free-text input in the student experience at all.",
   },
   {
     columns: ["users"],
     what: "Per staff member: a name, a school email address and a role.",
     why: "So staff can sign in and own a class.",
   },
+];
+
+/**
+ * What deleting actually deletes, said once because two surfaces promised more
+ * than the code does.
+ *
+ * `/privacy` said "A school can delete everything at any time without
+ * contacting us, because the data is theirs." There is no such control. The
+ * DELETE statements in this repository reach classes (cascading to roster,
+ * assignments, attempts and check-ins) and staff rows, and that is the whole
+ * self-service surface. `resetDatabase` is a developer script that re-seeds
+ * demo data; it is not an erasure path and is not reachable from the product.
+ *
+ * A district that relied on that sentence would have been relying on nothing.
+ */
+export const DELETION_SCOPE = [
+  "Deleting a class removes its roster, every mission attempt, both check-ins and that class's own mission assignments, in one operation and immediately. Rows are removed rather than flagged, and there is no soft-delete table and no restore path.",
+  "An administrator can also remove a staff member once that person owns no classes. Nobody can remove their own account, and a school must keep at least one administrator, so the last one cannot be removed either.",
+  "Nothing in this build deletes the school record and its settings, the staff accounts that remain, their orientation answers, or the audit log. There is no whole-school or account erasure control in this demonstration — not self-service, and not by any other route the product offers.",
 ];
 
 export const NOT_COLLECTED = [

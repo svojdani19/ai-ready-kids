@@ -85,16 +85,15 @@ describe("teacher manages a class", () => {
   it("assigns and unassigns missions without duplicating rows", () => {
     const mission = MISSIONS[0];
     assignMission(db, { classId, missionId: mission.id, assignedBy: DEMO_TEACHER });
-    assignMission(db, {
-      classId,
-      missionId: mission.id,
-      assignedBy: DEMO_TEACHER,
-      note: "Do this on the rug.",
-    });
+    assignMission(db, { classId, missionId: mission.id, assignedBy: DEMO_TEACHER });
 
     const assignments = listAssignments(db, classId);
     expect(assignments).toHaveLength(1);
-    expect(assignments[0].note).toBe("Do this on the rug.");
+    // Sprint 67: this used to pass a note through and assert it was stored.
+    // Assigning writes no free text at all now, so both unused columns stay
+    // null however many times the row is written.
+    expect(assignments[0].note).toBeNull();
+    expect(assignments[0].due_on).toBeNull();
 
     unassignMission(db, classId, mission.id);
     expect(listAssignments(db, classId)).toHaveLength(0);

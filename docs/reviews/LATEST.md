@@ -7,119 +7,93 @@ likely to be.
 
 ---
 
-## Sprint 66 — a risk conclusion is not a security control, and "complete" was two different lists
+## Sprint 67 — a deletion right the code does not grant, and an assurance nothing enforced
 
-- **Reviewed against:** HEAD `f9dc70c`
+- **Reviewed against:** HEAD `ab5d258`
 - **Repository:** <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-29-sprint-66.md`](2026-08-29-sprint-66.md)
+- **Full review:** [`2026-08-29-sprint-67.md`](2026-08-29-sprint-67.md)
 
-### Defect 1 — three surfaces dismissed unauthorised access
+### Defect 1 — "A school can delete everything at any time"
 
-Home: *"A first name and a last initial is the entire student record. Nothing to
-reset, nothing worth stealing."* Admin → Classes: *"exactly as much security as
-this data warrants."* Privacy: *"the security is proportionate to that."*
+`/privacy` promised whole-school erasure. Tracing every `DELETE FROM` in the
+repository, the self-service surface is: **classes** (cascading to roster,
+assignments, attempts, check-ins), **students**, **attempts**, **assignments**,
+and **users** via `removeStaffAction` — which refuses while the person owns any
+class, refuses your own account, and refuses the last administrator. Nothing
+deletes the `schools` row, the remaining `users`/`certifications`, `audit_log`,
+`meta` or the account settings. `resetDatabase` empties the tables and
+**re-seeds demo data** from `scripts/reset-db.ts`; no file under `src/app`
+references it.
 
-All three are conclusions about risk rather than descriptions of a control, and
-all three sat on a product that correctly calls the same records **education
-records under FERPA**. They also understated the reach, which I verified in code
-rather than inferring:
+Replaced by `DELETION_SCOPE`, rendered on `/privacy` and `/admin/data`: the
+class cascade and the staff rule stated exactly, then — *"Nothing in this build
+deletes the school record and its settings, the staff accounts that remain,
+their orientation answers, or the audit log. There is no whole-school or account
+erasure control in this demonstration — not self-service, and not by any other
+route the product offers."* No support contact, ticket, backup behaviour or
+timeline invented in its place; a test forbids each. `/for-schools` and the
+README are aligned.
 
-- `src/app/join/[classId]/page.tsx` renders every child in the class by name and
-  avatar to any holder of a valid grant.
-- `chooseStudent` in `src/app/actions/auth.ts` writes a **student session** for
-  any listed child — badges, finished missions, per-skill evidence.
+### Defect 2 — "Nothing here names a student"
 
-Replaced by `CLASS_CODE_BOUNDARY` in `src/content/data-inventory.ts`, used on
-all three surfaces: a code is **shared classroom access, not proof of who is
-using it**; anyone with it can see that roster, choose any child on it, and open
-that child's progress; it reaches one class and no further; rotate it when it
-travels. `CLASS_CODE_POSTURE` names the posture once — **not production access control**,
-this build is a **local demonstration running fictional data**, and putting real
-student records behind a class code is the **school's** judgement to weigh
-against its own policies, with no vendor assurance offered. The accurate
-existing statements (no password, no recovery flow, roster sync and SSO not
-built) are kept.
+The `assignments` entry carried that assurance while `assignments.note` was an
+unconstrained `TEXT` column, `assignMission` accepted and wrote a `note`, and the
+demo seed wrote *"Do this one together on the rug…"* into it. The promise held
+only because no form called the parameter.
 
-### Correction during acceptance (two claims still ahead of the evidence)
-
-**The replacement posture was the same conclusion, narrower.** It first said a
-class code was *"enough for a supervised pilot… where an adult is in the room
-and the roster is fictional or small and known"*. Neither clause mitigates: an
-adult in the room does not stop a photographed code being used that evening, and
-a small roster does not stop the holder choosing a different child on it. Only
-the local demonstration on fictional data is named now; the real-student
-question goes to the school.
-
-**`students.created_at` was given a purpose it does not have.** The entry said
-it existed *"so an administrator can see when a record entered the system"*.
-Traced: written by the `INSERT`, read back only by `SELECT *`, rendered by no
-route (the one `.created_at` rendered under the routed roots is the audit log's,
-a staff action), and used by neither retention (which reads the class's
-`year_ends_on`) nor `buildSchoolReport`. Corrected to the boundary — database
-metadata, displayed nowhere, computed from by nothing, *"listed because it is in
-the database, not because it does anything"*. The column is kept; dropping it
-would mean a schema change and a migration, which is out of scope here.
-
-### Defect 2 — two absolute inventories, neither matching the schema
-
-`/admin/data` said *"The complete list. There is nothing held back"* over six
-items; `/privacy` said *"Everything we hold about a student"* over a **different**
-six. Against the 18 columns of the three student-linked tables (`students` 5,
-`attempts` 7, `benchmarks` 6): the admin list accounted for **4**, the public
-list for **7**. Both omitted `attempts.evidence_json` (the derived per-skill
-judgement), the check-in timestamps, `students.created_at` and every id/FK; the
-admin list also omitted `students.class_id`.
-
-Both pages now read one module. `tests/data-inventory.test.ts` parses
-`SCHEMA_SQL` and fails when any column of any student-linked table is unclaimed,
-so `ALTER TABLE` breaks the build until the new column is described. Scope is
-stated on both pages instead of assumed — student-linked rows plus, on the admin
-page only, the class and staff records they hang from; explicitly **not** the
-school's account settings or the audit log.
+The write surface is reduced rather than documented: `assignMission` has no
+`note` parameter, the `INSERT` writes literal `NULL` for `note` and `due_on`, the
+conflict clause is `DO NOTHING`, and the seed writes no note. **No note UI was
+added.** Both columns stay — dropping them is a migration that would erase
+values an existing database may hold — so the inventory says they are unused,
+that an older database may still hold a staff-typed note, and that a child
+cannot put text there or anywhere else because there is no free-text input in
+the student experience at all.
 
 ### Evidence
 
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      693 passed (17 files)   — up from 678
+tests      705 passed (18 files)   — up from 693
 build      ✓ Compiled successfully
-revert 4 page files  → 6 of 12 fail   (original sprint, every copy assertion)
-against b56aeb2      → 5 of 15 fail   (acceptance correction, both phrases)
+against ab5d258 → 8 of 12 new tests fail (both defects)
 ```
 
-Browser on :3210 — `/`, `/privacy`, `/admin/data`, `/admin/classes` at 1280×800
-and 768×1024. All eight: banned phrases absent, boundary and posture present,
-the previously-omitted facts rendered, no horizontal overflow. The corrected
-`/privacy`, `/admin/data` and `/admin/classes` were rechecked at both widths
-after the acceptance fix.
+Two tests are grounded in statements rather than prose: one parses every
+`DELETE FROM` in `src/` and `scripts/` and asserts the table set is exactly
+`{assignments, attempts, classes, students, users}`; the other deletes a demo
+class and asserts roster, attempts, benchmarks and assignments are gone while
+the audit log, staff rows and school row are untouched.
+
+Browser on :3210 — `/privacy` and `/admin/data` at 1280×800 and 768×1024. All
+four: banned claims absent, cascade/staff/no-erasure lines present, unused-column
+and legacy-database sentences present, no horizontal overflow.
+
+The local demo database held four notes from the old seed; cleared with a
+targeted `UPDATE assignments SET note = NULL` so the demo matches the new seed.
+No migration added, no other row touched.
 
 ### Where to push hardest
 
-1. **Six of the twelve new tests cannot fail-before, and I say so in the
-   review.** The schema-coverage assertions had nothing to check before this
-   sprint, because no list was schema-linked. The evidence that the defect was
-   real is the column count (4/18 and 7/18), not those tests.
-2. **The coverage test is only as good as `STUDENT_LINKED_TABLES`.** It is a
-   hand-maintained list of three table names. A future table with a `student_id`
-   foreign key that nobody adds to that constant is invisible to the test —
-   deriving it from the FK declarations in `SCHEMA_SQL` would close that, and I
-   did not.
-3. **`SURROUNDING_RECORD` is grouped, not enumerated.** Its entries name tables
-   (`classes`, `assignments`, `users`) rather than columns, and no test enforces
-   coverage there. That is deliberate — those are not student records and the
-   heading does not claim column-completeness for them — but it is a weaker
-   guarantee sitting next to a stronger one on the same panel.
-4. **The limitation is now a commercial fact on a buyer-facing page.** A
-   district administrator reading `/privacy` is told that anyone with a class
-   code can open any listed child's progress, that this build is a local
-   demonstration on fictional data, and that any real-student pilot is theirs to
-   evaluate. That is the honest position and it may cost deals. The alternative
-   was a security claim the code did not support.
-5. **`SURROUNDING_RECORD` may hold the same defect I just fixed one entry
-   deep.** Its three `why` lines were written the same way `students.created_at`
-   was — from what the field is for, not from what the code does with it. I
-   traced `created_at` because the review named it; I did not trace the others.
-6. **Nothing was fixed about the access model itself.** Class codes remain the
-   only student credential. If the reviewer's next finding is "then build roster
-   sync", that is a build, not a copy sprint, and should be scoped as one.
+1. **Four of the twelve new tests pass before the fix, and I say so.** The
+   `DELETE FROM` inventory, the `resetDatabase` containment check, the cascade
+   test and null-after-write pin code that was already correct — the copy was
+   what disagreed. They exist so a future change to the delete surface has to
+   confront the copy in the same commit.
+2. **The `DELETE FROM` parser is a regex over source text.** It would miss a
+   deletion expressed another way — a raw `db.exec` built by string
+   concatenation, an `ON DELETE CASCADE` reaching further than expected, or a
+   future ORM call. It checks the statements that exist today, not the concept.
+3. **`assignments.note` still exists and may hold data.** I removed the write
+   paths and cleared the demo, but any database carried over from before this
+   commit keeps whatever was written. The inventory says so; nothing deletes it.
+4. **The remaining deployment gaps are real and unfixed:** no account erasure at
+   all, an audit log that outlives the records it describes and cannot be
+   deleted, and `npm run reset-db` sitting one shell command away for anyone with
+   the filesystem. The product now describes these accurately rather than
+   contradicting them, which is not the same as solving them.
+5. **The same audit is worth running on the other verbs.** This sprint checked
+   "delete" against the `DELETE` statements. "Export", "archive", "reassign" and
+   "rotate" all have buyer-facing copy that has never been traced to the code the
+   same way.

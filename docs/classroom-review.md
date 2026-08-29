@@ -580,6 +580,18 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       before writing its purpose; where there is neither, that absence is the
       honest entry.
 
+- [ ] **A rights claim is checked against the statements, not the prose.** "A
+      school can delete everything at any time" is a claim about which DELETEs
+      exist. Enumerate them — including what only a developer script can reach —
+      and write the copy from that list. The same method applies to export,
+      archive and every other verb a buyer might rely on.
+- [ ] **An assurance nothing enforces is a defect, not a description.**
+      "Nothing here names a student" was true only because no form happened to
+      call a parameter that wrote arbitrary text into an unconstrained column.
+      Where the promise matters, close the write path so the schema enforces it;
+      where a column must stay, say it is unused and that an older database may
+      hold values, rather than promising what its contents will be.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

@@ -361,7 +361,9 @@ export function seed(db: Db): void {
         cls.teacherId,
         isoDay(5 + index * 18),
         null,
-        index === 0 ? "Do this one together on the rug before independent work." : null,
+        // No note. The demo used to write one here, which made a column no
+        // screen renders and no action writes look like a feature in use.
+        null,
       );
     });
 
