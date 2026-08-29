@@ -301,7 +301,14 @@ describe("check-in save resilience", () => {
     await user.click(screen.getByRole("radio", { name: first.options[1].label }));
     await user.click(screen.getByRole("button", { name: "Next" }));
 
-    const retry = screen.getByRole("button", { name: "Try again" });
+    // `findBy`, for the same reason the advance assertion below uses it, and
+    // fixed here in sprint 76 after this line failed once in a full-suite run.
+    // Sprint 62 de-flaked the *advance* and left this one synchronous: the
+    // rejection is also handled inside the async `startTransition`, so the
+    // button's label can still be "Next" when this runs. Same race, one line
+    // earlier, and it survived because the second assertion usually gave the
+    // first enough time.
+    const retry = await screen.findByRole("button", { name: "Try again" });
     expect(retry).toBeEnabled();
     // The failure left the child exactly where they were.
     expect(

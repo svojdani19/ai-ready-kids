@@ -756,6 +756,19 @@ one of them has not tested the thing that was built.
       database lets a later case pass on state an earlier one left behind. Fresh
       fixture per transition, or exact restoration between them.
 
+- [ ] **An idempotent write must not produce a non-idempotent record.** `ON
+      CONFLICT DO NOTHING` and a `DELETE` with a discarded change count are right
+      for a double-tapped toggle and wrong for the audit log: they let the caller
+      write "assigned" for a mission the class already had. Return whether a row
+      actually changed, and make the audit conditional on it — an event that did
+      not happen is worse in a log than a gap.
+- [ ] **When a brief asks you to test a refusal, check the refusal exists.** The
+      archived-class case turned out not to be refused at all. Asserting the
+      requested behaviour would have been fabricating it; asserting the real
+      behaviour under a neutral name would have hidden it. Record what the code
+      does, name the test so it reads as a finding, and say plainly why the fix
+      was left for its own sprint.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

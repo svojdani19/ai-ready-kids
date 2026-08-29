@@ -22,6 +22,7 @@ import {
   unassignMission,
 } from "@/lib/repo/classroom";
 import {
+  ASSIGNMENT_FAILED,
   auditedWrite,
   REMOVE_STUDENT_FAILED,
   ROTATE_FAILED,
@@ -425,22 +426,41 @@ export async function setAssignmentAction(input: {
     if (!mission) throw new Error("Unknown mission.");
     const { db, user, classroom } = await requireOwnActiveClass(input.classId);
 
-    if (input.assigned) {
-      assignMission(db, {
-        classId: input.classId,
-        missionId: input.missionId,
-        assignedBy: user.id,
-      });
-    } else {
-      unassignMission(db, input.classId, input.missionId);
+    // The change and its record commit together. Sprint 76: these were two
+    // separate commits, so a failing audit insert could expose a mission to a
+    // class, or withdraw one mid-attempt, with nothing recording who did it —
+    // and the optimistic switch got an uncaught error rather than a state a
+    // teacher could act on.
+    //
+    // The audit is conditional on the write having changed something. Both
+    // repository calls are idempotent by design, for the double-tap and the
+    // stale tab; that is right for the data and wrong for the log, which must
+    // not gain "mission assigned" for a mission the class already had.
+    try {
+      auditedWrite(
+        db,
+        () =>
+          input.assigned
+            ? assignMission(db, {
+                classId: input.classId,
+                missionId: input.missionId,
+                assignedBy: user.id,
+              })
+            : unassignMission(db, input.classId, input.missionId),
+        (changed) =>
+          changed
+            ? {
+                schoolId: user.school_id,
+                actorLabel: user.name,
+                action: input.assigned ? "mission.assigned" : "mission.unassigned",
+                detail: `${mission.title} ${input.assigned ? "assigned to" : "removed from"} ${classroom.name}.`,
+              }
+            : null,
+      );
+    } catch (error) {
+      if (asExpectedError(error)) throw error;
+      return { error: ASSIGNMENT_FAILED(classroom.name) };
     }
-
-    recordAudit(db, {
-      schoolId: user.school_id,
-      actorLabel: user.name,
-      action: input.assigned ? "mission.assigned" : "mission.unassigned",
-      detail: `${mission.title} ${input.assigned ? "assigned to" : "removed from"} ${classroom.name}.`,
-    });
     revalidatePath("/teacher/missions");
     revalidatePath(`/teacher/missions/${mission.slug}`);
     revalidatePath(`/teacher/class/${input.classId}`);

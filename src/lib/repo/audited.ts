@@ -37,13 +37,19 @@ export type AuditInput = {
 export function auditedWrite<T>(
   db: Db,
   write: () => T,
-  audit: (result: T) => AuditInput,
+  audit: (result: T) => AuditInput | null,
 ): T {
   const outer = db.isTransaction;
   if (!outer) db.exec("BEGIN IMMEDIATE");
   try {
     const result = write();
-    recordAudit(db, audit(result));
+    // `null` means the write turned out to be a no-op, so there is no event to
+    // record. Sprint 76: an idempotent call — assigning a mission a class
+    // already has, unassigning one it does not — must not produce an audit
+    // entry describing something that did not happen. The write still runs
+    // inside the transaction either way; only the record is conditional.
+    const entry = audit(result);
+    if (entry) recordAudit(db, entry);
     if (!outer) db.exec("COMMIT");
     return result;
   } catch (error) {
@@ -108,6 +114,18 @@ export const RETENTION_FAILED =
   "The retention window was not changed. Every class keeps the same retention " +
   "status and the same scheduled deletion date it had before you pressed Save, " +
   "and no records were deleted. Try again.";
+
+/**
+ * Assigning or withdrawing a mission decides which authored practice a class may
+ * open. The message names what a teacher would otherwise have to go and check —
+ * the mission list, and whether any child's saved work moved — and says outright
+ * that nothing reached the audit log, so nobody goes looking for an entry that
+ * was rolled back.
+ */
+export const ASSIGNMENT_FAILED = (className: string) =>
+  `That did not save. ${className} is offered exactly the same missions as before, ` +
+  `no child's saved mission work or badge has changed, and nothing was written to ` +
+  `the audit log. It is safe to try again.`;
 
 export const REMOVE_STUDENT_FAILED = (className: string) =>
   `That student was not removed, and no records were deleted: they are still on ` +

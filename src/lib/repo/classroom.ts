@@ -457,21 +457,32 @@ export function listAssignments(db: Db, classId: string): Assignment[] {
  * `due_on` was already always NULL and stays that way. Both columns remain in
  * the schema: dropping them is a migration, and a migration that erases values
  * an existing database may hold is not something to do in passing.
+ *
+ * Returns whether a row was actually created. `ON CONFLICT DO NOTHING` makes
+ * this idempotent, which is right for a toggle a teacher may double-tap or a
+ * stale tab may resend — but it also meant the caller could not tell an
+ * assignment from a no-op, and wrote a "mission assigned" audit entry either
+ * way. An audit log that records events which did not happen is worse than one
+ * that is merely incomplete, so the answer comes back (sprint 76).
  */
 export function assignMission(
   db: Db,
   input: { classId: string; missionId: string; assignedBy: string },
-): void {
-  db.prepare(
-    `INSERT INTO assignments (id, class_id, mission_id, assigned_by, assigned_at, due_on, note)
-     VALUES (?,?,?,?,?,NULL,NULL)
-     ON CONFLICT (class_id, mission_id) DO NOTHING`,
-  ).run(newId("asg"), input.classId, input.missionId, input.assignedBy, nowIso());
+): boolean {
+  const result = db
+    .prepare(
+      `INSERT INTO assignments (id, class_id, mission_id, assigned_by, assigned_at, due_on, note)
+       VALUES (?,?,?,?,?,NULL,NULL)
+       ON CONFLICT (class_id, mission_id) DO NOTHING`,
+    )
+    .run(newId("asg"), input.classId, input.missionId, input.assignedBy, nowIso());
+  return result.changes > 0;
 }
 
-export function unassignMission(db: Db, classId: string, missionId: string): void {
-  db.prepare("DELETE FROM assignments WHERE class_id = ? AND mission_id = ?").run(
-    classId,
-    missionId,
-  );
+/** Returns whether a row was actually removed. See `assignMission`. */
+export function unassignMission(db: Db, classId: string, missionId: string): boolean {
+  const result = db
+    .prepare("DELETE FROM assignments WHERE class_id = ? AND mission_id = ?")
+    .run(classId, missionId);
+  return result.changes > 0;
 }

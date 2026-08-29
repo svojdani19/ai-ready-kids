@@ -788,6 +788,11 @@ describe("no destructive or credential-changing action audits outside a transact
     // check-in. A lost record of who opened a window is a benchmark-integrity
     // question. Added singly, for the same reason retention was.
     "setBenchmarkWindow(",
+    // Sprint 76. Deciding which authored mission a class may open is the same
+    // kind of thing one class at a time: assigning exposes a mission to
+    // children, unassigning withdraws one that may be half-finished.
+    "assignMission(",
+    "unassignMission(",
   ];
 
   it("pairs every consequential write with auditedWrite", () => {
@@ -820,8 +825,9 @@ describe("no destructive or credential-changing action audits outside a transact
         "rotateJoinCodeAction",
         "setRetentionAction",
         "setBenchmarkWindowAction",
+        "setAssignmentAction",
       ]),
     );
-    expect(wrapped.length).toBeGreaterThanOrEqual(10);
+    expect(wrapped.length).toBeGreaterThanOrEqual(11);
   });
 });
