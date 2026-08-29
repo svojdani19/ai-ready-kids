@@ -366,7 +366,7 @@ export async function rotateJoinCodeAction(classId: string): Promise<{ error?: s
       schoolId: user.school_id,
       actorLabel: user.name,
       action: "class.code_rotated",
-      detail: `${classroom.name} has a new class code. The old one stopped working immediately.`,
+      detail: `${classroom.name} has a new class code. The old one is now rejected on its next use, for new joins and for browsers already signed in with it.`,
     });
     revalidatePath(`/teacher/class/${classId}`);
     return {};

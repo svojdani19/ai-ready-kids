@@ -488,7 +488,7 @@ export async function rotateJoinCodeAsAdminAction(classId: string): Promise<{ er
       // No child is named here, and none needs to be: what happened is that a
       // class credential changed, which is a fact about the class.
       action: "class.code_rotated",
-      detail: `${classroom.name} has a new class code. The old one stopped working immediately. The roster and all student records are unchanged.`,
+      detail: `${classroom.name} has a new class code. The old one is now rejected on its next use, for new joins and for browsers already signed in with it. The roster and all student records are unchanged.`,
     });
     revalidatePath("/admin/classes");
     revalidatePath(`/teacher/class/${classId}`);

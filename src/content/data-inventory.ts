@@ -168,7 +168,8 @@ export const CLASS_CODE_BOUNDARY = [
   "A class code is shared classroom access, not proof of who is using it. It is typed by a room, not held by a person.",
   "Anyone with the code can see that class's roster of first names and avatars, choose any child listed on it, and open that child's progress.",
   "It reaches one class. It is not a way into another class, into a teacher's tools or into anything an administrator sees.",
-  "Rotate the code whenever it has travelled further than the class. The old code stops working immediately and nothing else about the class changes.",
+  "Rotate the code whenever it has travelled further than the class. From then on the old code is rejected on the next request that uses it: nobody can join with it, a half-finished join stops, and a browser already signed in with it is asked to rejoin the next time it loads a page. Nothing else about the class changes, and no records are touched.",
+  "What rotation cannot do is reach into a page already on a screen. A child looking at a mission they have open keeps looking at it until they navigate; the product signs that browser out on its next request, not before.",
 ];
 
 /**

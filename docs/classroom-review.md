@@ -600,6 +600,18 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       before-state is non-zero so the test cannot pass by deleting nothing from
       nothing.
 
+- [ ] **Revoking a credential must reach the sessions it already bought.**
+      Rotating a class code invalidated new joins and half-finished grants but
+      not sessions already issued, because the session recorded *who* was signed
+      in and not *what let them in*. When a product names an action as the
+      recovery for a leak, enumerate every artefact that action has to
+      invalidate, and check each one — a credential store that only guards the
+      front door leaves everyone already inside.
+- [ ] **Containment copy must name the moment, not the feeling.** "Stops working
+      immediately" implies real-time control no server-rendered app has. Say
+      when the check actually runs — "rejected on the next request" — and say
+      plainly what it cannot reach, such as a page already open on a screen.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

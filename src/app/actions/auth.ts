@@ -33,7 +33,15 @@ export async function enterDemo(role: "teacher" | "admin" | "student"): Promise<
   if (role === "student") {
     const student = getStudent(db, DEMO.studentId) ?? listStudents(db, DEMO.classId)[0];
     if (!student) redirect("/join");
-    await writeSession({ kind: "student", studentId: student.id });
+    // Bound to the class's *current* code, read at issue time. A demo session
+    // minted before a rotation is no more privileged than a real one.
+    const demoClass = getClass(db, student.class_id);
+    if (!demoClass) redirect("/join");
+    await writeSession({
+      kind: "student",
+      studentId: student.id,
+      code: normaliseJoinCode(demoClass.join_code),
+    });
     redirect("/student");
   }
   const email = role === "admin" ? DEMO.adminEmail : DEMO.teacherEmail;
@@ -159,7 +167,10 @@ export async function chooseStudent(studentId: string): Promise<void> {
   }
 
   await clearJoinGrant();
-  await writeSession({ kind: "student", studentId: student.id });
+  // The code the grant carried, which the checks above have just confirmed is
+  // still the class's current one. Not re-read from the class: the session
+  // records what authorised it.
+  await writeSession({ kind: "student", studentId: student.id, code: grant.code });
   redirect("/student");
 }
 

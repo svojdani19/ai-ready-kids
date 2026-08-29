@@ -170,6 +170,42 @@ describe("no surface draws a risk conclusion the product cannot support", () => 
     }
   });
 
+  it("promises only the rotation containment the code delivers", () => {
+    const boundary = CLASS_CODE_BOUNDARY.join(" ");
+
+    // "The old code stops working immediately" was true of new joins and of
+    // half-finished grants, and false of a session already issued — which
+    // survived rotation for the rest of its twelve hours (sprint 68).
+    expect(boundary).not.toMatch(/stops working immediately/i);
+
+    // What is true: rejected on next use, for both credentials.
+    expect(boundary).toMatch(/rejected on the next request/i);
+    expect(boundary).toMatch(/nobody can join with it/i);
+    expect(boundary).toMatch(/already signed in with it is asked to rejoin/i);
+
+    // And the limit said out loud rather than implied away: no real-time
+    // control over a page already rendered.
+    expect(boundary).toMatch(/cannot do is reach into a page already on a screen/i);
+
+    // No stronger claim smuggled in.
+    for (const line of CLASS_CODE_BOUNDARY) {
+      expect(line).not.toMatch(/\bimmediately\b|\bin real time\b|\binstantly\b|signed out at once/i);
+    }
+  });
+
+  it("says the same thing in the administrator's note and the audit entry", () => {
+    const classes = copyOf(SURFACES.adminClasses);
+    expect(classes).not.toMatch(/old code stops working immediately/i);
+    expect(classes).toMatch(/rejected\s+on the next request/i);
+    expect(classes).toMatch(/mid-mission keeps that screen until they navigate/i);
+
+    for (const path of ["src/app/actions/admin.ts", "src/app/actions/teacher.ts"]) {
+      const actions = copyOf(path);
+      expect(actions).not.toMatch(/old one stopped working immediately/i);
+      expect(actions).toMatch(/rejected on its next use/i);
+    }
+  });
+
   it("states the boundary and the posture in the shared copy", () => {
     const boundary = CLASS_CODE_BOUNDARY.join(" ");
     expect(boundary).toMatch(/not proof of who is using it/i);

@@ -196,8 +196,12 @@ export default async function AdminClasses() {
           holding it can see that class&rsquo;s roster of first names and avatars, choose
           any child on it, and open that child&rsquo;s progress. Codes get read aloud and
           photographed off whiteboards, so choose <strong>New code</strong> above whenever
-          one has travelled further than the class. The old code stops working immediately
-          and nothing else about the class changes. The teacher of record can do the same
+          one has travelled further than the class. From then on the old code is rejected
+          on the next request that uses it: nobody can join with it, a half-finished join
+          stops, and a browser already signed in with it is asked to rejoin the next time
+          it loads a page. It does not close a page that is already open &mdash; a child
+          mid-mission keeps that screen until they navigate. Nothing else about the class
+          changes and no records are touched. The teacher of record can do the same
           from their own class page. Deleting a class is never the way to change its code.
           Roster sync and single sign-on would replace codes in a production deployment;
           neither is built, so a class code is the only credential in the product and it is

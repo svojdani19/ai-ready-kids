@@ -5,9 +5,26 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  * can be tested directly.
  */
 
+/**
+ * A student session carries the class code that authorised it.
+ *
+ * Rotation used to invalidate new joins and half-finished grants but not a
+ * session already issued: `{ kind: "student", studentId }` said nothing about
+ * *how* the holder got in, so `currentStudent` had nothing to compare against
+ * the class's current code. A session created through a leaked code therefore
+ * survived rotation for the rest of its twelve hours — while the product told
+ * administrators the old code "stops working immediately".
+ *
+ * `code` is the normalised join code, which is exactly the marker the grant
+ * already carried. It is not persisted anywhere: it lives only inside the
+ * signed, HttpOnly cookie, and no screen shows it.
+ *
+ * The field is required, not optional. A token from an older build decodes to
+ * null and its holder is asked to rejoin — see `decodeSession`.
+ */
 export type SessionValue =
   | { kind: "staff"; userId: string }
-  | { kind: "student"; studentId: string };
+  | { kind: "student"; studentId: string; code: string };
 
 /**
  * What entering a correct class code buys you: a short-lived, signed statement
@@ -100,8 +117,17 @@ export function decodeSession(key: Buffer, token: string | undefined): SessionVa
     if (candidate.kind === "staff" && typeof candidate.userId === "string") {
       return { kind: "staff", userId: candidate.userId };
     }
-    if (candidate.kind === "student" && typeof candidate.studentId === "string") {
-      return { kind: "student", studentId: candidate.studentId };
+    if (
+      candidate.kind === "student" &&
+      typeof candidate.studentId === "string" &&
+      // Fail closed. A legacy student token has no `code`, and treating a
+      // missing binding as "matches anything" would preserve the exact hole
+      // this closes. The one-time cost is real and is stated in the copy:
+      // student sessions issued by an older build are asked to rejoin.
+      typeof candidate.code === "string" &&
+      candidate.code !== ""
+    ) {
+      return { kind: "student", studentId: candidate.studentId, code: candidate.code };
     }
     return null;
   } catch {

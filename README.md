@@ -389,8 +389,14 @@ administrator surfaces, with every student-facing control measured against the
   holds a counter and a timestamp, keyed by forwarded address, stores nothing
   about anybody, and forgets everything on restart. A real deployment does this
   at the edge; a single Node process behind one load balancer is not a rate
-  limit. A teacher can rotate a code from the class page, which invalidates
-  outstanding join grants immediately.
+  limit. A teacher can rotate a code from the class page. A student
+  session carries the normalised code that authorised it, inside the signed
+  HttpOnly cookie and nowhere else, and `currentStudent` compares it to the
+  class's current code — so rotation rejects outstanding join grants *and*
+  sessions already issued under the old code, each on its next request. It
+  cannot reach a page already rendered on a screen. Student session tokens from
+  builds before this binding carry no code and are rejected: those children are
+  asked to rejoin once.
 - **A class belongs to its teacher.** `canTeachClass` in
   `src/lib/auth/access.ts` is the only rule that grants access to a roster or
   to individual evidence, and it requires the requesting user to be the teacher

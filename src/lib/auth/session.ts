@@ -10,7 +10,7 @@ import {
   encodeSession,
   type SessionValue,
 } from "./token";
-import { getStudent, getClass } from "@/lib/repo/classroom";
+import { getStudent, getClass, normaliseJoinCode } from "@/lib/repo/classroom";
 import { getUser } from "@/lib/repo/school";
 import type { Classroom, Student, User } from "@/lib/types";
 
@@ -114,6 +114,19 @@ export async function currentStaff(): Promise<StaffContext | null> {
   return user ? { user } : null;
 }
 
+/**
+ * A student session is only good for as long as the code that bought it.
+ *
+ * Rotation invalidated new joins and half-finished grants, but not a session
+ * already issued — so a code that leaked kept one browser inside the class for
+ * the rest of the twelve hours, after the administrator had done the exact
+ * thing the product told them to do. The comparison below is the whole fix:
+ * the code carried in the signed cookie against the class's current one.
+ *
+ * Both sides are normalised. The cookie is written from an already-normalised
+ * value, but normalising here too means a stored code that was never
+ * normalised cannot fail to match itself.
+ */
 export async function currentStudent(): Promise<StudentContext | null> {
   const session = await readSession();
   if (session?.kind !== "student") return null;
@@ -122,6 +135,7 @@ export async function currentStudent(): Promise<StudentContext | null> {
   if (!student) return null;
   const classroom = getClass(db, student.class_id);
   if (!classroom) return null;
+  if (normaliseJoinCode(classroom.join_code) !== normaliseJoinCode(session.code)) return null;
   return { student, classroom };
 }
 

@@ -16,7 +16,7 @@ import {
   DEMO_TEACHER,
   playToEnd,
 } from "./helpers";
-import { decodeSession, encodeSession } from "@/lib/auth/token";
+import { decodeSession, encodeSession, signPayload } from "@/lib/auth/token";
 import { getMission, MISSIONS } from "@/content/missions";
 import { getBenchmarkForm } from "@/content/benchmark";
 import { findChoice, findScene, validateMission } from "@/lib/domain/missionPath";
@@ -57,9 +57,38 @@ describe("session cookies", () => {
       kind: "staff",
       userId: "usr_1",
     });
+    // Sprint 68: a student session carries the class code that authorised it,
+    // so the round-trip has to preserve the binding, not just the id.
     expect(
-      decodeSession(key, encodeSession(key, { kind: "student", studentId: "stu_1" })),
-    ).toEqual({ kind: "student", studentId: "stu_1" });
+      decodeSession(
+        key,
+        encodeSession(key, { kind: "student", studentId: "stu_1", code: "MAPLEHERON317" }),
+      ),
+    ).toEqual({ kind: "student", studentId: "stu_1", code: "MAPLEHERON317" });
+  });
+
+  it("rejects a legacy student session that carries no code binding", () => {
+    // Exactly the shape older builds issued. Fail closed: a missing binding is
+    // not "matches any code", it is a token this build will not accept, and
+    // its holder is asked to rejoin.
+    const legacy = Buffer.from(
+      JSON.stringify({ kind: "student", studentId: "stu_1" }),
+      "utf8",
+    ).toString("base64url");
+    expect(decodeSession(key, `${legacy}.${signPayload(key, legacy)}`)).toBeNull();
+
+    // And an empty binding is no better than a missing one.
+    const blank = Buffer.from(
+      JSON.stringify({ kind: "student", studentId: "stu_1", code: "" }),
+      "utf8",
+    ).toString("base64url");
+    expect(decodeSession(key, `${blank}.${signPayload(key, blank)}`)).toBeNull();
+
+    // Staff tokens are untouched by any of this.
+    expect(decodeSession(key, encodeSession(key, { kind: "staff", userId: "usr_1" }))).toEqual({
+      kind: "staff",
+      userId: "usr_1",
+    });
   });
 
   it("rejects a cookie signed with a different key", () => {
@@ -68,7 +97,11 @@ describe("session cookies", () => {
   });
 
   it("rejects a tampered payload that keeps the old signature", () => {
-    const token = encodeSession(key, { kind: "student", studentId: "stu_1" });
+    const token = encodeSession(key, {
+      kind: "student",
+      studentId: "stu_1",
+      code: "MAPLEHERON317",
+    });
     const [, signature] = token.split(".");
     const forged = Buffer.from(JSON.stringify({ kind: "staff", userId: "usr_delgado" }))
       .toString("base64url");
@@ -335,7 +368,11 @@ describe("a class code is worth something", () => {
   });
 
   it("refuses a session token presented as a grant, and the reverse", () => {
-    const session = encodeSession(key, { kind: "student", studentId: "stu_1" });
+    const session = encodeSession(key, {
+      kind: "student",
+      studentId: "stu_1",
+      code: "MAPLEHERON317",
+    });
     expect(decodeJoinGrant(key, session, now)).toBeNull();
     const grant = encodeJoinGrant(key, { kind: "join", classId: "cls_a", code: "MAPLE-HERON-317", exp: now + 600 });
     expect(decodeSession(key, grant)).toBeNull();
