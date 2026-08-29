@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getMission, MISSIONS } from "@/content/missions";
+import { FOUNDATIONS_BY_TRACK, getMission, MISSIONS } from "@/content/missions";
 import { COMPETENCY_BY_ID, SKILL_BY_ID } from "@/content/competencies";
 import { PrintButton } from "@/components/PrintButton";
 import { LogoMark } from "@/components/Logo";
@@ -50,14 +50,16 @@ export default async function PrintableGuide({
         <header className="flex items-start justify-between gap-4 border-b border-sand pb-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">
-              Discussion guide · {competency.formalName}
+              Discussion guide ·{" "}
+              {mission.segment === "foundation" ? "First Look" : competency.formalName}
             </p>
             <h1 className="mt-1.5 font-display text-3xl leading-tight text-ink">
               {mission.title}
             </h1>
             <p className="mt-1.5 text-sm text-ink-soft">
-              Mission {mission.order} · Grades {mission.gradeBand} ·{" "}
-              {mission.estimatedMinutes} minutes independent, 15 minutes debrief
+              {mission.segment === "foundation" ? "Session" : "Mission"} {mission.order} ·
+              Grades {mission.gradeBand} · {mission.estimatedMinutes} minutes independent, 15
+              minutes debrief
             </p>
           </div>
           <LogoMark size={40} />
@@ -77,8 +79,13 @@ export default async function PrintableGuide({
               </li>
             ))}
           </ul>
+          {/* The sheet a teacher prints and keeps must not say a First Look
+              session records a skill. It records nothing, and this line is
+              where that claim would survive longest once it is on paper. */}
           <p className="mt-3 text-sm text-ink-faint">
-            Primary skill recorded: {SKILL_BY_ID[mission.primarySkillId].educatorLabel}
+            {mission.segment === "foundation"
+              ? `Records nothing. Leads into: ${SKILL_BY_ID[mission.primarySkillId].educatorLabel}`
+              : `Primary skill recorded: ${SKILL_BY_ID[mission.primarySkillId].educatorLabel}`}
           </p>
         </section>
 
@@ -180,8 +187,13 @@ export default async function PrintableGuide({
         </section>
 
         <footer className="mt-8 border-t border-sand pt-4 text-xs text-ink-faint">
-          AI Ready Kids · {competency.formalName} · Mission {mission.order} of {MISSIONS.length}. Reproduce
-          freely within your school.
+          AI Ready Kids ·{" "}
+          {mission.segment === "foundation"
+            ? `First Look · Session ${mission.order} of ${
+                FOUNDATIONS_BY_TRACK[mission.track ?? "early"].length
+              }, grades ${mission.gradeBand}`
+            : `${competency.formalName} · Mission ${mission.order} of ${MISSIONS.length}`}
+          . Reproduce freely within your school.
         </footer>
       </article>
     </div>

@@ -61,7 +61,7 @@ import {
   saveBenchmarkResponse,
 } from "@/lib/repo/progress";
 import { buildSchoolReport, MIN_REPORTABLE_GROUP, reportToCsv } from "@/lib/repo/report";
-import { MISSIONS } from "@/content/missions";
+import { ALL_SESSIONS, MISSIONS } from "@/content/missions";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
 import { MIN_BENCHMARK_GROUP, summariseCohortBenchmark } from "@/lib/domain/benchmark";
 import {
@@ -109,7 +109,11 @@ describe("school overview", () => {
     expect(report.totals.completionRate).toBeGreaterThan(0);
     expect(report.totals.completionRate).toBeLessThanOrEqual(1);
     expect(report.competencies).toHaveLength(3);
-    expect(report.missions).toHaveLength(MISSIONS.length);
+    // Every session in the catalogue, First Look included, each tagged with
+    // its segment so the "every core mission in use" check can exclude the
+    // grade track this school does not run.
+    expect(report.missions).toHaveLength(ALL_SESSIONS.length);
+    expect(report.missions.filter((m) => m.segment === "core")).toHaveLength(MISSIONS.length);
     expect(report.byGrade.map((g) => g.grade)).toEqual([2, 3, 4]);
   });
 

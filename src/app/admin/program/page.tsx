@@ -61,9 +61,13 @@ export default async function AdminProgram() {
       detail: `${bench.preCompleted} students completed`,
     },
     {
-      label: "Every mission in use",
-      done: report.missions.every((m) => m.assignedTo > 0),
-      detail: `${report.missions.filter((m) => m.assignedTo > 0).length} of ${MISSIONS.length} assigned somewhere`,
+      // Core only. No school runs both First Look grade tracks, so a check
+      // over the whole catalogue could never be completed.
+      label: "Every core mission in use",
+      done: report.missions.every((m) => m.segment !== "core" || m.assignedTo > 0),
+      detail: `${
+        report.missions.filter((m) => m.segment === "core" && m.assignedTo > 0).length
+      } of ${MISSIONS.length} assigned somewhere`,
     },
     {
       label: "Spring check-in window",

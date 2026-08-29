@@ -12,7 +12,7 @@ import { listAttemptsForClass, listBenchmarksForClass } from "@/lib/repo/progres
 import { summariseCohort, summariseStudent } from "@/lib/domain/evidence";
 import { summariseCohortBenchmark } from "@/lib/domain/benchmark";
 import { COMPETENCIES, COMPETENCY_BY_ID } from "@/content/competencies";
-import { MISSIONS, MISSION_BY_ID } from "@/content/missions";
+import { ALL_SESSIONS, FOUNDATIONS_BY_TRACK, MISSIONS, MISSION_BY_ID, trackForGrade } from "@/content/missions";
 import { Avatar } from "@/components/art/Avatar";
 import { PageHeader, Panel, PanelBody } from "@/components/ui/Panel";
 import { ButtonLink } from "@/components/ui/Button";
@@ -110,7 +110,7 @@ export default async function ClassPage({
 
       <div className="grid gap-3 sm:grid-cols-4">
         <Stat label="Students" value={students.length} />
-        <Stat label="Missions assigned" value={`${assignments.length} of ${MISSIONS.length}`} />
+        <Stat label="Missions assigned" value={`${assignments.length} of ${ALL_SESSIONS.length}`} />
         <Stat
           label="Assigned work completed"
           value={`${Math.round(cohort.completionRate * 100)}%`}
@@ -129,13 +129,29 @@ export default async function ClassPage({
           description="Turn a mission on and it appears on every student's map in this class straight away."
         >
           <PanelBody className="space-y-5">
-            {COMPETENCIES.map((competency) => (
-              <div key={competency.id}>
+            {/* The First Look track written for this class's grade. The other
+                track is a click away in the library; putting both here would
+                offer a grade 1 teacher three sessions pitched at grade 5. */}
+            {[
+              {
+                id: "first-look",
+                label: `First Look · grades ${
+                  trackForGrade(classroom.grade) === "early" ? "1 and 2" : "3 to 5"
+                }`,
+                missions: FOUNDATIONS_BY_TRACK[trackForGrade(classroom.grade)],
+              },
+              ...COMPETENCIES.map((competency) => ({
+                id: competency.id,
+                label: competency.formalName,
+                missions: MISSIONS.filter((m) => m.competency === competency.id),
+              })),
+            ].map((group) => (
+              <div key={group.id}>
                 <h3 className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-faint">
-                  {competency.formalName}
+                  {group.label}
                 </h3>
                 <ul className="mt-2 space-y-2">
-                  {MISSIONS.filter((m) => m.competency === competency.id).map((m) => (
+                  {group.missions.map((m) => (
                     <li
                       key={m.id}
                       className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-sand bg-paper px-3.5 py-2.5"

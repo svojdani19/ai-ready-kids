@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     template: "%s · AI Ready Kids",
   },
   description:
-    "AI Ready Kids helps students understand the nuances of safety in using artificial intelligence before they are thrust into prompts and language models. Teacher-guided scenarios build privacy, verification and independent learning for grades 2 to 4.",
+    "AI Ready Kids helps students understand the nuances of safety in using artificial intelligence before they are thrust into prompts and language models. It starts with First Look, an introduction for children who have not been told what AI is, then builds privacy, verification and independent learning through teacher-guided scenarios for grades 1 to 5.",
 };
 
 export const viewport: Viewport = {

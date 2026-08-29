@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { MISSIONS, MISSION_BY_SLUG } from "@/content/missions";
+import { ALL_SESSIONS, MISSIONS, MISSION_BY_SLUG } from "@/content/missions";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
 import { CERTIFICATION_MODULES, CERTIFICATION_TITLE } from "@/content/certification";
 import { ALL_SKILLS, COMPETENCIES, SKILL_BY_ID } from "@/content/competencies";
@@ -76,11 +76,15 @@ describe("mission content integrity", () => {
 
   it("uses unique slugs, ids, orders and badges", () => {
     const unique = (values: string[]) => new Set(values).size === values.length;
-    expect(unique(MISSIONS.map((m) => m.slug))).toBe(true);
-    expect(unique(MISSIONS.map((m) => m.id))).toBe(true);
-    expect(unique(MISSIONS.map((m) => m.badge.id))).toBe(true);
+    // `order` is unique within a segment, not across the catalogue: First Look
+    // session 1 and mission 1 are both called 1 on screen, in different lanes.
+    // Slugs, ids and badge ids have to be unique across everything, because
+    // the route, the attempt row and the badge wall are all shared.
     expect(unique(MISSIONS.map((m) => String(m.order)))).toBe(true);
-    expect(Object.keys(MISSION_BY_SLUG)).toHaveLength(MISSIONS.length);
+    expect(unique(ALL_SESSIONS.map((m) => m.slug))).toBe(true);
+    expect(unique(ALL_SESSIONS.map((m) => m.id))).toBe(true);
+    expect(unique(ALL_SESSIONS.map((m) => m.badge.id))).toBe(true);
+    expect(Object.keys(MISSION_BY_SLUG)).toHaveLength(ALL_SESSIONS.length);
   });
 
   it("keeps all student-facing sentences short enough to read aloud at grade 3", () => {

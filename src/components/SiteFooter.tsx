@@ -9,7 +9,7 @@ export function SiteFooter() {
           <Logo />
           <p className="mt-3 text-sm leading-relaxed text-ink-soft">
             Practice before exposure. An annual subscription for elementary schools that
-            gives grades 2 to 4 rehearsed decisions about AI, and gives their school
+            gives grades 1 to 5 rehearsed decisions about AI, and gives their school
             something honest to report.
           </p>
         </div>

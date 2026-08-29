@@ -3,7 +3,7 @@ import { isRecognisedRetention } from "@/lib/domain/retention";
 import { isAcademicYearLabel } from "@/lib/domain/calendar";
 import type { Db } from "@/lib/db";
 import { COMPETENCY_BY_ID, COMPETENCY_IDS } from "@/content/competencies";
-import { MISSIONS, MISSION_BY_ID } from "@/content/missions";
+import { ALL_SESSIONS, MISSION_BY_ID } from "@/content/missions";
 import { CERTIFICATION_MODULES } from "@/content/certification";
 import { summariseCohort } from "@/lib/domain/evidence";
 import {
@@ -15,7 +15,7 @@ import { listAssignments, listClasses, listStudents } from "./classroom";
 import { listAttemptsForClass, listBenchmarksForClass, listCertifications } from "./progress";
 import { getSchool, listUsers } from "./school";
 import type { School } from "@/lib/types";
-import type { CompetencyId } from "@/content/types";
+import type { CompetencyId, Mission } from "@/content/types";
 
 /**
  * Minimum group size for anything that leaves the building.
@@ -83,7 +83,19 @@ export interface SchoolReport {
     /** Distinct students across all classes who contributed to this figure. */
     contributors: number;
   }[];
-  missions: { missionId: string; title: string; completed: number; assignedTo: number }[];
+  /**
+   * Every session in the catalogue, First Look and core. `segment` is here so
+   * a reader can separate the two: an administrator's "every mission in use"
+   * check applies to the core curriculum, since no school runs both First Look
+   * grade tracks.
+   */
+  missions: {
+    missionId: string;
+    title: string;
+    segment: Mission["segment"];
+    completed: number;
+    assignedTo: number;
+  }[];
   byClass: ClassReport[];
   byGrade: { grade: number; students: number; completionRate: number | null }[];
   benchmark: CohortBenchmark;
@@ -159,9 +171,10 @@ export function buildSchoolReport(db: Db, schoolId: string, now = new Date()): S
     };
   });
 
-  const missions = MISSIONS.map((mission) => ({
+  const missions = ALL_SESSIONS.map((mission) => ({
     missionId: mission.id,
     title: mission.title,
+    segment: mission.segment,
     completed: perClass.reduce(
       (n, c) =>
         n + (c.cohort.missionCompletion.find((m) => m.missionId === mission.id)?.completed ?? 0),
@@ -214,7 +227,7 @@ export function buildSchoolReport(db: Db, schoolId: string, now = new Date()): S
       classes: classes.length,
       students: allStudents,
       teachers: teachers.length,
-      missionsAvailable: MISSIONS.length,
+      missionsAvailable: ALL_SESSIONS.length,
       assignmentsMade,
       missionsCompleted,
       completionRate: possible ? missionsCompleted / possible : 0,
@@ -295,8 +308,13 @@ export function reportToCsv(report: SchoolReport): string {
   }
   push();
 
-  push("Mission", "Assigned to classes", "Students completed");
-  for (const m of report.missions) push(m.title, m.assignedTo, m.completed);
+  // Segment is a column rather than a note, because this file lands in a
+  // spreadsheet where a "· First Look" suffix on a title would be sorted,
+  // filtered and eventually lost.
+  push("Mission", "Segment", "Assigned to classes", "Students completed");
+  for (const m of report.missions) {
+    push(m.title, m.segment === "foundation" ? "First Look" : "Core", m.assignedTo, m.completed);
+  }
   push();
 
   push("Benchmark", "Value");

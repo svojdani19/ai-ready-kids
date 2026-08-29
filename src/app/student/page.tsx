@@ -9,7 +9,8 @@ import { nextBenchmarkFor } from "@/lib/domain/eligibility";
 import { getSchool } from "@/lib/repo/school";
 import { schoolHasLapsed } from "@/lib/auth/subscription-gate";
 import { COMPETENCIES } from "@/content/competencies";
-import { MISSION_BY_ID, MISSIONS } from "@/content/missions";
+import { ALL_SESSIONS, FOUNDATIONS, MISSION_BY_ID, MISSIONS } from "@/content/missions";
+import { COMPETENCY_BY_ID } from "@/content/competencies";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
 import { BadgeSticker } from "@/components/art/BadgeSticker";
 import { ButtonLink } from "@/components/ui/Button";
@@ -66,10 +67,18 @@ export default async function StudentHome() {
   const school = getSchool(db, classroom.school_id);
   const nextCheckIn = nextBenchmarkFor(benchmarks, school?.benchmark_window ?? "closed");
 
+  // Two lists, because they are two different things. First Look is the way
+  // in for a child who has not been told what AI is; the core missions are the
+  // assessed curriculum. Counting them together would tell a first grader they
+  // had finished 3 of 30 when their teacher has only opened three.
+  const assignedFoundations = FOUNDATIONS.filter((m) => assignedIds.has(m.id));
   const assignedMissions = MISSIONS.filter((m) => assignedIds.has(m.id));
+  const assignedAll = [...assignedFoundations, ...assignedMissions];
+  // First Look comes first in this list, so an unfinished introduction is
+  // always what Up next offers before any core mission.
   const upNext =
-    assignedMissions.find((m) => inProgress.has(m.id)) ??
-    assignedMissions.find((m) => !completed.has(m.id));
+    assignedAll.find((m) => inProgress.has(m.id)) ??
+    assignedAll.find((m) => !completed.has(m.id));
 
   return (
     <div>
@@ -79,8 +88,8 @@ export default async function StudentHome() {
             Hello, {student.display_name.split(" ")[0]}
           </h1>
           <p className="mt-1.5 text-[1.05rem] text-ink-soft">
-            You have finished {summary.completedMissionIds.length} of {assignedMissions.length}{" "}
-            missions in {classroom.name}.
+            You have finished {assignedAll.filter((m) => completed.has(m.id)).length} of{" "}
+            {assignedAll.length} missions in {classroom.name}.
           </p>
         </div>
         {summary.badgeIds.length > 0 && (
@@ -91,7 +100,7 @@ export default async function StudentHome() {
           >
             <span className="flex -space-x-2">
               {summary.badgeIds.slice(0, 4).map((badgeId) => {
-                const mission = MISSIONS.find((m) => m.badge.id === badgeId)!;
+                const mission = ALL_SESSIONS.find((m) => m.badge.id === badgeId)!;
                 return (
                   <BadgeSticker
                     key={badgeId}
@@ -150,7 +159,7 @@ export default async function StudentHome() {
         </section>
       )}
 
-      {assignedMissions.length === 0 ? (
+      {assignedAll.length === 0 ? (
         <div className="mt-8">
           <EmptyState title="No missions yet">
             Your teacher has not opened any missions for {classroom.name}. Check back after
@@ -159,6 +168,84 @@ export default async function StudentHome() {
         </div>
       ) : (
         <div className="mt-9 space-y-7">
+          {/* First Look sits above the three lanes rather than inside one.
+              These sessions are the way in for a child who has not been told
+              what AI is, and they record nothing, so they belong with neither
+              a competency heading nor the skills list further down. */}
+          {assignedFoundations.length > 0 && (
+            <section aria-labelledby="lane-first-look">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 id="lane-first-look" className="font-display text-2xl text-ink">
+                  First Look
+                </h2>
+                <p className="text-sm font-semibold text-ink-soft">
+                  {assignedFoundations.filter((m) => completed.has(m.id)).length} of{" "}
+                  {assignedFoundations.length} finished
+                </p>
+              </div>
+              <p className="mt-1 max-w-2xl text-[0.95rem] text-ink-soft">
+                Start here. These tell you what AI actually is.
+              </p>
+
+              <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {assignedFoundations.map((m) => {
+                  const lane = LANE[COMPETENCY_BY_ID[m.competency].accent];
+                  const isDone = completed.has(m.id);
+                  const isStarted = inProgress.has(m.id);
+                  return (
+                    <li key={m.id}>
+                      <Card
+                        {...(closed
+                          ? { as: "div" as const }
+                          : {
+                              as: "link" as const,
+                              href: `/student/play/${m.slug}`,
+                              ariaLabel: `${
+                                isDone ? "Play again" : isStarted ? "Carry on with" : "Start"
+                              } First Look ${m.order}, ${m.title}`,
+                            })}
+                        className={`ark-sticker flex h-full flex-col rounded-2xl border-4 border-ink p-4 transition-colors ${
+                          isDone
+                            ? lane.wash
+                            : closed
+                              ? "bg-surface opacity-80"
+                              : "bg-surface hover:bg-paper-deep"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-faint">
+                            First Look {m.order}
+                          </span>
+                          <BadgeSticker
+                            skillId={m.primarySkillId}
+                            competency={m.competency}
+                            earned={isDone}
+                            size={38}
+                          />
+                        </div>
+                        <h3 className="mt-2 font-display text-lg leading-snug text-ink">
+                          {m.title}
+                        </h3>
+                        <p className="mt-1.5 flex-1 text-sm leading-relaxed text-ink-soft">
+                          {m.teaser}
+                        </p>
+                        <p className={`mt-3 text-sm font-bold ${lane.text}`}>
+                          {isDone
+                            ? "Finished ✓"
+                            : closed
+                              ? "Not open right now"
+                              : isStarted
+                                ? "Keep going →"
+                                : "Start →"}
+                        </p>
+                      </Card>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
           {COMPETENCIES.map((competency) => {
             const lane = LANE[competency.accent];
             const missions = assignedMissions.filter((m) => m.competency === competency.id);

@@ -32,11 +32,21 @@ export function CreateClassForm({
           <input id="name" name="name" required maxLength={40} className={inputClass} placeholder="Room 7" />
         </Field>
       </div>
-      <Field label="Grade" htmlFor="grade">
+      {/* Grades 1 and 5 are here for First Look, which is written for them.
+          The twenty-seven core missions are reading-levelled for grades 2 to 4
+          and say so on every library card, so a grade 1 or grade 5 teacher can
+          see what they are assigning rather than finding out in the lesson. */}
+      <Field
+        label="Grade"
+        htmlFor="grade"
+        hint="Grades 1 and 5 get the First Look sessions written for them."
+      >
         <select id="grade" name="grade" defaultValue="3" className={inputClass}>
+          <option value="1">Grade 1</option>
           <option value="2">Grade 2</option>
           <option value="3">Grade 3</option>
           <option value="4">Grade 4</option>
+          <option value="5">Grade 5</option>
         </select>
       </Field>
       <Field label="Teacher" htmlFor="teacherId">

@@ -6,7 +6,7 @@ import { listAssignments, listClassesForTeacher, listStudents } from "@/lib/repo
 import { getCertification, listAttemptsForClass } from "@/lib/repo/progress";
 import { nextTeachingFocus, summariseCohort } from "@/lib/domain/evidence";
 import { COMPETENCY_BY_ID } from "@/content/competencies";
-import { MISSION_BY_ID, MISSIONS } from "@/content/missions";
+import { ALL_SESSIONS, MISSION_BY_ID } from "@/content/missions";
 import { CERTIFICATION_MODULES } from "@/content/certification";
 import { PageHeader, Panel, PanelBody } from "@/components/ui/Panel";
 import { ButtonLink } from "@/components/ui/Button";
@@ -121,7 +121,7 @@ export default async function TeacherOverview() {
                   <Tag tone="denim">Code {classroom.join_code}</Tag>
                 </span>
               }
-              description={`${students.length} students · ${assignments.length} of ${MISSIONS.length} missions assigned`}
+              description={`${students.length} students · ${assignments.length} of ${ALL_SESSIONS.length} missions assigned`}
               actions={
                 <ButtonLink href={`/teacher/class/${classroom.id}`} size="sm" variant="secondary">
                   Open class

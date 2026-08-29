@@ -46,11 +46,16 @@ export default async function MissionPreview({
   );
 
   const competency = COMPETENCY_BY_ID[mission.competency];
+  const isFoundation = mission.segment === "foundation";
 
   return (
     <div>
       <PageHeader
-        eyebrow={`${competency.formalName} · Mission ${mission.order}`}
+        eyebrow={
+          isFoundation
+            ? `First Look · Session ${mission.order} · Grades ${mission.gradeBand}`
+            : `${competency.formalName} · Mission ${mission.order}`
+        }
         title={mission.title}
         description={mission.summary}
         actions={
@@ -73,8 +78,25 @@ export default async function MissionPreview({
         <Tag>Grades {mission.gradeBand}</Tag>
         <Tag>{mission.scenes.length} scenes</Tag>
         <Tag>{mission.scenes.filter((s) => s.choices?.length).length} decisions</Tag>
-        <Tag tone="denim">Primary skill: {SKILL_BY_ID[mission.primarySkillId].educatorLabel}</Tag>
+        {/* A First Look session records nothing, so it must not be labelled
+            with a primary skill. What it has is a skill it leads into, and
+            saying so is the difference between an honest library card and one
+            that implies the roster will fill in. */}
+        <Tag tone="denim">
+          {isFoundation ? "Leads into" : "Primary skill"}:{" "}
+          {SKILL_BY_ID[mission.primarySkillId].educatorLabel}
+        </Tag>
       </div>
+
+      {isFoundation && (
+        <div className="mt-4">
+          <Note tone="marigold" title="Records no evidence">
+            {mission.bigIdea} This session is an introduction, so nothing in it appears on
+            the class roster or the school report. Finishing it earns the student a badge
+            and nothing else.
+          </Note>
+        </div>
+      )}
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_16rem]">
         <Panel title="Learning goals">

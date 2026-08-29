@@ -19,16 +19,19 @@ export const CERTIFICATION_MODULES: CertificationModule[] = [
   {
     id: "cert-1",
     order: 1,
-    title: "What grades 2 to 4 actually need",
+    title: "What grades 1 to 5 actually need",
     minutes: 7,
     body: [
-      "Seven to ten year olds are not going to be taught their way out of encountering AI. They meet it in a sibling's phone, a game, a smart speaker in someone else's kitchen, and a search box that now answers in sentences. The question is not whether they will use it. It is whether the first time they meet a request for their address, or a confident wrong answer, is the first time they have thought about it.",
+      "Six to eleven year olds are not going to be taught their way out of encountering AI. They meet it in a sibling's phone, a game, a smart speaker in someone else's kitchen, and a search box that now answers in sentences. The question is not whether they will use it. It is whether the first time they meet a request for their address, or a confident wrong answer, is the first time they have thought about it.",
       "That is the whole design brief for this program: practice before exposure. The curriculum is 27 authored missions, three for each of the nine skills, so a child meets the same decision in three different situations rather than once.",
+      "Before any of that there is First Look: six short sessions, in a grades 1 and 2 tier and a grades 3 to 5 tier, for a class that has not been told what AI is. Every mission in the core curriculum assumes three things a child already has. That AI is a program which produces what usually comes next. That it is already inside ordinary tools rather than being a robot in a film. And that a person decides when it is used and is answerable for the result. Those three were assumed and never taught until First Look existed, which meant a mission about declining a request for a home address could be played by a child who thought the app asking was alive.",
+      "First Look records nothing on the roster, deliberately. A six year old answering a comprehension question on the board has not demonstrated a safety skill in the sense the nine skills mean, and the report says only what the core missions can actually support.",
       "The shape of each encounter is deliberate: a specific situation first, then the decision rule named out loud, then the same rule met again somewhere new. That is a sequence to teach with, not a claim about what a seven year old is capable of. Plenty of children this age reason perfectly well in the abstract, and the repetition is there so they get practice applying a rule rather than because they cannot hold one.",
-      "What this age band can genuinely do is impressive. They can distinguish a fact about themselves from a fact that locates them. They can hold the idea that a confident voice proves nothing. They can tell you which of four kinds of help fits a problem. An abstract warning on its own is thin material to work from at any age, and thinner still about a situation nobody has ever met, which is why every mission is a story with a decision in it.",
+      "What this age band can genuinely do is impressive. Grade 1 can tell you that a program which fills in the next word has never met their cat, and grade 5 can watch a tool invent a school swimming team and say why. They can distinguish a fact about themselves from a fact that locates them. They can hold the idea that a confident voice proves nothing. They can tell you which of four kinds of help fits a problem. An abstract warning on its own is thin material to work from at any age, and thinner still about a situation nobody has ever met, which is why every mission is a story with a decision in it.",
     ],
     keyPoints: [
       "Practice before exposure, not after an incident",
+      "First Look first: six sessions, two grade tiers, for a class that has not been told what AI is",
       "27 missions, three per skill: the same decision met in three different situations",
       "Start concrete, name the rule out loud, then meet it again somewhere new",
       "The goal is a decision habit, not fear of technology",

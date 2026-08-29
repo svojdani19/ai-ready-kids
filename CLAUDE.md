@@ -11,7 +11,7 @@ Write each review to `docs/reviews/<date>-sprint-NN.md`. Say what was found,
 what was changed, and what was deliberately left and why.
 
 The review has three parts, all of which must be run: **teacher-led group
-instruction** on a projector, **independent grade 2–4 use** on a Chromebook and
+instruction** on a projector, **independent grade 1–5 use** on a Chromebook and
 a tablet, and the cross-cutting pass covering developmental appropriateness,
 instructional clarity, privacy, accessibility, cultural inclusion and teacher
 workload.
@@ -20,7 +20,7 @@ workload.
 
 Judge every feature against this, not against engagement:
 
-> Does this help a seven to ten year old build calibrated trust and safe habits
+> Does this help a six to eleven year old build calibrated trust and safe habits
 > around AI, and prepare them to use it responsibly later?
 
 Entertaining them is not the goal. Teaching them where a button lives is not
@@ -41,6 +41,12 @@ the goal. Teaching them to distrust everything is a failure, not a success.
   not a feature request.
 - **Unsafe branches always loop back.** A `rethink` choice offers another go
   and records no evidence. `tests/content.test.ts` enforces this.
+- **First Look records nothing.** The six introductory sessions check that an
+  idea landed; that is not a demonstrated safety skill and it never reaches the
+  roster, the school report or the nine-skill denominators. `validateMission`
+  refuses a First Look choice carrying evidence and `tests/foundations.test.ts`
+  proves it through the real repository. Adding a fourth competency, or letting
+  an introduction report one of the nine, is a product change.
 
 ## Before you commit
 

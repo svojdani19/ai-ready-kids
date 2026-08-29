@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getMission, MISSIONS } from "@/content/missions";
+import { ALL_SESSIONS, FOUNDATION_TRACKS, FOUNDATIONS_BY_TRACK, getMission, MISSIONS } from "@/content/missions";
 import { COMPETENCY_BY_ID } from "@/content/competencies";
 import { Logo } from "@/components/Logo";
 import { PrintButton } from "@/components/PrintButton";
@@ -17,7 +17,7 @@ export async function generateMetadata({
 }
 
 export function generateStaticParams() {
-  return MISSIONS.map((m) => ({ slug: m.slug }));
+  return ALL_SESSIONS.map((m) => ({ slug: m.slug }));
 }
 
 /**
@@ -49,7 +49,8 @@ export default async function FamilyPage({
           <article className="rounded-xl border-2 border-sand-deep bg-surface p-8 ark-print-plain">
             <header className="border-b-2 border-sand pb-5">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">
-                A page for home · {competency.formalName}
+                A page for home ·{" "}
+                {mission.segment === "foundation" ? "First Look" : competency.formalName}
               </p>
               <h1 className="mt-1.5 font-display text-3xl leading-tight text-ink">
                 {mission.title}
@@ -109,20 +110,35 @@ export default async function FamilyPage({
             className="ark-no-print mt-8 rounded-xl border border-sand-deep bg-surface p-5"
           >
             <h2 className="font-display text-lg text-ink">Take-home pages for every mission</h2>
-            <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
-              {MISSIONS.map((m) => (
-                <li key={m.id}>
-                  <Link
-                    href={`/family/${m.slug}`}
-                    className={`text-sm underline-offset-2 hover:underline ${
-                      m.id === mission.id ? "font-semibold text-ink" : "text-ink-soft"
-                    }`}
-                  >
-                    {m.order}. {m.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            {[
+              // First Look is split by track, because both tracks number their
+              // sessions 1 to 3 and one flat list would show two of each.
+              ...FOUNDATION_TRACKS.map((track) => ({
+                label: `${track.name} · ${track.grades}`,
+                items: FOUNDATIONS_BY_TRACK[track.id],
+              })),
+              { label: "Missions", items: MISSIONS },
+            ].map((group) => (
+              <div key={group.label} className="mt-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-faint">
+                  {group.label}
+                </p>
+                <ul className="mt-1.5 grid gap-1.5 sm:grid-cols-2">
+                  {group.items.map((m) => (
+                    <li key={m.id}>
+                      <Link
+                        href={`/family/${m.slug}`}
+                        className={`text-sm underline-offset-2 hover:underline ${
+                          m.id === mission.id ? "font-semibold text-ink" : "text-ink-soft"
+                        }`}
+                      >
+                        {m.order}. {m.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </nav>
         </main>
       </div>

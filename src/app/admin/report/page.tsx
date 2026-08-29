@@ -198,10 +198,19 @@ export default async function AdminReport() {
 
         <section className="mt-7 break-inside-avoid">
           <h2 className="font-display text-xl text-ink">Mission uptake</h2>
+          {/* First Look sessions are marked. They are real work a class did
+              and belong in an uptake table, but they record no skill evidence,
+              so a reader must not count them towards the competency figures
+              above. */}
           <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
             {report.missions.map((m) => (
               <li key={m.missionId} className="flex justify-between gap-3 text-sm">
-                <span className="text-ink">{m.title}</span>
+                <span className="text-ink">
+                  {m.title}
+                  {m.segment === "foundation" && (
+                    <span className="text-ink-faint"> · First Look</span>
+                  )}
+                </span>
                 <span className="ark-tabular shrink-0 text-ink-soft">
                   {m.completed} completions · {m.assignedTo}/{report.totals.classes} classes
                 </span>

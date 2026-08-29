@@ -98,7 +98,7 @@ export async function createClassAction(
   const grade = Number(formData.get("grade"));
 
   if (name.length < 2) return { error: "Give the class a name with at least two characters." };
-  if (![2, 3, 4].includes(grade)) return { error: "Choose grade 2, 3 or 4." };
+  if (![1, 2, 3, 4, 5].includes(grade)) return { error: "Choose a grade from 1 to 5." };
 
   const db = getDb();
   const lapsed = lapsedRefusal(db, user.school_id);

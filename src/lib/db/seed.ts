@@ -1,4 +1,4 @@
-import { MISSIONS } from "@/content/missions";
+import { MISSIONS, foundationsForGrade } from "@/content/missions";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
 import { CERTIFICATION_MODULES } from "@/content/certification";
 import type { Mission } from "@/content/types";
@@ -352,7 +352,13 @@ export function seed(db: Db): void {
       isoDay(-20),
     );
 
-    const assigned = MISSIONS.slice(0, cls.assignedMissions);
+    // Every demo class opens with the First Look track for its grade, the way
+    // a real one would: the introduction is not optional and it is not
+    // something a class arrives having done.
+    const assigned = [
+      ...foundationsForGrade(cls.grade),
+      ...MISSIONS.slice(0, cls.assignedMissions),
+    ];
     assigned.forEach((mission, index) => {
       insertAssignment.run(
         `asg_${cls.id}_${mission.id}`,

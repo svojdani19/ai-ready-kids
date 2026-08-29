@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { MISSIONS } from "@/content/missions";
+import { ALL_SESSIONS } from "@/content/missions";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
 import { MIN_REPORTABLE_GROUP } from "@/lib/repo/report";
 import {
@@ -114,7 +114,7 @@ export default function PrivacyPage() {
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-relaxed text-ink-soft">
             This page is the whole story, not a summary of a longer document kept
-            elsewhere. It describes {MISSIONS.length} missions,{" "}
+            elsewhere. It describes {ALL_SESSIONS.length} sessions and missions,{" "}
             {BENCHMARK_FORMS.pre.items.length * 2} benchmark items and every record the
             product creates about a seven year old.
           </p>

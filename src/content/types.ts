@@ -174,15 +174,70 @@ export interface FamilyTakeHome {
   familyRule: string;
 }
 
+/**
+ * Which half of the programme a session belongs to.
+ *
+ * `core` is the twenty-seven assessed missions: they rehearse a decision and
+ * record evidence against one of the nine skills.
+ *
+ * `foundation` is the First Look segment, for a child who has not yet been
+ * told what AI is. It teaches what a guessing machine is, where one already
+ * sits in their day, and who is in charge of it. A foundation session records
+ * no evidence at all — there is no decision in it that a child could get
+ * wrong in the sense the nine skills mean, and reporting one would put a
+ * comprehension check in a column that says "demonstrated this skill".
+ * `validateMission` enforces that; `tests/foundations.test.ts` proves it.
+ */
+export type Segment = "foundation" | "core";
+
+/**
+ * Foundation sessions come in two grade tiers rather than one. A first grader
+ * and a fifth grader both need to be told what AI is, and a single script
+ * written for either one patronises or loses the other.
+ */
+export type FoundationTrack = "early" | "upper";
+
+/**
+ * Reading and interest band. `1-2` and `3-5` are the two First Look tiers;
+ * `2-4` is the core curriculum, which is written and reading-levelled for
+ * that band and is not claimed beyond it.
+ */
+export type GradeBand = "1-2" | "2-4" | "3-5";
+
 export interface Mission {
   id: string;
   slug: string;
+  /** Core: 1 to 27 across the curriculum. Foundation: 1 to 3 within its track. */
   order: number;
   title: string;
+  segment: Segment;
+  /**
+   * Core: the competency this mission is assessed against.
+   *
+   * Foundation: the competency the session opens the door to. Nothing is
+   * assessed, so this is a routing and colour decision, not a claim — it is
+   * what puts the session in the right lane on the map and gives its badge a
+   * glyph from the right family.
+   */
   competency: CompetencyId;
-  /** Which of the competency's skills this mission is built around. */
+  /**
+   * Core: which of the competency's skills this mission is built around, and
+   * the skill its evidence is reported under.
+   *
+   * Foundation: the skill the session previews. Never recorded. Teacher-facing
+   * screens label it "Leads into", never "Primary skill", because a First Look
+   * session cannot and does not report it.
+   */
   primarySkillId: string;
-  gradeBand: "2-4";
+  /** Foundation sessions only: which tier this is written for. */
+  track?: FoundationTrack;
+  /**
+   * Foundation sessions only. The one sentence the session exists to leave
+   * behind, in the child's own register. Shown on the teacher's library card
+   * and read out at the end of Classroom Mode.
+   */
+  bigIdea?: string;
+  gradeBand: GradeBand;
   estimatedMinutes: number;
   /** Kid-facing teaser on the mission map. */
   teaser: string;

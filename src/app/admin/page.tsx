@@ -246,7 +246,12 @@ export default async function AdminOverview() {
             <ul className="space-y-1.5">
               {report.missions.map((m) => (
                 <li key={m.missionId} className="flex items-baseline justify-between gap-3 text-sm">
-                  <span className="text-ink">{m.title}</span>
+                  <span className="text-ink">
+                    {m.title}
+                    {m.segment === "foundation" && (
+                      <span className="text-ink-faint"> · First Look</span>
+                    )}
+                  </span>
                   <span className="shrink-0">
                     <Tag tone={m.assignedTo === 0 ? "neutral" : "pine"}>
                       {m.assignedTo} of {report.totals.classes} classes

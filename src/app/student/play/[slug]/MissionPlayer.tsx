@@ -179,8 +179,12 @@ export function MissionPlayer({
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
+          {/* The eyebrow has to match the tile the child tapped. The map
+              calls these First Look 1 to 3; landing on a page headed
+              "Mission 2" is the kind of mismatch a seven year old reads as
+              having opened the wrong thing. */}
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">
-            Mission {mission.order}
+            {mission.segment === "foundation" ? "First Look" : "Mission"} {mission.order}
           </p>
           <h1 className="font-display text-2xl leading-tight text-ink">{mission.title}</h1>
         </div>
@@ -232,7 +236,7 @@ export function MissionPlayer({
             tabIndex={-1}
             className="sr-only focus:outline-none"
           >
-            {scene.kind === "ending" ? "Mission finished" : `Part of ${mission.title}`}
+            {scene.kind === "ending" ? "Finished" : `Part of ${mission.title}`}
           </h2>
 
           {scene.speaker && (
@@ -285,7 +289,7 @@ export function MissionPlayer({
                         Your badge is not lost
                       </p>
                       <p className="text-sm text-ink-soft">
-                        You finished the mission. We just have not been able to write it
+                        You got to the end. We just have not been able to write it
                         down yet. Tap Try again.
                       </p>
                     </>

@@ -1,4 +1,5 @@
 import type { CompetencyId, Mission } from "../types";
+import { FOUNDATIONS } from "../foundations";
 import { privacyMissions } from "./privacy";
 import { privacyMoreMissions } from "./privacy-more";
 import { verificationMissions } from "./verification";
@@ -29,12 +30,26 @@ export const MISSIONS: Mission[] = [
   ...ownershipMoreMissions,
 ].sort((a, b) => a.order - b.order);
 
+/**
+ * Everything a child can be assigned and can play: the six First Look sessions
+ * followed by the twenty-seven core missions.
+ *
+ * `MISSIONS` stays the core curriculum on purpose. It is the assessed spine —
+ * the nine skills, the interleaving, the badge wall, the school report all key
+ * off it, and widening it to include an introductory segment that reports no
+ * evidence would put comprehension checks into a column that reads
+ * "demonstrated this skill". Anything that means "a thing with a scene graph
+ * that a child can open" uses `ALL_SESSIONS`; anything that means "the
+ * assessed curriculum" keeps using `MISSIONS`.
+ */
+export const ALL_SESSIONS: Mission[] = [...FOUNDATIONS, ...MISSIONS];
+
 export const MISSION_BY_SLUG: Record<string, Mission> = Object.fromEntries(
-  MISSIONS.map((m) => [m.slug, m]),
+  ALL_SESSIONS.map((m) => [m.slug, m]),
 );
 
 export const MISSION_BY_ID: Record<string, Mission> = Object.fromEntries(
-  MISSIONS.map((m) => [m.id, m]),
+  ALL_SESSIONS.map((m) => [m.id, m]),
 );
 
 export function missionsForCompetency(competency: CompetencyId): Mission[] {
@@ -49,3 +64,11 @@ export function missionsForSkill(skillId: string): Mission[] {
 export function getMission(slug: string): Mission | undefined {
   return MISSION_BY_SLUG[slug];
 }
+
+export {
+  FOUNDATIONS,
+  FOUNDATIONS_BY_TRACK,
+  FOUNDATION_TRACKS,
+  foundationsForGrade,
+  trackForGrade,
+} from "../foundations";

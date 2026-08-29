@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { COMPETENCIES } from "@/content/competencies";
-import { MISSIONS } from "@/content/missions";
+import { FOUNDATIONS_BY_TRACK, FOUNDATION_TRACKS, MISSIONS } from "@/content/missions";
 import { PageHero, Section } from "@/components/marketing/Page";
 import { ButtonLink } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Bits";
@@ -8,7 +8,7 @@ import { Tag } from "@/components/ui/Bits";
 export const metadata: Metadata = {
   title: "Curriculum",
   description:
-    "Twenty-seven authored story missions across three competencies: privacy, verification and learning ownership, for grades 2 to 4.",
+    "Six First Look sessions for grades 1 to 5, then twenty-seven authored story missions across three competencies: privacy, verification and learning ownership.",
 };
 
 const LANE: Record<string, { wrap: string; text: string; chip: "pine" | "marigold" | "denim" }> = {
@@ -23,8 +23,8 @@ export default function CurriculumPage() {
       <PageHero
         eyebrow="Curriculum"
         tone="marigold"
-        title="Three competencies. Twenty-seven missions. Nothing improvised."
-        lede="Three competencies, three named skills each, three missions per skill. A mission takes seven to nine minutes, ends with a printable family take-home, and shares a cast and a setting with all the others, so a class builds continuity across a whole year."
+        title="An introduction, then three competencies and twenty-seven missions."
+        lede="First Look is where a class that has never been told what AI is starts, in a tier written for grades 1 and 2 or one for grades 3 to 5. After that: three competencies, three named skills each, three missions per skill. A mission takes seven to nine minutes, ends with a printable family take-home, and shares a cast and a setting with all the others."
       >
         <div className="flex flex-wrap gap-3">
           <ButtonLink href="/demo">Play one in the demo</ButtonLink>
@@ -34,11 +34,50 @@ export default function CurriculumPage() {
         </div>
       </PageHero>
 
+      <Section
+        tone="surface"
+        title="First Look: before any of it makes sense"
+        lede="Six sessions for a class that has not been told what AI is. The twenty-seven missions assume three things a child arrives with, and this is where those three get taught."
+      >
+        {/* One column until lg. At exactly 768 the two track cards were each
+            about 350px wide and the session titles wrapped to three lines. */}
+        <div className="grid gap-5 lg:grid-cols-2">
+          {FOUNDATION_TRACKS.map((track) => (
+            <div key={track.id} className="rounded-3xl border-4 border-ink bg-paper p-5 sm:p-6">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h3 className="font-display text-2xl text-ink">{track.name}</h3>
+                <Tag>{track.grades}</Tag>
+              </div>
+              <p className="mt-2 text-[0.95rem] leading-relaxed text-ink-soft">{track.blurb}</p>
+              <ul className="mt-4 space-y-3">
+                {FOUNDATIONS_BY_TRACK[track.id].map((m) => (
+                  <li key={m.id} className="rounded-2xl border-2 border-ink bg-surface p-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.1em] text-ink-faint">
+                      Session {m.order} · {m.estimatedMinutes} min
+                    </p>
+                    <h4 className="mt-1.5 font-display text-lg leading-snug text-ink">
+                      {m.title}
+                    </h4>
+                    <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">{m.bigIdea}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <p className="mt-5 max-w-3xl text-[0.95rem] leading-relaxed text-ink-soft">
+          First Look records no skill evidence. It checks that an idea landed, and the
+          school report only ever says which of the nine skills a student has demonstrated
+          in the core missions. The core missions are written and reading-levelled for
+          grades 2 to 4, which every library card says on its face.
+        </p>
+      </Section>
+
       {COMPETENCIES.map((competency, index) => {
         const lane = LANE[competency.accent];
         const missions = MISSIONS.filter((m) => m.competency === competency.id);
         return (
-          <Section key={competency.id} tone={index % 2 === 0 ? "surface" : "paper"}>
+          <Section key={competency.id} tone={index % 2 === 0 ? "paper" : "surface"}>
             <div className={`rounded-3xl border-4 p-5 sm:p-7 ${lane.wrap}`}>
               <div className="flex flex-wrap items-baseline justify-between gap-3">
                 <h2 className={`font-display text-3xl ${lane.text}`}>

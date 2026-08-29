@@ -160,10 +160,21 @@ export function validateMission(mission: Mission): ContentIssue[] {
             add(scene.id, `Unsafe choice ${choice.id} must not record evidence`);
           }
         }
-        // A sole safe exit teaches the recovery step, but every completer is
-        // funnelled through it. It may intentionally omit evidence because it
-        // cannot distinguish independent reasoning from a coached retry.
-        if (
+        // First Look records nothing, by design. A comprehension check that a
+        // six year old answers on the board is not a demonstrated safety
+        // skill, and putting one in the same column as a child declining a
+        // request for their street address would make the teacher's roster
+        // mean two different things at once. So the evidence rules invert for
+        // this segment: instead of requiring a strong choice to record, they
+        // forbid any choice from recording at all.
+        if (mission.segment === "foundation") {
+          if (choice.evidence) {
+            add(scene.id, `First Look choice ${choice.id} records evidence`);
+          }
+        } else if (
+          // A sole safe exit teaches the recovery step, but every completer is
+          // funnelled through it. It may intentionally omit evidence because it
+          // cannot distinguish independent reasoning from a coached retry.
           choice.feedback.tone === "strong" &&
           !choice.evidence &&
           nonRetryChoices.length > 1

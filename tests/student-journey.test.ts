@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Db } from "@/lib/db";
 import { createTestDb, DEMO_CLASS } from "./helpers";
-import { getMission, MISSIONS } from "@/content/missions";
+import { ALL_SESSIONS, getMission } from "@/content/missions";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
 import { createStudent, getClassByJoinCode, listStudents, normaliseJoinCode } from "@/lib/repo/classroom";
 import {
@@ -304,6 +304,6 @@ describe("student-facing reporting", () => {
     const attempts = listAttemptsForStudent(db, "stu_room12_02");
     const summary = summariseStudent(attempts);
     expect(summary.badgeIds).toHaveLength(summary.completedMissionIds.length);
-    expect(summary.badgeIds.every((b) => MISSIONS.some((m) => m.badge.id === b))).toBe(true);
+    expect(summary.badgeIds.every((b) => ALL_SESSIONS.some((m) => m.badge.id === b))).toBe(true);
   });
 });

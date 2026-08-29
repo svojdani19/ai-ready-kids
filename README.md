@@ -1,8 +1,10 @@
 # AI Ready Kids
 
-An annual school-subscription platform that gives students in grades 2–4
+An annual school-subscription platform that gives students in grades 1–5
 rehearsed practice at the decisions AI actually puts in front of them, and
-gives their school something honest to report about it.
+gives their school something honest to report about it. It opens with **First
+Look**, an introduction for children who have not been told what AI is, and
+continues into twenty-seven assessed missions for grades 2–4.
 
 It is not an AI tutor, a chatbot, a coding course, or detection software. There
 is no generative model anywhere in the request path: every word a child can
@@ -73,8 +75,33 @@ Other class codes: `ACORN-208` (Grade 2), `HERON-455` (Grade 4), `CEDAR-361`
 
 ## The curriculum
 
-Three competencies, three named skills each, three missions each. Nine missions,
-seven to nine minutes apiece.
+### First Look — the introduction
+
+Six sessions for a class that has not been told what AI is, in two grade tiers
+that cover the same three ideas. A class runs one tier.
+
+| Track | Grades | Sessions |
+| --- | --- | --- |
+| **Early** | 1–2 | The Guessing Machine · You Have Met It Already · Who Does the Thinking? |
+| **Upper** | 3–5 | Where the Guesses Come From · Spot the AI · Who Is in Charge Here |
+
+The three ideas are what every core mission already assumed a child had: that
+AI is a program which produces what usually comes next, that it is already
+inside ordinary tools rather than being a robot in a film, and that a person
+decides when it is used and is answerable for the result.
+
+**First Look records no skill evidence.** A comprehension check answered on the
+board is not a demonstrated safety skill, and the roster reports only the nine
+skills the core missions rehearse. Finishing a session earns a badge and
+nothing else. `validateMission` refuses a First Look choice that carries
+evidence, and `tests/foundations.test.ts` proves it end to end through the real
+repository.
+
+### The three competencies
+
+Three competencies, three named skills each, three missions per skill.
+Twenty-seven missions, seven to nine minutes apiece, reading-levelled for
+grades 2–4. The table below names the first mission for each skill.
 
 | Competency | Skills | Missions |
 | --- | --- | --- |
@@ -82,8 +109,10 @@ seven to nine minutes apiece.
 | **Verification and Evidence** | separates confident delivery from accuracy · spots indicators of synthetic media · checks a claim against an authoritative source | The Very Sure Answer · The Penguin on the Playground · Two Answers, One Truth |
 | **Learning Ownership** | attempts the task before asking · chooses think / look up / ask a person / use AI · reports assistance accurately | The Homework That Did Itself · Four Doors · The Spelling Test Surprise |
 
-All nine share a cast and a setting — Room 12 at Brightwood Elementary, Theo,
-Ms. Okafor, Mr. Ruiz — so a class builds continuity across the year.
+All twenty-seven share a cast and a setting — Room 12 at Brightwood Elementary,
+Theo, Ms. Okafor, Mr. Ruiz — so a class builds continuity across the year. The
+upper First Look track is set one room along, in Room 20 with Mr. Alvarez, so a
+fifth grader is not asked to identify with the younger room.
 
 ### Content model
 
@@ -100,8 +129,10 @@ shipped mission:
 - Every choice carries authored feedback. There is no generated text.
 - Every `rethink` (unsafe) choice **loops back and records no evidence**, so a
   child is never locked into an unsafe path and never penalised for exploring.
-- Every `strong` choice records evidence against a skill that exists.
-- No student-facing sentence runs longer than 32 words.
+- Every `strong` choice records evidence against a skill that exists — except
+  in First Look, where the rule inverts and **no** choice may record anything.
+- No student-facing sentence runs longer than 32 words. First Look is capped
+  tighter still: 14 words in the grades 1–2 tier, 24 in grades 3–5.
 - Both benchmark forms are balanced by competency and share no scenario with
   any mission, so the spring window measures transfer rather than recall.
 
@@ -184,7 +215,7 @@ before the sprint is called complete.
 
 The review has three parts: **teacher-led group instruction** (projector
 legibility, teacher preview and control, branch reveal, whole-class prompts,
-transitions, driving without a mouse), **independent grade 2–4 use** (reading
+transitions, driving without a mouse), **independent grade 1–5 use** (reading
 load, narration, 44px targets, no confusing states, keyboard and touch, calm
 feedback, no addictive mechanics), and a cross-cutting pass covering
 developmental appropriateness, instructional clarity, privacy, accessibility,

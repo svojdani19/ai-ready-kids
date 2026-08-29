@@ -257,7 +257,8 @@ export function ClassroomMode({ mission }: { mission: Mission }) {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
-                Classroom Mode · Mission {mission.order}
+                Classroom Mode · {mission.segment === "foundation" ? "First Look" : "Mission"}{" "}
+                {mission.order}
               </p>
               <h1 className="font-display text-2xl leading-tight text-ink sm:text-3xl">
                 {mission.title}

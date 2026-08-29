@@ -57,9 +57,14 @@ room, or at least the back of your office.
 - [ ] **Nothing is recorded.** Group instruction is teaching, not assessment.
       What a room shouts out is not data about any child in it.
 
-## Part 2 — Independent grade 2–4 use
+## Part 2 — Independent grade 1–5 use
 
 Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
+
+If the feature touches First Look, run it twice: once as a grade 1 or 2 class
+on the early track and once as a grade 3 to 5 class on the upper track. The two
+tiers exist because one script cannot serve both, and a check that only walks
+one of them has not tested the thing that was built.
 
 - [ ] **Reading load.** Short sentences, common words, no abbreviations, no
       parentheticals. Read every new sentence aloud; if you stumble, a child
@@ -148,7 +153,7 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       Prefer a question every person is asked the same way.
 - [ ] **Suppression counts the people who contributed, not the people who
       could have.** A rate over one child in a school of thirty is a disclosure
-      however many are enrolled, and in a grade 2-4 school somebody can usually
+      however many are enrolled, and in a grade 1-5 school somebody can usually
       work out who. Check what the threshold is applied to, and deduplicate
       across groups before applying it. Suppress the raw counts beside the rate:
       "1 of 1" says exactly what the percentage would have.

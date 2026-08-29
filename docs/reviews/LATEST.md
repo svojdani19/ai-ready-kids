@@ -7,97 +7,106 @@ likely to be.
 
 ---
 
-## Sprint 72 — repairing a school calendar was three commits, and one of them set retention dates
+## Sprint 73 — the curriculum never told a child what AI was
 
-- **Reviewed against:** HEAD `f33dd64`
+- **Reviewed against:** HEAD `c65026b` plus this sprint's commit
 - **Repository:** <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-29-sprint-72.md`](2026-08-29-sprint-72.md)
+- **Full review:** [`2026-08-29-sprint-73.md`](2026-08-29-sprint-73.md)
 
-### The finding
+### The gap
 
-`setAcademicDates` committed in pieces — the school row, then the decisive read
-of the previous academic year, then a loop repairing each candidate cohort's
-label and year-end — and the action wrote `year.dates_set` separately after all
-of it. A failure partway left the calendar changed, **some** cohorts repaired
-and others not, and no audit. **Each class's `year_ends_on` is what its
-retention due date is calculated from**, so that leaves two cohorts in the same
-year on different deletion schedules, one still unschedulable, with nothing
-recording the attempt.
+Mission 1 hands a child a tablet, has a homework app say hello, and asks whether
+to type their full name into it. That assumes the child already knows the thing
+saying hello is a program producing what usually comes next, that AI is not a
+robot in a film, and that a person — not the app — is deciding. Twenty-seven
+missions, an annual benchmark and a five-module educator orientation, and none
+of the three was ever taught. A seven year old who thinks Sprocket is alive can
+still pick the safe answer, and the roster records `privacy.identity`
+demonstrated; what they learned is that one cartoon gear is untrustworthy.
 
-### The correction
+Separately, class creation refused any grade but 2, 3 and 4, so a grade 1 or
+grade 5 teacher could not create a class at all.
 
-`setAcademicDates` is transaction-aware itself, so direct repository callers are
-safe too, and `BEGIN IMMEDIATE` is taken **before** the read that decides which
-labels are candidates. An outer transaction is participated in, never committed
-or rolled back here. The action wraps the helper plus the success audit in
-`auditedWrite`; validation stays before the transaction so a rejected form never
-takes a write lock. On failure it returns a calm inline error naming the school
-year, the class labels and the class year-ends used for retention as unchanged,
-with a retry instruction and no support promise.
+### What was built
 
-### Failing-before
+**First Look** — six sessions in `src/content/foundations/`, two grade tiers
+teaching the same three ideas. Early (grades 1–2) starts inside the children's
+own heads: the class finishes "peanut butter and ___", works out *why* they
+could, then meets a program doing the same from millions of sentences. Upper
+(grades 3–5) replaces a folk theory with a mechanism: Room 20 asks the school's
+writing helper about the Brightwood swimming team, Brightwood has no pool, and
+the answer arrives in two seconds with a coach, a practice night and a trophy.
+The line the session is built around is a student's: *it did not look wrong, it
+looked like every other answer.*
 
-Two genuine candidates (broken label + unreadable date) plus three controls: a
-same-label class with a **valid** date, a real historical year, and another
-school. A counter trigger aborts the **second** class update, so the failure
-lands between two intended repairs. Against the un-transacted helper:
+Grades widened to 1–5 in class creation and routing. The twenty-seven core
+missions still say `2-4` on every library card, preview and printable guide,
+because that is the band they are written for.
 
-```
-school = 2026-2027 / 2027-06-12      ← calendar already moved
-a      = 2026-2027 / (empty)         ← relabelled, retention date still unusable
-b      = 2025-2027 / 2026-13-45      ← not repaired at all
-audits = 0
-```
+### The decision that shaped the integration
 
-The corrected helper throws and the whole snapshot is byte-for-byte unchanged,
-including the trigger's own counter row. Through the real action with an
-audit-insert abort: `ACADEMIC_DATES_FAILED` returned, snapshot exact,
-`year.dates_set` rows **0**. Retry asserts exact new dates, both candidates
-repaired in label and year-end, all three controls untouched, subscription and
-retention preserved, and exactly one audit carrying the same two facts as the
-on-screen message.
+**First Look records no skill evidence, anywhere.** A six year old answering a
+comprehension question on a projector is not the same act as a child declining
+to give an app their street address under an offer of Turbo Mode, and a column
+headed "demonstrated this skill" cannot mean both. So the evidence rule inverts
+for this segment: `validateMission` normally flags a strong choice recording
+nothing, and for `segment: "foundation"` it flags any choice recording anything.
 
-**Mutation checks, one at a time** — date repair disabled, relabel repair
-disabled, success audit removed, helper transaction removed — each fails the
-relevant test on its own. No batch mutation, no test-side insert as evidence.
+Followed through rather than left implicit: `MISSIONS` still means the assessed
+spine and every interleaving test still runs against exactly those twenty-seven;
+`ALL_SESSIONS` is the new name for "anything a child can open"; `offeredBy` is
+unchanged, so no class looks as though it missed opportunities it was never
+given; the school report gained a `segment` **column** in both the screen table
+and the CSV rather than a suffix a spreadsheet would lose; and the
+administrator's "every mission in use" became "every **core** mission in use",
+because no school runs both grade tracks.
+
+### Classroom review — eight findings, all fixed in this sprint
+
+Driven at 1280×800 and 768×1024 as a grade 2 student, a grade 3 student, the
+teacher and the administrator. The one worth reading first: **the printable
+discussion guide said "Primary skill recorded:" on a session that records
+nothing** — the sheet a teacher prints, keeps and plans from, and so the place a
+false claim would have survived longest. Also: the player headed a First Look
+session "Mission 2" while the tile said FIRST LOOK 2; session numbering ran 1–6
+across both tracks, so a grade 5 class got sessions 4–6 and a printable footer
+reading "Session 6 of 3"; narration said "points at four things" above three
+options; the family take-home filed a First Look session under a competency
+heading; the two track columns collided at 768; one 25-word sentence, one over
+the tier cap.
 
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      760 passed (23 files)   — up from 755
+tests      790 passed (24 files)   — up from 760
 build      ✓ Compiled successfully
 ```
 
-### Browser
-
-Trigger armed **in place**, no file swapping. At 1280×800 and 768×1024: changed
-**Last day** to `2026-06-19` in the real form and saved — `errorPage false`,
-inline message readable and within the viewport, field reverted to `2026-06-12`,
-retry usable, no overflow. Server state unchanged both times, `year.dates_set`
-audits **0**. Trigger dropped and the demo verified **on disk and in the running
-process**: the form reads back the original dates, `/admin/data` still shows all
-four due dates as **June 12, 2027**, six seeded audit actions in order. No
-successful save was driven in the browser.
+`tests/foundations.test.ts` is new: 30 tests covering structural validity, the
+records-nothing rule at three levels (content, validator, and end to end through
+the real repository), per-band reading caps, per-track numbering, self-limiting
+unplugged extensions and a blanket-distrust check.
 
 ### Where to push hardest
 
-1. **Two pre-existing source-position tests were replaced, not patched.**
-   *"validates before any write"* checked where `academicProblem` sat relative to
-   `setAcademicDates(` in the file; it now drives the validator against a real
-   database and asserts nothing was written. Worth confirming the replacement is
-   stronger rather than quieter — that has been the failure mode in four of my
-   recent sprints.
-2. **The other configuration actions are unchanged.** `setRetentionAction`,
-   `setSchoolAction`, `setBenchmarkWindowAction` and staff removal still audit
-   outside a transaction. Each is a single-row write, so a lost entry cannot
-   produce a half-repaired state — but the page's promise covers them too, and
-   the scope here was one action.
-3. **`auditedWrite` is applied action by action.** Nothing structurally stops the
-   next configuration action from auditing separately.
-4. **Failures still write nothing.** A successful retry shows one clean entry
-   with no sign the first attempt failed.
-5. **The repair scope is deliberately narrow and unchanged.** A cohort whose
-   label is a *real* school year but whose date is unreadable is repairable only
-   by opening that year, not the current one. History is not rewritten, which is
-   right — but it leaves one recovery path that requires knowing which year to
-   open.
+1. **The grade claim now runs ahead of the core content, deliberately.** A
+   grade 5 class can be created and assigned missions written for grades 2–4.
+   Every teacher-facing surface says `2-4`, and the review records this as left
+   on purpose — but a reviewer should decide whether saying it is enough, or
+   whether grade 5 should be gated until upper-grade variants of the twenty-seven
+   exist.
+2. **`competency` and `primarySkillId` are reused on foundation sessions** to
+   mean "leads into" rather than "assessed as". The types document it, the UI
+   relabels it, and nothing records against it — but it is one field doing two
+   jobs, which is the shape of thing that drifts.
+3. **The badge wall filters by the class's grade.** A child moved between classes
+   mid-year could hold a badge whose tile the wall would otherwise hide; there is
+   a fallback for exactly that, and it deserves a second read.
+4. **The upper-track cast is new.** Room 20, Mr. Alvarez, Priya and Dev. Nothing
+   enforces cast consistency across the product, so this is convention only.
+5. **No test compares the two tiers against each other.** Coverage of the three
+   ideas is asserted through the `competency` field, which is a proxy for the
+   idea rather than the idea itself.
+6. **The benchmark is untouched.** First Look teaches nothing the nine skills
+   measure, so the fall and spring windows still compare the same thing — worth
+   confirming that is the right call rather than a gap.
