@@ -295,9 +295,11 @@ export default async function AdminProgram() {
           accepting changes. Lapsing does not itself delete or hide anything, and your
           reports, exports, retention settings and staff administration all keep working,
           because the school owns its records whatever the invoice says. What it does not do
-          is suspend retention: the schedule you configured carries on, so a class already
-          past its deletion date is still deleted on time. Renewing lifts the pause and
-          every class carries on where it stopped.
+          is suspend retention: the schedule you configured carries on, so a class past its
+          deletion date stays due, and it is deleted the next time your deployment runs the
+          purge job. Pausing neither brings that forward nor holds it back, and nothing in
+          this build runs the job on a timer, so due is not yet deleted. Renewing lifts the
+          pause and every class carries on where it stopped.
         </Note>
         <Note tone="neutral" title="Programme contact">
           {school.contact_name} · {school.contact_email}. Quotes, purchase orders and

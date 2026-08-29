@@ -50,20 +50,47 @@ past its deletion date is still deleted on time."*
 `LAPSED_WRITE_REFUSAL` keeps *"Nothing has been changed."* — transactionally
 true of the rejected write. Child copy unchanged and still billing-free.
 
+### Correction during acceptance
+
+My first version of that Program note ended *"a class already past its deletion
+date is still **deleted on time**."* — a promise about a schedule this build
+does not run. `admin/data/page.tsx` has always said the opposite: nothing here
+runs the purge on a timer, a deployment schedules `npm run purge`, and until it
+runs, records past the date are still present. I had replaced one unsupported
+claim with another on the same subject.
+
+Corrected to keep **due** and **deleted** as separate facts and name the actor:
+
+> …so a class past its deletion date **stays due**, and it is deleted **the next
+> time your deployment runs the purge job**. Pausing neither brings that forward
+> nor holds it back, and nothing in this build runs the job on a timer, so due
+> is not yet deleted.
+
+The shared subscription constants needed no change — they speak of the schedule
+*carrying on*, never of when a deletion happens. Retention behaviour untouched.
+`tests/subscription-lapse.test.ts` → *"claims no deletion timeline this build
+does not run"* forbids `deleted on time` / `deleted on schedule`, requires the
+four mechanism phrases, and forbids any timeline phrase in the shared bodies. It
+fails on the pre-correction file.
+
 ### Evidence
 
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      677 passed (16 files)   — up from 669
+tests      678 passed (16 files)   — up from 669
 build      ✓ Compiled successfully
-stash 3 source files → 4 failures  (failing-before confirmed)
+stash 3 source files      → 4 failures  (failing-before, copy correction)
+stash program/page.tsx    → 1 failure   (failing-before, timeline correction)
 ```
 
 Browser on :3210 — `/admin` and `/admin/program`, lapsed and
 needs-configuration, at 1280×800 and 768×1024. All eight combinations: banned
 claims absent, causal + retention-window + schedule sentences present, no
 `Invalid Date`/`NaN`, raw stored `soon` never echoed, no horizontal overflow.
+The acceptance correction was re-checked scoped to Program & plan at both
+widths: `deleted on time` absent, all four mechanism phrases present, no
+`Invalid Date`/`NaN`, no overflow.
 Demo restored (plan `school`, 120 seats, retention 12, 2025-2026 /
 2025-08-25 → 2026-06-12, term → 2026-09-01, 4 classes, 90 students, 884
 attempts, 6 audit rows).
@@ -87,3 +114,8 @@ attempts, 6 audit rows).
 4. **The refusal/notice boundary.** *"Nothing has been changed"* is now allowed
    only in the refusal constants. Check that distinction holds in the rendered
    product, not just in the constants file.
+5. **Other timeline claims.** The acceptance correction found one sentence
+   promising a run time the build does not schedule. The same question is worth
+   asking of every surface that mentions deletion, rollover or check-in windows:
+   does the copy name a *state* the product can guarantee, or an *event* that
+   depends on somebody's cron?

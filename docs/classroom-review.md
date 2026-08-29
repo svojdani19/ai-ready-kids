@@ -545,6 +545,14 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       The test for it: name every mechanism that could falsify the sentence,
       and check the gate actually covers each one.
 
+- [ ] **A date the product computes is not an event the product performs.**
+      "Due on June 12" is a state the code can guarantee; "deleted on June 12"
+      is an event that depends on a job somebody else schedules. Copy that
+      collapses the two tells an administrator a cohort is gone when a missed
+      cron has left it sitting there. Name the actor and the trigger — "deleted
+      the next time your deployment runs the purge job" — wherever the product
+      cannot promise the clock.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

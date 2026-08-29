@@ -963,6 +963,41 @@ describe("a paused term does not pause retention, and the copy says so", () => {
     expect(program).toMatch(/schedule you configured carries on/i);
   });
 
+  it("claims no deletion timeline this build does not run", () => {
+    // Comments and imports are not copy (sprint 44), and this assertion needs
+    // the stripping because the source explains the very phrase it forbids.
+    const program = readFileSync(join(process.cwd(), "src/app/admin/program/page.tsx"), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/(^|\s)\/\/[^\n]*/g, "$1")
+      .replace(/^import[^\n]*$/gm, "")
+      // JSX wraps mid-sentence, so a phrase check has to see one line.
+      .replace(/\s+/g, " ");
+
+    // Nothing in this build runs the purge on a timer: `npm run purge` is
+    // scheduled by a deployment, so "on time" is a promise about somebody
+    // else's cron that the product cannot keep. The Data page has always said
+    // so; this note had started saying the opposite.
+    expect(program).not.toMatch(/deleted on time/i);
+    expect(program).not.toMatch(/deleted (?:automatically )?on schedule/i);
+
+    // Due date and deletion event are different facts, and the copy separates
+    // them: the class *stays due*, and the *job* is what deletes it.
+    expect(program).toMatch(/stays due/i);
+    expect(program).toMatch(/next time your deployment runs the purge job/i);
+    expect(program).toMatch(/due is not yet deleted/i);
+
+    // And the term state is neither an accelerator nor a brake on that.
+    expect(program).toMatch(/neither brings that forward nor holds it back/i);
+
+    // The shared notices never took on a timeline claim of their own.
+    // Word boundaries, not substrings: unanchored `on schedule` matches inside
+    // "retenti-on schedule", which is the phrase these notices are supposed to
+    // contain.
+    for (const body of [LAPSED_STAFF_BODY, UNVERIFIED_STAFF_BODY]) {
+      expect(body).not.toMatch(/\bon time\b|\bon schedule\b|\bimmediately\b|\bwithin \d/i);
+    }
+  });
+
   it("says nothing to a child about any of it", () => {
     for (const word of ["subscription", "renew", "retention", "deleted", "configuration"]) {
       expect(LAPSED_STUDENT_MESSAGE.toLowerCase()).not.toContain(word);
