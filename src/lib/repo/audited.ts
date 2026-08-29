@@ -79,6 +79,19 @@ export const ACADEMIC_DATES_FAILED =
   "records are deleted are all exactly as they were before you pressed Save. " +
   "Try again.";
 
+/**
+ * Retention is one number that moves every cohort's deletion date.
+ *
+ * The message names the two things an administrator would otherwise have to go
+ * and check: that the schedule did not move, and that nothing was deleted while
+ * the save was failing. It does not claim the attempt was recorded, because it
+ * was not — the rollback takes the audit row with it.
+ */
+export const RETENTION_FAILED =
+  "The retention window was not changed. Every class keeps the same retention " +
+  "status and the same scheduled deletion date it had before you pressed Save, " +
+  "and no records were deleted. Try again.";
+
 export const REMOVE_STUDENT_FAILED = (className: string) =>
   `That student was not removed, and no records were deleted: they are still on ` +
   `${className}'s roster with their mission history and check-ins exactly as they were. ` +

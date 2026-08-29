@@ -21,6 +21,7 @@ import {
   ACADEMIC_DATES_FAILED,
   ARCHIVE_FAILED,
   REMOVE_STAFF_FAILED,
+  RETENTION_FAILED,
   auditedWrite,
   DELETE_FAILED,
   RESTORE_FAILED,
@@ -180,13 +181,30 @@ export async function setRetentionAction(
   }
 
   const db = getDb();
-  setRetentionMonths(db, user.school_id, months);
-  recordAudit(db, {
-    schoolId: user.school_id,
-    actorLabel: user.name,
-    action: "retention.updated",
-    detail: `Student record retention set to ${months} months after the school year ends.`,
-  });
+
+  // One field, and it moves the scheduled deletion date for every cohort and
+  // changes which children's records the purge considers eligible. Sprint 74:
+  // the policy used to commit before its audit row, so a failing insert left a
+  // new deletion schedule running with no trustworthy record of who set it —
+  // on the same page that promises every configuration action is audited.
+  //
+  // Validation stays above this, so a rejected option never takes a write lock.
+  try {
+    auditedWrite(
+      db,
+      () => setRetentionMonths(db, user.school_id, months),
+      () => ({
+        schoolId: user.school_id,
+        actorLabel: user.name,
+        action: "retention.updated",
+        detail: `Student record retention set to ${months} months after the school year ends.`,
+      }),
+    );
+  } catch (error) {
+    if (asExpectedError(error)) throw error;
+    return { error: RETENTION_FAILED };
+  }
+
   revalidatePath("/admin/data");
   return { ok: `Retention set to ${months} months after the school year ends.` };
 }

@@ -7,94 +7,85 @@ likely to be.
 
 ---
 
-## Sprint 73 — the same operation, transactional on one path and not the other
+## Sprint 74 — one number that moves every deletion date, committed apart from its record
 
-- **Reviewed against:** HEAD `c65026b`
+- **Reviewed against:** HEAD `bd8e9ea`
 - **Repository:** <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-29-sprint-73.md`](2026-08-29-sprint-73.md)
+- **Full review:** [`2026-08-29-sprint-74.md`](2026-08-29-sprint-74.md)
 
 ### The finding
 
-Sprint 71 made the **administrator's** code rotation atomic with its audit and
-left `rotateJoinCodeAction` — the **teacher's** rotation — untouched. Same
-repository call, same credential consequence, same audit action, and it is the
-path teachers use most. Two more of the same shape were also unwrapped, both
-irreversible: `removeStudentAction` (deletes a child's row, cascading to every
-attempt and check-in) and `removeStaffAction` (deletes an account, cascading to
-their certification). A lost audit there means records gone with no answer to
-"who removed them, and when".
+`setRetentionAction` wrote `schools.retention_months` and inserted
+`retention.updated` afterwards, as two commits. That field moves the scheduled
+deletion date for **every cohort** and changes which children's records the
+purge considers eligible — so a failing audit insert left a new deletion
+schedule running with no trustworthy record of who set it, on the page that
+promises every configuration action is audited.
 
 ### The correction
 
-Each wraps its mutation and audit in `auditedWrite` and returns a calm inline
-error naming what did not change — student removal says **"no records were
-deleted"** explicitly. The mismatched-pair refusal keeps its own message, since
-nothing was attempted.
+Validation stays above the transaction, so a rejected option never takes a write
+lock. `setRetentionMonths` and its audit are wrapped in `auditedWrite`. On
+failure the action returns an inline error naming the two things an
+administrator would otherwise go and check — the schedule did not move, and
+nothing was deleted — and **does not claim the attempt was recorded**, because
+the rollback takes the audit row with it. `setRetentionMonths(` joins the
+consequential-write guard as exactly one new entry; the other configuration
+writes stay out, because keying it on "any write" would turn it back into the
+action-name list sprint 73 replaced.
 
-**A structural guard replaces sprint 71's list.** It keys on the *repository
-call* — `deleteClass(`, `deleteStudentFromClass(`, `deleteUser(`,
-`rotateJoinCode(`, `archiveClass(`, `restoreClass(`, `setAcademicDates(` — so
-any exported action that performs one and audits must use `auditedWrite`. A new
-destructive action is caught without anyone updating a list, which is precisely
-how the teacher rotation had been missed. A companion test asserts the sweep
-finds the eight actions that exist, so an empty sweep cannot pass silently.
+### Proof
 
-### Evidence
+Through the exported action with a real admin session, real database and real
+`FormData`, against a fixture containing **a second school** on 24 months.
+Snapshots include derived `retentionRows` and **the exact set of purge-eligible
+class ids at fixed dates**, not just the column.
+
+- **Audit failure:** returns `RETENTION_FAILED`; school row, class rows, derived
+  due dates, purge eligibility, audit rows and the other school all exact.
+- **Retry:** school row differs in `retention_months` and nothing else; class
+  rows byte-identical; each due date moves by exactly **−9 months** from that
+  class's own year-end, same day of month; eligibility empty at 2026-09-11 and
+  all four classes at 2026-09-13; no student/attempt/check-in count changes;
+  exactly one new audit; other school still on 24 months.
+- **Invalid option:** `7`, `0`, `-12`, `"twelve"`, `""` each return the existing
+  validation error and write nothing.
+
+**Mutation checks, one at a time:** removing `auditedWrite` fails both behaviour
+tests *and* both guard tests; removing only the audit spec fails both behaviour
+tests; weakening the **no-deletion** clause and weakening the
+**date-preservation** clause each fail the audit-failure test on their own.
 
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      799 passed (24 files)   — up from 760
+tests      802 passed (25 files)   — up from 799
 build      ✓ Compiled successfully
 ```
 
-Reverting `removeStudentAction` to mutate-then-audit fails three behaviour tests
-**and the structural guard**. Each audit was then broken **on its own** — never
-in a batch — and each fails exactly its own two tests. Retry tests assert the
-mutation, not its precondition: rotation requires a changed `join_code` with
-every other column identical; student removal captures the child's id before the
-delete and checks their attempts by that literal id.
+### Browser
 
-Browser: trigger armed in place, the teacher's rotation driven through the real
-class page at both widths — no error page, code still `MAPLE-HERON-317`, inline
-message within the viewport, retry usable, no overflow.
-
-### Correction to earlier sprints' demo-restore claims
-
-The demo's counts no longer match what sprints 70–72 recorded (884/134/53); they
-are now 1078/129/65, which is **exactly what a fresh seed produces today**.
-`data/airk.db` was rewritten at 10:26 — when I restarted the dev server during
-sprint 70's acceptance correction. My sprint-70 file-copy restore captured the
-main file without the pages the running server still held in its WAL, so the
-restarted process read the database as empty and re-seeded it. Sprint 70's own
-review warned that verifying a restore with `node` proves the file and not the
-process; this is that hazard going further than I described.
-
-The demo is currently correct — clean current-content seed, original join codes,
-2025-2026 calendar, term and retention intact, nothing archived, six seeded audit
-actions. Nothing was lost (gitignored fictional data). But "demo restored
-exactly, 884/134/53" in sprints 70, 71 and 72 stopped being true of the file at
-10:26, and those reviews now say so. No sprint since 70 has used file-copying;
-71, 72 and 73 all arm and drop triggers in place.
+Trigger armed in place, no file swapping. 12 → 3 months on the real page at both
+widths: no error page, inline message fully readable and within the viewport,
+**12-month option re-selected**, summary still **12 months**, all four due dates
+still **June 12, 2027**, retry usable, no overflow. Confirmed again after a hard
+refresh. Trigger dropped and the demo verified on disk and in the running
+process. No successful save was driven in the browser.
 
 ### Where to push hardest
 
-1. **Twelve configuration actions still audit outside a transaction** —
-   `updateSchoolAction`, `setRetentionAction`, `addTeacherAction`,
-   `reassignClassAction`, `createClassAction`, `addStudentAction` and the rest.
-   Each is a single-row write that cannot leave a half-finished state, which is
-   why they are not here, and the guard deliberately does not flag them — keying
-   it on "any write" would make it a list again. Whether that line is in the
-   right place is worth challenging.
-2. **The guard reads source text.** A consequential write reached through an
-   alias or a helper would not be seen, and it cannot know that a repository
-   function became destructive later.
-3. **I found the demo drift myself, late.** It had been wrong since 10:26 and I
-   verified "restored exactly" twice after that without noticing, because I
-   compared against numbers I had written down rather than against what the seed
-   produces. Checking a restore against its generator, not against a note, is the
-   durable fix.
-4. **Failures still write nothing**, consistent with sprints 70–72.
-5. **One more source-position test was replaced** (`access-control`'s
-   `if (!removed)` before `recordAudit`). That is the fifth such replacement;
-   worth confirming each landed stronger, not quieter.
+1. **`setBenchmarkWindowAction` is the closest call I left out.** It decides
+   which check-in children are offered, so a lost record of who opened a window
+   is a real governance question — just not one that moves a deletion date. I
+   kept to the stated scope; whether that was the right line is worth challenging.
+2. **Eleven configuration actions still audit outside a transaction.** Each is a
+   single-row write that cannot leave a half-finished state. The guard
+   deliberately does not flag them.
+3. **A fixture bug I hit and fixed is worth knowing about.** The derived-row
+   helper first used `getPrimarySchool` — `ORDER BY created_at LIMIT 1` — and my
+   deliberately-added second school was created earlier, so the test measured the
+   wrong school and reported a 0-month move. A test that adds a second school
+   must not then ask for "the first one".
+4. **Failures still write nothing**, consistent with sprints 70–73.
+5. **The guard reads source text** and would miss a write reached through an
+   alias or a helper.

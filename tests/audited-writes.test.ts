@@ -776,6 +776,13 @@ describe("no destructive or credential-changing action audits outside a transact
     "archiveClass(",
     "restoreClass(",
     "setAcademicDates(",
+    // Sprint 74. Not destructive in itself, but it moves the scheduled deletion
+    // date for every cohort and changes which records the purge considers
+    // eligible — the one configuration write whose loss is a data-governance
+    // problem rather than a cosmetic one. Added deliberately and singly; the
+    // other configuration writes stay out, because keying this on "any write"
+    // would turn it back into the list it replaced.
+    "setRetentionMonths(",
   ];
 
   it("pairs every consequential write with auditedWrite", () => {
@@ -806,8 +813,9 @@ describe("no destructive or credential-changing action audits outside a transact
         "removeStaffAction",
         "removeStudentAction",
         "rotateJoinCodeAction",
+        "setRetentionAction",
       ]),
     );
-    expect(wrapped.length).toBeGreaterThanOrEqual(8);
+    expect(wrapped.length).toBeGreaterThanOrEqual(9);
   });
 });

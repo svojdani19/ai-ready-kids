@@ -733,6 +733,18 @@ one of them has not tested the thing that was built.
       process: the copy misses what the process still holds in its WAL, and the
       restart can re-seed what looks like an empty database.
 
+- [ ] **Snapshot the derived consequence, not just the column.** Retention is
+      one integer, and asserting it rolled back says nothing about the deletion
+      dates and purge eligibility it drives. Capture what the product computes
+      from the field — the due dates, and the exact set of records a job would
+      act on at fixed boundary dates — so the test measures the blast radius
+      rather than the write.
+- [ ] **A fixture that adds a second row must not then ask for "the first one".**
+      A helper reading `ORDER BY created_at LIMIT 1` silently measured the
+      control school instead of the one under test, and reported no change where
+      there was a nine-month one. Read by id in any test that deliberately
+      creates a neighbour.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same
