@@ -59,7 +59,7 @@ already on a screen.
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      717 passed (19 files)   — up from 706
+tests      718 passed (19 files)   — up from 706
 build      ✓ Compiled successfully
 ```
 
@@ -110,7 +110,26 @@ does. Both now carry the same wording as the note and the audit entry, and
 member actually reads"* reads both questions, forbids both immediacy phrasings
 and requires the sessions clause. It fails against the pre-correction files.
 
-Gate re-run after the fix — the figures above are post-fix.
+**That test did not originally read what it claimed.** Its extraction was
+`copy.match(/question=\{?"?`?([^`"}]*new code[^`"}]*)/i)?.[1] ?? copy`, and
+`[^`"}]*` stops at the `}` of `${classroom.name}` — so on the admin page it
+never matched and **fell back to the whole file**, where the note under the
+table legitimately contains *"already signed in with it"*. Demonstrated rather
+than argued: changing the admin question's *"a student already signed in with
+it"* to *"a student using the old one"* — a real regression, no banned phrase,
+note left accurate — makes the old expression **pass** and the corrected test
+fail.
+
+Corrected to `rotationQuestion(path, pattern)`: anchored to the specific
+*"Give … a new code?"* template (so the Archive and Delete-data `ConfirmAction`s
+on the same page cannot be read instead), `${classroom.name}` substituted,
+**no fallback**, and `matchAll` + `toHaveLength(1)` so zero or two matches both
+fail. The untouched-records clause is asserted on the extracted question, not
+the page. A companion test asserts the helper throws when extraction finds
+nothing.
+
+Gate re-run for the test change — the figures above are post-fix. No production
+file changed; the corrected test exposed none.
 
 ### Where to push hardest
 
@@ -123,7 +142,13 @@ Gate re-run after the fix — the figures above are post-fix.
    the child navigates. The copy now says so; if a reviewer thinks a school
    would still read "rejected on the next request" as stronger than it is, that
    is worth pushing on.
-3. **My alignment sweeps are greps, and greps miss paraphrase.** The confirm
+3. **Two of my last three test-side defects were extraction that could not
+   fail** — the sprint-67 cascade query that ran through the rows it had just
+   deleted, and this one, which fell back to the whole file when its regex hit
+   an interpolation. Both passed. Both were checking the sprint's own central
+   claim. Any assertion of mine that narrows a haystack is worth reading with
+   that pattern in mind.
+4. **My alignment sweeps are greps, and greps miss paraphrase.** The confirm
    questions escaped this sprint's own sweep by saying "straight away" instead of
    "immediately". Two tests now pin those two strings, which does nothing about
    the third paraphrase nobody has written yet. The durable fix would be routing
@@ -131,13 +156,13 @@ Gate re-run after the fix — the figures above are post-fix.
    `CLASS_CODE_BOUNDARY` already are — these two are still inline strings,
    because the confirm question interpolates a class name and I did not want to
    reshape `ConfirmAction`'s API inside an acceptance correction.
-4. **The one-time rejoin.** Every pre-existing student session is invalidated. In
+5. **The one-time rejoin.** Every pre-existing student session is invalidated. In
    a local demonstration that costs nothing; a deployment would owe teachers
    advance notice, and nothing in the product delivers that notice.
-5. **`enterDemo` reads the class code at issue time; `chooseStudent` uses the
+6. **`enterDemo` reads the class code at issue time; `chooseStudent` uses the
    grant's.** They are equivalent today because the grant is re-verified against
    the class immediately before. If that re-verification ever moves, the two
    issuers stop agreeing.
-6. **Nothing shortens the twelve-hour session.** Rotation now bounds a leaked
+7. **Nothing shortens the twelve-hour session.** Rotation now bounds a leaked
    code to "until the next request", which is a real improvement and is not the
    same as short-lived sessions or SSO.

@@ -206,28 +206,71 @@ describe("no surface draws a risk conclusion the product cannot support", () => 
     }
   });
 
+  /**
+   * The one rotation confirmation on a page, extracted or not at all.
+   *
+   * The first version of this helper was `copy.match(...) ?? copy`, and the
+   * fallback was the whole file. `[^`"}]*` stops at the `}` of
+   * `${classroom.name}`, so the admin page never matched and every assertion
+   * below ran against the entire source — where the note under the table
+   * legitimately contains "already signed in with it". The admin confirmation
+   * could have regressed and the test would still have passed. That is the
+   * sprint-67 false-positive pattern, one sprint later.
+   *
+   * So: anchored to the specific question, no fallback, and exactly one match
+   * required. A renamed prop, a second rotation ConfirmAction or a malformed
+   * template fails here rather than silently widening the search.
+   */
+  function rotationQuestion(path: string, pattern: RegExp): string {
+    const found = [...copyOf(path).matchAll(pattern)].map((m) => m[1]);
+    expect(
+      found,
+      `expected exactly one rotation confirmation in ${path}, found ${found.length}`,
+    ).toHaveLength(1);
+    // The class name is interpolated; substituting a real one keeps the
+    // assertions reading the sentence a staff member sees.
+    return found[0].replace(/\$\{classroom\.name\}/g, "Room 4");
+  }
+
   it("aligns the rotation confirmations a staff member actually reads", () => {
     // The sprint-68 sweep grepped "stops working immediately" and missed both
     // of these, which said "stop working straight away" and named only people
     // halfway through joining — omitting the sessions the binding newly
     // reaches. Found by driving the confirm dialog rather than reading source.
-    const prompts = [
-      copyOf("src/app/admin/classes/page.tsx"),
-      copyOf("src/app/teacher/class/[classId]/page.tsx"),
-    ];
+    const admin = rotationQuestion(
+      "src/app/admin/classes/page.tsx",
+      // The rotation ConfirmAction specifically. Archive and Delete data are
+      // also ConfirmActions on this page and must not be what is read.
+      /question=\{`(Give \$\{classroom\.name\} a new code\?[^`]*)`\}/g,
+    );
+    const teacher = rotationQuestion(
+      "src/app/teacher/class/[classId]/page.tsx",
+      /question="(Everybody will need the new code[^"]*)"/g,
+    );
 
-    for (const copy of prompts) {
-      const question = copy.match(/question=\{?"?`?([^`"}]*new code[^`"}]*)/i)?.[1] ?? copy;
+    // Both extractions found the real thing, not a neighbouring prop.
+    expect(admin).toMatch(/^Give Room 4 a new code\?/);
+    expect(teacher).toMatch(/^Everybody will need the new code/);
+
+    for (const question of [admin, teacher]) {
       expect(question).not.toMatch(/stop working straight away|stops working immediately/i);
       // Both credentials named, not just the half-finished join.
       expect(question).toMatch(/already signed in with (?:it|the old one)/i);
       expect(question).toMatch(/rejoin next time they load a page/i);
     }
 
-    // The admin prompt keeps saying what rotation does not touch.
-    expect(copyOf("src/app/admin/classes/page.tsx")).toMatch(
+    // On the admin question itself, not on the page around it.
+    expect(admin).toMatch(
       /roster, assignments, mission history, badges and both check-ins are not touched/i,
     );
+  });
+
+  it("fails rather than widening when a confirmation cannot be extracted", () => {
+    // The guard that makes the assertions above trustworthy: no silent
+    // fallback to a larger haystack.
+    expect(() =>
+      rotationQuestion("src/app/admin/classes/page.tsx", /question=\{`(NoSuchPrompt[^`]*)`\}/g),
+    ).toThrow();
   });
 
   it("states the boundary and the posture in the shared copy", () => {

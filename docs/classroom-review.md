@@ -624,6 +624,15 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       staff member reads before committing. Interaction copy hides behind
       handlers and interpolation, so drive the control and read what it renders.
 
+- [ ] **An extraction with a fallback is not an extraction.** `match(...) ?? copy`
+      quietly turns a precise assertion into a search of the whole file, and the
+      file usually contains the required phrase somewhere honest — a note, a
+      heading, a neighbouring prop — so the test passes while the thing it names
+      has regressed. Anchor to the one string, substitute interpolations, assert
+      exactly one match, and let extraction failure fail the test. Character
+      classes are where this bites: `[^`"}]*` stops dead at the `}` of a
+      `${...}`.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same
