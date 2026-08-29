@@ -100,7 +100,7 @@ export default async function ClassPage({
                 tone="quiet"
                 label="New code"
                 confirmLabel="Change it"
-                question="Everybody will need the new code, including anybody halfway through joining. Change it?"
+                question="Everybody will need the new code: anybody halfway through joining, and any student already signed in with the old one, who is asked to rejoin next time they load a page. Change it?"
                 action={rotateJoinCodeAction.bind(null, classroom.id)}
               />
             </div>

@@ -206,6 +206,30 @@ describe("no surface draws a risk conclusion the product cannot support", () => 
     }
   });
 
+  it("aligns the rotation confirmations a staff member actually reads", () => {
+    // The sprint-68 sweep grepped "stops working immediately" and missed both
+    // of these, which said "stop working straight away" and named only people
+    // halfway through joining — omitting the sessions the binding newly
+    // reaches. Found by driving the confirm dialog rather than reading source.
+    const prompts = [
+      copyOf("src/app/admin/classes/page.tsx"),
+      copyOf("src/app/teacher/class/[classId]/page.tsx"),
+    ];
+
+    for (const copy of prompts) {
+      const question = copy.match(/question=\{?"?`?([^`"}]*new code[^`"}]*)/i)?.[1] ?? copy;
+      expect(question).not.toMatch(/stop working straight away|stops working immediately/i);
+      // Both credentials named, not just the half-finished join.
+      expect(question).toMatch(/already signed in with (?:it|the old one)/i);
+      expect(question).toMatch(/rejoin next time they load a page/i);
+    }
+
+    // The admin prompt keeps saying what rotation does not touch.
+    expect(copyOf("src/app/admin/classes/page.tsx")).toMatch(
+      /roster, assignments, mission history, badges and both check-ins are not touched/i,
+    );
+  });
+
   it("states the boundary and the posture in the shared copy", () => {
     const boundary = CLASS_CODE_BOUNDARY.join(" ");
     expect(boundary).toMatch(/not proof of who is using it/i);

@@ -618,6 +618,12 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       one. Say which width each run used, and never summarise "checked at both"
       unless both were exercised end to end.
 
+- [ ] **Open the dialog; do not grep for it.** A sweep for "stops working
+      immediately" missed two confirmation prompts that said "stop working
+      straight away" — the same claim in different words, on the last screen a
+      staff member reads before committing. Interaction copy hides behind
+      handlers and interpolation, so drive the control and read what it renders.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

@@ -59,7 +59,7 @@ already on a screen.
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      716 passed (19 files)   — up from 706
+tests      717 passed (19 files)   — up from 706
 build      ✓ Compiled successfully
 ```
 
@@ -82,12 +82,35 @@ the student and classroom after rotation, which is the defect exactly.
   its centre returns the button). The rejoin screen was then used at that width
   and returned the child to the roster.
 - **Administrator rotation at 1280×800** — pressed **New code** on Room 4,
-  confirmed, and read the corrected audit entry on `/admin/data`. That
-  interaction was **not** re-driven at 768×1024; only its copy was checked there.
-- **Copy at both widths** on `/admin/classes`, `/privacy`, `/admin/data`.
+  confirmed, and read the corrected audit entry on `/admin/data`.
+- **Administrator rotation at 768×1024**, driven separately during acceptance —
+  and it **found a defect** (below). Confirmation panel rendered in full with
+  both **Change the code** and **Cancel** visible, in viewport and unobscured by
+  `elementFromPoint`; confirming changed Room 4's code visibly in the table to
+  `DRAGON-ASPEN-818` with no server error and no document overflow (the wide
+  table has its own `overflow-x: auto` container); `/admin/data` showed the
+  corrected audit entry at that width.
+- **Copy at both widths** on `/admin/classes`, `/privacy`, `/admin/data` —
+  recorded as copy-only, which is not evidence that an interaction on the same
+  page works at that width.
 
-Demo restored after each run. The tablet run exposed no defect, so no code
-changed and the gate above was not re-run.
+Demo restored after each run, with counts re-confirmed unchanged.
+
+### The defect the tablet administrator run found
+
+Opening the confirm dialog rather than reading the source for it surfaced two
+rotation claims this sprint's own sweep had missed: the admin confirm question
+said *"stop working straight away"* and the teacher one named *"anybody halfway
+through joining"* alone. Two failures at once — the **immediacy claim under
+different words**, which is why a grep for `stops working immediately` walked
+past them, and **no mention of student sessions**, making the administrator's
+last screen before confirming the least accurate description of what confirming
+does. Both now carry the same wording as the note and the audit entry, and
+`tests/data-inventory.test.ts` → *"aligns the rotation confirmations a staff
+member actually reads"* reads both questions, forbids both immediacy phrasings
+and requires the sessions clause. It fails against the pre-correction files.
+
+Gate re-run after the fix — the figures above are post-fix.
 
 ### Where to push hardest
 
@@ -100,11 +123,14 @@ changed and the gate above was not re-run.
    the child navigates. The copy now says so; if a reviewer thinks a school
    would still read "rejected on the next request" as stronger than it is, that
    is worth pushing on.
-3. **The administrator rotation *interaction* has only been driven at 1280×800.**
-   Its copy is checked at both widths, but nobody has pressed **New code** and
-   confirmed at 768×1024. The confirm control is the shared `ConfirmAction`,
-   covered by its own tests, which is a reason to expect it works and not
-   evidence that it does.
+3. **My alignment sweeps are greps, and greps miss paraphrase.** The confirm
+   questions escaped this sprint's own sweep by saying "straight away" instead of
+   "immediately". Two tests now pin those two strings, which does nothing about
+   the third paraphrase nobody has written yet. The durable fix would be routing
+   every rotation claim through the shared constant the way `DELETION_SCOPE` and
+   `CLASS_CODE_BOUNDARY` already are — these two are still inline strings,
+   because the confirm question interpolates a class name and I did not want to
+   reshape `ConfirmAction`'s API inside an acceptance correction.
 4. **The one-time rejoin.** Every pre-existing student session is invalidated. In
    a local demonstration that costs nothing; a deployment would owe teachers
    advance notice, and nothing in the product delivers that notice.

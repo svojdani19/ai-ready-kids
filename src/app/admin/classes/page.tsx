@@ -126,7 +126,13 @@ export default async function AdminClasses() {
                             tone="quiet"
                             label="New code"
                             confirmLabel="Change the code"
-                            question={`Give ${classroom.name} a new code? The old one and anybody halfway through joining with it stop working straight away. The class, its teacher, the roster, assignments, mission history, badges and both check-ins are not touched.`}
+                            // Sprint 68 aligned the note below and the audit
+                            // entry, and missed this: it said "stop working
+                            // straight away" — the same immediacy claim under
+                            // different words — and named only people halfway
+                            // through joining, not students already signed in,
+                            // who are the ones the binding newly reaches.
+                            question={`Give ${classroom.name} a new code? From then on the old code is rejected on its next use: nobody can join with it, anybody halfway through joining stops, and a student already signed in with it is asked to rejoin next time they load a page. The class, its teacher, the roster, assignments, mission history, badges and both check-ins are not touched.`}
                             action={async () => {
                               "use server";
                               return rotateJoinCodeAsAdminAction(classroom.id);
