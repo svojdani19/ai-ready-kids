@@ -336,9 +336,11 @@ describe("the copy says what archiving now does", () => {
     const admin = copyOf("src/app/actions/admin.ts");
     expect(admin).toMatch(/archived\. Students cannot join and those already signed in are rejected on their next request/i);
     expect(admin).toMatch(/issued a new join code, so the old one stays invalid even if the class is restored/i);
-    // Rollover result and audit detail both carry it.
-    expect(admin).toMatch(/each issued a new join code, with students signed out on their next request/i);
+    // The rollover's success message stays with the action; sprint 70 moved
+    // its audit detail into the transaction that writes it.
     expect(admin).toMatch(/Archived classes have new join codes and their students are signed out on their next request/i);
+    const rollover = copyOf("src/lib/repo/rollover.ts");
+    expect(rollover).toMatch(/each issued a new join code, with students signed out on their next request/i);
   });
 
   it("warns in the rollover preview, before the button", () => {

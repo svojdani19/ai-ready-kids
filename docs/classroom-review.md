@@ -653,6 +653,19 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       unconditionally, assert on what it returns or throws, and compare the rows
       byte for byte — never behind the condition the fix makes false.
 
+- [ ] **A loop of committing writes is not a transaction.** A helper that opens
+      its own transaction "when there is no outer one" is correct in isolation
+      and silently per-commit when called in a loop — so a failure halfway leaves
+      half the work done and no record of which half. Wrap the whole operation in
+      one `BEGIN IMMEDIATE`, put the audit row inside it, and re-read the state
+      the decision depends on within the same lock; a preview computed before the
+      transaction is a guess by the time it is acted on.
+- [ ] **Do not promise "nothing was changed" until a rollback test proves it.**
+      The reassurance and the mechanism ship together or not at all: inject a
+      deterministic failure after at least one write has landed, and assert the
+      database is byte-for-byte what it was — including that the failure
+      counter itself rolled back.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

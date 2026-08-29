@@ -22,12 +22,11 @@ import {
   assertSubscriptionActive,
   lapsedRefusal,
 } from "@/lib/auth/subscription-gate";
-import { previewRollover } from "@/lib/domain/rollover";
+import { performRollover, ROLLOVER_FAILED } from "@/lib/repo/rollover";
 import { ACADEMIC_PROBLEM_MESSAGE, academicProblem } from "@/lib/domain/calendar";
 import {
   archiveClass,
   deleteClass,
-  listClasses,
   getClass,
   listStudents,
   reassignClass,
@@ -44,7 +43,6 @@ import {
   recordAudit,
   getSchool,
   setAcademicDates,
-  setAcademicYear,
   setBenchmarkWindow,
   setRetentionMonths,
   updateSchoolProfile,
@@ -367,31 +365,26 @@ export async function rolloverYearAction(): Promise<ActionState> {
   const lapsed = lapsedRefusal(db, user.school_id);
   if (lapsed) return { error: lapsed };
   
-  const school = getSchool(db, user.school_id);
-  if (!school) return { error: "That school could not be found." };
+  // One transaction, and the state it decides from is re-read inside it. The
+  // page's preview is informational; this is the one that acts. See
+  // `performRollover` for why a half-finished rollover is worse than a refused
+  // one, and worse again since sprint 69 made archiving rotate a code.
+  let outcome;
+  try {
+    outcome = performRollover(db, user.school_id, user.name);
+  } catch {
+    // An expected operational failure, not a crash. The transaction has already
+    // rolled back, so this message is true rather than hopeful, and the form
+    // keeps its retry button.
+    return { error: ROLLOVER_FAILED };
+  }
+  if (!outcome.ok) return { error: outcome.error };
 
-  const preview = previewRollover(school, listClasses(db, user.school_id, true));
-  if ("error" in preview) return { error: preview.error };
-
-  for (const c of preview.toArchive) archiveClass(db, c.id);
-  setAcademicYear(db, user.school_id, {
-    year: preview.toYear,
-    startsOn: preview.startsOn,
-    endsOn: preview.endsOn,
-  });
-  setBenchmarkWindow(db, user.school_id, "closed");
-
-  recordAudit(db, {
-    schoolId: user.school_id,
-    actorLabel: user.name,
-    action: "year.rolled",
-    detail: `${preview.fromYear} rolled into ${preview.toYear}. ${preview.toArchive.length} class${preview.toArchive.length === 1 ? "" : "es"} archived — each issued a new join code, with students signed out on their next request — check-ins closed, and no existing deletion date moved.`,
-  });
   revalidatePath("/admin/program");
   revalidatePath("/admin/classes");
   revalidatePath("/admin/data");
   return {
-    ok: `${preview.toYear} is now the current year. ${preview.toArchive.length} class${preview.toArchive.length === 1 ? " was" : "es were"} archived, and check-ins are closed. Archived classes have new join codes and their students are signed out on their next request; no record and no deletion date changed.`,
+    ok: `${outcome.toYear} is now the current year. ${outcome.archived} class${outcome.archived === 1 ? " was" : "es were"} archived, and check-ins are closed. Archived classes have new join codes and their students are signed out on their next request; no record and no deletion date changed.`,
   };
 }
 
