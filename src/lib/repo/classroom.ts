@@ -202,8 +202,56 @@ export function reassignClass(db: Db, classId: string, teacherId: string): boole
   return true;
 }
 
+/**
+ * Archive a class, and revoke the way into it in the same breath.
+ *
+ * Archiving was a bookkeeping flag: it dropped the cohort out of the active
+ * seat count and refused new code entry, and did nothing at all to a student
+ * session already issued. `currentStudent` loaded the student, loaded the
+ * class, checked the session's bound code and handed back an archived
+ * classroom — so a child with a live cookie kept the roster-linked experience
+ * and kept recording authored work for up to twelve hours after the class was
+ * "finished", including through a year rollover. Commercially that is a school
+ * archiving a cohort to free seats while signed-in devices carry on using the
+ * product.
+ *
+ * `currentStudent` now refuses an archived class, which closes it on the next
+ * request. That alone would leave a second hole: restore the class inside those
+ * twelve hours and every pre-archive session would come back to life, because
+ * the code it is bound to is the code the class still has. So archiving issues
+ * a new join code in the same transaction. The session and any grant are bound
+ * to the old one and stay invalid across a restore; students rejoin with the
+ * code the class has now.
+ *
+ * The credential changes. Nothing else does — not a student, an attempt, a
+ * check-in, the teacher, the year-end or the deletion date.
+ *
+ * Archiving an already-archived class is a no-op, deliberately: it must not
+ * keep minting codes for a class that is already closed, and both callers —
+ * `archiveClassAction` and the rollover — can arrive at one.
+ */
 export function archiveClass(db: Db, id: string): void {
-  db.prepare("UPDATE classes SET archived_at = ? WHERE id = ?").run(nowIso(), id);
+  const outer = db.isTransaction;
+  if (!outer) db.exec("BEGIN IMMEDIATE");
+  try {
+    const current = db
+      .prepare("SELECT archived_at FROM classes WHERE id = ?")
+      .get(id) as { archived_at: string | null } | undefined;
+    // Unknown class, or already archived: touch nothing. The read and the write
+    // share one transaction so two archives arriving together cannot both see
+    // an active class and both rotate.
+    if (current && !current.archived_at) {
+      db.prepare("UPDATE classes SET archived_at = ?, join_code = ? WHERE id = ?").run(
+        nowIso(),
+        generateJoinCode(db),
+        id,
+      );
+    }
+    if (!outer) db.exec("COMMIT");
+  } catch (error) {
+    if (!outer) db.exec("ROLLBACK");
+    throw error;
+  }
 }
 
 /**

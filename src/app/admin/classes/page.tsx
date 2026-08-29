@@ -44,7 +44,7 @@ export default async function AdminClasses() {
       <PageHeader
         eyebrow="Administrator"
         title="Classes"
-        description={`${school.name} · ${schoolYear}. Archiving keeps a finished class out of the way without changing when its records are deleted. Deleting removes its roster and every record immediately.`}
+        description={`${school.name} · ${schoolYear}. Archiving closes a finished class: students cannot join and those already signed in are signed out on their next request, while its records and their deletion date are unchanged. Deleting removes its roster and every record immediately.`}
       />
 
       <Panel
@@ -169,7 +169,12 @@ export default async function AdminClasses() {
                               tone="quiet"
                               label="Archive"
                               confirmLabel="Archive class"
-                              question={`Archive ${classroom.name}? Students can no longer join. Its deletion date does not change.`}
+                              // Sprint 69: this said only "students can no
+                              // longer join", which was the whole of what
+                              // archiving used to do. It now closes access for
+                              // children already signed in, and issues a new
+                              // code so restoring cannot revive their sessions.
+                              question={`Archive ${classroom.name}? Students can no longer join, and any child already signed in is asked to rejoin next time they load a page. The class gets a new join code, so the old one will not work even if you restore it — everyone rejoins with the new code. The roster, mission history, check-ins and the deletion date do not change.`}
                               action={async () => {
                                 "use server";
                                 return archiveClassAction(classroom.id);

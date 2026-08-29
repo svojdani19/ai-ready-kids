@@ -415,6 +415,16 @@ administrator surfaces, with every student-facing control measured against the
   An administrator rolls the school forward from Program & plan; the preview
   states what will be archived, the new year's dates, that check-ins close, and
   that no existing deletion date moves.
+- **Archiving is an access boundary, not only a bookkeeping flag.** It used to
+  drop a cohort out of the licensed-seat count and refuse new code entry while
+  doing nothing to a student session already issued, so a child with a live
+  cookie kept using the product for up to twelve hours after the class was
+  "finished" — through a year rollover included. `currentStudent` now refuses an
+  archived class, and `archiveClass` issues a new join code in the same
+  transaction so restoring cannot revive pre-archive sessions. Both the manual
+  archive and the rollover go through that one function, and archiving an
+  already-archived class is a no-op. The credential changes; the roster,
+  attempts, check-ins, teacher, year-end and deletion date do not.
 - **Schema changes ship as migrations, not as "delete the database".**
   `src/lib/db/migrations.ts` holds an ordered list; `openDatabase` reads the
   stored `schema_version`, applies whatever is pending, and writes the new

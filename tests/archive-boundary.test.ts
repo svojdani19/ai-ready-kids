@@ -1,0 +1,311 @@
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
+
+/** Same cookie jar shape a Server Action gets from `next/headers`. */
+const jar = vi.hoisted(() => {
+  const store = new Map<string, string>();
+  return {
+    store,
+    api: {
+      get: (name: string) => (store.has(name) ? { name, value: store.get(name)! } : undefined),
+      set: (name: string, value: string) => {
+        store.set(name, value);
+      },
+      delete: (name: string) => {
+        store.delete(name);
+      },
+    },
+  };
+});
+
+vi.mock("next/headers", () => ({
+  cookies: async () => jar.api,
+  headers: async () => new Map(),
+}));
+
+import {
+  createTestDb,
+  DEMO_CLASS,
+  DEMO_SCHOOL,
+  DEMO_STUDENT,
+  DEMO_TEACHER,
+} from "./helpers";
+import type { Db } from "@/lib/db";
+import { currentStaff, currentStudent, writeSession } from "@/lib/auth/session";
+import {
+  archiveClass,
+  createClass,
+  getClass,
+  listClasses,
+  normaliseJoinCode,
+  restoreClass,
+} from "@/lib/repo/classroom";
+import { licenceStatus } from "@/lib/repo/entitlement";
+import { completeAttempt, recordDecision, startAttempt } from "@/lib/repo/progress";
+import { MISSIONS } from "@/content/missions";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+let db: Db;
+let cleanup: () => void;
+
+const codeOf = (classId: string) => normaliseJoinCode(getClass(db, classId)!.join_code);
+
+/** Every row that must survive archiving, as a comparable snapshot. */
+function snapshot() {
+  const dump = (sql: string) => JSON.stringify(db.prepare(sql).all());
+  return {
+    students: dump("SELECT * FROM students ORDER BY id"),
+    attempts: dump("SELECT * FROM attempts ORDER BY id"),
+    benchmarks: dump("SELECT * FROM benchmarks ORDER BY id"),
+    assignments: dump("SELECT * FROM assignments ORDER BY id"),
+    users: dump("SELECT * FROM users ORDER BY id"),
+    schools: dump("SELECT * FROM schools ORDER BY id"),
+    // Everything about the class except the two columns archiving may change.
+    classesExceptCredential: dump(
+      `SELECT id, school_id, teacher_id, name, grade, school_year, year_ends_on, created_at
+       FROM classes ORDER BY id`,
+    ),
+  };
+}
+
+beforeEach(() => {
+  ({ db, cleanup } = createTestDb());
+  globalThis.__airkDb = db;
+  jar.store.clear();
+});
+
+afterEach(() => {
+  globalThis.__airkDb = undefined;
+  cleanup();
+});
+
+describe("archiving closes student access, not just the seat count", () => {
+  it("rejects a student session on the next request after archive", async () => {
+    await writeSession({ kind: "student", studentId: DEMO_STUDENT, code: codeOf(DEMO_CLASS) });
+    expect((await currentStudent())?.student.id).toBe(DEMO_STUDENT);
+
+    archiveClass(db, DEMO_CLASS);
+
+    // FAILING-BEFORE: this returned the student and an archived classroom, so
+    // every student page and instructional action carried on working.
+    expect(await currentStudent()).toBeNull();
+  });
+
+  it("stays rejected after the class is restored", async () => {
+    const original = codeOf(DEMO_CLASS);
+    await writeSession({ kind: "student", studentId: DEMO_STUDENT, code: original });
+    expect(await currentStudent()).not.toBeNull();
+
+    archiveClass(db, DEMO_CLASS);
+    expect(await currentStudent()).toBeNull();
+
+    restoreClass(db, DEMO_CLASS);
+
+    // The class is active again, and the old cookie is still no good: archiving
+    // issued a new code, and the session is bound to the one it came in with.
+    expect(getClass(db, DEMO_CLASS)!.archived_at).toBeNull();
+    expect(codeOf(DEMO_CLASS)).not.toBe(original);
+    expect(await currentStudent()).toBeNull();
+  });
+
+  it("lets a child back in with the code the class has now", async () => {
+    archiveClass(db, DEMO_CLASS);
+    restoreClass(db, DEMO_CLASS);
+
+    // What `chooseStudent` writes after a fresh join with the current code.
+    await writeSession({ kind: "student", studentId: DEMO_STUDENT, code: codeOf(DEMO_CLASS) });
+    expect((await currentStudent())?.student.id).toBe(DEMO_STUDENT);
+  });
+
+  it("does not touch a student in a different class", async () => {
+    const other = createClass(db, {
+      schoolId: DEMO_SCHOOL,
+      teacherId: DEMO_TEACHER,
+      name: "Room 99",
+      grade: 3,
+      schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-12",
+    });
+    await writeSession({ kind: "student", studentId: DEMO_STUDENT, code: codeOf(DEMO_CLASS) });
+
+    archiveClass(db, other.id);
+
+    expect((await currentStudent())?.student.id).toBe(DEMO_STUDENT);
+  });
+
+  it("leaves staff sessions alone", async () => {
+    await writeSession({ kind: "staff", userId: DEMO_TEACHER });
+    archiveClass(db, DEMO_CLASS);
+    // The teacher still needs their tools; an archived class is theirs to
+    // restore, rename or delete.
+    expect((await currentStaff())?.user.id).toBe(DEMO_TEACHER);
+  });
+});
+
+describe("archiving revokes exactly once", () => {
+  it("issues one new code, and archiving again changes nothing", () => {
+    const original = codeOf(DEMO_CLASS);
+
+    archiveClass(db, DEMO_CLASS);
+    const afterFirst = codeOf(DEMO_CLASS);
+    const archivedAt = getClass(db, DEMO_CLASS)!.archived_at;
+    expect(afterFirst).not.toBe(original);
+    expect(archivedAt).toBeTruthy();
+
+    // No-op: not a second code, and not a moved timestamp.
+    archiveClass(db, DEMO_CLASS);
+    archiveClass(db, DEMO_CLASS);
+    expect(codeOf(DEMO_CLASS)).toBe(afterFirst);
+    expect(getClass(db, DEMO_CLASS)!.archived_at).toBe(archivedAt);
+  });
+
+  it("is a no-op for a class that does not exist", () => {
+    const before = snapshot();
+    expect(() => archiveClass(db, "cls_nope")).not.toThrow();
+    expect(snapshot()).toEqual(before);
+  });
+
+  it("rotates once through the rollover path too", () => {
+    // The rollover archives every class of the outgoing year. Same repository
+    // function, so the revocation is not a property of one action.
+    const active = listClasses(db, DEMO_SCHOOL, false);
+    expect(active.length).toBeGreaterThan(1);
+    const codesBefore = new Map(active.map((c) => [c.id, normaliseJoinCode(c.join_code)]));
+
+    for (const c of active) archiveClass(db, c.id);
+    const afterFirst = new Map(
+      listClasses(db, DEMO_SCHOOL, true).map((c) => [c.id, normaliseJoinCode(c.join_code)]),
+    );
+    for (const [id, before] of codesBefore) expect(afterFirst.get(id)).not.toBe(before);
+
+    // A second sweep over classes that are already archived changes nothing.
+    for (const c of listClasses(db, DEMO_SCHOOL, true)) archiveClass(db, c.id);
+    for (const [id, code] of afterFirst) {
+      expect(normaliseJoinCode(getClass(db, id)!.join_code)).toBe(code);
+    }
+  });
+});
+
+describe("archiving changes the credential and nothing else", () => {
+  it("preserves every record row for row, apart from archived_at and join_code", () => {
+    const before = snapshot();
+    const classBefore = getClass(db, DEMO_CLASS)!;
+
+    archiveClass(db, DEMO_CLASS);
+
+    const after = snapshot();
+    for (const key of Object.keys(before) as (keyof typeof before)[]) {
+      expect(after[key], `${key} changed`).toBe(before[key]);
+    }
+
+    const classAfter = getClass(db, DEMO_CLASS)!;
+    expect(classAfter.year_ends_on).toBe(classBefore.year_ends_on);
+    expect(classAfter.school_year).toBe(classBefore.school_year);
+    expect(classAfter.teacher_id).toBe(classBefore.teacher_id);
+    expect(classAfter.archived_at).toBeTruthy();
+    expect(classAfter.join_code).not.toBe(classBefore.join_code);
+  });
+
+  it("frees the licensed seats the roster was using", () => {
+    const before = licenceStatus(db, DEMO_SCHOOL);
+    const roster = db
+      .prepare("SELECT COUNT(*) AS n FROM students WHERE class_id = ?")
+      .get(DEMO_CLASS) as { n: number };
+    expect(roster.n).toBeGreaterThan(0);
+
+    archiveClass(db, DEMO_CLASS);
+
+    expect(licenceStatus(db, DEMO_SCHOOL).used).toBe(before.used - roster.n);
+  });
+
+  it("records nothing when a signed-out child's device tries to keep working", async () => {
+    const mission = MISSIONS[5];
+    await writeSession({ kind: "student", studentId: DEMO_STUDENT, code: codeOf(DEMO_CLASS) });
+    expect(await currentStudent()).not.toBeNull();
+
+    archiveClass(db, DEMO_CLASS);
+
+    const attemptRows = () =>
+      JSON.stringify(
+        db.prepare("SELECT * FROM attempts WHERE student_id = ? ORDER BY id").all(DEMO_STUDENT),
+      );
+    const benchmarkRows = () =>
+      JSON.stringify(
+        db.prepare("SELECT * FROM benchmarks WHERE student_id = ? ORDER BY id").all(DEMO_STUDENT),
+      );
+    const attemptsBefore = attemptRows();
+    const benchmarksBefore = benchmarkRows();
+
+    // The resolver every student mutation goes through refuses first, so the
+    // repository is never reached. Nothing below runs.
+    const resolved = await currentStudent();
+    expect(resolved).toBeNull();
+    if (resolved) {
+      startAttempt(db, DEMO_STUDENT, mission.id);
+      recordDecision(db, { studentId: DEMO_STUDENT, missionId: mission.id, sceneId: "x", choiceId: "y" });
+      completeAttempt(db, DEMO_STUDENT, mission.id);
+    }
+
+    expect(attemptRows()).toBe(attemptsBefore);
+    expect(benchmarkRows()).toBe(benchmarksBefore);
+  });
+});
+
+describe("the copy says what archiving now does", () => {
+  const src = (p: string) => readFileSync(join(process.cwd(), p), "utf8");
+  const copyOf = (p: string) =>
+    src(p)
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/(^|\s)\/\/[^\n]*/g, "$1")
+      .replace(/^import[^\n]*$/gm, "")
+      .replace(/\s+/g, " ");
+
+  /** One anchored extraction, no fallback — sprint 68's lesson. */
+  function only(path: string, pattern: RegExp): string {
+    const found = [...copyOf(path).matchAll(pattern)].map((m) => m[1]);
+    expect(found, `expected one match in ${path}, found ${found.length}`).toHaveLength(1);
+    return found[0].replace(/\$\{classroom\.name\}/g, "Room 12");
+  }
+
+  it("tells the administrator about sessions and the code before they commit", () => {
+    const question = only(
+      "src/app/admin/classes/page.tsx",
+      /question=\{`(Archive \$\{classroom\.name\}\?[^`]*)`\}/g,
+    );
+    expect(question).toMatch(/^Archive Room 12\?/);
+    // The old sentence, which described only half of what archiving did even
+    // then and none of what it does now.
+    expect(question).not.toMatch(/^Archive Room 12\? Students can no longer join\. Its deletion date does not change\.$/);
+    expect(question).toMatch(/already signed in is asked to rejoin next time they load a page/i);
+    expect(question).toMatch(/new join code/i);
+    expect(question).toMatch(/will not work even if you restore it/i);
+    // And what does not change stays said.
+    expect(question).toMatch(/roster, mission history, check-ins and the deletion date do not change/i);
+    // No real-time erasure implied.
+    expect(question).not.toMatch(/\bimmediately\b|\bstraight away\b|signed out at once/i);
+  });
+
+  it("says the same in the audit entry and the rollover result", () => {
+    const admin = copyOf("src/app/actions/admin.ts");
+    expect(admin).toMatch(/archived\. Students cannot join and those already signed in are rejected on their next request/i);
+    expect(admin).toMatch(/issued a new join code, so the old one stays invalid even if the class is restored/i);
+    // Rollover result and audit detail both carry it.
+    expect(admin).toMatch(/each issued a new join code, with students signed out on their next request/i);
+    expect(admin).toMatch(/Archived classes have new join codes and their students are signed out on their next request/i);
+  });
+
+  it("warns in the rollover preview, before the button", () => {
+    const preview = copyOf("src/app/admin/program/RolloverForm.tsx");
+    expect(preview).toMatch(/new join code/i);
+    expect(preview).toMatch(/asked to rejoin on their next request/i);
+    expect(preview).toMatch(/stay invalid even if you restore a class later/i);
+  });
+
+  it("no longer describes archiving as merely keeping a class out of the way", () => {
+    const page = copyOf("src/app/admin/classes/page.tsx");
+    expect(page).not.toMatch(/keeps a finished class out of the way/i);
+    expect(page).toMatch(/those already signed in are signed out on their next request/i);
+    // The records claim survives, because it is still true.
+    expect(page).toMatch(/its records and their deletion date are unchanged/i);
+  });
+});

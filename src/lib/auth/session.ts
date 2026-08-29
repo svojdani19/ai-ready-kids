@@ -135,6 +135,12 @@ export async function currentStudent(): Promise<StudentContext | null> {
   if (!student) return null;
   const classroom = getClass(db, student.class_id);
   if (!classroom) return null;
+  // Archived is a closed class, not merely a hidden one. Sprint 69: this
+  // resolver is what every student page and every instructional action trusts,
+  // and it used to hand back an archived classroom quite happily — so
+  // "finished class" and year rollover did not actually close student access.
+  // Both `/join` steps already refused an archived class; the session did not.
+  if (classroom.archived_at) return null;
   if (normaliseJoinCode(classroom.join_code) !== normaliseJoinCode(session.code)) return null;
   return { student, classroom };
 }

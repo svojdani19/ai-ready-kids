@@ -7,162 +7,93 @@ likely to be.
 
 ---
 
-## Sprint 68 — rotation invalidated the way in, not the people already inside
+## Sprint 69 — archiving was bookkeeping, not a boundary
 
-- **Reviewed against:** HEAD `53a5d6e`
+- **Reviewed against:** HEAD `6ae0159`
 - **Repository:** <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-29-sprint-68.md`](2026-08-29-sprint-68.md)
+- **Full review:** [`2026-08-29-sprint-69.md`](2026-08-29-sprint-69.md)
 
 ### The defect
 
-Rotation is the recovery action the product recommends by name, and it was half
-an answer:
+Archiving dropped a cohort out of the licensed-seat count and refused new code
+entry, and did nothing to a student session already issued. `currentStudent`
+loaded the student, loaded the class, compared the session's bound code — sprint
+68's fix — and handed back an **archived** classroom. Every student page and
+instructional action trusts that resolver, so a child with a live twelve-hour
+cookie kept the roster-linked experience and kept recording authored work after
+the class was "finished". Both `archiveClassAction` and `rolloverYearAction`
+were affected.
 
-| Credential | After rotation |
-| --- | --- |
-| A new join with the old code | rejected |
-| A half-finished join grant | rejected — the grant carries the code |
-| **A student session already issued** | **still worked** |
-
-`{ kind: "student", studentId }` recorded who was signed in and nothing about
-how they got in, so `currentStudent` had nothing to compare against the class's
-current code. A browser that entered through a leaked code stayed inside for the
-rest of the twelve-hour lifetime — after the administrator had done exactly what
-the product told them to do, while three surfaces said *"the old code stops
-working immediately."*
+Commercially: a school archives a cohort to free seats while signed-in devices
+carry on using the product.
 
 ### The correction
 
-One field, in the signed HttpOnly cookie and nowhere else: a student session
-carries the normalised join code that authorised it. No column, no student data
-field, no telemetry.
+`currentStudent` refuses an archived class, closing every student page and
+mutation on the next request. That alone would leave a restore inside the
+twelve hours reviving every pre-archive session, so `archiveClass` issues a
+**new join code in the same transaction** — no schema field, the existing
+credential lifecycle doing the revocation. Sessions and grants stay invalid
+across a restore; everyone rejoins with the current code.
 
-- `chooseStudent` issues with `grant.code` — the code the verified grant
-  carries, already re-checked against the class above it.
-- `enterDemo("student")` issues against the demo class's current code.
-- `currentStudent` compares the bound code to the class's current one and
-  returns `null` on mismatch. Archive/entitlement checks and the twelve-hour
-  lifetime are untouched; `currentStaff` is unchanged.
-- **Legacy tokens fail closed.** `decodeSession` requires a non-empty `code` on
-  a student token, so a token from an older build decodes to `null`. Stated
-  rather than smoothed over: **student sessions from before this commit are
-  rejected and those children rejoin once.** No seamless migration is claimed.
-
-Copy aligned in five places (shared boundary, admin Classes note, both
-`class.code_rotated` audit details, README): *"rejected on the next request that
-uses it… a browser already signed in with it is asked to rejoin the next time it
-loads a page"*, plus the limit said out loud — rotation cannot reach a page
-already on a screen.
+Both archive paths go through that one function. Archiving an already-archived
+class is a no-op — no second code, no moved timestamp — and the read and write
+share one `BEGIN IMMEDIATE`. Staff sessions, restore's seat cap, subscription
+rules, records, year-end and deletion dates are untouched.
 
 ### Evidence
 
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      718 passed (19 files)   — up from 706
+tests      733 passed (20 files)   — up from 718
 build      ✓ Compiled successfully
+against 6ae0159 → 6 of 11 behaviour tests fail, plus all 4 copy tests
 ```
 
-**Failing-before, behaviourally.** `tests/session-binding.test.ts` drives the
-real `currentStudent` with a mocked cookie jar and a seeded fixture behind
-`globalThis.__airkDb`. Removing only the comparison line: *"is valid before its
-own class code rotates, and invalid after"* fails — `currentStudent()` returns
-the student and classroom after rotation, which is the defect exactly.
+Failing-before is behavioural through the real `currentStudent`: a valid student
+session stayed valid after archive. The preservation test compares JSON dumps of
+every table and every class column except `archived_at` and `join_code`.
 
-**Browser** — recorded per width, and claimed only where actually driven:
+**Browser.** A single browser profile holds one `airk_session` cookie, so the
+student and administrator sessions cannot be live in it together; the two halves
+were driven as separate passes, **both at both widths**, and are recorded as
+such.
 
-- **Student join → rotate → recover at 1280×800**, and again **at 768×1024**.
-  The tablet run was added during acceptance: the first pass drove the flow only
-  at desktop and checked the tablet layout for copy alone, which did not prove
-  the recovery path on the Chromebook layout these children use. At 768×1024 the
-  child reached `/student` (*"Hello, Elias"*, 16 of 18 missions, badge strip),
-  the code was rotated underneath, and navigating landed on `/join` with
-  `serverError:false`, no stale name/missions/badges, no horizontal overflow, and
-  the **Go** button visible, in viewport and unobscured (`elementFromPoint` at
-  its centre returns the button). The rejoin screen was then used at that width
-  and returned the child to the roster.
-- **Administrator rotation at 1280×800** — pressed **New code** on Room 4,
-  confirmed, and read the corrected audit entry on `/admin/data`.
-- **Administrator rotation at 768×1024**, driven separately during acceptance —
-  and it **found a defect** (below). Confirmation panel rendered in full with
-  both **Change the code** and **Cancel** visible, in viewport and unobscured by
-  `elementFromPoint`; confirming changed Room 4's code visibly in the table to
-  `DRAGON-ASPEN-818` with no server error and no document overflow (the wide
-  table has its own `overflow-x: auto` container); `/admin/data` showed the
-  corrected audit entry at that width.
-- **Copy at both widths** on `/admin/classes`, `/privacy`, `/admin/data` —
-  recorded as copy-only, which is not evidence that an interaction on the same
-  page works at that width.
+- *Student device, 1280×800 and 768×1024:* joined, chose a child, `/student`
+  rendered; class archived underneath; navigating landed on `/join` with no
+  server error, no stale name/missions/badges, no overflow. Class then
+  **restored** with the old cookie still present — still `/join`, `reactivated:
+  false`. The old code was refused at the join form; the new code returned the
+  child to the roster.
+- *Administrator, 768×1024 and 1280×800, real UI throughout:* **Archive** on
+  Room 12 (control unobscured by `elementFromPoint`), corrected confirmation read
+  in full, confirmed; row became `Room 12 Archived` and the code changed
+  (`COMET-UMBRELLA-604` tablet, `COMET-JACKET-540` desktop); `/admin/data` showed
+  the corrected audit entry; **Restore** driven at both widths, with the code
+  correctly staying rotated.
 
-Demo restored after each run, with counts re-confirmed unchanged.
-
-### The defect the tablet administrator run found
-
-Opening the confirm dialog rather than reading the source for it surfaced two
-rotation claims this sprint's own sweep had missed: the admin confirm question
-said *"stop working straight away"* and the teacher one named *"anybody halfway
-through joining"* alone. Two failures at once — the **immediacy claim under
-different words**, which is why a grep for `stops working immediately` walked
-past them, and **no mention of student sessions**, making the administrator's
-last screen before confirming the least accurate description of what confirming
-does. Both now carry the same wording as the note and the audit entry, and
-`tests/data-inventory.test.ts` → *"aligns the rotation confirmations a staff
-member actually reads"* reads both questions, forbids both immediacy phrasings
-and requires the sessions clause. It fails against the pre-correction files.
-
-**That test did not originally read what it claimed.** Its extraction was
-`copy.match(/question=\{?"?`?([^`"}]*new code[^`"}]*)/i)?.[1] ?? copy`, and
-`[^`"}]*` stops at the `}` of `${classroom.name}` — so on the admin page it
-never matched and **fell back to the whole file**, where the note under the
-table legitimately contains *"already signed in with it"*. Demonstrated rather
-than argued: changing the admin question's *"a student already signed in with
-it"* to *"a student using the old one"* — a real regression, no banned phrase,
-note left accurate — makes the old expression **pass** and the corrected test
-fail.
-
-Corrected to `rotationQuestion(path, pattern)`: anchored to the specific
-*"Give … a new code?"* template (so the Archive and Delete-data `ConfirmAction`s
-on the same page cannot be read instead), `${classroom.name}` substituted,
-**no fallback**, and `matchAll` + `toHaveLength(1)` so zero or two matches both
-fail. The untouched-records clause is asserted on the extracted question, not
-the page. A companion test asserts the helper throws when extraction finds
-nothing.
-
-Gate re-run for the test change — the figures above are post-fix. No production
-file changed; the corrected test exposed none.
+Demo restored exactly: Room 12 `MAPLE-HERON-317`, unarchived, test audit rows
+removed, counts and the seeded six audit actions re-confirmed.
 
 ### Where to push hardest
 
-1. **The binding is a code, not a version counter.** Rotating twice back to the
-   same value would revalidate an old session. Vanishingly unlikely with this
-   generator, but it is a real difference between "code equality" and "version
-   monotonicity", and closing it means a database column this sprint was told
-   not to add.
-2. **Containment is per request, not real time.** A rendered page survives until
-   the child navigates. The copy now says so; if a reviewer thinks a school
-   would still read "rejected on the next request" as stronger than it is, that
-   is worth pushing on.
-3. **Two of my last three test-side defects were extraction that could not
-   fail** — the sprint-67 cascade query that ran through the rows it had just
-   deleted, and this one, which fell back to the whole file when its regex hit
-   an interpolation. Both passed. Both were checking the sprint's own central
-   claim. Any assertion of mine that narrows a haystack is worth reading with
-   that pattern in mind.
-4. **My alignment sweeps are greps, and greps miss paraphrase.** The confirm
-   questions escaped this sprint's own sweep by saying "straight away" instead of
-   "immediately". Two tests now pin those two strings, which does nothing about
-   the third paraphrase nobody has written yet. The durable fix would be routing
-   every rotation claim through the shared constant the way `DELETION_SCOPE` and
-   `CLASS_CODE_BOUNDARY` already are — these two are still inline strings,
-   because the confirm question interpolates a class name and I did not want to
-   reshape `ConfirmAction`'s API inside an acceptance correction.
-5. **The one-time rejoin.** Every pre-existing student session is invalidated. In
-   a local demonstration that costs nothing; a deployment would owe teachers
-   advance notice, and nothing in the product delivers that notice.
-6. **`enterDemo` reads the class code at issue time; `chooseStudent` uses the
-   grant's.** They are equivalent today because the grant is re-verified against
-   the class immediately before. If that re-verification ever moves, the two
-   issuers stop agreeing.
-7. **Nothing shortens the twelve-hour session.** Rotation now bounds a leaked
-   code to "until the next request", which is a real improvement and is not the
-   same as short-lived sessions or SSO.
+1. **The archive in the student browser pass was performed by the repository
+   transaction, not by clicking Archive**, because one cookie jar cannot hold a
+   student and an administrator at once. The administrator pass drives the real
+   button and proves it calls the same thing; if a reviewer wants one continuous
+   run, it needs two browser profiles and I did not set that up.
+2. **Revocation is code rotation, not session invalidation.** There is no session
+   store, so "invalidate this child's session" is only expressible as "change the
+   credential it was bound to". That covers archive and rotation; it could not
+   express signing out one child while the class carries on.
+3. **A restore always costs a rejoin.** Archive by mistake, restore immediately,
+   and every child still goes back to the join screen with a new code. The
+   confirmation now says so before committing, but it is a real operational cost
+   a school might not want.
+4. **Containment is per request.** A rendered page survives until the child
+   navigates. Copy says so; nothing pushes to a connected browser.
+5. **`generateJoinCode` is now called on every archive, including a rollover that
+   archives many classes at once.** It scans all codes per call and retries on
+   collision. Fine at four classes; nobody has looked at it for a district-sized
+   rollover.

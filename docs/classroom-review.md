@@ -633,6 +633,19 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       classes are where this bites: `[^`"}]*` stops dead at the `}` of a
       `${...}`.
 
+- [ ] **A state that excludes something from counting must also exclude it from
+      working.** Archiving removed a cohort from the licensed-seat total and
+      refused new joins, while sessions already issued carried on — so the
+      product billed as if the class were closed and behaved as if it were open.
+      For every "inactive", "archived" or "suspended" flag, ask which resolver
+      reads it, and check the one that authorises requests, not only the ones
+      that build lists.
+- [ ] **Reversing a state must not resurrect the credentials it revoked.**
+      Closing access is only closed if reopening does not silently reinstate
+      everyone who was inside. Where there is no session store to revoke
+      against, rotate the credential the session was bound to on the way out —
+      and say in the confirmation that reopening will cost a rejoin.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

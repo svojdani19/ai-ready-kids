@@ -38,6 +38,15 @@ export function RolloverForm({ preview }: { preview: RolloverPreview | { error: 
           )}
           . {preview.alreadyArchived > 0 && `${preview.alreadyArchived} already archived, untouched.`}
         </li>
+        {/* What archiving now does to access, stated before the button rather
+            than discovered afterwards. Sprint 69 made archive close student
+            sessions and rotate the code; a preview that omitted that would be
+            describing the old behaviour. */}
+        <li>
+          Each newly archived class gets a <strong>new join code</strong>, and children
+          signed in to it are asked to rejoin on their next request. The old codes and
+          sessions stay invalid even if you restore a class later.
+        </li>
         <li>
           New classes will be created in <strong>{preview.toYear}</strong>, ending{" "}
           <strong>{preview.endsOn}</strong>.

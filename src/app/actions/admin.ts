@@ -385,13 +385,13 @@ export async function rolloverYearAction(): Promise<ActionState> {
     schoolId: user.school_id,
     actorLabel: user.name,
     action: "year.rolled",
-    detail: `${preview.fromYear} rolled into ${preview.toYear}. ${preview.toArchive.length} class${preview.toArchive.length === 1 ? "" : "es"} archived, check-ins closed, and no existing deletion date moved.`,
+    detail: `${preview.fromYear} rolled into ${preview.toYear}. ${preview.toArchive.length} class${preview.toArchive.length === 1 ? "" : "es"} archived — each issued a new join code, with students signed out on their next request — check-ins closed, and no existing deletion date moved.`,
   });
   revalidatePath("/admin/program");
   revalidatePath("/admin/classes");
   revalidatePath("/admin/data");
   return {
-    ok: `${preview.toYear} is now the current year. ${preview.toArchive.length} class${preview.toArchive.length === 1 ? " was" : "es were"} archived and check-ins are closed.`,
+    ok: `${preview.toYear} is now the current year. ${preview.toArchive.length} class${preview.toArchive.length === 1 ? " was" : "es were"} archived, and check-ins are closed. Archived classes have new join codes and their students are signed out on their next request; no record and no deletion date changed.`,
   };
 }
 
@@ -508,7 +508,7 @@ export async function archiveClassAction(classId: string): Promise<{ error?: str
       schoolId: user.school_id,
       actorLabel: user.name,
       action: "class.archived",
-      detail: `${classroom.name} archived. Its scheduled deletion date is unchanged.`,
+      detail: `${classroom.name} archived. Students cannot join and those already signed in are rejected on their next request; the class was issued a new join code, so the old one stays invalid even if the class is restored. The roster, records and the scheduled deletion date are unchanged.`,
     });
     revalidatePath("/admin/classes");
     revalidatePath("/admin/data");
