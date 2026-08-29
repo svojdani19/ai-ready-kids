@@ -698,6 +698,12 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       action writes it — and it passes unchanged after the action stops. Call the
       real exported path and read back what it produced.
 
+- [ ] **Mutate one thing at a time.** Removing four call sites at once and
+      watching three tests fail proves three are covered and says nothing about
+      the fourth — it reads as proof of all four. When a set of paths must each
+      be pinned, break each one on its own and confirm exactly one test fails
+      each time; the count is the evidence.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

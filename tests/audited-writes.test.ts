@@ -440,6 +440,41 @@ describe("restore refusals go through the real action", () => {
     expect(listAudit(db, DEMO_SCHOOL, 200).length).toBe(auditBefore + 1);
   });
 
+  it("refuses a malformed seat licence, changes nothing, and writes only its refusal audit", async () => {
+    // The fourth refusal handler. It was the one path the first version of this
+    // suite left out, while the sprint record claimed all four audit calls were
+    // proved — so removing only this `recordAudit` still passed.
+    await signInAsAdmin();
+    archiveClass(db, DEMO_CLASS);
+    // Outside 1-5000, which sprint 56 made an unrecognised contract value. Not
+    // a number this product sells, so it is an account-record problem rather
+    // than an overage.
+    db.prepare("UPDATE schools SET licensed_students = -7 WHERE id = ?").run(DEMO_SCHOOL);
+
+    const before = capture();
+    const auditBefore = listAudit(db, DEMO_SCHOOL, 200).length;
+
+    const result = await restoreClassAction(DEMO_CLASS);
+
+    // The established configuration refusal, not the over-the-licence one and
+    // not the operational-failure one.
+    expect(result.error).toMatch(/seat licence needs configuration/i);
+    expect(result.error).toMatch(/nothing has been changed/i);
+    expect(result.error).toMatch(/have the seat licence corrected on the account/i);
+    expect(result.error).not.toMatch(/licensed places are already in use/i);
+    expect(result.error).not.toMatch(/was not restored\. It is still archived/);
+    // Never repeats the malformed value back — sprint 56's rule.
+    expect(result.error).not.toMatch(/-7|\b7\b/);
+
+    // Nothing moved, including the code the archive rotated.
+    expect(classRow()).toEqual(before.class);
+    expect(protectedRecords()).toEqual(before.records);
+
+    expect(auditsOf("class.restore_blocked_by_licence_config")).toHaveLength(1);
+    expect(auditsOf("class.restored")).toHaveLength(0);
+    expect(listAudit(db, DEMO_SCHOOL, 200).length).toBe(auditBefore + 1);
+  });
+
   it("restores through the action when the school has the seats", async () => {
     await signInAsAdmin();
     archiveClass(db, DEMO_CLASS);

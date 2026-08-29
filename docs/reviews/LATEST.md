@@ -51,7 +51,7 @@ operation — with the delete diff showing 23 children's records gone and
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      754 passed (22 files)   — up from 737
+tests      755 passed (22 files)   — up from 737
 build      ✓ Compiled successfully
 ```
 
@@ -76,13 +76,26 @@ skips the rotation — both of which the old assertions passed.
 *The refusal test manufactured its own evidence.* It called `restoreClass`
 directly, watched it throw, then wrote `class.restore_blocked_by_licence` itself
 with `auditedWrite(() => {})` and asserted the row it had just inserted existed.
-Replaced by four tests calling the **exported `restoreClassAction`** with a real
-seeded database and administrator session, covering licence, classroom-cap and
-unrecognised-plan refusals plus the success path: each asserts the established
-inline message, an unchanged class row and protected records, exactly one
-matching refusal audit and zero `class.restored`. Nothing in them creates an
-audit row. Shown to fail when the four refusal `recordAudit` calls are stripped
-from the action.
+Replaced by tests calling the **exported `restoreClassAction`** with a real
+seeded database and administrator session, covering **all four refusal paths
+plus success**: unrecognised plan, classroom cap, malformed seat licence and
+over the licence. Each asserts the established inline message, an unchanged
+class row and protected records, exactly one matching refusal audit, zero
+`class.restored`, and total audit count up by exactly one. Nothing in them
+creates an audit row.
+
+*A third correction followed.* My first pass covered three of the four and I
+proved it by stripping **all four** `recordAudit` calls at once — so removing
+only `class.restore_blocked_by_licence_config` still passed, and the record
+overstated what had been shown. `LicenceNotRecognisedError` now has its own
+test, and each of the four is verified by removing **that one call alone**:
+
+```
+remove only class.restore_blocked_by_plan_config     -> 1 failing test
+remove only class.restore_blocked_by_plan            -> 1 failing test
+remove only class.restore_blocked_by_licence_config  -> 1 failing test
+remove only class.restore_blocked_by_licence         -> 1 failing test
+```
 
 No production change was needed (`git diff --stat src/` empty), and no extraction
 was required — the action was already callable once the Next mocks and the
@@ -120,7 +133,7 @@ the retry-success integration test is that evidence.
    source — a text-position proxy that the move into the transaction invalidated.
    It is now a behavioural assertion in the new file. Worth confirming I replaced
    it with something stronger rather than something quieter.
-6. **Four of my last five test-side defects were assertions that could not
+6. **Five of my last six test-side defects were assertions that could not
    fail** — sprint 67's cascade query through the rows it had deleted, sprint
    68's extraction that fell back to the whole file, sprint 69's mutation behind
    an unreachable branch, and this sprint's pair: a retry check on a
@@ -128,4 +141,5 @@ the retry-success integration test is that evidence.
    passed, and every one was verifying the sprint's own central claim. The
    recurring shape is an assertion whose subject is produced by the test or
    derived from the state the fix changes, rather than read back from the code
-   under test.
+   under test — joined now by a sixth shape: a mutation check that removes
+   several things at once and reports the aggregate as proof of each.
