@@ -93,10 +93,18 @@ export default async function AdminData() {
             return due ? formatDate(due) : "Not set";
           })()}
           hint={
+            // Two different blocks, and only one of them is global. An
+            // unrecognised retention *window* makes `runScheduledPurge` skip
+            // the whole school (sprint 54), so "nothing is deleted" is true
+            // there. An unusable academic *date* only costs this summary
+            // figure: every cohort still carries its own snapshotted year-end,
+            // and the purge keeps acting on the valid ones. Sprint 64 — this
+            // branch was carrying the global claim sprint 63 removed from the
+            // Program page, and I had recorded it as one of the correct ones.
             policyBlocked
               ? "Nothing is deleted automatically while the retention window needs configuration."
               : purgeDateFor(school) === null
-                ? "Set the academic dates on Program & plan. Nothing is deleted until you do."
+                ? "This year's date is unavailable until the academic dates are set on Program & plan. Classes with a valid recorded year-end still follow their own deletion dates, and any class without one is not deleted automatically."
                 : eligible.length
                   ? `${eligible.length} classes eligible now`
                   : "Nothing eligible yet"

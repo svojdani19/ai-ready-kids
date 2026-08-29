@@ -7,6 +7,60 @@ likely to be.
 
 ---
 
+## Sprint 64 — correction to sprint 63: the fourth branch I recorded as correct
+
+- **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-29-sprint-62.md`](2026-08-29-sprint-62.md), sprint 64
+  section.
+
+### The defect
+
+`admin/data/page.tsx` has two blocking branches for *"This year due"*, and they
+are different kinds of block. `policyBlocked` — an unrecognised retention
+**window** — makes the purge skip the whole school (sprint 54), so *"nothing is
+deleted automatically"* is true. `purgeDateFor(school) === null` — an unusable
+academic **date** — costs only the school-level summary; every cohort still
+carries its own snapshotted year-end and the purge keeps acting on the valid
+ones.
+
+The second branch still said *"Set the academic dates on Program & plan. Nothing
+is deleted until you do."* — the exact claim sprint 63 removed from the Program
+page, **on the page whose other branches I had just declared correct**. The
+contradiction was visible on one screen: the summary said nothing would be
+deleted while three rows underneath showed **June 12, 2027**.
+
+### The correction
+
+Only that branch: *"This year's date is unavailable until the academic dates are
+set on Program & plan. Classes with a valid recorded year-end still follow their
+own deletion dates, and any class without one is not deleted automatically."*
+The `policyBlocked` branch is untouched. **No subscription copy touched.**
+
+### Evidence
+
+- Typecheck clean; lint 0 errors (2 pre-existing warnings); **669 tests** (16
+  files, up from 667); Turbopack build **Compiled successfully**.
+- Two cases, one failing against the previous page. The first asserts the scoped
+  wording, **forbids the old sentence by exact text**, and asserts the policy
+  branch keeps its deliberately global one — so the two cannot be confused or
+  "fixed" together. The second proves the model the copy describes: summary date
+  null, valid cohort scheduled, malformed cohort blocked.
+- **Browser at 1280×800 and 768×1024**, school year-end `"2026-13-45"` with three
+  valid cohorts and one malformed: summary *"Not set"* + scoped hint; **three
+  rows showing June 12, 2027** and one *"Blocked"*; **summary and rows agree**;
+  old sentence absent; **no raw malformed value**; no overflow. With
+  `retention_months = -12` the policy branch still reads its global sentence.
+- Demo restored: 2025-2026 / 2025-08-25 / 2026-06-12, retention 12, four cohorts
+  on 2026-06-12, 90 students, 884 attempts, 6 audit rows.
+
+### Where this is most likely still wrong
+
+- **Copy has now been checked branch-by-branch on two pages only** — Program and
+  Data. The subscription, seat and plan notes are still audited only as written
+  text, not against the `if` each one answers to.
+
+---
+
 ## Sprint 63 — correction to sprint 62: the new copy overstated what was blocked
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
@@ -40,7 +94,8 @@ state.
 **Deliberately unchanged:** the Data page's policy hint and per-row
 `unrecognised-policy` reason, and the report's retention line. Those describe an
 unrecognised **retention window**, which sprint 54 made skip the whole school —
-they are accurate.
+they are accurate. **That list was wrong about a fourth branch** — see sprint 64
+above.
 
 ### Evidence
 

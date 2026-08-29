@@ -140,6 +140,62 @@ describe("nothing downstream throws, calculates or exports from a bad calendar",
     expect(rows[2].purgeOn).toBeInstanceOf(Date);
   });
 
+
+  /**
+   * Sprint 64. The Data page has two blocking branches and they are not the
+   * same kind of block.
+   *
+   * An unrecognised retention **window** makes `runScheduledPurge` skip the
+   * whole school (sprint 54), so "nothing is deleted automatically" is true
+   * there. An unusable academic **date** only costs the school-level summary
+   * figure: every cohort still carries its own snapshotted year-end, and the
+   * purge keeps acting on the valid ones.
+   *
+   * The academic branch was carrying the global claim sprint 63 removed from
+   * the Program page — and sprint 63 recorded it as one of the branches that
+   * were correct, which was wrong.
+   */
+  it("scopes the academic-date hint without touching the policy one", () => {
+    const page = readFileSync(join(process.cwd(), "src/app/admin/data/page.tsx"), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/(^|\s)\/\/[^\n]*/g, "$1");
+
+    // The academic-date branch: scoped, and no longer globally false.
+    expect(page).toMatch(/This year's date is unavailable until the academic dates are set/);
+    expect(page).toMatch(/valid recorded year-end still follow their own deletion dates/);
+    expect(page).toMatch(/without one is not deleted automatically/);
+    expect(page).not.toMatch(/Set the academic dates on Program & plan\. Nothing is deleted until you do\./);
+
+    // The policy branch is deliberately global and must survive untouched:
+    // sprint 54 makes the purge skip the entire school for that one.
+    expect(page).toMatch(
+      /Nothing is deleted automatically while the retention window needs configuration\./,
+    );
+  });
+
+  it("keeps the summary and the row copy agreeing about a malformed year end", () => {
+    const school = {
+      academic_year: "2025-2026",
+      year_starts_on: "2025-08-25",
+      year_ends_on: "2026-13-45",
+      retention_months: 12,
+    } as never;
+    const classes = [
+      { id: "ok", name: "Fine", grade: 3, school_year: "2025-2026", year_ends_on: "2026-06-12", archived_at: null, studentCount: 1 },
+      { id: "bad", name: "Broken", grade: 3, school_year: "2025-2026", year_ends_on: "2026-13-45", archived_at: null, studentCount: 1 },
+    ] as never;
+
+    // The school summary has no date to show...
+    expect(purgeDateFor(school)).toBeNull();
+    // ...while a cohort with its own valid snapshot still has one, which is
+    // exactly why the summary must not claim nothing is deleted.
+    const rows = retentionRows(school, classes, NOW);
+    expect(rows[0].purgeOn).toBeInstanceOf(Date);
+    expect(rows[0].blockedReason).toBeNull();
+    expect(rows[1].purgeOn).toBeNull();
+    expect(rows[1].blockedReason).toBe("malformed-year-end");
+  });
+
   it("never exports a malformed academic year as a reporting period", () => {
     const { db, cleanup } = createTestDb();
     try {

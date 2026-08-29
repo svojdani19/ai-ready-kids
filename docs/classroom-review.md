@@ -404,6 +404,11 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       continuing to act on it. A default that looks like restraint — "we won't
       assume it lapsed" — may be asserting the opposite with equal force. If
       neither answer is verifiable, say so as a third state.
+- [ ] **When checking copy against a mechanism, the unit is the branch.**
+      Grouping strings by what they *say* hides the fact that they answer to
+      different conditions: two sentences making the same claim can be true for
+      one `if` and false for another on the same page. Trace each string back to
+      the branch that renders it before clearing it.
 - [ ] **On a broken-state screen, write a description, not reassurance.**
       "Nothing has been deleted, nothing has changed" calms the reader and makes
       two factual claims — one about the past you cannot check, one about scope
