@@ -7,6 +7,88 @@ likely to be.
 
 ---
 
+## Sprint 60 — P1: the calendar that produced Invalid Dates and hid them
+
+- **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-29-sprint-60.md`](2026-08-29-sprint-60.md)
+- **Review trail:** sprints 49–51 made the subscription term real; 52–53 the
+  classroom limit; 54–55 retention and its CLI; 56–57 the seat count and the
+  export that leaked it; 58–59 the term dates and the recovery route. **Sprint 60
+  does the academic calendar — the last member of the unconstrained-column
+  family, and the one with a silent retention consequence.**
+
+### What changed
+
+1. **`setAcademicDatesAction` checked only regex shape**, so `"2026-13-45"` and
+   `"2026-02-30"` were saved **and backfilled into every class in that year**.
+   The ordering guard passed because comparing two Invalid Dates gives `NaN`.
+2. **Three failures downstream.** `addYear` threw `RangeError`, taking down the
+   Program page — the only place these can be corrected. `purgeDateForClass`
+   returned an Invalid Date, so Data displayed *"Invalid Date"* as a schedule.
+   And **the purge job compared `NaN <= now`, skipped the cohort and exited
+   saying nothing was due** — a child's records retained indefinitely, reported
+   as success.
+3. **One rule, extracted** to `calendar.ts`; sprint 58's `isContractDate` now
+   *is* `isCalendarDate` rather than a second definition. A date is exact and
+   UTC-round-tripping; a label is exact consecutive `YYYY-YYYY`; the pair is
+   ordered **and inside the two years named**.
+4. **Nothing downstream can produce an Invalid Date.** Retention returns `null`;
+   `RetentionBlock` gains **`malformed-year-end`**, distinct from `no-year-end`;
+   `previewRollover` validates before any arithmetic and never throws.
+5. **The purge blocks instead of skipping**, reporting cohorts **per school as a
+   count** — no class name, no child, no raw value — while valid due cohorts in
+   the same school **still purge**. The CLI guards its all-clear on both kinds of
+   block and exits 1 for either.
+6. **Recovery repairs empty *and malformed* year-ends**, scoped to that school
+   and that academic year, leaving already-valid snapshots and other years
+   untouched — stated with a count in the audit and the message.
+7. **Class creation refuses** before any write when the calendar is unreadable,
+   with staff-only wording noting existing work is unaffected. **The report
+   exports `"Needs configuration"`** rather than a shaped-but-wrong label.
+
+### Already verified — please do not redo
+
+- Typecheck, lint, **656 tests** (up from 641), Turbopack production build.
+- Fifteen cases in a new `tests/academic-calendar.test.ts`, **eleven failing
+  against the previous code** when the consumers are stashed. Sweeps every
+  malformed shape, non-strings, non-consecutive and reversed labels,
+  `start >= end`, out-of-span dates, valid leap days, mixed cohorts, the partial
+  purge with a refusal snapshot, repair scope across three cohorts and a second
+  year, rollover never throwing, and buyer/export safety.
+- **Browser at 1280×800 and 768×1024** with `academic_year = "2025-2027"`,
+  `year_starts_on = "2026-13-45"` and one cohort on `"2026-02-30"`: Program
+  renders with the correction form, **no `Invalid Date`, `NaN` or raw value**,
+  rollover suppressed, and the form **does not prefill** the bad values; Data
+  shows the cohort *"Blocked"* with a repair instruction and nothing eligible;
+  class creation refused with 4 classes intact; JSON/CSV carry
+  `schoolYear: "Needs configuration"` and none of the raw values.
+- **The purge, live**: three overdue valid cohorts deleted (68 student records),
+  then `BLOCKED: 1 cohort across 1 school…` with school and count only, **exit
+  1**, malformed cohort untouched.
+- **Recovery**: *"Saved. 1 class in 2025-2026 had no usable deletion date and now
+  has one. Classes with a valid date were left unchanged."* — rollover returned,
+  and the database confirmed only that cohort moved.
+- Demo restored with `npm run db:reset`: 4 classes, 90 students, 884 attempts.
+
+### Where this is most likely still wrong — best places to push
+
+- **The columns remain unconstrained.** Safe and recoverable; not prevented.
+- **One pre-existing test is intermittently timing-sensitive** — *"offers Try
+  again, and advances once the retry succeeds"* in the mission player failed once
+  during this sprint and passed on four consecutive re-runs. Unrelated to this
+  work, but it is a flake and should be nailed down rather than tolerated.
+- **Classroom Mode still opens for a closed school** — outstanding since 49.
+- Everything under sprints 49–59 still stands.
+- **Twenty-four mission guides have not been read for the real-material defect
+  class** — sprints 37–41. **Twenty-six missions have untraced shared scenes** —
+  sprint 36.
+- **`src/app/(site)/privacy/page.tsx` has two unused-import lint warnings.**
+- **Only one previous schema shape is recognised** — sprint 34.
+- **The limiter is per process** — sprint 30. **The instrument is unequated** —
+  sprint 24. **Every mission has been read once, none twice.**
+
+---
+
 ## Sprint 59 — correction to sprint 58: one link for two roles and two problems
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>

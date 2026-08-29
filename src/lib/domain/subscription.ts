@@ -1,4 +1,5 @@
 import type { School } from "@/lib/types";
+import { isCalendarDate } from "@/lib/domain/calendar";
 
 /**
  * What the subscription term actually means.
@@ -49,13 +50,9 @@ export function calendarDate(now: Date): string {
  * right value into a right one: a malformed date is not evidence of when a term
  * begins or ends, and guessing sets a commercial deadline nobody agreed to.
  */
-const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
-
-export function isContractDate(value: unknown): value is string {
-  if (typeof value !== "string" || !DATE_ONLY.test(value)) return false;
-  const parsed = new Date(`${value}T00:00:00.000Z`);
-  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
-}
+// Sprint 60 extracted this to `calendar.ts`, because the academic dates need
+// the identical rule and two definitions of "is this a real day" drift.
+export const isContractDate = isCalendarDate;
 
 /** Both dates real, and the term does not renew before it starts. */
 export function hasVerifiableTerm(

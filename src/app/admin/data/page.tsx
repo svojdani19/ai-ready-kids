@@ -9,6 +9,7 @@ import {
   purgeDateFor,
   retentionBlock,
   retentionRows,
+  schoolYearEndBlock,
 } from "@/lib/domain/retention";
 import { PageHeader, Panel, PanelBody } from "@/components/ui/Panel";
 import { Note, Stat, Tag } from "@/components/ui/Bits";
@@ -50,6 +51,9 @@ export default async function AdminData() {
   // An unrecognised window stops the schedule for the whole school, so it is
   // said once at the top rather than repeated on every row.
   const policyBlocked = retentionBlock(school) !== null;
+  // The school's own year end, separately from the policy: missing is a
+  // migration in progress, malformed is a broken record.
+  const yearEndBlock = schoolYearEndBlock(school);
   const audit = listAudit(db, user.school_id, 25);
   const eligible = rows.filter((r) => r.eligibleNow);
   const totalStudents = classes.reduce((n, c) => n + c.studentCount, 0);
@@ -72,9 +76,11 @@ export default async function AdminData() {
           hint={
             policyBlocked
               ? `The stored value is ${JSON.stringify(school.retention_months)}, which is not one of the windows below. Automatic purge is blocked until you choose one.`
-              : school.year_ends_on
-                ? `After a cohort's own school year ends. This year's ends ${formatDate(school.year_ends_on)}.`
-                : "After a cohort's own school year ends — and this school has not recorded when that is."
+              : yearEndBlock === "malformed-year-end"
+                ? "After a cohort's own school year ends — and this school's recorded end date cannot be read. Set the academic dates on Program & plan."
+                : yearEndBlock === "no-year-end"
+                  ? "After a cohort's own school year ends — and this school has not recorded when that is."
+                  : `After a cohort's own school year ends. This year's ends ${formatDate(school.year_ends_on)}.`
           }
           tone={policyBlocked ? "berry" : "neutral"}
         />
@@ -89,7 +95,7 @@ export default async function AdminData() {
             policyBlocked
               ? "Nothing is deleted automatically while the retention window needs configuration."
               : purgeDateFor(school) === null
-                ? "Record when the school year ends on Program & plan. Nothing is deleted until you do."
+                ? "Set the academic dates on Program & plan. Nothing is deleted until you do."
                 : eligible.length
                   ? `${eligible.length} classes eligible now`
                   : "Nothing eligible yet"
@@ -174,13 +180,21 @@ export default async function AdminData() {
                       <span className={row.eligibleNow ? "font-semibold text-berry-deep" : "text-ink-soft"}>
                         {row.purgeOn
                           ? formatDate(row.purgeOn)
-                          : row.blockedReason === "unrecognised-policy"
+                          : row.blockedReason === "unrecognised-policy" ||
+                              row.blockedReason === "malformed-year-end"
                             ? "Blocked"
                             : "Not set"}
                       </span>
                       {row.blockedReason === "unrecognised-policy" && (
                         <span className="block text-xs text-berry-deep">
                           Retention needs configuration — automatic purge is blocked.
+                        </span>
+                      )}
+                      {row.blockedReason === "malformed-year-end" && (
+                        <span className="block text-xs text-berry-deep">
+                          This cohort&apos;s year-end date cannot be read, so nothing here is
+                          deleted automatically. Save the academic dates on Program &amp; plan to
+                          repair it.
                         </span>
                       )}
                       {row.blockedReason === "no-year-end" && (

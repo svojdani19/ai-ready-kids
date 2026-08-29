@@ -1,6 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import {
+  ACADEMIC_NEEDS_CONFIGURATION,
+  hasVerifiableAcademicDates,
+} from "@/lib/domain/calendar";
 import { getDb } from "@/lib/db";
 import { requireAdmin, requireStaff } from "@/lib/auth/session";
 import { canTeachClass } from "@/lib/auth/access";
@@ -111,6 +115,21 @@ export async function createClassAction(
   // every new class was still being created in 2025-2026.
   const school = getSchool(db, user.school_id);
   if (!school) return { error: "That school could not be found." };
+
+  // A new class snapshots the school's academic year and its year-end date,
+  // and that snapshot is what retention is calculated from for the rest of the
+  // cohort's life. Creating one from a calendar nobody can read mints a class
+  // that can never be scheduled for deletion — so this refuses before any
+  // class or audit row is written. Staff-only wording: no child is affected and
+  // ordinary mission work carries on.
+  if (!hasVerifiableAcademicDates(school)) {
+    return {
+      error:
+        `${ACADEMIC_NEEDS_CONFIGURATION}. A new class copies the school year and its end date, ` +
+        "and those cannot be read right now, so nothing has been created. An administrator can " +
+        "set them on the Program and plan page — existing classes and student work are unaffected.",
+    };
+  }
   let created;
   try {
     created = createClass(db, {

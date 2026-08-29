@@ -404,6 +404,12 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       continuing to act on it. A default that looks like restraint — "we won't
       assume it lapsed" — may be asserting the opposite with equal force. If
       neither answer is verifiable, say so as a third state.
+- [ ] **An Invalid Date is worse than no date, and a cooperative sentinel is
+      worse than a refusing one.** A missing value announces itself and trips the
+      emptiness checks you already wrote; `new Date("2026-13-45")` passes them,
+      renders as text, and compares false against everything — so it looks like
+      a schedule while answering "never" to the one question that matters.
+      Validate into `null`, never into a value that participates.
 - [ ] **A string comparison is not a date comparison.** Lexicographic order on
       unvalidated text silently picks a winner, and the winner flatters whichever
       side the malformed value happens to sort on. Validate the shape before

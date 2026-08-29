@@ -36,6 +36,14 @@ export interface PurgeResult {
    * which school has a broken account record is not a fact about any pupil.
    */
   blocked: { schoolId: string; schoolName: string; retentionMonths: number }[];
+  /**
+   * Cohorts skipped because their own year-end date is not a real day, counted
+   * per school. Aggregate on purpose: which school has broken records is
+   * operational, and **which class or child** is not the operator's business
+   * and is not a fact a purge log should carry. The malformed value itself is
+   * never reported either.
+   */
+  blockedCohorts: { schoolId: string; schoolName: string; cohorts: number }[];
 }
 
 /** Midnight UTC on the given date, so eligibility is a day and not an instant. */
@@ -53,6 +61,7 @@ export function runScheduledPurge(db: Db, now = new Date()): PurgeResult {
     studentsDeleted: 0,
     classNames: [],
     blocked: [],
+    blockedCohorts: [],
   };
   const schools = rows<School>(db.prepare("SELECT * FROM schools ORDER BY name").all());
 
@@ -83,7 +92,22 @@ export function runScheduledPurge(db: Db, now = new Date()): PurgeResult {
       ).length,
     }));
 
-    const due = retentionRows(school, classes, now).filter(
+    const scheduled = retentionRows(school, classes, now);
+
+    // A cohort whose year end is not a real day is a genuine block, not a
+    // quiet skip. It used to fall out of the filter below as though it simply
+    // was not due yet, and the run then reported success — so a child's records
+    // were retained indefinitely and nothing said so.
+    const malformed = scheduled.filter((row) => row.blockedReason === "malformed-year-end");
+    if (malformed.length > 0) {
+      result.blockedCohorts.push({
+        schoolId: school.id,
+        schoolName: school.name,
+        cohorts: malformed.length,
+      });
+    }
+
+    const due = scheduled.filter(
       // A cohort whose school-year end was never recorded is never due. The
       // job would rather leave records in place than delete them on a date
       // nobody supplied.

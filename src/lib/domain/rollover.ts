@@ -1,4 +1,10 @@
 import type { Classroom, School } from "@/lib/types";
+import {
+  ACADEMIC_NEEDS_CONFIGURATION,
+  ACADEMIC_PROBLEM_MESSAGE,
+  academicProblem,
+  isCalendarDate,
+} from "@/lib/domain/calendar";
 import { formatDate } from "./retention";
 
 /**
@@ -55,6 +61,19 @@ export function nextYearLabel(year: string): string | null {
  * Add a year to an ISO date, keeping the day where the calendar allows it.
  * 29 February becomes 28 February rather than rolling into March.
  */
+/**
+ * Add a year, or return null when the input is not a real day.
+ *
+ * Sprint 60: this used to build a `Date` from whatever it was given, and
+ * `new Date("2026-13-45").getUTCFullYear()` is `NaN`, so `Date.UTC(NaN, …)`
+ * produced an Invalid Date and `.toISOString()` threw `RangeError` — taking
+ * down the Program page, which is the only place an administrator can correct
+ * the dates. The recovery surface must never be the thing that breaks.
+ */
+export function addYearOrNull(iso: string): string | null {
+  return isCalendarDate(iso) ? addYear(iso) : null;
+}
+
 export function addYear(iso: string): string {
   const date = new Date(iso);
   const year = date.getUTCFullYear() + 1;
@@ -69,9 +88,26 @@ export function previewRollover(
   school: School,
   classes: Classroom[],
 ): RolloverPreview | { error: string } {
+  // Validate the whole calendar before any formatting or arithmetic. The old
+  // check looked only at the label, so a valid label with an impossible date
+  // reached `addYear` and `formatDate` below.
+  const problem = academicProblem({
+    year: school.academic_year,
+    startsOn: school.year_starts_on,
+    endsOn: school.year_ends_on,
+  });
+  if (problem) {
+    // Never quotes the stored value back: a malformed label is not a fact
+    // about the school year and does not belong on the page as though it were.
+    return {
+      error: `${ACADEMIC_NEEDS_CONFIGURATION}. ${ACADEMIC_PROBLEM_MESSAGE[problem]}`,
+    };
+  }
   const toYear = nextYearLabel(school.academic_year);
-  if (!toYear) {
-    return { error: `The current year is recorded as "${school.academic_year}", which is not a year this can roll forward.` };
+  const startsOn = addYearOrNull(school.year_starts_on);
+  const endsOn = addYearOrNull(school.year_ends_on);
+  if (!toYear || !startsOn || !endsOn) {
+    return { error: `${ACADEMIC_NEEDS_CONFIGURATION}. ${ACADEMIC_PROBLEM_MESSAGE.label}` };
   }
 
   const current = classes.filter(
@@ -80,8 +116,8 @@ export function previewRollover(
   return {
     fromYear: school.academic_year,
     toYear,
-    startsOn: addYear(school.year_starts_on),
-    endsOn: addYear(school.year_ends_on),
+    startsOn,
+    endsOn,
     toArchive: current.map((c) => ({ id: c.id, name: c.name, grade: c.grade })),
     alreadyArchived: classes.filter((c) => c.archived_at).length,
     windowWasOpen: school.benchmark_window !== "closed",

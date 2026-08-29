@@ -1,5 +1,6 @@
 import "server-only";
 import { isRecognisedRetention } from "@/lib/domain/retention";
+import { isAcademicYearLabel } from "@/lib/domain/calendar";
 import type { Db } from "@/lib/db";
 import { COMPETENCY_BY_ID, COMPETENCY_IDS } from "@/content/competencies";
 import { MISSIONS, MISSION_BY_ID } from "@/content/missions";
@@ -200,7 +201,11 @@ export function buildSchoolReport(db: Db, schoolId: string, now = new Date()): S
       // The school's deliberate current year. Taking it from whichever class
       // sorted first meant a mixed-cohort school got labelled by an accident
       // of ordering.
-      schoolYear: school.academic_year,
+      // A shaped-but-wrong label like "2025-2027" is not a reporting period,
+      // and this object is serialised into a district-office download.
+      schoolYear: isAcademicYearLabel(school.academic_year)
+        ? school.academic_year
+        : "Needs configuration",
       retention: isRecognisedRetention(school.retention_months)
         ? { status: "configured", months: school.retention_months }
         : { status: "needs-configuration" },

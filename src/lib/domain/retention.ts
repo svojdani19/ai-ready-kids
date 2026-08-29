@@ -1,4 +1,5 @@
 import type { Classroom, School } from "@/lib/types";
+import { isCalendarDate } from "@/lib/domain/calendar";
 
 /**
  * Retention maths for the administrator's data controls.
@@ -48,8 +49,18 @@ export function isRecognisedRetention(months: unknown): months is number {
   );
 }
 
-/** Why a cohort has no deletion date. The two reasons are not the same. */
-export type RetentionBlock = "unrecognised-policy" | "no-year-end";
+/**
+ * Why a cohort has no deletion date. Three reasons, all different.
+ *
+ * Sprint 60 added the third. A **malformed** year end — `"2026-13-45"`, a
+ * timestamp, anything that is not a real day — used to pass the emptiness check
+ * and go straight into `addMonths`, which returned an Invalid Date. The row
+ * then read as having a schedule while the purge job compared `NaN <= now`,
+ * found it false, and moved on saying nothing was due. A missing date is an
+ * administrator mid-migration; a malformed one is a broken record that was
+ * silently retaining a child's records for ever.
+ */
+export type RetentionBlock = "unrecognised-policy" | "no-year-end" | "malformed-year-end";
 
 export function addMonths(iso: string, months: number): Date {
   const date = new Date(iso);
@@ -72,8 +83,17 @@ export function addMonths(iso: string, months: number): Date {
  */
 export function purgeDateFor(school: School): Date | null {
   if (!isRecognisedRetention(school.retention_months)) return null;
-  if (!school.year_ends_on) return null;
+  // Validated, not merely non-empty. `addMonths` on a malformed string returns
+  // an Invalid Date, and an Invalid Date is worse than no date: it renders, it
+  // compares false against everything, and it looks like a schedule.
+  if (!isCalendarDate(school.year_ends_on)) return null;
   return addMonths(school.year_ends_on, school.retention_months);
+}
+
+/** Why this school has no schedule for its current year, or null. */
+export function schoolYearEndBlock(school: Pick<School, "year_ends_on">): RetentionBlock | null {
+  if (!school.year_ends_on) return "no-year-end";
+  return isCalendarDate(school.year_ends_on) ? null : "malformed-year-end";
 }
 
 /**
@@ -96,7 +116,7 @@ export function purgeDateForClass(
   // rather than an arithmetic result nobody asked for — a negative one lands
   // before the year even ended.
   if (!isRecognisedRetention(retentionMonths)) return null;
-  if (!classroom.year_ends_on) return null;
+  if (!isCalendarDate(classroom.year_ends_on)) return null;
   return addMonths(classroom.year_ends_on, retentionMonths);
 }
 
@@ -158,9 +178,11 @@ export function retentionRows(
     // no schedule at all regardless of what any individual cohort recorded.
     const blockedReason: RetentionBlock | null = !isRecognisedRetention(school.retention_months)
       ? "unrecognised-policy"
-      : c.year_ends_on
-        ? null
-        : "no-year-end";
+      : !c.year_ends_on
+        ? "no-year-end"
+        : isCalendarDate(c.year_ends_on)
+          ? null
+          : "malformed-year-end";
     return {
       classId: c.id,
       className: c.name,

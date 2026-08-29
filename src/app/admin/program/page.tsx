@@ -18,6 +18,12 @@ import { RolloverForm } from "./RolloverForm";
 import { AcademicDatesForm } from "./AcademicDatesForm";
 import { previewRollover } from "@/lib/domain/rollover";
 import { subscriptionState } from "@/lib/domain/subscription";
+import {
+  ACADEMIC_NEEDS_CONFIGURATION,
+  hasVerifiableAcademicDates,
+  isAcademicYearLabel,
+  isCalendarDate,
+} from "@/lib/domain/calendar";
 import { listClasses } from "@/lib/repo/classroom";
 
 export const metadata: Metadata = { title: "Program and plan" };
@@ -80,6 +86,9 @@ export default async function AdminProgram() {
   // Shown so an administrator on the classroom plan learns the limit before
   // filling in the create form, not after.
   const rooms = classroomAllowance(db, school.id);
+  // One question for the whole calendar: label, both dates, their order and
+  // whether they fall inside the years named.
+  const academicOk = hasVerifiableAcademicDates(school);
   // Not a ternary ending in "Classroom": that labelled every unrecognised
   // value as the cheapest plan while the lookup granted the most expensive
   // behaviour. `planLabel` says so instead.
@@ -90,7 +99,11 @@ export default async function AdminProgram() {
       <PageHeader
         eyebrow="Administrator"
         title="Program status and plan"
-        description={`Where ${school.name} is in the ${report.school.schoolYear} programme year, and what happens at renewal.`}
+        description={
+          academicOk
+            ? `Where ${school.name} is in the ${school.academic_year} programme year, and what happens at renewal.`
+            : `${school.name}. The programme year needs configuring below before rollover and retention can work.`
+        }
         actions={
           <ButtonLink href="/admin/report" variant="secondary">
             Open the annual report
@@ -211,18 +224,24 @@ export default async function AdminProgram() {
         <Panel
           title="Academic year"
           description={
-            school.year_ends_on
+            academicOk
               ? `Currently ${school.academic_year}, ending ${formatDate(school.year_ends_on)}.`
-              : "No dates recorded yet. Retention is blocked until they are."
+              // Never echoes the stored value back: a malformed label is not a
+              // fact about the school year, and this panel is the recovery
+              // surface, so it has to stay readable and say what to do.
+              : `${ACADEMIC_NEEDS_CONFIGURATION}. Retention and rollover are blocked until the year and both dates are set below.`
           }
         >
           <PanelBody className="space-y-6">
+            {/* Never prefilled with a value the product would reject — sprint
+                56's precedent: offering it back invites a resubmit that
+                launders it into a record. */}
             <AcademicDatesForm
-              academicYear={school.academic_year}
-              startsOn={school.year_starts_on}
-              endsOn={school.year_ends_on}
+              academicYear={isAcademicYearLabel(school.academic_year) ? school.academic_year : null}
+              startsOn={isCalendarDate(school.year_starts_on) ? school.year_starts_on : null}
+              endsOn={isCalendarDate(school.year_ends_on) ? school.year_ends_on : null}
             />
-            {school.year_ends_on && (
+            {academicOk && (
               <RolloverForm preview={previewRollover(school, listClasses(db, school.id, true))} />
             )}
           </PanelBody>

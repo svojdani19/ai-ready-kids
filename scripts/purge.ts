@@ -16,7 +16,11 @@ const target = process.env.AIRK_DB_PATH ? resolve(process.env.AIRK_DB_PATH) : DE
 const db = openDatabase(target);
 const result = runScheduledPurge(db);
 
-if (result.classesDeleted === 0 && result.blocked.length > 0) {
+const blockedSchools = result.blocked.length;
+const blockedCohortSchools = result.blockedCohorts.length;
+const anyBlock = blockedSchools + blockedCohortSchools > 0;
+
+if (result.classesDeleted === 0 && anyBlock) {
   // Deliberately not "Nothing is past its retention date". For a blocked
   // school that is unknowable: there is no valid schedule to be past. Claiming
   // an all-clear and then printing a block underneath is the contradiction
@@ -49,8 +53,28 @@ if (result.blocked.length > 0) {
         "which is not 3, 12, 24 or 36. Set a policy on the Data and retention page.",
     );
   }
+}
+
+if (result.blockedCohorts.length > 0) {
+  const cohorts = result.blockedCohorts.reduce((n, s) => n + s.cohorts, 0);
+  console.error(
+    `\nBLOCKED: ${cohorts} cohort${cohorts === 1 ? "" : "s"} across ` +
+      `${result.blockedCohorts.length} school${result.blockedCohorts.length === 1 ? "" : "s"} ` +
+      "skipped because their school-year end date is not a real date. Nothing was deleted for " +
+      "them and nothing has been changed.",
+  );
+  for (const school of result.blockedCohorts) {
+    // School and a count. No class name, no child, no malformed value.
+    console.error(
+      `  - ${school.schoolName}: ${school.cohorts} cohort${school.cohorts === 1 ? "" : "s"} ` +
+        "with an unreadable year-end date. Correct the academic dates on the Program and plan page.",
+    );
+  }
+}
+
+if (anyBlock) {
   // A non-zero exit, so a scheduler notices rather than logging it into
-  // nothing. Automatic deletion has stopped for these schools until somebody
+  // nothing. Automatic deletion has stopped for these records until somebody
   // acts, and that is worth waking up for.
   process.exitCode = 1;
 }

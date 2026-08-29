@@ -17,9 +17,10 @@ export function AcademicDatesForm({
   startsOn,
   endsOn,
 }: {
-  academicYear: string;
-  startsOn: string;
-  endsOn: string;
+  /** Null when the stored value is not one this product recognises. */
+  academicYear: string | null;
+  startsOn: string | null;
+  endsOn: string | null;
 }) {
   const [state, action, pending] = useActionState<ActionState, FormData>(
     setAcademicDatesAction,
@@ -41,7 +42,7 @@ export function AcademicDatesForm({
           <input
             id="academicYear"
             name="academicYear"
-            defaultValue={academicYear}
+            defaultValue={academicYear ?? undefined}
             placeholder="2025-2026"
             className={inputClass}
             required
@@ -52,7 +53,7 @@ export function AcademicDatesForm({
             id="startsOn"
             name="startsOn"
             type="date"
-            defaultValue={startsOn}
+            defaultValue={startsOn ?? undefined}
             className={inputClass}
             required
           />
@@ -62,7 +63,7 @@ export function AcademicDatesForm({
             id="endsOn"
             name="endsOn"
             type="date"
-            defaultValue={endsOn}
+            defaultValue={endsOn ?? undefined}
             className={inputClass}
             required
           />

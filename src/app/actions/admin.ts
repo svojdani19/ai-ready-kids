@@ -23,6 +23,7 @@ import {
   lapsedRefusal,
 } from "@/lib/auth/subscription-gate";
 import { previewRollover } from "@/lib/domain/rollover";
+import { ACADEMIC_PROBLEM_MESSAGE, academicProblem } from "@/lib/domain/calendar";
 import {
   archiveClass,
   deleteClass,
@@ -307,13 +308,12 @@ export async function setAcademicDatesAction(
   const startsOn = String(formData.get("startsOn") ?? "").trim();
   const endsOn = String(formData.get("endsOn") ?? "").trim();
 
-  if (!/^\d{4}-\d{4}$/.test(year)) return { error: "Write the year like 2025-2026." };
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(startsOn) || !/^\d{4}-\d{2}-\d{2}$/.test(endsOn)) {
-    return { error: "Give both dates as year-month-day, like 2026-06-12." };
-  }
-  if (new Date(endsOn).getTime() <= new Date(startsOn).getTime()) {
-    return { error: "The year has to end after it starts." };
-  }
+  // Shape was all this checked, so "2026-13-45" and "2026-02-30" were saved to
+  // the school and backfilled into classes. The ordering guard passed too:
+  // comparing two Invalid Dates gives NaN, and every comparison against NaN is
+  // false. One validator now, before any school, class or audit write.
+  const problem = academicProblem({ year, startsOn, endsOn });
+  if (problem) return { error: ACADEMIC_PROBLEM_MESSAGE[problem] };
 
   const db = getDb();
   const backfilled = setAcademicDates(db, user.school_id, { year, startsOn, endsOn });
@@ -321,13 +321,13 @@ export async function setAcademicDatesAction(
     schoolId: user.school_id,
     actorLabel: user.name,
     action: "year.dates_set",
-    detail: `${year} recorded as running ${startsOn} to ${endsOn}. ${backfilled} class${backfilled === 1 ? "" : "es"} given a retention date that had none.`,
+    detail: `${year} recorded as running ${startsOn} to ${endsOn}. ${backfilled} class${backfilled === 1 ? "" : "es"} in that year repaired: they had no usable retention date and now have one. Cohorts with a valid date were left as they were.`,
   });
   revalidatePath("/admin/program");
   revalidatePath("/admin/data");
   return {
     ok: backfilled
-      ? `Saved. ${backfilled} class${backfilled === 1 ? "" : "es"} now ${backfilled === 1 ? "has" : "have"} a deletion date.`
+      ? `Saved. ${backfilled} class${backfilled === 1 ? "" : "es"} in ${year} had no usable deletion date and ${backfilled === 1 ? "now has" : "now have"} one. Classes with a valid date were left unchanged.`
       : "Saved.",
   };
 }

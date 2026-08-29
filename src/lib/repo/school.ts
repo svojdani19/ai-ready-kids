@@ -1,5 +1,6 @@
 import "server-only";
 import { type Db, newId, nowIso, row, rows } from "@/lib/db";
+import { isCalendarDate } from "@/lib/domain/calendar";
 import type { AuditEntry, BenchmarkWindow, Role, School, User } from "@/lib/types";
 
 export function getSchool(db: Db, id: string): School | undefined {
@@ -57,13 +58,24 @@ export function setAcademicDates(
   input: { year: string; startsOn: string; endsOn: string },
 ): number {
   setAcademicYear(db, id, input);
-  const result = db
-    .prepare(
-      `UPDATE classes SET year_ends_on = ?
-       WHERE school_id = ? AND school_year = ? AND year_ends_on = ''`,
-    )
-    .run(input.endsOn, id, input.year);
-  return Number(result.changes);
+  // Repairs empty **and malformed** snapshots, which is sprint 60's widening:
+  // the old clause matched `= ''` only, so a cohort carrying "2026-13-45" had
+  // no administrator recovery path at all — correcting the school left it
+  // permanently unschedulable.
+  //
+  // Scoped tightly on purpose. Only this school, only this academic year, and
+  // only rows whose date is not already a real day: an already-valid cohort
+  // snapshot is a deliberate record of when that year ended and must not be
+  // moved, and neither may any other year.
+  const candidates = rows<{ id: string; year_ends_on: string }>(
+    db
+      .prepare("SELECT id, year_ends_on FROM classes WHERE school_id = ? AND school_year = ?")
+      .all(id, input.year),
+  ).filter((c) => !isCalendarDate(c.year_ends_on));
+
+  const update = db.prepare("UPDATE classes SET year_ends_on = ? WHERE id = ?");
+  for (const candidate of candidates) update.run(input.endsOn, candidate.id);
+  return candidates.length;
 }
 
 /** Move the school into a new academic year. Subscription dates untouched. */
