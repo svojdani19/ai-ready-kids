@@ -21,6 +21,11 @@ import {
   renameStudent,
   unassignMission,
 } from "@/lib/repo/classroom";
+import {
+  auditedWrite,
+  REMOVE_STUDENT_FAILED,
+  ROTATE_FAILED,
+} from "@/lib/repo/audited";
 import { getSchool, getUser, recordAudit } from "@/lib/repo/school";
 import {
   ClassroomLimitError,
@@ -328,17 +333,35 @@ export async function removeStudentAction(classId: string, studentId: string): P
     // by both ids and reports whether it actually removed anything, so a
     // mismatched pair changes nothing and does not leave a success audit behind
     // claiming it did.
-    const removed = deleteStudentFromClass(db, studentId, classroom.id);
-    if (!removed) {
-      throw new Error("That student is not on this class's roster.");
+    // The removal and its record commit together. This deletes a child's row
+    // and cascades to every attempt and check-in they have, so a lost audit
+    // entry means records gone with no answer to "who removed them, and when".
+    try {
+      auditedWrite(
+        db,
+        () => {
+          const removed = deleteStudentFromClass(db, studentId, classroom.id);
+          if (!removed) {
+            throw new Error("That student is not on this class's roster.");
+          }
+          return removed;
+        },
+        () => ({
+          schoolId: user.school_id,
+          actorLabel: user.name,
+          action: "roster.removed",
+          detail: `One student and all of their records removed from ${classroom.name}.`,
+        }),
+      );
+    } catch (error) {
+      if (asExpectedError(error)) throw error;
+      // The mismatched-pair refusal keeps its own message: nothing was
+      // attempted, so this is not an operational failure.
+      if (error instanceof Error && /not on this class's roster/.test(error.message)) {
+        return { error: "That student is not on this class's roster." };
+      }
+      return { error: REMOVE_STUDENT_FAILED(classroom.name) };
     }
-
-    recordAudit(db, {
-      schoolId: user.school_id,
-      actorLabel: user.name,
-      action: "roster.removed",
-      detail: `One student and all of their records removed from ${classroom.name}.`,
-    });
     revalidatePath(`/teacher/class/${classId}`);
     return {};
   } catch (error) {
@@ -360,14 +383,29 @@ export async function removeStudentAction(classId: string, studentId: string): P
 export async function rotateJoinCodeAction(classId: string): Promise<{ error?: string }> {
   try {
     const { db, user, classroom } = await requireOwnActiveClass(classId);
-    const code = rotateJoinCode(db, classroom.id);
-    if (!code) throw new Error("That class no longer exists.");
-    recordAudit(db, {
-      schoolId: user.school_id,
-      actorLabel: user.name,
-      action: "class.code_rotated",
-      detail: `${classroom.name} has a new class code. The old one is now rejected on its next use, for new joins and for browsers already signed in with it.`,
-    });
+    // Sprint 71 made the administrator's rotation atomic and left this one —
+    // the same repository call, the same credential consequence, and the path
+    // teachers actually use most. A code that changed without a record of it
+    // changing is the worst of both.
+    try {
+      auditedWrite(
+        db,
+        () => {
+          const code = rotateJoinCode(db, classroom.id);
+          if (!code) throw new Error("That class no longer exists.");
+          return code;
+        },
+        () => ({
+          schoolId: user.school_id,
+          actorLabel: user.name,
+          action: "class.code_rotated",
+          detail: `${classroom.name} has a new class code. The old one is now rejected on its next use, for new joins and for browsers already signed in with it.`,
+        }),
+      );
+    } catch (error) {
+      if (asExpectedError(error)) throw error;
+      return { error: ROTATE_FAILED(classroom.name) };
+    }
     revalidatePath(`/teacher/class/${classId}`);
     return {};
   } catch (error) {

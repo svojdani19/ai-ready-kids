@@ -527,12 +527,18 @@ describe("deleting a child is scoped to the class that authorised it", () => {
   });
 
   it("makes the action refuse a mismatch rather than writing a false audit", () => {
+    // Sprint 73 put the removal and its audit in one transaction, so the audit
+    // call is no longer a string in this action's body and the source-position
+    // version of this test could only ever have gone stale. The property it
+    // stood for is behavioural and is asserted in
+    // `tests/audited-writes.test.ts`: a mismatched pair throws before the audit
+    // insert, and the transaction rolls back both.
     const src = readFileSync(join(process.cwd(), "src/app/actions/teacher.ts"), "utf8");
     const start = src.indexOf("export async function removeStudentAction");
     const body = src.slice(start, src.indexOf("export async function", start + 10));
-    // Scoped by both ids, and the audit is only reached when a row went.
+    // Still scoped by both ids, and still never by student id alone.
     expect(body).toContain("deleteStudentFromClass(db, studentId, classroom.id)");
-    expect(body.indexOf("if (!removed)")).toBeLessThan(body.indexOf("recordAudit"));
+    expect(body).toContain("auditedWrite");
     expect(body).not.toContain("deleteStudent(db, studentId)");
   });
 });

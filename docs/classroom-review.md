@@ -720,6 +720,19 @@ one of them has not tested the thing that was built.
       deletion schedules. The blast radius of an interrupted loop is the meaning
       of the column, not the number of rows.
 
+- [ ] **Fixing one path leaves the other one broken.** The administrator's code
+      rotation was made atomic and the teacher's — same repository call, same
+      consequence, more frequently used — was not. When an operation has two
+      entry points, list them before declaring the fix complete, and prefer a
+      guard keyed on the underlying call over one keyed on action names, because
+      a name list is exactly what let the second path through.
+- [ ] **Verify a restore against its generator, not against a note.** Comparing
+      the demo to counts written down in an earlier review passed twice while the
+      database had silently been re-seeded to different content. Regenerate and
+      compare, or checksum. And never replace a database file under a running
+      process: the copy misses what the process still holds in its WAL, and the
+      restart can re-seed what looks like an empty database.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

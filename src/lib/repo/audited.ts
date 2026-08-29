@@ -79,6 +79,15 @@ export const ACADEMIC_DATES_FAILED =
   "records are deleted are all exactly as they were before you pressed Save. " +
   "Try again.";
 
+export const REMOVE_STUDENT_FAILED = (className: string) =>
+  `That student was not removed, and no records were deleted: they are still on ` +
+  `${className}'s roster with their mission history and check-ins exactly as they were. ` +
+  `Try again.`;
+
+export const REMOVE_STAFF_FAILED = (staffName: string) =>
+  `${staffName} was not removed. They still have their account and their orientation ` +
+  `record, and no class changed hands. Nothing was changed. Try again.`;
+
 export const ROTATE_FAILED = (className: string) =>
   `${className} did not get a new code. The current code still works and nobody has been ` +
   `signed out. Nothing was changed. Try again.`;

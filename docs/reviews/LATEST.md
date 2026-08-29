@@ -7,106 +7,94 @@ likely to be.
 
 ---
 
-## Sprint 73 — the curriculum never told a child what AI was
+## Sprint 73 — the same operation, transactional on one path and not the other
 
-- **Reviewed against:** HEAD `c65026b` plus this sprint's commit
+- **Reviewed against:** HEAD `c65026b`
 - **Repository:** <https://github.com/svojdani19/ai-ready-kids>
 - **Full review:** [`2026-08-29-sprint-73.md`](2026-08-29-sprint-73.md)
 
-### The gap
+### The finding
 
-Mission 1 hands a child a tablet, has a homework app say hello, and asks whether
-to type their full name into it. That assumes the child already knows the thing
-saying hello is a program producing what usually comes next, that AI is not a
-robot in a film, and that a person — not the app — is deciding. Twenty-seven
-missions, an annual benchmark and a five-module educator orientation, and none
-of the three was ever taught. A seven year old who thinks Sprocket is alive can
-still pick the safe answer, and the roster records `privacy.identity`
-demonstrated; what they learned is that one cartoon gear is untrustworthy.
+Sprint 71 made the **administrator's** code rotation atomic with its audit and
+left `rotateJoinCodeAction` — the **teacher's** rotation — untouched. Same
+repository call, same credential consequence, same audit action, and it is the
+path teachers use most. Two more of the same shape were also unwrapped, both
+irreversible: `removeStudentAction` (deletes a child's row, cascading to every
+attempt and check-in) and `removeStaffAction` (deletes an account, cascading to
+their certification). A lost audit there means records gone with no answer to
+"who removed them, and when".
 
-Separately, class creation refused any grade but 2, 3 and 4, so a grade 1 or
-grade 5 teacher could not create a class at all.
+### The correction
 
-### What was built
+Each wraps its mutation and audit in `auditedWrite` and returns a calm inline
+error naming what did not change — student removal says **"no records were
+deleted"** explicitly. The mismatched-pair refusal keeps its own message, since
+nothing was attempted.
 
-**First Look** — six sessions in `src/content/foundations/`, two grade tiers
-teaching the same three ideas. Early (grades 1–2) starts inside the children's
-own heads: the class finishes "peanut butter and ___", works out *why* they
-could, then meets a program doing the same from millions of sentences. Upper
-(grades 3–5) replaces a folk theory with a mechanism: Room 20 asks the school's
-writing helper about the Brightwood swimming team, Brightwood has no pool, and
-the answer arrives in two seconds with a coach, a practice night and a trophy.
-The line the session is built around is a student's: *it did not look wrong, it
-looked like every other answer.*
+**A structural guard replaces sprint 71's list.** It keys on the *repository
+call* — `deleteClass(`, `deleteStudentFromClass(`, `deleteUser(`,
+`rotateJoinCode(`, `archiveClass(`, `restoreClass(`, `setAcademicDates(` — so
+any exported action that performs one and audits must use `auditedWrite`. A new
+destructive action is caught without anyone updating a list, which is precisely
+how the teacher rotation had been missed. A companion test asserts the sweep
+finds the eight actions that exist, so an empty sweep cannot pass silently.
 
-Grades widened to 1–5 in class creation and routing. The twenty-seven core
-missions still say `2-4` on every library card, preview and printable guide,
-because that is the band they are written for.
-
-### The decision that shaped the integration
-
-**First Look records no skill evidence, anywhere.** A six year old answering a
-comprehension question on a projector is not the same act as a child declining
-to give an app their street address under an offer of Turbo Mode, and a column
-headed "demonstrated this skill" cannot mean both. So the evidence rule inverts
-for this segment: `validateMission` normally flags a strong choice recording
-nothing, and for `segment: "foundation"` it flags any choice recording anything.
-
-Followed through rather than left implicit: `MISSIONS` still means the assessed
-spine and every interleaving test still runs against exactly those twenty-seven;
-`ALL_SESSIONS` is the new name for "anything a child can open"; `offeredBy` is
-unchanged, so no class looks as though it missed opportunities it was never
-given; the school report gained a `segment` **column** in both the screen table
-and the CSV rather than a suffix a spreadsheet would lose; and the
-administrator's "every mission in use" became "every **core** mission in use",
-because no school runs both grade tracks.
-
-### Classroom review — eight findings, all fixed in this sprint
-
-Driven at 1280×800 and 768×1024 as a grade 2 student, a grade 3 student, the
-teacher and the administrator. The one worth reading first: **the printable
-discussion guide said "Primary skill recorded:" on a session that records
-nothing** — the sheet a teacher prints, keeps and plans from, and so the place a
-false claim would have survived longest. Also: the player headed a First Look
-session "Mission 2" while the tile said FIRST LOOK 2; session numbering ran 1–6
-across both tracks, so a grade 5 class got sessions 4–6 and a printable footer
-reading "Session 6 of 3"; narration said "points at four things" above three
-options; the family take-home filed a First Look session under a competency
-heading; the two track columns collided at 768; one 25-word sentence, one over
-the tier cap.
+### Evidence
 
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      790 passed (24 files)   — up from 760
+tests      799 passed (24 files)   — up from 760
 build      ✓ Compiled successfully
 ```
 
-`tests/foundations.test.ts` is new: 30 tests covering structural validity, the
-records-nothing rule at three levels (content, validator, and end to end through
-the real repository), per-band reading caps, per-track numbering, self-limiting
-unplugged extensions and a blanket-distrust check.
+Reverting `removeStudentAction` to mutate-then-audit fails three behaviour tests
+**and the structural guard**. Each audit was then broken **on its own** — never
+in a batch — and each fails exactly its own two tests. Retry tests assert the
+mutation, not its precondition: rotation requires a changed `join_code` with
+every other column identical; student removal captures the child's id before the
+delete and checks their attempts by that literal id.
+
+Browser: trigger armed in place, the teacher's rotation driven through the real
+class page at both widths — no error page, code still `MAPLE-HERON-317`, inline
+message within the viewport, retry usable, no overflow.
+
+### Correction to earlier sprints' demo-restore claims
+
+The demo's counts no longer match what sprints 70–72 recorded (884/134/53); they
+are now 1078/129/65, which is **exactly what a fresh seed produces today**.
+`data/airk.db` was rewritten at 10:26 — when I restarted the dev server during
+sprint 70's acceptance correction. My sprint-70 file-copy restore captured the
+main file without the pages the running server still held in its WAL, so the
+restarted process read the database as empty and re-seeded it. Sprint 70's own
+review warned that verifying a restore with `node` proves the file and not the
+process; this is that hazard going further than I described.
+
+The demo is currently correct — clean current-content seed, original join codes,
+2025-2026 calendar, term and retention intact, nothing archived, six seeded audit
+actions. Nothing was lost (gitignored fictional data). But "demo restored
+exactly, 884/134/53" in sprints 70, 71 and 72 stopped being true of the file at
+10:26, and those reviews now say so. No sprint since 70 has used file-copying;
+71, 72 and 73 all arm and drop triggers in place.
 
 ### Where to push hardest
 
-1. **The grade claim now runs ahead of the core content, deliberately.** A
-   grade 5 class can be created and assigned missions written for grades 2–4.
-   Every teacher-facing surface says `2-4`, and the review records this as left
-   on purpose — but a reviewer should decide whether saying it is enough, or
-   whether grade 5 should be gated until upper-grade variants of the twenty-seven
-   exist.
-2. **`competency` and `primarySkillId` are reused on foundation sessions** to
-   mean "leads into" rather than "assessed as". The types document it, the UI
-   relabels it, and nothing records against it — but it is one field doing two
-   jobs, which is the shape of thing that drifts.
-3. **The badge wall filters by the class's grade.** A child moved between classes
-   mid-year could hold a badge whose tile the wall would otherwise hide; there is
-   a fallback for exactly that, and it deserves a second read.
-4. **The upper-track cast is new.** Room 20, Mr. Alvarez, Priya and Dev. Nothing
-   enforces cast consistency across the product, so this is convention only.
-5. **No test compares the two tiers against each other.** Coverage of the three
-   ideas is asserted through the `competency` field, which is a proxy for the
-   idea rather than the idea itself.
-6. **The benchmark is untouched.** First Look teaches nothing the nine skills
-   measure, so the fall and spring windows still compare the same thing — worth
-   confirming that is the right call rather than a gap.
+1. **Twelve configuration actions still audit outside a transaction** —
+   `updateSchoolAction`, `setRetentionAction`, `addTeacherAction`,
+   `reassignClassAction`, `createClassAction`, `addStudentAction` and the rest.
+   Each is a single-row write that cannot leave a half-finished state, which is
+   why they are not here, and the guard deliberately does not flag them — keying
+   it on "any write" would make it a list again. Whether that line is in the
+   right place is worth challenging.
+2. **The guard reads source text.** A consequential write reached through an
+   alias or a helper would not be seen, and it cannot know that a repository
+   function became destructive later.
+3. **I found the demo drift myself, late.** It had been wrong since 10:26 and I
+   verified "restored exactly" twice after that without noticing, because I
+   compared against numbers I had written down rather than against what the seed
+   produces. Checking a restore against its generator, not against a note, is the
+   durable fix.
+4. **Failures still write nothing**, consistent with sprints 70–72.
+5. **One more source-position test was replaced** (`access-control`'s
+   `if (!removed)` before `recordAudit`). That is the fifth such replacement;
+   worth confirming each landed stronger, not quieter.

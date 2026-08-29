@@ -20,6 +20,7 @@ import {
 import {
   ACADEMIC_DATES_FAILED,
   ARCHIVE_FAILED,
+  REMOVE_STAFF_FAILED,
   auditedWrite,
   DELETE_FAILED,
   RESTORE_FAILED,
@@ -449,13 +450,24 @@ export async function removeStaffAction(userId: string): Promise<{ error?: strin
     return { error: "A school must keep at least one administrator." };
   }
 
-  deleteUser(db, userId);
-  recordAudit(db, {
-    schoolId: user.school_id,
-    actorLabel: user.name,
-    action: "staff.removed",
-    detail: `${target.name} removed from the school.`,
-  });
+  // Deleting a staff row cascades to their orientation record. The guards above
+  // have already refused every case where this is not allowed, so anything that
+  // fails here is operational and must leave the account intact.
+  try {
+    auditedWrite(
+      db,
+      () => deleteUser(db, userId),
+      () => ({
+        schoolId: user.school_id,
+        actorLabel: user.name,
+        action: "staff.removed",
+        detail: `${target.name} removed from the school.`,
+      }),
+    );
+  } catch (error) {
+    if (asExpectedError(error)) throw error;
+    return { error: REMOVE_STAFF_FAILED(target.name) };
+  }
   revalidatePath("/admin/staff");
   return {};
 }

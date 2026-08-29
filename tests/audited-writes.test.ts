@@ -27,8 +27,9 @@ vi.mock("next/navigation", () => ({
     throw new Error(`REDIRECT:${to}`);
   },
 }));
-import { createTestDb, DEMO_ADMIN, DEMO_CLASS, DEMO_SCHOOL } from "./helpers";
-import { restoreClassAction } from "@/app/actions/admin";
+import { createTestDb, DEMO_ADMIN, DEMO_CLASS, DEMO_SCHOOL, DEMO_TEACHER } from "./helpers";
+import { removeStaffAction, restoreClassAction } from "@/app/actions/admin";
+import { removeStudentAction, rotateJoinCodeAction } from "@/app/actions/teacher";
 import { writeSession } from "@/lib/auth/session";
 import type { Db } from "@/lib/db";
 import {
@@ -44,10 +45,11 @@ import {
   archiveClass,
   deleteClass,
   listStudents,
+  createClass,
   restoreClass,
   rotateJoinCode,
 } from "@/lib/repo/classroom";
-import { listAudit } from "@/lib/repo/school";
+import { createUser, listAudit } from "@/lib/repo/school";
 import { setLicensedSeats } from "./helpers";
 
 let db: Db;
@@ -568,5 +570,244 @@ describe("the audit promise on the buyer-facing pages is the one this code keeps
     expect(ARCHIVE_FAILED("Room 12")).toMatch(/still active, its join code is unchanged/i);
     expect(RESTORE_FAILED("Room 12")).toMatch(/still archived/i);
     expect(ROTATE_FAILED("Room 12")).toMatch(/current code still works/i);
+  });
+});
+
+describe("sprint 73: the destructive teacher and staff operations audit atomically", () => {
+  const auditsOf = (action: string) =>
+    listAudit(db, DEMO_SCHOOL, 500).filter((a) => a.action === action);
+
+  async function signInAs(userId: string) {
+    jar.store.clear();
+    await writeSession({ kind: "staff", userId });
+  }
+
+  it("teacher code rotation: an audit failure leaves the code untouched", async () => {
+    await signInAs(DEMO_TEACHER);
+    const before = capture();
+
+    failAuditFor("class.code_rotated");
+    const result = await rotateJoinCodeAction(DEMO_CLASS);
+    removeFailure();
+
+    expect(result.error).toBe(ROTATE_FAILED("Room 12"));
+    expect(result.error).toMatch(/current code still works and nobody has been signed out/i);
+    // The whole point: the credential did not change.
+    expect(classRow()!.join_code).toBe(before.class!.join_code);
+    expect(classRow()).toEqual(before.class);
+    expect(protectedRecords()).toEqual(before.records);
+    expect(auditsOf("class.code_rotated")).toHaveLength(0);
+  });
+
+  it("teacher code rotation: the retry rotates and audits exactly once", async () => {
+    await signInAs(DEMO_TEACHER);
+    failAuditFor("class.code_rotated");
+    await rotateJoinCodeAction(DEMO_CLASS);
+    removeFailure();
+
+    const before = capture();
+    const auditBefore = listAudit(db, DEMO_SCHOOL, 500).length;
+    const result = await rotateJoinCodeAction(DEMO_CLASS);
+
+    expect(result.error).toBeUndefined();
+    expect(classRow()!.join_code).not.toBe(before.class!.join_code);
+    expect(classExcept(classRow(), "join_code")).toEqual(classExcept(before.class, "join_code"));
+    expect(protectedRecords()).toEqual(before.records);
+    expect(auditsOf("class.code_rotated")).toHaveLength(1);
+    expect(listAudit(db, DEMO_SCHOOL, 500).length).toBe(auditBefore + 1);
+  });
+
+  it("removing a student: an audit failure deletes no records", async () => {
+    await signInAs(DEMO_TEACHER);
+    const victim = listStudents(db, DEMO_CLASS)[0];
+    const before = capture();
+    const attemptsBefore = (
+      db
+        .prepare("SELECT COUNT(*) AS n FROM attempts WHERE student_id = ?")
+        .get(victim.id) as { n: number }
+    ).n;
+    expect(attemptsBefore).toBeGreaterThan(0);
+
+    failAuditFor("roster.removed");
+    const result = await removeStudentAction(DEMO_CLASS, victim.id);
+    removeFailure();
+
+    expect(result.error).toMatch(/no records were deleted/i);
+    expect(result.error).toMatch(/still on Room 12's roster/i);
+    // The child, and everything that hangs off them.
+    expect(listStudents(db, DEMO_CLASS).map((s) => s.id)).toContain(victim.id);
+    expect(
+      (
+        db
+          .prepare("SELECT COUNT(*) AS n FROM attempts WHERE student_id = ?")
+          .get(victim.id) as { n: number }
+      ).n,
+    ).toBe(attemptsBefore);
+    expect(protectedRecords()).toEqual(before.records);
+    expect(auditsOf("roster.removed")).toHaveLength(0);
+  });
+
+  it("removing a student: the retry removes them and audits exactly once", async () => {
+    await signInAs(DEMO_TEACHER);
+    const victim = listStudents(db, DEMO_CLASS)[0];
+    failAuditFor("roster.removed");
+    await removeStudentAction(DEMO_CLASS, victim.id);
+    removeFailure();
+
+    const rosterBefore = listStudents(db, DEMO_CLASS).length;
+    const auditBefore = listAudit(db, DEMO_SCHOOL, 500).length;
+    const result = await removeStudentAction(DEMO_CLASS, victim.id);
+
+    expect(result.error).toBeUndefined();
+    expect(listStudents(db, DEMO_CLASS)).toHaveLength(rosterBefore - 1);
+    // Captured id, so an orphaned attempt fails here rather than hiding behind
+    // an empty subquery — sprint 67's lesson.
+    expect(
+      (
+        db
+          .prepare("SELECT COUNT(*) AS n FROM attempts WHERE student_id = ?")
+          .get(victim.id) as { n: number }
+      ).n,
+    ).toBe(0);
+    expect(auditsOf("roster.removed")).toHaveLength(1);
+    expect(listAudit(db, DEMO_SCHOOL, 500).length).toBe(auditBefore + 1);
+  });
+
+  it("a mismatched student and class still refuses, and audits nothing", async () => {
+    await signInAs(DEMO_TEACHER);
+    const other = createClass(db, {
+      schoolId: DEMO_SCHOOL,
+      teacherId: DEMO_TEACHER,
+      name: "Room 99",
+      grade: 3,
+      schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-12",
+    });
+    const victim = listStudents(db, DEMO_CLASS)[0];
+    const before = capture();
+
+    // Authorising the class is not authorising the child.
+    const result = await removeStudentAction(other.id, victim.id);
+
+    expect(result.error).toMatch(/not on this class's roster/i);
+    expect(listStudents(db, DEMO_CLASS).map((s) => s.id)).toContain(victim.id);
+    expect(protectedRecords()).toEqual(before.records);
+    expect(auditsOf("roster.removed")).toHaveLength(0);
+  });
+
+  it("removing staff: an audit failure keeps the account and its orientation", async () => {
+    await signInAs(DEMO_ADMIN);
+    // A teacher who owns no classes, so the offboarding guards pass.
+    const spare = createUser(db, {
+      schoolId: DEMO_SCHOOL,
+      role: "teacher",
+      name: "Spare Teacher",
+      email: "spare@brightwood.demo",
+      title: "Teacher",
+    });
+    const usersBefore = JSON.stringify(db.prepare("SELECT * FROM users ORDER BY id").all());
+
+    failAuditFor("staff.removed");
+    const result = await removeStaffAction(spare.id);
+    removeFailure();
+
+    expect(result.error).toMatch(/was not removed/i);
+    expect(result.error).toMatch(/still have their account and their orientation record/i);
+    expect(JSON.stringify(db.prepare("SELECT * FROM users ORDER BY id").all())).toBe(usersBefore);
+    expect(auditsOf("staff.removed")).toHaveLength(0);
+  });
+
+  it("removing staff: the retry removes them and audits exactly once", async () => {
+    await signInAs(DEMO_ADMIN);
+    const spare = createUser(db, {
+      schoolId: DEMO_SCHOOL,
+      role: "teacher",
+      name: "Spare Teacher",
+      email: "spare@brightwood.demo",
+      title: "Teacher",
+    });
+    failAuditFor("staff.removed");
+    await removeStaffAction(spare.id);
+    removeFailure();
+
+    const auditBefore = listAudit(db, DEMO_SCHOOL, 500).length;
+    const result = await removeStaffAction(spare.id);
+
+    expect(result.error).toBeUndefined();
+    expect(db.prepare("SELECT * FROM users WHERE id = ?").get(spare.id)).toBeUndefined();
+    expect(auditsOf("staff.removed")).toHaveLength(1);
+    expect(listAudit(db, DEMO_SCHOOL, 500).length).toBe(auditBefore + 1);
+  });
+});
+
+describe("no destructive or credential-changing action audits outside a transaction", () => {
+  const read = (p: string) => readFileSync(join(process.cwd(), p), "utf8");
+
+  /** Every exported action body, keyed by name. */
+  function actionBodies(): { file: string; name: string; body: string }[] {
+    const out: { file: string; name: string; body: string }[] = [];
+    for (const file of ["src/app/actions/admin.ts", "src/app/actions/teacher.ts"]) {
+      const src = read(file);
+      const starts = [...src.matchAll(/export async function (\w+)/g)];
+      starts.forEach((m, i) => {
+        const from = m.index!;
+        const to = i + 1 < starts.length ? starts[i + 1].index! : src.length;
+        out.push({ file, name: m[1], body: src.slice(from, to) });
+      });
+    }
+    return out;
+  }
+
+  /**
+   * Repository calls whose failure cannot be undone by trying again, or which
+   * change a credential. An action that performs one of these and writes an
+   * audit must do both in one transaction — otherwise the record and the
+   * consequence can part company, which is the whole subject of sprints 71-73.
+   *
+   * Keyed on the repository call rather than the action name, so a **new**
+   * action that deletes a class or rotates a code is caught without anyone
+   * remembering to add it to a list. That was the gap I named in sprint 71.
+   */
+  const CONSEQUENTIAL = [
+    "deleteClass(",
+    "deleteStudentFromClass(",
+    "deleteUser(",
+    "rotateJoinCode(",
+    "archiveClass(",
+    "restoreClass(",
+    "setAcademicDates(",
+  ];
+
+  it("pairs every consequential write with auditedWrite", () => {
+    const offenders: string[] = [];
+    for (const { file, name, body } of actionBodies()) {
+      const stripped = body.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\/\/[^\n]*/g, "$1");
+      const does = CONSEQUENTIAL.filter((call) => stripped.includes(call));
+      if (does.length === 0) continue;
+      if (!stripped.includes("recordAudit") && !stripped.includes("auditedWrite")) continue;
+      if (!stripped.includes("auditedWrite")) {
+        offenders.push(`${file}:${name} performs ${does.join(", ")} and audits outside a transaction`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("actually looks at something, rather than passing on an empty sweep", () => {
+    // A guard that scanned nothing would pass silently. These are the actions
+    // it must be finding.
+    const wrapped = actionBodies().filter((a) => a.body.includes("auditedWrite")).map((a) => a.name);
+    expect(wrapped).toEqual(
+      expect.arrayContaining([
+        "setAcademicDatesAction",
+        "rotateJoinCodeAsAdminAction",
+        "archiveClassAction",
+        "restoreClassAction",
+        "deleteClassDataAction",
+        "removeStaffAction",
+        "removeStudentAction",
+        "rotateJoinCodeAction",
+      ]),
+    );
+    expect(wrapped.length).toBeGreaterThanOrEqual(8);
   });
 });
