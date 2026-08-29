@@ -59,7 +59,46 @@ export interface AcademicRepair {
   datesRepaired: number;
 }
 
+/**
+ * Correcting a school calendar, as one transaction.
+ *
+ * This is a multi-write boundary and it used to be a sequence of separate
+ * commits: the school row first, then the decisive read of the previous label,
+ * then a loop repairing each candidate cohort's label and year-end. A failure
+ * partway through left the school's calendar changed, **some** cohorts repaired
+ * and others not — and because each class's `year_ends_on` is what its
+ * retention due date is calculated from, that is not a cosmetic inconsistency.
+ * Two children's cohorts in the same year would have had different deletion
+ * dates, one of them still unschedulable, with no record that a save had been
+ * attempted.
+ *
+ * `BEGIN IMMEDIATE` is taken **before** the read of the previous academic year,
+ * because that read is what decides which labels are repair candidates: taking
+ * the lock afterwards would leave a window in which the answer could change.
+ *
+ * Transaction-aware rather than transaction-owning. An outer transaction — the
+ * action's `auditedWrite`, or any future caller — is participated in and never
+ * committed or rolled back here. A direct repository caller with no transaction
+ * of its own still gets atomicity.
+ */
 export function setAcademicDates(
+  db: Db,
+  id: string,
+  input: { year: string; startsOn: string; endsOn: string },
+): AcademicRepair {
+  const outer = db.isTransaction;
+  if (!outer) db.exec("BEGIN IMMEDIATE");
+  try {
+    const repair = applyAcademicDates(db, id, input);
+    if (!outer) db.exec("COMMIT");
+    return repair;
+  } catch (error) {
+    if (!outer) db.exec("ROLLBACK");
+    throw error;
+  }
+}
+
+function applyAcademicDates(
   db: Db,
   id: string,
   input: { year: string; startsOn: string; endsOn: string },

@@ -7,139 +7,97 @@ likely to be.
 
 ---
 
-## Sprint 71 — a school operation and its audit entry were two facts
+## Sprint 72 — repairing a school calendar was three commits, and one of them set retention dates
 
-- **Reviewed against:** HEAD `0a09050`
+- **Reviewed against:** HEAD `f33dd64`
 - **Repository:** <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-29-sprint-71.md`](2026-08-29-sprint-71.md)
+- **Full review:** [`2026-08-29-sprint-72.md`](2026-08-29-sprint-72.md)
 
 ### The finding
 
-`/privacy` promises *"Every configuration change and every deletion writes an
-audit entry"*; the admin Audit log and the plans page say the same. All four
-class operations mutated first and audited afterwards, each committing
-separately. When `recordAudit` failed: **delete** had already cascade-removed
-the class, roster, attempts, check-ins and assignments — and the administrator
-saw an unhandled failure over a class that no longer existed; **archive** had
-rotated the code and signed the room out; **rotate** had invalidated the
-credential; **restore** had reactivated the roster. All unrecorded. Someone
-reading the log for "who deleted Room 12" would find nothing while Room 12 was
-gone.
+`setAcademicDates` committed in pieces — the school row, then the decisive read
+of the previous academic year, then a loop repairing each candidate cohort's
+label and year-end — and the action wrote `year.dates_set` separately after all
+of it. A failure partway left the calendar changed, **some** cohorts repaired
+and others not, and no audit. **Each class's `year_ends_on` is what its
+retention due date is calculated from**, so that leaves two cohorts in the same
+year on different deletion schedules, one still unschedulable, with nothing
+recording the attempt.
 
 ### The correction
 
-`auditedWrite(db, write, audit)` — one `BEGIN IMMEDIATE` over the mutation and
-its audit insert. Repository operations check `db.isTransaction` and
-participate; a test pins that. Each action returns a calm inline error naming
-the unchanged state, with deletion saying **"no records were removed"**
-explicitly. No message promises support, monitoring or diagnostics, and a test
-forbids each phrasing.
-
-Restore refusals are untouched: a plan/cap/licence refusal throws before
-anything is written, and its refusal audit is recorded separately afterwards
-because it records that nothing happened. `deleteClassDataAction` now returns
-`{ error?: string }` and both call sites return it rather than discarding, so
-`ConfirmAction` can render the error.
+`setAcademicDates` is transaction-aware itself, so direct repository callers are
+safe too, and `BEGIN IMMEDIATE` is taken **before** the read that decides which
+labels are candidates. An outer transaction is participated in, never committed
+or rolled back here. The action wraps the helper plus the success audit in
+`auditedWrite`; validation stays before the transaction so a rejected form never
+takes a write lock. On failure it returns a calm inline error naming the school
+year, the class labels and the class year-ends used for retention as unchanged,
+with a retry instruction and no support promise.
 
 ### Failing-before
 
-A `BEFORE INSERT` trigger on `audit_log` raises `ABORT` for one action, after
-the mutation has run. Against the pre-fix sequence, **4 of 15 fail** — one per
-operation — with the delete diff showing 23 children's records gone and
-`data.deleted` audits at 0.
+Two genuine candidates (broken label + unreadable date) plus three controls: a
+same-label class with a **valid** date, a real historical year, and another
+school. A counter trigger aborts the **second** class update, so the failure
+lands between two intended repairs. Against the un-transacted helper:
+
+```
+school = 2026-2027 / 2027-06-12      ← calendar already moved
+a      = 2026-2027 / (empty)         ← relabelled, retention date still unusable
+b      = 2025-2027 / 2026-13-45      ← not repaired at all
+audits = 0
+```
+
+The corrected helper throws and the whole snapshot is byte-for-byte unchanged,
+including the trigger's own counter row. Through the real action with an
+audit-insert abort: `ACADEMIC_DATES_FAILED` returned, snapshot exact,
+`year.dates_set` rows **0**. Retry asserts exact new dates, both candidates
+repaired in label and year-end, all three controls untouched, subscription and
+retention preserved, and exactly one audit carrying the same two facts as the
+on-screen message.
+
+**Mutation checks, one at a time** — date repair disabled, relabel repair
+disabled, success audit removed, helper transaction removed — each fails the
+relevant test on its own. No batch mutation, no test-side insert as evidence.
 
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      755 passed (22 files)   — up from 737
+tests      760 passed (23 files)   — up from 755
 build      ✓ Compiled successfully
 ```
 
-Snapshots are `toEqual` over stringified rows of `classes` (including
-`archived_at` and `join_code`), `students`, `attempts`, `benchmarks`,
-`assignments`, `audit_log` and `schools`, table-driven across all four
-operations both after the injected failure and after the retry.
-
-**Corrected during acceptance — two tests did not prove what they claimed.**
-
-*The retry assertions could not fail on a no-op.* `rotate` asserted only that
-`archived_at` was null — the precondition, true whether or not the code changed
-— and `archive` asserted only the timestamp, not the rotation that is half the
-credential boundary sprint 69 built. Now each operation compares against a state
-captured **before the failed attempt**: rotate requires a changed `join_code`
-with every other column identical; archive requires a non-null `archived_at`
-**and** a changed code; restore requires only `archived_at` back to null with the
-archive's rotated code **byte-identical**; delete keeps the real cascade proof.
-Shown to fail under a deliberate no-op rotation and a deliberate archive that
-skips the rotation — both of which the old assertions passed.
-
-*The refusal test manufactured its own evidence.* It called `restoreClass`
-directly, watched it throw, then wrote `class.restore_blocked_by_licence` itself
-with `auditedWrite(() => {})` and asserted the row it had just inserted existed.
-Replaced by tests calling the **exported `restoreClassAction`** with a real
-seeded database and administrator session, covering **all four refusal paths
-plus success**: unrecognised plan, classroom cap, malformed seat licence and
-over the licence. Each asserts the established inline message, an unchanged
-class row and protected records, exactly one matching refusal audit, zero
-`class.restored`, and total audit count up by exactly one. Nothing in them
-creates an audit row.
-
-*A third correction followed.* My first pass covered three of the four and I
-proved it by stripping **all four** `recordAudit` calls at once — so removing
-only `class.restore_blocked_by_licence_config` still passed, and the record
-overstated what had been shown. `LicenceNotRecognisedError` now has its own
-test, and each of the four is verified by removing **that one call alone**:
-
-```
-remove only class.restore_blocked_by_plan_config     -> 1 failing test
-remove only class.restore_blocked_by_plan            -> 1 failing test
-remove only class.restore_blocked_by_licence_config  -> 1 failing test
-remove only class.restore_blocked_by_licence         -> 1 failing test
-```
-
-No production change was needed (`git diff --stat src/` empty), and no extraction
-was required — the action was already callable once the Next mocks and the
-database handle were in place.
-
 ### Browser
 
-Trigger installed **in place** — no file swap, so no repeat of sprint 70's
-stale-inode mistake. At both widths, the real Delete confirmation on Room 12:
-`errorPage false`, inline "no records were removed" message, Room 12 still
-listed with 23 students, confirmation reopenable, no overflow. Database after:
-4 classes / 90 students / 884 attempts / 6 audit rows, `data.deleted` audits
-**0**. Trigger dropped and the demo verified **on disk and in the running
-process**. A successful destructive deletion was not re-driven in the browser;
-the retry-success integration test is that evidence.
+Trigger armed **in place**, no file swapping. At 1280×800 and 768×1024: changed
+**Last day** to `2026-06-19` in the real form and saved — `errorPage false`,
+inline message readable and within the viewport, field reverted to `2026-06-12`,
+retry usable, no overflow. Server state unchanged both times, `year.dates_set`
+audits **0**. Trigger dropped and the demo verified **on disk and in the running
+process**: the form reads back the original dates, `/admin/data` still shows all
+four due dates as **June 12, 2027**, six seeded audit actions in order. No
+successful save was driven in the browser.
 
 ### Where to push hardest
 
-1. **Non-class operations are unchanged.** `setRetentionAction`,
-   `setAcademicDatesAction`, staff removal and the report export still audit
-   outside a transaction. Same shape, smaller consequence — a configuration
-   write rather than a cascading deletion — but not fixed, and the brief scoped
-   me to four.
-2. **The buyer-promise guard names four actions by name.** A fifth class
-   operation added later would not be noticed by it. A lint rule or a repository
-   boundary that made auditing impossible outside a transaction would be the
-   durable version.
-3. **Failures still write nothing.** An administrator who retries successfully
-   gets a log showing one clean operation, with no sign the first attempt failed.
-   Consistent with sprint 70, and still a gap in the story an auditor could read.
-4. **`revalidatePath` runs after the commit.** The atomicity claim stops at the
-   transaction boundary; a revalidation failure would leave the write done.
-5. **One pre-existing assertion was replaced, not deleted.** `admin-journey`
-   checked that the restore success audit appeared *after* `return {` in the
-   source — a text-position proxy that the move into the transaction invalidated.
-   It is now a behavioural assertion in the new file. Worth confirming I replaced
-   it with something stronger rather than something quieter.
-6. **Five of my last six test-side defects were assertions that could not
-   fail** — sprint 67's cascade query through the rows it had deleted, sprint
-   68's extraction that fell back to the whole file, sprint 69's mutation behind
-   an unreachable branch, and this sprint's pair: a retry check on a
-   precondition, and a refusal check on a row the test inserted itself. Every one
-   passed, and every one was verifying the sprint's own central claim. The
-   recurring shape is an assertion whose subject is produced by the test or
-   derived from the state the fix changes, rather than read back from the code
-   under test — joined now by a sixth shape: a mutation check that removes
-   several things at once and reports the aggregate as proof of each.
+1. **Two pre-existing source-position tests were replaced, not patched.**
+   *"validates before any write"* checked where `academicProblem` sat relative to
+   `setAcademicDates(` in the file; it now drives the validator against a real
+   database and asserts nothing was written. Worth confirming the replacement is
+   stronger rather than quieter — that has been the failure mode in four of my
+   recent sprints.
+2. **The other configuration actions are unchanged.** `setRetentionAction`,
+   `setSchoolAction`, `setBenchmarkWindowAction` and staff removal still audit
+   outside a transaction. Each is a single-row write, so a lost entry cannot
+   produce a half-repaired state — but the page's promise covers them too, and
+   the scope here was one action.
+3. **`auditedWrite` is applied action by action.** Nothing structurally stops the
+   next configuration action from auditing separately.
+4. **Failures still write nothing.** A successful retry shows one clean entry
+   with no sign the first attempt failed.
+5. **The repair scope is deliberately narrow and unchanged.** A cohort whose
+   label is a *real* school year but whose date is unreadable is repairable only
+   by opening that year, not the current one. History is not rewritten, which is
+   right — but it leaves one recovery path that requires knowing which year to
+   open.

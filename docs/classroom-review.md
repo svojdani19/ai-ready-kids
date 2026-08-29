@@ -704,6 +704,17 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       be pinned, break each one on its own and confirm exactly one test fails
       each time; the count is the evidence.
 
+- [ ] **Take the lock before the read the decision depends on.** A repair that
+      selects candidates and then writes them must hold `BEGIN IMMEDIATE` from
+      before the select, not from the first write — otherwise the set it acts on
+      can change between deciding and doing. Make the repository function
+      transaction-aware rather than relying on every caller to wrap it.
+- [ ] **A loop that writes one row per iteration is a partial-state generator.**
+      Ask what each row drives: here every class year-end is a retention due
+      date, so a failure halfway gave two cohorts in the same year different
+      deletion schedules. The blast radius of an interrupted loop is the meaning
+      of the column, not the number of rows.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

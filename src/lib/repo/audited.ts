@@ -73,6 +73,12 @@ export const RESTORE_FAILED = (className: string) =>
   `${className} was not restored. It is still archived, its join code is unchanged, and ` +
   `none of its records have changed. Try again.`;
 
+export const ACADEMIC_DATES_FAILED =
+  "The academic dates were not saved. The school year, its first and last day, " +
+  "every class year label and every class year-end date used to work out when " +
+  "records are deleted are all exactly as they were before you pressed Save. " +
+  "Try again.";
+
 export const ROTATE_FAILED = (className: string) =>
   `${className} did not get a new code. The current code still works and nobody has been ` +
   `signed out. Nothing was changed. Try again.`;

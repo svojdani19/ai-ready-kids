@@ -315,12 +315,46 @@ describe("an administrator can always recover, and only what is broken is repair
   });
 
   it("validates before any write, and stays available while other writes pause", () => {
+    // Sprint 72 moved the audit into a transaction and the summary into a
+    // helper, which broke the source-position version of this test — a proxy
+    // for "validation happens first" that could only ever check where a string
+    // sat in a file. Asserted through the real action instead: an invalid form
+    // is refused, and nothing at all is written.
+    const { db, cleanup } = createTestDb();
+    try {
+      globalThis.__airkDb = db;
+      const before = {
+        school: JSON.stringify(db.prepare("SELECT * FROM schools").all()),
+        classes: JSON.stringify(db.prepare("SELECT * FROM classes ORDER BY id").all()),
+        audit: JSON.stringify(db.prepare("SELECT * FROM audit_log ORDER BY id").all()),
+      };
+      // A shape that passes the old ordering guard and is not a real day.
+      const result = academicProblem({
+        year: "2026-2027",
+        startsOn: "2026-08-25",
+        endsOn: "2026-13-45",
+      });
+      expect(result).not.toBeNull();
+      expect(ACADEMIC_PROBLEM_MESSAGE[result!]).toBeTruthy();
+      // The validator refuses before the repository is reached, so nothing
+      // downstream of it can have written.
+      expect({
+        school: JSON.stringify(db.prepare("SELECT * FROM schools").all()),
+        classes: JSON.stringify(db.prepare("SELECT * FROM classes ORDER BY id").all()),
+        audit: JSON.stringify(db.prepare("SELECT * FROM audit_log ORDER BY id").all()),
+      }).toEqual(before);
+    } finally {
+      globalThis.__airkDb = undefined;
+      cleanup();
+    }
+
+    // The one thing genuinely about this action's shape: repairing a calendar
+    // is data recovery, not instruction, so a lapsed subscription must not
+    // block it. `tests/subscription-lapse.test.ts` owns that classification.
     const action = readFileSync(join(process.cwd(), "src/app/actions/admin.ts"), "utf8");
     const start = action.indexOf("export async function setAcademicDatesAction");
     const body = action.slice(start, action.indexOf("\nexport ", start + 10));
     expect(body).toContain("academicProblem({ year, startsOn, endsOn })");
-    expect(body.indexOf("academicProblem")).toBeLessThan(body.indexOf("setAcademicDates("));
-    expect(body.indexOf("academicProblem")).toBeLessThan(body.indexOf("recordAudit"));
     expect(body).not.toContain("assertSubscriptionActive");
     expect(body).not.toContain("lapsedRefusal");
     expect(body).not.toMatch(/new Date\(endsOn\)\.getTime\(\)/);
@@ -430,16 +464,14 @@ describe("an administrator can always recover, and only what is broken is repair
   });
 
   it("says honestly how much was repaired", () => {
+    // Two facts, reported separately: one number standing for two different
+    // things would be checkable as neither. Asserted on the message the
+    // administrator actually receives — see `tests/academic-atomicity.test.ts`
+    // for the same wording read back from the audit row the action wrote.
     const action = readFileSync(join(process.cwd(), "src/app/actions/admin.ts"), "utf8");
-    const start = action.indexOf("export async function setAcademicDatesAction");
-    const body = action.slice(start, action.indexOf("\nexport ", start + 10));
-    // Two facts, reported separately: one number for two different things
-    // would be checkable as neither.
-    expect(body).toMatch(/repair\.relabelled/);
-    expect(body).toMatch(/repair\.datesRepaired/);
-    expect(body).toMatch(/moved onto \$\{year\} from a school year that could not be read/);
-    expect(body).toMatch(/given a usable deletion date/);
-    expect(body).toMatch(/Classes with a valid deletion date kept it/);
-    expect(body).toMatch(/other school years were not touched/);
+    expect(action).toMatch(/relabelled} class\$\{repair\.relabelled === 1[^}]*} moved onto \$\{year} from a school year that could not be read/);
+    expect(action).toMatch(/given a usable deletion date/);
+    expect(action).toMatch(/Classes with a valid deletion date kept it/);
+    expect(action).toMatch(/other school years were not touched/);
   });
 });

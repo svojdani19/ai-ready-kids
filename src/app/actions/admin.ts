@@ -18,6 +18,7 @@ import {
   RestoreExceedsLicenceError,
 } from "@/lib/repo/entitlement";
 import {
+  ACADEMIC_DATES_FAILED,
   ARCHIVE_FAILED,
   auditedWrite,
   DELETE_FAILED,
@@ -50,6 +51,7 @@ import {
   recordAudit,
   getSchool,
   setAcademicDates,
+  type AcademicRepair,
   setBenchmarkWindow,
   setRetentionMonths,
   updateSchoolProfile,
@@ -304,6 +306,29 @@ export async function reassignClassAction(
  * held none — and retention stays blocked until somebody who knows the answer
  * supplies it. Backfills the cohorts in that year at the same time.
  */
+/**
+ * Two separate facts, reported separately. Saying "3 classes repaired" when one
+ * was relabelled and two got a date would be one number standing for two
+ * different things, and neither would be checkable.
+ *
+ * Shared by the audit detail and the on-screen message so the record and what
+ * the administrator was told cannot drift apart.
+ */
+function academicRepairSummary(year: string, repair: AcademicRepair): string {
+  const parts: string[] = [];
+  if (repair.relabelled) {
+    parts.push(
+      `${repair.relabelled} class${repair.relabelled === 1 ? "" : "es"} moved onto ${year} from a school year that could not be read`,
+    );
+  }
+  if (repair.datesRepaired) {
+    parts.push(
+      `${repair.datesRepaired} class${repair.datesRepaired === 1 ? "" : "es"} given a usable deletion date`,
+    );
+  }
+  return parts.length ? `${parts.join(", and ")}.` : "";
+}
+
 export async function setAcademicDatesAction(
   _prev: ActionState,
   formData: FormData,
@@ -316,37 +341,41 @@ export async function setAcademicDatesAction(
   // Shape was all this checked, so "2026-13-45" and "2026-02-30" were saved to
   // the school and backfilled into classes. The ordering guard passed too:
   // comparing two Invalid Dates gives NaN, and every comparison against NaN is
-  // false. One validator now, before any school, class or audit write.
+  // false. One validator now, before any school, class or audit write — and
+  // before the transaction, so a rejected form never takes a write lock.
   const problem = academicProblem({ year, startsOn, endsOn });
   if (problem) return { error: ACADEMIC_PROBLEM_MESSAGE[problem] };
 
   const db = getDb();
-  const repair = setAcademicDates(db, user.school_id, { year, startsOn, endsOn });
-  // Two separate facts, reported separately. Saying "3 classes repaired" when
-  // one was relabelled and two got a date would be one number standing for two
-  // different things, and neither would be checkable.
-  const parts: string[] = [];
-  if (repair.relabelled) {
-    parts.push(
-      `${repair.relabelled} class${repair.relabelled === 1 ? "" : "es"} moved onto ${year} from a school year that could not be read`,
+
+  // The calendar write, every cohort repair and the success audit commit
+  // together. Sprint 72: these were three separate commits, so a failure could
+  // leave the school on new dates with only some cohorts repaired and nothing
+  // recording the attempt — and a class's `year_ends_on` is what its retention
+  // due date is calculated from, so a half-repaired year gives two cohorts in
+  // the same year two different deletion schedules.
+  let repair: AcademicRepair;
+  try {
+    repair = auditedWrite(
+      db,
+      () => setAcademicDates(db, user.school_id, { year, startsOn, endsOn }),
+      (result) => ({
+        schoolId: user.school_id,
+        actorLabel: user.name,
+        action: "year.dates_set",
+        detail:
+          `${year} recorded as running ${startsOn} to ${endsOn}.` +
+          (academicRepairSummary(year, result)
+            ? ` ${academicRepairSummary(year, result)} Classes with a valid deletion date kept it, and other school years were not touched.`
+            : " No classes needed repairing."),
+      }),
     );
+  } catch (error) {
+    if (asExpectedError(error)) throw error;
+    return { error: ACADEMIC_DATES_FAILED };
   }
-  if (repair.datesRepaired) {
-    parts.push(
-      `${repair.datesRepaired} class${repair.datesRepaired === 1 ? "" : "es"} given a usable deletion date`,
-    );
-  }
-  const summary = parts.length ? `${parts.join(", and ")}.` : "";
-  recordAudit(db, {
-    schoolId: user.school_id,
-    actorLabel: user.name,
-    action: "year.dates_set",
-    detail:
-      `${year} recorded as running ${startsOn} to ${endsOn}.` +
-      (summary
-        ? ` ${summary} Classes with a valid deletion date kept it, and other school years were not touched.`
-        : " No classes needed repairing."),
-  });
+
+  const summary = academicRepairSummary(year, repair);
   revalidatePath("/admin/program");
   revalidatePath("/admin/data");
   return {
