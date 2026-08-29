@@ -22,6 +22,16 @@ vi.mock("next/headers", () => ({
   headers: async () => new Map(),
 }));
 
+// `requireStudent` redirects when `currentStudent` returns null. Next's real
+// redirect throws a framework error; this throws a recognisable one so the
+// tests can tell "the action refused" from "the action blew up".
+vi.mock("next/navigation", () => ({
+  redirect: (to: string) => {
+    throw new Error(`REDIRECT:${to}`);
+  },
+}));
+vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
+
 import {
   createTestDb,
   DEMO_CLASS,
@@ -35,12 +45,16 @@ import {
   archiveClass,
   createClass,
   getClass,
+  listAssignments,
   listClasses,
   normaliseJoinCode,
   restoreClass,
 } from "@/lib/repo/classroom";
 import { licenceStatus } from "@/lib/repo/entitlement";
-import { completeAttempt, recordDecision, startAttempt } from "@/lib/repo/progress";
+import { beginMission, submitCheckInAnswer, submitDecision } from "@/app/actions/student";
+import { getAttempt, startAttempt } from "@/lib/repo/progress";
+import { expectedDecisionSceneId } from "@/lib/domain/missionPath";
+import { BENCHMARK_FORMS } from "@/content/benchmark";
 import { MISSIONS } from "@/content/missions";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -218,10 +232,33 @@ describe("archiving changes the credential and nothing else", () => {
     expect(licenceStatus(db, DEMO_SCHOOL).used).toBe(before.used - roster.n);
   });
 
-  it("records nothing when a signed-out child's device tries to keep working", async () => {
-    const mission = MISSIONS[5];
+  it("refuses the real student actions after archive, and writes nothing", async () => {
+    // The first version of this test called the repository behind
+    // `if (resolved)` — a branch that is unreachable once the fix is in, so it
+    // proved `currentStudent` returns null a second time and nothing about the
+    // actions. These are the exported Server Actions a child's browser posts
+    // to, called directly, with no resolver check in front of them.
+    // Assigned to this class and not already finished by this child, so the
+    // attempt has a live decision point to post at.
+    const assigned = new Set(listAssignments(db, DEMO_CLASS).map((a) => a.mission_id));
+    const mission = MISSIONS.find(
+      (m) => assigned.has(m.id) && !getAttempt(db, DEMO_STUDENT, m.id)?.completed_at,
+    )!;
+    expect(mission).toBeTruthy();
+
     await writeSession({ kind: "student", studentId: DEMO_STUDENT, code: codeOf(DEMO_CLASS) });
-    expect(await currentStudent()).not.toBeNull();
+    // A real, reachable scene and choice: on the old implementation this call
+    // appended to path_json and merged evidence_json.
+    startAttempt(db, DEMO_STUDENT, mission.id);
+    const sceneId = expectedDecisionSceneId(mission, getAttempt(db, DEMO_STUDENT, mission.id)!.path);
+    expect(sceneId, "the fixture must offer a live decision point").not.toBeNull();
+    const scene = mission.scenes.find((sc) => sc.id === sceneId)!;
+    const choice = scene.choices!.find((c) => !c.retry)!;
+
+    // The check-in this child could otherwise answer.
+    db.prepare("UPDATE schools SET benchmark_window = 'pre' WHERE id = ?").run(DEMO_SCHOOL);
+    db.prepare("DELETE FROM benchmarks WHERE student_id = ?").run(DEMO_STUDENT);
+    const item = BENCHMARK_FORMS.pre.items[0];
 
     archiveClass(db, DEMO_CLASS);
 
@@ -236,16 +273,26 @@ describe("archiving changes the credential and nothing else", () => {
     const attemptsBefore = attemptRows();
     const benchmarksBefore = benchmarkRows();
 
-    // The resolver every student mutation goes through refuses first, so the
-    // repository is never reached. Nothing below runs.
-    const resolved = await currentStudent();
-    expect(resolved).toBeNull();
-    if (resolved) {
-      startAttempt(db, DEMO_STUDENT, mission.id);
-      recordDecision(db, { studentId: DEMO_STUDENT, missionId: mission.id, sceneId: "x", choiceId: "y" });
-      completeAttempt(db, DEMO_STUDENT, mission.id);
-    }
+    // Returns its refusal rather than hiding it behind a redirect.
+    const decision = await submitDecision({
+      slug: mission.slug,
+      sceneId: scene.id,
+      choiceId: choice.id,
+    });
+    expect(decision).toEqual({ ok: false, error: "That mission is not open for your class." });
 
+    const checkIn = await submitCheckInAnswer({
+      form: "pre",
+      itemId: item.id,
+      optionId: item.options[0].id,
+    });
+    expect(checkIn).toEqual({ ok: false, error: "That check-in is not open." });
+
+    // `beginMission` has no return value to inspect, so its refusal is the
+    // redirect `requireStudent` performs.
+    await expect(beginMission(mission.slug)).rejects.toThrow(/REDIRECT:\/join/);
+
+    // Byte for byte, including path_json, evidence_json and completed_at.
     expect(attemptRows()).toBe(attemptsBefore);
     expect(benchmarkRows()).toBe(benchmarksBefore);
   });

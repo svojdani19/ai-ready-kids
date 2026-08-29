@@ -646,6 +646,13 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       against, rotate the credential the session was bound to on the way out —
       and say in the confirmation that reopening will cost a rejoin.
 
+- [ ] **A guarded call is not a call.** `expect(x).toBeNull()` followed by
+      `if (x) { mutate() }` is dead code the moment the fix lands: the assertion
+      passes, the mutation never runs, and the test reads as though it exercised
+      the endpoint. To prove a boundary refuses, invoke the real exported action
+      unconditionally, assert on what it returns or throws, and compare the rows
+      byte for byte — never behind the condition the fix makes false.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same
