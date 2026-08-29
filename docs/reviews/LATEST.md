@@ -7,6 +7,66 @@ likely to be.
 
 ---
 
+## Sprint 61 — correction to sprint 60: the recovery missed the cohort it was for
+
+- **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-29-sprint-60.md`](2026-08-29-sprint-60.md), sprint 61
+  section.
+
+### The defect
+
+`setAcademicDates` updated the school first, then matched classes on the **new**
+label. But a class created while the school said `"2025-2027"` copied **that**
+label along with the broken date — so after the administrator saved a correct
+2025-2026 calendar, the query looked for `"2025-2026"` and never found it. Data
+still said **Blocked**, the purge still exited **1**, and there was no correction
+path. Sprint 60 claimed a recovery path it did not have for the exact case it
+described.
+
+### The correction
+
+- **Read the previous label before writing.** The repair covers the new label
+  always, and the previous one **only when it was itself unrecognised** — such a
+  cohort could only exist by copying a broken school label. A previous label
+  that was a real school year is history and is never rewritten.
+- Cohorts are relabelled; **only missing or malformed year-ends are repaired**,
+  so a valid snapshot is kept even on a relabelled cohort.
+- **Two counts, reported separately** — one number for two different things is
+  checkable as neither.
+- The Data table no longer renders a **cohort's** malformed label either; the
+  class name identifies the row, so it reads *"Year needs configuration"*.
+
+### Already verified — please do not redo
+
+- Typecheck, lint, **658 tests** (up from 656), Turbopack production build.
+- Two cases added, **four failing against the sprint-60 repair**. The first
+  builds the exact legacy state with two controls — same broken label but a
+  **valid** date (relabelled, date kept) and a **real** historical year
+  (untouched) — then proves retention unblocks, rollover returns and the purge
+  reports **no** blocked cohorts. The second proves an ordinary year-to-year
+  change relabels nothing.
+- **Browser at both sizes** from the legacy state: Data showed *Year needs
+  configuration · Blocked* with no raw value; saving returned *"1 class moved
+  onto 2025-2026 from a school year that could not be read, and 1 class given a
+  usable deletion date…"*; rollover reappeared; afterwards nothing blocked and
+  `npm run purge` printed *"Nothing is past its retention date"*, exit **0**.
+- Demo left at 2025-2026 / 2025-08-25 / 2026-06-12, four classes, 90 students,
+  884 attempts, 6 audit rows.
+
+### Where this is most likely still wrong
+
+- **Recovery is anchored to the school's previous label.** If an administrator
+  corrects the school first and only later notices a stranded cohort, the
+  previous label is already valid and the cohort is unreachable — a second save
+  reports *"Saved."* and repairs nothing. I did **not** broaden the match to "any
+  unrecognised label in this school" on my own judgement: that would also sweep
+  cohorts from a different broken era onto the current year, which is a data
+  decision rather than a bug fix. **Flagged for direction.**
+- Everything under sprint 60 below still stands, including the intermittently
+  timing-sensitive mission-player test.
+
+---
+
 ## Sprint 60 — P1: the calendar that produced Invalid Dates and hid them
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>

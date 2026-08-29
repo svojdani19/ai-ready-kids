@@ -1,6 +1,6 @@
 import "server-only";
 import { type Db, newId, nowIso, row, rows } from "@/lib/db";
-import { isCalendarDate } from "@/lib/domain/calendar";
+import { isAcademicYearLabel, isCalendarDate } from "@/lib/domain/calendar";
 import type { AuditEntry, BenchmarkWindow, Role, School, User } from "@/lib/types";
 
 export function getSchool(db: Db, id: string): School | undefined {
@@ -52,11 +52,29 @@ export function setRetentionMonths(db: Db, id: string, months: number): void {
  * the real date, and it backfills the classes in that year at the same time so
  * retention starts working for them rather than staying blocked forever.
  */
+export interface AcademicRepair {
+  /** Cohorts moved off an unrecognised label onto the corrected one. */
+  relabelled: number;
+  /** Cohorts given a usable year-end date they did not have. */
+  datesRepaired: number;
+}
+
 export function setAcademicDates(
   db: Db,
   id: string,
   input: { year: string; startsOn: string; endsOn: string },
-): number {
+): AcademicRepair {
+  // Read before writing. Sprint 61: the repair used to run after the school was
+  // updated and matched only `school_year = <new label>`, which missed the one
+  // state this whole correction exists for. A class created while the school
+  // said "2025-2027" copied **that** label along with the broken date, so after
+  // an administrator saved a correct 2025-2026 calendar the cohort still sat
+  // under "2025-2027" with an unreadable date, Data still said Blocked, the
+  // purge still exited 1, and there was no way to fix it from anywhere.
+  const previous = row<{ academic_year: string }>(
+    db.prepare("SELECT academic_year FROM schools WHERE id = ?").get(id),
+  )?.academic_year;
+
   setAcademicYear(db, id, input);
   // Repairs empty **and malformed** snapshots, which is sprint 60's widening:
   // the old clause matched `= ''` only, so a cohort carrying "2026-13-45" had
@@ -67,15 +85,48 @@ export function setAcademicDates(
   // only rows whose date is not already a real day: an already-valid cohort
   // snapshot is a deliberate record of when that year ended and must not be
   // moved, and neither may any other year.
-  const candidates = rows<{ id: string; year_ends_on: string }>(
-    db
-      .prepare("SELECT id, year_ends_on FROM classes WHERE school_id = ? AND school_year = ?")
-      .all(id, input.year),
-  ).filter((c) => !isCalendarDate(c.year_ends_on));
+  //
+  // Which labels this correction covers. Always the new one. Additionally the
+  // previous one **only when it was itself unrecognised** — such a cohort could
+  // only exist by copying a broken school label, which is the invariant class
+  // creation has always had. A previous label that was a real school year is
+  // history and is never rewritten.
+  const labels = [input.year];
+  const relabelFrom =
+    previous !== undefined && previous !== input.year && !isAcademicYearLabel(previous)
+      ? previous
+      : null;
+  if (relabelFrom) labels.push(relabelFrom);
 
-  const update = db.prepare("UPDATE classes SET year_ends_on = ? WHERE id = ?");
-  for (const candidate of candidates) update.run(input.endsOn, candidate.id);
-  return candidates.length;
+  const placeholders = labels.map(() => "?").join(", ");
+  const candidates = rows<{ id: string; school_year: string; year_ends_on: string }>(
+    db
+      .prepare(
+        `SELECT id, school_year, year_ends_on FROM classes
+          WHERE school_id = ? AND school_year IN (${placeholders})`,
+      )
+      .all(id, ...labels),
+  );
+
+  const setDate = db.prepare("UPDATE classes SET year_ends_on = ? WHERE id = ?");
+  const setLabel = db.prepare("UPDATE classes SET school_year = ? WHERE id = ?");
+
+  let relabelled = 0;
+  let datesRepaired = 0;
+  for (const candidate of candidates) {
+    if (relabelFrom && candidate.school_year === relabelFrom) {
+      setLabel.run(input.year, candidate.id);
+      relabelled += 1;
+    }
+    // Only a date that is not already a real day. A valid snapshot is a
+    // deliberate record of when that year ended and is never moved, even for a
+    // cohort being relabelled.
+    if (!isCalendarDate(candidate.year_ends_on)) {
+      setDate.run(input.endsOn, candidate.id);
+      datesRepaired += 1;
+    }
+  }
+  return { relabelled, datesRepaired };
 }
 
 /** Move the school into a new academic year. Subscription dates untouched. */

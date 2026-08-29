@@ -225,13 +225,15 @@ describe("an administrator can always recover, and only what is broken is repair
     const valid = mk("Valid", "2025-2026", "2026-06-30");
     const otherYear = mk("Other", "2024-2025", "");
 
+    // The school already calls this year 2025-2026, so nothing is relabelled.
+    db.prepare("UPDATE schools SET academic_year = '2025-2026' WHERE id = ?").run(DEMO_SCHOOL);
     const repaired = setAcademicDates(db, DEMO_SCHOOL, {
       year: "2025-2026",
       startsOn: "2025-08-25",
       endsOn: "2026-06-12",
     });
 
-    expect(repaired).toBe(2);
+    expect(repaired).toEqual({ relabelled: 0, datesRepaired: 2 });
     expect(getClass(db, empty)!.year_ends_on).toBe("2026-06-12");
     expect(getClass(db, malformed)!.year_ends_on).toBe("2026-06-12");
     expect(getClass(db, valid)!.year_ends_on).toBe("2026-06-30");
@@ -278,12 +280,110 @@ describe("an administrator can always recover, and only what is broken is repair
     expect(body).toMatch(/existing classes and student work are unaffected/);
   });
 
+
+  /**
+   * Sprint 61. The repair matched only `school_year = <the new label>`, which
+   * misses the exact legacy state sprint 60 exists to fix.
+   *
+   * A class created while the school said "2025-2027" copied **that** label
+   * along with the broken date. `setAcademicDates` updated the school first and
+   * then looked for classes labelled "2025-2026" — so the affected cohort stayed
+   * under "2025-2027" with an unreadable date. Data still said Blocked, the
+   * purge still exited 1, and there was no correction path from anywhere. The
+   * sprint claimed a recovery path it did not have.
+   */
+  it("recovers a cohort that copied the school's unreadable label", () => {
+    db.prepare("DELETE FROM classes").run();
+    db.prepare(
+      "UPDATE schools SET academic_year = '2025-2027', year_starts_on = '2026-13-45', year_ends_on = '2026-13-45' WHERE id = ?",
+    ).run(DEMO_SCHOOL);
+
+    const mk = (name: string, year: string, endsOn: string) =>
+      createClass(db, {
+        schoolId: DEMO_SCHOOL,
+        teacherId: DEMO_TEACHER,
+        name,
+        grade: 3,
+        schoolYear: year,
+        yearEndsOn: endsOn,
+      }).id;
+
+    // The legacy cohort: it copied the broken label and the broken date.
+    const stranded = mk("Stranded", "2025-2027", "2026-13-45");
+    // A control under the same broken label but with a usable date: relabelled,
+    // date kept, because a valid snapshot records when that year really ended.
+    const datedOk = mk("Dated", "2025-2027", "2026-06-30");
+    // And a real historical year, which is history and is never rewritten.
+    const history = mk("History", "2024-2025", "2025-06-20");
+
+    const repair = setAcademicDates(db, DEMO_SCHOOL, {
+      year: "2025-2026",
+      startsOn: "2025-08-25",
+      endsOn: "2026-06-12",
+    });
+
+    expect(repair).toEqual({ relabelled: 2, datesRepaired: 1 });
+    expect(getClass(db, stranded)!.school_year).toBe("2025-2026");
+    expect(getClass(db, stranded)!.year_ends_on).toBe("2026-06-12");
+    expect(getClass(db, datedOk)!.school_year).toBe("2025-2026");
+    expect(getClass(db, datedOk)!.year_ends_on).toBe("2026-06-30");
+    expect(getClass(db, history)!.school_year).toBe("2024-2025");
+    expect(getClass(db, history)!.year_ends_on).toBe("2025-06-20");
+
+    // Data and retention unblock, rollover returns.
+    const school = getPrimarySchool(db);
+    const classes = listClasses(db, DEMO_SCHOOL, true).map((c) => ({
+      ...c,
+      studentCount: 0,
+    }));
+    const rows = retentionRows(school, classes, NOW);
+    expect(rows.every((r) => r.blockedReason === null)).toBe(true);
+    expect(rows.every((r) => r.purgeOn instanceof Date)).toBe(true);
+    expect(hasVerifiableAcademicDates(school)).toBe(true);
+    expect(previewRollover(school, listClasses(db, DEMO_SCHOOL, true))).not.toHaveProperty("error");
+
+    // And the purge no longer reports that cohort as malformed.
+    const result = runScheduledPurge(db, new Date("2026-06-13T00:00:00.000Z"));
+    expect(result.blockedCohorts).toEqual([]);
+  });
+
+  it("never rewrites a previous label that was a real school year", () => {
+    db.prepare("DELETE FROM classes").run();
+    db.prepare(
+      "UPDATE schools SET academic_year = '2024-2025', year_starts_on = '2024-08-25', year_ends_on = '2025-06-20' WHERE id = ?",
+    ).run(DEMO_SCHOOL);
+    const lastYear = createClass(db, {
+      schoolId: DEMO_SCHOOL,
+      teacherId: DEMO_TEACHER,
+      name: "Last year",
+      grade: 3,
+      schoolYear: "2024-2025",
+      yearEndsOn: "",
+    }).id;
+
+    // Rolling the school forward normally: the old label was perfectly good, so
+    // last year's cohort stays in last year even though its date is empty.
+    const repair = setAcademicDates(db, DEMO_SCHOOL, {
+      year: "2025-2026",
+      startsOn: "2025-08-25",
+      endsOn: "2026-06-12",
+    });
+    expect(repair).toEqual({ relabelled: 0, datesRepaired: 0 });
+    expect(getClass(db, lastYear)!.school_year).toBe("2024-2025");
+    expect(getClass(db, lastYear)!.year_ends_on).toBe("");
+  });
+
   it("says honestly how much was repaired", () => {
     const action = readFileSync(join(process.cwd(), "src/app/actions/admin.ts"), "utf8");
     const start = action.indexOf("export async function setAcademicDatesAction");
     const body = action.slice(start, action.indexOf("\nexport ", start + 10));
-    expect(body).toMatch(/had no usable deletion date/);
-    expect(body).toMatch(/left unchanged/);
-    expect(body).toMatch(/Cohorts with a valid date were left as they were/);
+    // Two facts, reported separately: one number for two different things
+    // would be checkable as neither.
+    expect(body).toMatch(/repair\.relabelled/);
+    expect(body).toMatch(/repair\.datesRepaired/);
+    expect(body).toMatch(/moved onto \$\{year\} from a school year that could not be read/);
+    expect(body).toMatch(/given a usable deletion date/);
+    expect(body).toMatch(/Classes with a valid deletion date kept it/);
+    expect(body).toMatch(/other school years were not touched/);
   });
 });

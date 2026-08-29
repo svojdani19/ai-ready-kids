@@ -316,18 +316,37 @@ export async function setAcademicDatesAction(
   if (problem) return { error: ACADEMIC_PROBLEM_MESSAGE[problem] };
 
   const db = getDb();
-  const backfilled = setAcademicDates(db, user.school_id, { year, startsOn, endsOn });
+  const repair = setAcademicDates(db, user.school_id, { year, startsOn, endsOn });
+  // Two separate facts, reported separately. Saying "3 classes repaired" when
+  // one was relabelled and two got a date would be one number standing for two
+  // different things, and neither would be checkable.
+  const parts: string[] = [];
+  if (repair.relabelled) {
+    parts.push(
+      `${repair.relabelled} class${repair.relabelled === 1 ? "" : "es"} moved onto ${year} from a school year that could not be read`,
+    );
+  }
+  if (repair.datesRepaired) {
+    parts.push(
+      `${repair.datesRepaired} class${repair.datesRepaired === 1 ? "" : "es"} given a usable deletion date`,
+    );
+  }
+  const summary = parts.length ? `${parts.join(", and ")}.` : "";
   recordAudit(db, {
     schoolId: user.school_id,
     actorLabel: user.name,
     action: "year.dates_set",
-    detail: `${year} recorded as running ${startsOn} to ${endsOn}. ${backfilled} class${backfilled === 1 ? "" : "es"} in that year repaired: they had no usable retention date and now have one. Cohorts with a valid date were left as they were.`,
+    detail:
+      `${year} recorded as running ${startsOn} to ${endsOn}.` +
+      (summary
+        ? ` ${summary} Classes with a valid deletion date kept it, and other school years were not touched.`
+        : " No classes needed repairing."),
   });
   revalidatePath("/admin/program");
   revalidatePath("/admin/data");
   return {
-    ok: backfilled
-      ? `Saved. ${backfilled} class${backfilled === 1 ? "" : "es"} in ${year} had no usable deletion date and ${backfilled === 1 ? "now has" : "now have"} one. Classes with a valid date were left unchanged.`
+    ok: summary
+      ? `Saved. ${summary} Classes with a valid deletion date kept it, and other school years were not touched.`
       : "Saved.",
   };
 }

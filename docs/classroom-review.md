@@ -404,6 +404,10 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       continuing to act on it. A default that looks like restraint — "we won't
       assume it lapsed" — may be asserting the opposite with equal force. If
       neither answer is verifiable, say so as a third state.
+- [ ] **A fix for old records needs a fixture written the way the old code wrote
+      them.** Building the test from the new invariants exercises a database
+      that could only exist after the fix, and the legacy shape never appears.
+      Ask what the broken writer actually stored, then construct that.
 - [ ] **An Invalid Date is worse than no date, and a cooperative sentinel is
       worse than a refusing one.** A missing value announces itself and trips the
       emptiness checks you already wrote; `new Date("2026-13-45")` passes them,

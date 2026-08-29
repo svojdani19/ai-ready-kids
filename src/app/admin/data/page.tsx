@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { isAcademicYearLabel } from "@/lib/domain/calendar";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/session";
 import { listClasses, listStudents } from "@/lib/repo/classroom";
@@ -172,7 +173,12 @@ export default async function AdminData() {
                         </Tag>
                       )}
                       <span className="block text-xs font-normal text-ink-soft">
-                        Grade {row.grade} · {row.schoolYear}
+                        {/* The cohort's own label, and it can be malformed too:
+                            a class created while the school's year was broken
+                            copied it. The class name already identifies the row,
+                            so the label adds nothing but a bad string. */}
+                        Grade {row.grade} ·{" "}
+                        {isAcademicYearLabel(row.schoolYear) ? row.schoolYear : "Year needs configuration"}
                       </span>
                     </th>
                     <td className="ark-tabular px-3 py-3 text-ink-soft">{row.studentCount}</td>
