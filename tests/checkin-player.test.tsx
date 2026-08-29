@@ -303,18 +303,29 @@ describe("check-in save resilience", () => {
 
     const retry = screen.getByRole("button", { name: "Try again" });
     expect(retry).toBeEnabled();
+    // The failure left the child exactly where they were.
+    expect(
+      screen.getByRole("heading", { name: `Story 1 of ${content.items.length}` }),
+    ).toBeInTheDocument();
 
     await user.click(retry);
 
-    expect(submitCheckInAnswer).toHaveBeenCalledTimes(2);
-    expect(submitCheckInAnswer).toHaveBeenLastCalledWith({
-      form: "pre",
-      itemId: first.id,
-      optionId: first.options[1].id,
-    });
+    // `findBy` rather than `getBy`. `confirm` advances inside an async
+    // `startTransition`, so the save resolves on a microtask that can land
+    // after `user.click` has finished awaiting act() — which is why asserting
+    // the heading synchronously was intermittently flaky. This waits for the
+    // state the successful transition produces, with no sleep and no retry of
+    // the action itself: if the child never advances, it fails.
     expect(
-      screen.getByRole("heading", { name: `Story 2 of ${content.items.length}` }),
+      await screen.findByRole("heading", { name: `Story 2 of ${content.items.length}` }),
     ).toBeInTheDocument();
+
+    // Exactly twice in total, and the same option both times: the failure and
+    // the retry, with no extra submit smuggled in by the transition.
+    expect(submitCheckInAnswer).toHaveBeenCalledTimes(2);
+    const expected = { form: "pre", itemId: first.id, optionId: first.options[1].id };
+    expect(submitCheckInAnswer).toHaveBeenNthCalledWith(1, expected);
+    expect(submitCheckInAnswer).toHaveBeenNthCalledWith(2, expected);
   });
 
   it("lets a child pick a different answer after a failure", async () => {

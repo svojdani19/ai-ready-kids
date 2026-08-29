@@ -20,6 +20,7 @@ import { previewRollover } from "@/lib/domain/rollover";
 import { subscriptionState } from "@/lib/domain/subscription";
 import {
   ACADEMIC_NEEDS_CONFIGURATION,
+  academicSettingsState,
   hasVerifiableAcademicDates,
   isAcademicYearLabel,
   isCalendarDate,
@@ -240,6 +241,10 @@ export default async function AdminProgram() {
               academicYear={isAcademicYearLabel(school.academic_year) ? school.academic_year : null}
               startsOn={isCalendarDate(school.year_starts_on) ? school.year_starts_on : null}
               endsOn={isCalendarDate(school.year_ends_on) ? school.year_ends_on : null}
+              // From the stored values, not from whether the prefills are null:
+              // an absent legacy column and a corrupted record both prefill as
+              // nothing, and only one of them is a migration.
+              settingsState={academicSettingsState(school)}
             />
             {academicOk && (
               <RolloverForm preview={previewRollover(school, listClasses(db, school.id, true))} />

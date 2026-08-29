@@ -404,6 +404,12 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       continuing to act on it. A default that looks like restraint — "we won't
       assume it lapsed" — may be asserting the opposite with equal force. If
       neither answer is verifiable, say so as a third state.
+- [ ] **When a value is narrowed on its way to a component, ask what the
+      component inferred from the width it used to have.** Sanitising a bad
+      value to `null` can collapse two states a screen was distinguishing —
+      "never recorded" and "unreadable" — and the sentence it then produces is
+      still grammatical, so nothing fails. Carry the status explicitly rather
+      than letting a component re-derive cause from a cleaned value.
 - [ ] **A fix for old records needs a fixture written the way the old code wrote
       them.** Building the test from the new invariants exercises a database
       that could only exist after the fix, and the legacy shape never appears.

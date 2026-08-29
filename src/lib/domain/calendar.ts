@@ -117,3 +117,56 @@ export const ACADEMIC_PROBLEM_MESSAGE: Record<AcademicProblem, string> = {
 };
 
 export const ACADEMIC_NEEDS_CONFIGURATION = "Academic dates need configuration";
+
+/**
+ * Why the academic settings cannot be used, told apart by provenance.
+ *
+ * Sprint 62: `AcademicDatesForm` received invalid values as `null` — sprint 60
+ * stopped prefilling them — and then inferred `missing = !startsOn || !endsOn`.
+ * So a **corrupted current record** produced "This school year has no recorded
+ * dates" and an explanation about records brought forward from an earlier
+ * version. That is an unsupported claim about where the data came from: a
+ * district administrator reading it cannot tell an absent legacy column from a
+ * broken record somebody wrote last week, and the two need different responses.
+ *
+ * `absent` is the genuine migration-era shape and nothing else: a database from
+ * before sprint 32 had nowhere to put these dates, so both arrive empty, and
+ * the label is either empty too or a real school year. Anything **present and
+ * unreadable** — either date, the label, or a combination that does not hold
+ * together — is `unreadable`, and gets neutral correction copy.
+ */
+export type AcademicSettingsState = "ok" | "absent" | "unreadable";
+
+export function academicSettingsState(school: {
+  academic_year: unknown;
+  year_starts_on: unknown;
+  year_ends_on: unknown;
+}): AcademicSettingsState {
+  if (hasVerifiableAcademicDates(school)) return "ok";
+  const bothDatesAbsent = school.year_starts_on === "" && school.year_ends_on === "";
+  const labelNotCorrupt = school.academic_year === "" || isAcademicYearLabel(school.academic_year);
+  return bothDatesAbsent && labelNotCorrupt ? "absent" : "unreadable";
+}
+
+/** The note above the form, or null when there is nothing to explain. */
+export const ACADEMIC_STATE_NOTE: Record<
+  Exclude<AcademicSettingsState, "ok">,
+  { title: string; body: string }
+> = {
+  absent: {
+    title: "This school year has no recorded dates",
+    body:
+      "Records brought forward from an earlier version arrive without them, because the old " +
+      "database had nowhere to put them and a guess could have deleted a child's work early. " +
+      "Nothing is deleted automatically until you fill these in.",
+  },
+  unreadable: {
+    // No provenance claim, and no echo of what is stored: naming the bad value
+    // back is how a wrong record gets copied into a correction.
+    title: "This school year's settings cannot be read",
+    body:
+      "The school year or one of its dates is not in a form this product can use, so rollover " +
+      "and automatic deletion are paused. Nothing has been deleted and no class or student " +
+      "record has changed. Enter the year and both dates below to correct it.",
+  },
+};

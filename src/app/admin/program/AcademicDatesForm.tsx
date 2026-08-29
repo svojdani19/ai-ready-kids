@@ -5,36 +5,46 @@ import { setAcademicDatesAction } from "@/app/actions/admin";
 import { Button } from "@/components/ui/Button";
 import { Field, inputClass, Note } from "@/components/ui/Bits";
 import type { ActionState } from "@/app/actions/admin";
+import {
+  ACADEMIC_STATE_NOTE,
+  type AcademicSettingsState,
+} from "@/lib/domain/calendar";
 
 /**
- * Records the academic dates. Shown prominently when they are missing, which
- * is how a database migrated from before sprint 32 arrives — retention is
- * blocked until this is filled in, deliberately, because the alternative was
- * guessing a date that might delete a child's records early.
+ * Records the academic dates.
+ *
+ * The note above the form depends on `state`, which the parent computes from
+ * the raw stored values — not on whether the prefills are null. Sprint 60
+ * stopped prefilling unreadable values, and this form then read those nulls as
+ * "missing" and told an administrator the record had come forward from an
+ * earlier version. That is a claim about provenance the product cannot support:
+ * an absent legacy column and a record somebody corrupted last week look
+ * identical from here, and they need different responses.
  */
 export function AcademicDatesForm({
   academicYear,
   startsOn,
   endsOn,
+  settingsState,
 }: {
   /** Null when the stored value is not one this product recognises. */
   academicYear: string | null;
   startsOn: string | null;
   endsOn: string | null;
+  /** Decided by the parent from what is actually stored. */
+  settingsState: AcademicSettingsState;
 }) {
   const [state, action, pending] = useActionState<ActionState, FormData>(
     setAcademicDatesAction,
     {},
   );
-  const missing = !startsOn || !endsOn;
+  const note = settingsState === "ok" ? null : ACADEMIC_STATE_NOTE[settingsState];
 
   return (
     <form action={action} className="space-y-4">
-      {missing && (
-        <Note tone="denim" title="This school year has no recorded dates">
-          Records brought forward from an earlier version arrive without them, because the
-          old database had nowhere to put them and a guess could have deleted a child&rsquo;s
-          work early. Nothing is deleted automatically until you fill these in.
+      {note && (
+        <Note tone={settingsState === "unreadable" ? "berry" : "denim"} title={note.title}>
+          {note.body}
         </Note>
       )}
       <div className="grid gap-4 sm:grid-cols-3">

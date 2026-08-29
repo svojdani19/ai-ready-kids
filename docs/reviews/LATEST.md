@@ -7,6 +7,75 @@ likely to be.
 
 ---
 
+## Sprint 62 — a provenance claim the product could not support, and a real flake
+
+- **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-29-sprint-62.md`](2026-08-29-sprint-62.md)
+- Two narrow corrections against `df62e1b`. No product broadening.
+
+### 1. The form claimed provenance it could not know
+
+Sprint 60 stopped `AcademicDatesForm` prefilling values the product would reject,
+passing `null`. The form then inferred `missing = !startsOn || !endsOn` — so a
+**corrupted current record** produced *"This school year has no recorded dates"*
+and *"records brought forward from an earlier version"*, while the parent panel
+said the dates **need configuring**. Two accounts of one state, one screen apart,
+and the migration claim has no basis: an absent legacy column and a record
+corrupted last week are indistinguishable from inside the form.
+
+**`academicSettingsState(school)`** now decides from what is stored:
+`absent` only for the genuine migration shape (both dates empty, label empty or
+valid); `unreadable` for anything present and unusable **including mixed
+missing/malformed**; `ok` for no note. The unreadable copy makes no provenance
+claim and **echoes no stored value** — asserted by a test forbidding any
+date-like string in it.
+
+### 2. The check-in retry flake was the test; the product is correct
+
+*"offers Try again, and advances once the retry succeeds"* asserted `Story 2`
+synchronously, but `confirm` advances inside an async `startTransition`.
+
+**I checked the product first.** `if (!selected || saving) return;` guards a
+second submit; `optionId`/`itemId` are captured before the transition opens; and
+`index`/`isLast` come from the click-time closure, which is the correct
+submission's values. No double-submit, no stale index.
+
+`findByRole` now waits for the state the successful transition produces — **no
+sleep, no retry of the action**. Strengthened: the child is asserted still on
+Story 1 before Retry; `submitCheckInAnswer` is called **exactly twice**; and
+**both** calls are asserted with `toHaveBeenNthCalledWith` and the same option.
+
+### Evidence
+
+- Typecheck clean; lint 0 errors (2 pre-existing warnings); **664 tests** (16
+  files, up from 658); Turbopack build **Compiled successfully**.
+- **Failing-before**: stashing `AcademicDatesForm.tsx` + `calendar.ts` fails 3 of
+  6 new cases, including `expected <div class="mt-1"></div> to be null` — the
+  migration note rendering for an unreadable record.
+- **Retry test**: six consecutive passes after the fix, and it **fails
+  deterministically** when `setIndex(index + 1)` is temporarily removed from the
+  player — so the wait does not mask a non-advance. Product file restored, `git
+  diff` clean.
+- **Browser at 1280×800 and 768×1024** — present-but-invalid start date →
+  *"settings cannot be read"*, no migration claim, `2026-13-45` nowhere; both
+  dates empty → the migration note; mixed absent/malformed → correction copy.
+  No crash, no overflow, form present throughout.
+- Demo restored: 2025-2026 / 2025-08-25 / 2026-06-12, four classes, 90 students,
+  884 attempts, 6 audit rows.
+
+### Where this is most likely still wrong
+
+- **No other component has been audited for inference from a sanitised value.**
+  This pattern — narrow a value for safety, then read cause from its absence —
+  could exist anywhere sprint 53–61 introduced a `null`.
+- Everything under sprints 60–61 below still stands, including the
+  previous-label limit on academic recovery. **The documented flake is now
+  closed** — and sprints 60 and 61 recorded it as being in the *mission* player,
+  which was wrong: it only ever existed in `tests/checkin-player.test.tsx`. Both
+  records are corrected in place.
+
+---
+
 ## Sprint 61 — correction to sprint 60: the recovery missed the cohort it was for
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
@@ -134,7 +203,9 @@ described.
 
 - **The columns remain unconstrained.** Safe and recoverable; not prevented.
 - **One pre-existing test is intermittently timing-sensitive** — *"offers Try
-  again, and advances once the retry succeeds"* in the mission player failed once
+  again, and advances once the retry succeeds"* — recorded here as the mission
+  player, which was wrong: it is in `tests/checkin-player.test.tsx`, corrected in
+  sprint 62 — failed once
   during this sprint and passed on four consecutive re-runs. Unrelated to this
   work, but it is a flake and should be nailed down rather than tolerated.
 - **Classroom Mode still opens for a closed school** — outstanding since 49.
