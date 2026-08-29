@@ -9,6 +9,8 @@ import {
   hasVerifiableTerm,
   instructionClosed,
   isContractDate,
+  staffHandoff,
+  subscriptionNotice,
   UNVERIFIED_STAFF_BODY,
   UNVERIFIED_WRITE_REFUSAL,
   LAPSED_STUDENT_MESSAGE,
@@ -719,5 +721,99 @@ describe("an unverifiable term closes new classroom work and writes nothing", ()
     expect(body).not.toMatch(/term_starts_on|term_renews_on/);
     expect(body).not.toContain("assertSubscriptionActive");
     expect(body).not.toContain("lapsedRefusal");
+  });
+});
+
+
+/**
+ * Sprint 59. `StaffShell` is shared by administrators and teachers, and the
+ * needs-configuration notice rendered one recovery link for both: "Request
+ * renewal on the Program and plan page", pointing at `/admin/program`.
+ *
+ * Two contradictions in the same paragraph. The notice said "This is not an
+ * expiry" and then told staff to request renewal — a sales action for what is a
+ * broken account record. And a **teacher cannot open that link**: `requireAdmin`
+ * bounces them back to `/teacher`, so the only route offered was a dead end for
+ * most of the people who would ever read it.
+ */
+describe("the closed-for-work notice routes the reader somewhere they can go", () => {
+  const REASONS = ["needs-configuration", "lapsed"] as const;
+  const ROLES = ["admin", "teacher"] as const;
+
+  it("never mentions renewal, ending or overdue when the term is unreadable", () => {
+    for (const role of ROLES) {
+      const notice = subscriptionNotice("needs-configuration", role);
+      const all = `${notice.title} ${notice.body} ${notice.link?.label ?? ""}`.toLowerCase();
+      // The contradiction: "this is not an expiry" followed by "request renewal".
+      expect(all, role).not.toMatch(/request renewal|renew/);
+      // Denials are stripped first. "Nothing has ended" is the point, not a
+      // violation of it — the test forbids *asserting* an ending, not the word.
+      const claims = all
+        .replace(/this is not an expiry/g, "")
+        .replace(/nothing has ended/g, "");
+      expect(claims, role).not.toMatch(/expired|has ended|overdue|lapsed/);
+      // And the denial really is present.
+      expect(notice.body).toMatch(/not an expiry/i);
+      expect(notice.body).toMatch(/nothing has ended/i);
+    }
+  });
+
+  it("gives a teacher a person rather than a page they cannot open", () => {
+    for (const reason of REASONS) {
+      const notice = subscriptionNotice(reason, "teacher");
+      // requireAdmin would bounce them straight back to /teacher.
+      expect(notice.link, reason).toBeUndefined();
+      const handoff = staffHandoff(reason);
+      expect(handoff, reason).toMatch(/school administrator/i);
+      expect(handoff, reason).not.toMatch(/\/admin/);
+    }
+    // And the two handoffs say different things, because the two problems are.
+    expect(staffHandoff("needs-configuration")).toMatch(/correct the subscription dates/i);
+    expect(staffHandoff("lapsed")).toMatch(/request renewal/i);
+  });
+
+  it("keeps the renewal route for an administrator on a genuinely lapsed term", () => {
+    const notice = subscriptionNotice("lapsed", "admin");
+    expect(notice.link).toEqual({
+      href: "/admin/program",
+      label: "Request renewal on the Program and plan page",
+    });
+  });
+
+  it("labels the administrator's configuration link honestly", () => {
+    const notice = subscriptionNotice("needs-configuration", "admin");
+    expect(notice.link?.href).toBe("/admin/program");
+    // Offered because it is the only surface they have, not because it fixes
+    // anything: the page shows account details, it does not correct them.
+    expect(notice.link?.label).toMatch(/see your account details/i);
+    expect(notice.link?.label).not.toMatch(/request|renew|fix|correct/i);
+  });
+
+  it("invents no support address and promises no self-service correction", () => {
+    for (const reason of REASONS) {
+      for (const role of ROLES) {
+        const notice = subscriptionNotice(reason, role);
+        const all = `${notice.title} ${notice.body} ${notice.link?.label ?? ""} ${staffHandoff(reason)}`;
+        expect(all, `${reason}/${role}`).not.toMatch(/@|https?:|support\.|\bcall\b|hotline/i);
+      }
+    }
+    // The quote form is never described as the thing that corrects dates.
+    expect(subscriptionNotice("needs-configuration", "admin").body).toMatch(
+      /account contact to correct the subscription dates/i,
+    );
+  });
+
+  it("wires the shell to the decision rather than to a fixed link", () => {
+    const shell = readFileSync(
+      join(process.cwd(), "src/components/staff/StaffShell.tsx"),
+      "utf8",
+    );
+    expect(shell).toContain("subscriptionNotice(closed, role)");
+    expect(shell).toContain("staffHandoff(closed)");
+    // No hard-coded admin route or renewal sentence left in the component.
+    expect(shell).not.toMatch(/href="\/admin\/program"/);
+    expect(shell).not.toMatch(/Request renewal on the Program and plan page/);
+    // The role comes from the user the shell was given, not assumed.
+    expect(shell).toMatch(/user\.role === "admin"/);
   });
 });

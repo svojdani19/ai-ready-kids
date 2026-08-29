@@ -394,6 +394,11 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       a correct block under an incorrect all-clear is still a lie. A transcript
       pasted into a review is a claim, and deserves the same scepticism as any
       other — especially your own.
+- [ ] **A shared shell has more than one reader, and a recovery route is only
+      recovery if the reader can take it.** Check any call to action against the
+      audience as well as the condition: a link gated by role is a dead end for
+      everyone else. And when new copy is added beside old copy, the old copy is
+      part of the new message — read the whole box, not the sentence you wrote.
 - [ ] **When a rule says "we will not invent X", check whether the fallback
       invents not-X.** Refusing to act on missing data is a decision; so is
       continuing to act on it. A default that looks like restraint — "we won't

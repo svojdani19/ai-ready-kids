@@ -155,3 +155,64 @@ export const UNVERIFIED_WRITE_REFUSAL =
 
 /** Grade 2-4. No billing, no blame, and a person to go to. */
 export const LAPSED_STUDENT_MESSAGE = "Your class isn't open right now. Ask your teacher.";
+
+/**
+ * What a member of staff is told when classroom work is closed, and where to
+ * go — which depends on **why** it is closed and **who** is reading.
+ *
+ * Sprint 59: the shell rendered one recovery link for everybody, "Request
+ * renewal on the Program and plan page", pointing at `/admin/program`. Two
+ * contradictions followed from that. The notice said "This is not an expiry"
+ * and then told staff to request renewal — which is a sales action for a
+ * problem that is a broken account record. And a **teacher** cannot open that
+ * link at all: `requireAdmin` bounces them straight back to `/teacher`, so the
+ * one route offered was a dead end for most of the people who would see it.
+ *
+ * Four combinations, each with a route the reader can actually take. No support
+ * address is invented, and nothing implies the quote form corrects dates — only
+ * the vendor can do that, and the copy says so.
+ */
+export interface SubscriptionNotice {
+  title: string;
+  body: string;
+  /** Omitted when the reader has no page they are allowed to open. */
+  link?: { href: string; label: string };
+}
+
+export function subscriptionNotice(
+  reason: "lapsed" | "needs-configuration",
+  role: "admin" | "teacher",
+): SubscriptionNotice {
+  if (reason === "needs-configuration") {
+    return {
+      title: UNVERIFIED_STAFF_TITLE,
+      body: UNVERIFIED_STAFF_BODY,
+      link:
+        role === "admin"
+          ? // Honestly labelled: the page shows the account details, it does
+            // not correct them. Offered because it is the only surface an
+            // administrator has for this, not because it fixes anything.
+            { href: "/admin/program", label: "See your account details on the Program and plan page" }
+          : undefined,
+    };
+  }
+  return {
+    title: LAPSED_STAFF_TITLE,
+    body: LAPSED_STAFF_BODY,
+    link:
+      role === "admin"
+        ? { href: "/admin/program", label: "Request renewal on the Program and plan page" }
+        : undefined,
+  };
+}
+
+/**
+ * The handoff for a teacher, who has no administrator page to open. Given
+ * instead of a link rather than as well as one, so nobody is pointed at a route
+ * that will bounce them.
+ */
+export function staffHandoff(reason: "lapsed" | "needs-configuration"): string {
+  return reason === "needs-configuration"
+    ? "Ask your school administrator to have the account team correct the subscription dates."
+    : "Ask your school administrator, who can request renewal for the school.";
+}

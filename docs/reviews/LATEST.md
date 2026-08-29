@@ -7,6 +7,63 @@ likely to be.
 
 ---
 
+## Sprint 59 — correction to sprint 58: one link for two roles and two problems
+
+- **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-29-sprint-58.md`](2026-08-29-sprint-58.md), sprint 59
+  section.
+
+### The defect
+
+`StaffShell` is shared by administrators and teachers, and the new
+needs-configuration notice always rendered *"Request renewal on the Program and
+plan page"* → `/admin/program`. **The notice says "This is not an expiry", then
+tells staff to request renewal** — a sales action for what the same paragraph
+has just explained is a broken account record. And **a teacher cannot open that
+link**: `requireAdmin` bounces them back to `/teacher`, so the only route
+offered was a dead end for most readers, making a configuration incident at a
+paying school look like a lapsed invoice.
+
+### The correction
+
+Recovery now depends on **why** and **who**:
+
+| | administrator | teacher |
+|---|---|---|
+| **needs-configuration** | *"See your account details on the Program and plan page"* | *"Ask your school administrator to have the account team correct the subscription dates."* |
+| **lapsed** | *"Request renewal on the Program and plan page"* | *"Ask your school administrator, who can request renewal for the school."* |
+
+The administrator's configuration link is **honestly labelled** — the page shows
+account details, it does not correct them — and **no support address is
+invented**, asserted across all four combinations.
+
+### Already verified — please do not redo
+
+- Typecheck, lint, **641 tests** (up from 635), Turbopack production build.
+- Six cases, **all failing against the sprint-58 shell**. One assertion needed
+  care: forbidding `has ended` caught **"nothing has ended"** — the denial the
+  copy should contain — so the test strips denial clauses, forbids the claim, and
+  separately asserts the denial is present. **Banning a word is not banning an
+  assertion.**
+- **Browser at 1280×800 and 768×1024, both roles, both reasons**: admin
+  needs-config → `/admin/program` labelled *"See your account details…"* with no
+  "renew" anywhere; teacher needs-config → **zero links** and the administrator
+  handoff; admin lapsed → *"This subscription has ended"* with the renewal link
+  unchanged; teacher lapsed → **zero admin links** and a usable handoff. No
+  overflow.
+- Demo restored: term 2025-08-18 → 2026-09-01, plan school, 120 seats, retention
+  12, four classes, 90 students, 885 attempts, 16 audit rows.
+
+### Where this is most likely still wrong
+
+- **No other shared component has been audited for role-dependent copy.** This
+  one was found because a reviewer read it; nothing systematically checks that a
+  call to action is reachable by everyone who sees it.
+- Everything under sprint 58 below still stands, including the malformed
+  `year_ends_on` reaching `addMonths`.
+
+---
+
 ## Sprint 58 — P1: "soon" was a subscription that never ended
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>

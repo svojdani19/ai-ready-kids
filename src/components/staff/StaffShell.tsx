@@ -1,10 +1,8 @@
 import Link from "next/link";
 import {
   instructionClosed,
-  LAPSED_STAFF_BODY,
-  LAPSED_STAFF_TITLE,
-  UNVERIFIED_STAFF_BODY,
-  UNVERIFIED_STAFF_TITLE,
+  staffHandoff,
+  subscriptionNotice,
 } from "@/lib/domain/subscription";
 import { signOut } from "@/app/actions/auth";
 import { LogoMark } from "@/components/Logo";
@@ -39,6 +37,10 @@ export function StaffShell({
   // things and say different sentences: one subscription ended, the other
   // cannot be read at all.
   const closed = instructionClosed(school, new Date());
+  // The recovery route depends on why it is closed and on who is reading it.
+  const role = user.role === "admin" ? "admin" : "teacher";
+  const notice = closed ? subscriptionNotice(closed, role) : null;
+  const handoff = closed ? staffHandoff(closed) : "";
 
   return (
     <div className="min-h-dvh bg-paper lg:flex">
@@ -99,24 +101,25 @@ export function StaffShell({
               page that happens not to carry it. `role="status"` rather than
               "alert": it is a standing condition a teacher should be told
               about, not an emergency interrupting what they are doing. */}
-          {closed && (
+          {notice && (
             <div
               role="status"
               className="mb-6 rounded-lg border-2 border-berry bg-berry-wash px-4 py-3 text-sm leading-relaxed text-ink"
             >
-              <p className="font-semibold text-berry-deep">
-                {closed === "needs-configuration" ? UNVERIFIED_STAFF_TITLE : LAPSED_STAFF_TITLE}
-              </p>
-              <p className="mt-1">
-                {closed === "needs-configuration" ? UNVERIFIED_STAFF_BODY : LAPSED_STAFF_BODY}
-              </p>
+              <p className="font-semibold text-berry-deep">{notice.title}</p>
+              <p className="mt-1">{notice.body}</p>
               <p className="mt-2">
-                <Link
-                  href="/admin/program"
-                  className="font-semibold text-berry-deep underline underline-offset-2"
-                >
-                  Request renewal on the Program and plan page
-                </Link>
+                {notice.link ? (
+                  <Link
+                    href={notice.link.href}
+                    className="font-semibold text-berry-deep underline underline-offset-2"
+                  >
+                    {notice.link.label}
+                  </Link>
+                ) : (
+                  // A teacher gets a person, not a link they cannot open.
+                  <span className="font-semibold text-berry-deep">{handoff}</span>
+                )}
               </p>
             </div>
           )}
