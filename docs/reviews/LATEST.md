@@ -35,6 +35,20 @@ audit row is written inside the transaction: exactly once on success, never on
 failure. A thrown failure rolls back and the action returns an inline
 `ROLLOVER_FAILED` with the retry path intact, not a 500.
 
+**Corrected during acceptance.** That message ended *"if it keeps happening your
+account contact can look at it"* — a support promise this product cannot keep.
+The programme contact is the school-side person for quotes and invoices, there
+is no technical support destination in the build, and a failed rollover
+deliberately writes no audit row or diagnostic, so there would be nothing to
+look at even if there were somewhere to send them. It now ends: *"Try again. If
+it still does not work, leave the school year as it is — your classes, rosters
+and codes carry on unchanged, and you can roll over later."* True because of the
+rollback the tests prove: stopping costs nothing. The test forbids `account
+contact`, `can look at it`, `support`, `we will look/investigate/fix`,
+`reported`, `within N hours`, `logged` and `diagnostic`, and fails against the
+old wording. No behaviour changed, so the destructive exercise was not repeated;
+the corrected message was read through the live form at both widths.
+
 ### Failing-before
 
 A SQLite trigger counts archives and raises `ABORT` on the second, so the first
@@ -81,15 +95,22 @@ no test trigger left in the schema.
    but nobody is told the numbers differed.
 2. **`ROLLOVER_FAILED` is one message for every failure mode**, and **failures
    write no audit row at all**. That is deliberate — a school cannot act on a
-   lock timeout — but a repeatedly failing rollover leaves support nothing to
-   read.
-3. **The rollover is the only multi-write action wrapped this way.**
+   lock timeout — but a repeatedly failing rollover leaves nothing to read, and
+   there is no support channel in this build to read it. The message now points
+   nowhere, which is honest and is also the whole remedy on offer.
+3. **File-copying the demo database out from under a running dev server leaves
+   the process reading a deleted inode.** It happened during this sprint's
+   browser run: the file was correctly restored while the server kept serving
+   the rolled-over school until I restarted it. `reset.ts` warns about this and
+   truncates through SQLite instead. Verifying a restore with `node` proves the
+   file, not the process.
+4. **The rollover is the only multi-write action wrapped this way.**
    `archiveClassAction` still calls `recordAudit` outside `archiveClass`'s
    transaction, so a failure between them leaves an archive with no audit row.
    Much narrower, same shape, not fixed here.
-4. **The atomicity test's failure injection is a trigger on `archived_at`.** It
+5. **The atomicity test's failure injection is a trigger on `archived_at`.** It
    proves the class loop is covered; it does not exercise a failure landing
    between `setAcademicYear` and `recordAudit`. Those are inside the same
    transaction by construction, but by construction is not by test.
-5. **Nothing retries automatically.** If the cause is transient, the
+6. **Nothing retries automatically.** If the cause is transient, the
    administrator presses the button again, and there is no queue or backoff.

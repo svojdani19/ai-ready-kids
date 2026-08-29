@@ -666,6 +666,14 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       database is byte-for-byte what it was — including that the failure
       counter itself rolled back.
 
+- [ ] **An error message may only send someone somewhere that exists.** "Your
+      account contact can look at it" named a person who handles invoices, about
+      a failure the product deliberately records nowhere, through a support
+      channel the build does not have. When there is no remedy to offer, say what
+      the user can safely do instead — often "stop, and nothing is lost" — and
+      let that be the whole message. Check the sprint's own stated limitations
+      against the copy it ships: they contradicted each other here.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

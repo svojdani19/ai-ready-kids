@@ -122,8 +122,31 @@ describe("a rollover that fails part-way changes nothing", () => {
     removeFailure();
 
     expect(result.error).toBe(ROLLOVER_FAILED);
+    // The proven claim, and the retry instruction.
     expect(ROLLOVER_FAILED).toMatch(/did not finish, so nothing was changed/i);
     expect(ROLLOVER_FAILED).toMatch(/try again/i);
+    // The truthful stop: leaving it alone costs nothing.
+    expect(ROLLOVER_FAILED).toMatch(/leave the school year as it is/i);
+    expect(ROLLOVER_FAILED).toMatch(/carry on unchanged/i);
+
+    // No support channel, diagnostic trail or response time is promised. This
+    // product ships no technical support destination — the programme contact
+    // handles quotes and invoices — and a failed attempt writes no audit row,
+    // so there would be nothing to inspect even if there were somewhere to
+    // send an administrator.
+    for (const promise of [
+      /account contact/i,
+      /can look at it/i,
+      /contact (?:us|support)/i,
+      /\bsupport\b/i,
+      /we (?:will|'ll) (?:look|investigate|fix)/i,
+      /report(?:ed)? (?:this|it) (?:to|automatically)/i,
+      /within \d+ (?:minutes|hours|days)/i,
+      /\blogged\b|\bdiagnostic/i,
+    ]) {
+      expect(ROLLOVER_FAILED).not.toMatch(promise);
+    }
+
     expect(snapshot()).toEqual(before);
   });
 

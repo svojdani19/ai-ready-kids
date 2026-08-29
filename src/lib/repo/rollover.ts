@@ -35,15 +35,27 @@ export type RolloverOutcome =
   | { ok: false; error: string };
 
 /**
- * The message for a write that failed part-way. It is only truthful because
- * the rollback below is unconditional — `tests/rollover-atomicity.test.ts`
- * injects a failure after the first class is archived and asserts the database
- * is byte-for-byte what it was.
+ * The message for a write that failed part-way.
+ *
+ * The first clause is only truthful because the rollback below is
+ * unconditional — `tests/rollover-atomicity.test.ts` injects a failure after
+ * the first class is archived and asserts the database is byte-for-byte what it
+ * was.
+ *
+ * The last clause used to be "if it keeps happening your account contact can
+ * look at it", which was not. The programme contact is the school-side person
+ * for quotes, purchase orders and invoices; this product ships no technical
+ * support destination, and this sprint deliberately writes no audit row or
+ * diagnostic for a failed attempt — so there would be nothing for anyone to
+ * look at even if there were somewhere to send them. The honest next step is
+ * the one the administrator can actually take: try again, and if it still
+ * fails, stop, because stopping costs nothing.
  */
 export const ROLLOVER_FAILED =
   "The rollover did not finish, so nothing was changed: every class, code, date " +
   "and check-in window is exactly as it was before you pressed the button. " +
-  "Try again, and if it keeps happening your account contact can look at it.";
+  "Try again. If it still does not work, leave the school year as it is — your " +
+  "classes, rosters and codes carry on unchanged, and you can roll over later.";
 
 export function performRollover(
   db: Db,
