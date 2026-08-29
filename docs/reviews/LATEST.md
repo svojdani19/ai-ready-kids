@@ -7,85 +7,86 @@ likely to be.
 
 ---
 
-## Sprint 74 — one number that moves every deletion date, committed apart from its record
+## Sprint 75 — the switch that decides what children are offered, committed apart from its record
 
-- **Reviewed against:** HEAD `bd8e9ea`
+- **Reviewed against:** HEAD `96f67c5`
 - **Repository:** <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-29-sprint-74.md`](2026-08-29-sprint-74.md)
+- **Full review:** [`2026-08-29-sprint-75.md`](2026-08-29-sprint-75.md)
 
 ### The finding
 
-`setRetentionAction` wrote `schools.retention_months` and inserted
-`retention.updated` afterwards, as two commits. That field moves the scheduled
-deletion date for **every cohort** and changes which children's records the
-purge considers eligible — so a failing audit insert left a new deletion
-schedule running with no trustworthy record of who set it, on the page that
-promises every configuration action is audited.
+`setBenchmarkWindowAction` wrote `schools.benchmark_window` and audited
+afterwards, as two commits. That setting decides immediately and school-wide
+whether children may start or resume the fall form, the spring form, or neither.
+A failing audit insert could leave a window opened, closed or switched with no
+record of who did it — children into an assessment outside its administration
+period, a mid-form class unable to resume, or a cohort moved between forms in a
+way that contaminates the fall-to-spring comparison.
 
 ### The correction
 
-Validation stays above the transaction, so a rejected option never takes a write
-lock. `setRetentionMonths` and its audit are wrapped in `auditedWrite`. On
-failure the action returns an inline error naming the two things an
-administrator would otherwise go and check — the schedule did not move, and
-nothing was deleted — and **does not claim the attempt was recorded**, because
-the rollback takes the audit row with it. `setRetentionMonths(` joins the
-consequential-write guard as exactly one new entry; the other configuration
-writes stay out, because keying it on "any write" would turn it back into the
-action-name list sprint 73 replaced.
+Validation **and** the lapsed-subscription refusal stay above the transaction.
+`setBenchmarkWindow` and its audit are wrapped in `auditedWrite`. The failure
+message states that children are offered exactly what they were, and that the
+attempt started no child, stopped no child and moved nobody between forms — and
+does not claim the attempt was recorded, because the rollback takes the audit
+row with it. `setBenchmarkWindow(` joins the consequential-write guard as one
+new entry; the expected wrapped-action proof now names ten.
 
 ### Proof
 
-Through the exported action with a real admin session, real database and real
-`FormData`, against a fixture containing **a second school** on 24 months.
-Snapshots include derived `retentionRows` and **the exact set of purge-eligible
-class ids at fixed dates**, not just the column.
+Each transition on **its own fresh fixture**, so they cannot mask each other:
 
-- **Audit failure:** returns `RETENTION_FAILED`; school row, class rows, derived
-  due dates, purge eligibility, audit rows and the other school all exact.
-- **Retry:** school row differs in `retention_months` and nothing else; class
-  rows byte-identical; each due date moves by exactly **−9 months** from that
-  class's own year-end, same day of month; eligibility empty at 2026-09-11 and
-  all four classes at 2026-09-13; no student/attempt/check-in count changes;
-  exactly one new audit; other school still on 24 months.
-- **Invalid option:** `7`, `0`, `-12`, `"twelve"`, `""` each return the existing
-  validation error and write nothing.
+- **closed → fall** — the child is still offered nothing, **and the real
+  exported `submitCheckInAnswer`, called as that signed-in child**, returns
+  `{ ok: false, error: "That check-in is not open." }` and writes no benchmark
+  row. The consequence is exercised, not mocked; the admin session is restored
+  afterwards.
+- **fall → closed** — an *incomplete* fall record stays `{ form: "pre",
+  resuming: true }` and byte-identical, with its saved option intact.
+- **fall → spring** — fall stays the only eligible form.
 
-**Mutation checks, one at a time:** removing `auditedWrite` fails both behaviour
-tests *and* both guard tests; removing only the audit spec fails both behaviour
-tests; weakening the **no-deletion** clause and weakening the
-**date-preservation** clause each fail the audit-failure test on their own.
+**Retry:** school row differs in `benchmark_window` and nothing else;
+eligibility becomes exactly `pre: true, post: false`; **opening a window starts
+nobody** (no benchmark row, all tables byte-identical); one new audit whose
+detail matches the success message; other school untouched. Invalid values and a
+lapsed term keep their own refusals and write nothing.
+
+**Mutation checks, one at a time:** removing `auditedWrite` fails all four
+behaviour tests *and* both guard tests; removing only the audit spec fails five;
+weakening the **unchanged-offer** clause and weakening the
+**no-child-moved/stopped** clause each fail the message test independently.
 
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      802 passed (25 files)   — up from 799
+tests      810 passed (26 files)   — up from 802
 build      ✓ Compiled successfully
 ```
 
 ### Browser
 
-Trigger armed in place, no file swapping. 12 → 3 months on the real page at both
-widths: no error page, inline message fully readable and within the viewport,
-**12-month option re-selected**, summary still **12 months**, all four due dates
-still **June 12, 2027**, retry usable, no overflow. Confirmed again after a hard
-refresh. Trigger dropped and the demo verified on disk and in the running
-process. No successful save was driven in the browser.
+Trigger armed in place, no file swapping. Closed → Fall window open at both
+widths: no error page, message readable and within the viewport, **Closed stays
+selected after the rerender and a hard refresh**, page still describes check-ins
+as closed, retry usable, no overflow. **Student-facing:** joined Room 12 as a
+child — `/student` shows no check-in card and no check-in link, and
+`/student/checkin/pre` lands back on `/student` with no actionable form. Trigger
+dropped; demo verified on disk and in the running process.
 
 ### Where to push hardest
 
-1. **`setBenchmarkWindowAction` is the closest call I left out.** It decides
-   which check-in children are offered, so a lost record of who opened a window
-   is a real governance question — just not one that moves a deletion date. I
-   kept to the stated scope; whether that was the right line is worth challenging.
-2. **Eleven configuration actions still audit outside a transaction.** Each is a
-   single-row write that cannot leave a half-finished state. The guard
-   deliberately does not flag them.
-3. **A fixture bug I hit and fixed is worth knowing about.** The derived-row
-   helper first used `getPrimarySchool` — `ORDER BY created_at LIMIT 1` — and my
-   deliberately-added second school was created earlier, so the test measured the
-   wrong school and reported a 0-month move. A test that adds a second school
-   must not then ask for "the first one".
-4. **Failures still write nothing**, consistent with sprints 70–73.
+1. **`setAssignmentAction` is now the closest call left out.** It decides which
+   missions a class is offered — the same kind of thing, one class at a time
+   rather than school-wide. Ten configuration actions remain unwrapped, all
+   additive or cosmetic single-row writes; whether that line is still in the
+   right place after two sprints of moving it is worth challenging.
+2. **Atomicity is not reversibility.** The switch and its record now agree, but
+   an accidentally-opened window cannot be undone once a class has started
+   answering. Nothing in this sprint addresses that.
+3. **The student-facing browser check confirms absence, not refusal.** It shows
+   no card and no route; the *endpoint* refusal is proved in the integration
+   test, where the real `submitCheckInAnswer` is called as the child.
+4. **Failures still write nothing**, consistent with sprints 70–74.
 5. **The guard reads source text** and would miss a write reached through an
    alias or a helper.

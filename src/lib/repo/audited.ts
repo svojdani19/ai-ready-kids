@@ -87,6 +87,23 @@ export const ACADEMIC_DATES_FAILED =
  * the save was failing. It does not claim the attempt was recorded, because it
  * was not — the rollback takes the audit row with it.
  */
+/**
+ * The check-in window decides, immediately and school-wide, whether children may
+ * start or resume the fall form, the spring form, or neither.
+ *
+ * The message answers the question an administrator would otherwise have to go
+ * and ask a classroom: what are the children being offered right now. It also
+ * says no child was moved between forms or stopped mid-answer, because a
+ * half-applied window change is the one that would corrupt a fall-to-spring
+ * comparison. It does not claim the attempt was recorded — the rollback takes
+ * the audit row with it.
+ */
+export const BENCHMARK_WINDOW_FAILED =
+  "The check-in window was not changed. Children are still offered exactly the " +
+  "same check-in as before you pressed Save — the same fall form, spring form, " +
+  "or none at all — and this attempt started no child, stopped no child, and " +
+  "moved nobody to a different check-in. Try again.";
+
 export const RETENTION_FAILED =
   "The retention window was not changed. Every class keeps the same retention " +
   "status and the same scheduled deletion date it had before you pressed Save, " +

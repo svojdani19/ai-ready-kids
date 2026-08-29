@@ -783,6 +783,11 @@ describe("no destructive or credential-changing action audits outside a transact
     // other configuration writes stay out, because keying this on "any write"
     // would turn it back into the list it replaced.
     "setRetentionMonths(",
+    // Sprint 75. Also not destructive, and also not cosmetic: it decides
+    // school-wide, immediately, whether children may start or resume a
+    // check-in. A lost record of who opened a window is a benchmark-integrity
+    // question. Added singly, for the same reason retention was.
+    "setBenchmarkWindow(",
   ];
 
   it("pairs every consequential write with auditedWrite", () => {
@@ -814,8 +819,9 @@ describe("no destructive or credential-changing action audits outside a transact
         "removeStudentAction",
         "rotateJoinCodeAction",
         "setRetentionAction",
+        "setBenchmarkWindowAction",
       ]),
     );
-    expect(wrapped.length).toBeGreaterThanOrEqual(9);
+    expect(wrapped.length).toBeGreaterThanOrEqual(10);
   });
 });

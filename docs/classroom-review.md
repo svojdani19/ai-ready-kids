@@ -745,6 +745,17 @@ one of them has not tested the thing that was built.
       there was a nine-month one. Read by id in any test that deliberately
       creates a neighbour.
 
+- [ ] **Prove the child-facing consequence through the child-facing endpoint.**
+      Asserting that a settings column rolled back says nothing about what a
+      seven year old is offered. Sign in as a representative child, call the
+      real action their browser would post to, and assert the refusal and the
+      absent record — then restore the staff session. A settings test that never
+      leaves the admin session is testing a column, not a classroom.
+- [ ] **Give each transition its own fixture.** closed→open, open→closed and
+      open→other-form fail differently, and running them against one shared
+      database lets a later case pass on state an earlier one left behind. Fresh
+      fixture per transition, or exact restoration between them.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

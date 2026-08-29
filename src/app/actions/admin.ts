@@ -20,6 +20,7 @@ import {
 import {
   ACADEMIC_DATES_FAILED,
   ARCHIVE_FAILED,
+  BENCHMARK_WINDOW_FAILED,
   REMOVE_STAFF_FAILED,
   RETENTION_FAILED,
   auditedWrite,
@@ -230,15 +231,33 @@ export async function setBenchmarkWindowAction(
   const lapsed = lapsedRefusal(db, user.school_id);
   if (lapsed) return { error: lapsed };
   
-  setBenchmarkWindow(db, user.school_id, window);
   const label =
     window === "closed" ? "closed" : window === "pre" ? "the fall window" : "the spring window";
-  recordAudit(db, {
-    schoolId: user.school_id,
-    actorLabel: user.name,
-    action: "benchmark.window",
-    detail: `Check-ins set to ${label}.`,
-  });
+
+  // The child-facing state and its record commit together. Sprint 75: this
+  // wrote the window first and audited after, so a failing insert could leave a
+  // window open, closed or switched with no trustworthy record of who did it —
+  // letting children into an assessment outside its administration period, or
+  // stopping a class mid-form, with nothing to explain either afterwards.
+  //
+  // Validation and the lapsed-term refusal stay above this, so neither takes a
+  // write lock.
+  try {
+    auditedWrite(
+      db,
+      () => setBenchmarkWindow(db, user.school_id, window),
+      () => ({
+        schoolId: user.school_id,
+        actorLabel: user.name,
+        action: "benchmark.window",
+        detail: `Check-ins set to ${label}.`,
+      }),
+    );
+  } catch (error) {
+    if (asExpectedError(error)) throw error;
+    return { error: BENCHMARK_WINDOW_FAILED };
+  }
+
   revalidatePath("/admin/program");
   revalidatePath("/student");
   return {
