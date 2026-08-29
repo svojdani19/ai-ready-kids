@@ -394,6 +394,12 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       a correct block under an incorrect all-clear is still a lie. A transcript
       pasted into a review is a claim, and deserves the same scepticism as any
       other — especially your own.
+- [ ] **When output is derived from a shared object, audit the object, not the
+      view.** A page renders a chosen subset; an export serialises everything.
+      Fixing what the screen shows leaves the download untouched, and a comment
+      asserting a property of the rendering path is not a guarantee about the
+      export path. Ask what is *in* the object, then what each surface does
+      with it.
 - [ ] **Make the invalid state unrepresentable, and let the compiler find the
       callers.** A guard protects the paths you remember; a type protects the
       ones you do not. Where a stored value can be meaningless, do not hand

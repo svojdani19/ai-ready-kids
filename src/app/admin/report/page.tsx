@@ -221,8 +221,10 @@ export default async function AdminReport() {
             ))}
           </ul>
           <p className="mt-3 text-sm text-ink-soft">
-            Suppression threshold: {MIN_REPORTABLE_GROUP} students. Data retention is set to{" "}
-            {report.school.retentionMonths} months after the school year ends.
+            Suppression threshold: {MIN_REPORTABLE_GROUP} students.{" "}
+            {report.school.retention.status === "configured"
+              ? `Data retention is set to ${report.school.retention.months} months after the school year ends.`
+              : "Retention needs configuration; automatic purge is blocked."}
           </p>
         </section>
 

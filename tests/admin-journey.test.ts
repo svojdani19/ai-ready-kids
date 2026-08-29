@@ -2283,3 +2283,112 @@ describe("an unrecognised seat licence enrols nobody and claims nothing", () => 
     expect(entitlement).not.toMatch(/Math\.(min|round)\([^)]*licensed/);
   });
 });
+
+
+/**
+ * Sprint 57. Sprints 53, 54 and 56 stopped Program, Overview and Data
+ * presenting a malformed plan, seat count or retention window as contract or
+ * policy — and missed the annual report, which is the most buyer-facing output
+ * of the three. `buildSchoolReport` copied all three raw, and the JSON download
+ * serialises the whole object, so a district-office export could still assert
+ * `plan: "classrooms"`, `licensedStudents: -5` and `retentionMonths: -12`.
+ *
+ * The export route's own comment claimed an export "can never contain something
+ * the screen was hiding". The screen renders a chosen subset; the JSON
+ * serialises everything.
+ */
+describe("the annual report exports no malformed account value", () => {
+  const malformed = () => {
+    const { db, cleanup } = createTestDb();
+    db.prepare(
+      "UPDATE schools SET plan = 'classrooms', licensed_students = -5, retention_months = -12 WHERE id = ?",
+    ).run(DEMO_SCHOOL);
+    return { db, cleanup };
+  };
+
+  it("carries no account metadata at all", () => {
+    const { db, cleanup } = malformed();
+    try {
+      const report = buildSchoolReport(db, DEMO_SCHOOL, new Date("2026-08-28T00:00:00.000Z"));
+      // Gone entirely: neither is used by the printed report or either export,
+      // and a report about demonstrated competencies is not where a school's
+      // commercial terms belong.
+      expect(Object.hasOwn(report.school, "plan")).toBe(false);
+      expect(Object.hasOwn(report.school, "licensedStudents")).toBe(false);
+      expect(Object.hasOwn(report.school, "retentionMonths")).toBe(false);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("serialises no malformed value, and labels none of them as policy", () => {
+    const { db, cleanup } = malformed();
+    try {
+      const report = buildSchoolReport(db, DEMO_SCHOOL, new Date("2026-08-28T00:00:00.000Z"));
+      const json = JSON.stringify(report);
+      // Scoped to the account block for the value check: mission ids like
+      // `m-privacy-5` legitimately contain "-5", and a naive substring sweep
+      // over the whole document reads authored curriculum as a seat count.
+      const account = JSON.stringify(report.school);
+
+      // The exact values a district office could otherwise have read as fact.
+      expect(account).not.toContain("classrooms");
+      expect(account).not.toContain("-5");
+      expect(account).not.toContain("-12");
+      // The keys are absent from the whole document, not just this block.
+      expect(json).not.toMatch(/licensedStudents|retentionMonths|"plan"/);
+      // And the retention state that is present says it needs configuring.
+      expect(report.school.retention).toEqual({ status: "needs-configuration" });
+      expect(json).toContain("needs-configuration");
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("keeps a recognised retention window as a number", () => {
+    const { db, cleanup } = createTestDb();
+    try {
+      db.prepare("UPDATE schools SET retention_months = 24 WHERE id = ?").run(DEMO_SCHOOL);
+      const report = buildSchoolReport(db, DEMO_SCHOOL, new Date("2026-08-28T00:00:00.000Z"));
+      expect(report.school.retention).toEqual({ status: "configured", months: 24 });
+      expect(JSON.stringify(report)).toContain('"months":24');
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("says retention needs configuration on the printed report, never the number", () => {
+    const page = readFileSync(join(process.cwd(), "src/app/admin/report/page.tsx"), "utf8");
+    // The truthful sentence survives for a valid window...
+    expect(page).toContain("Data retention is set to");
+    expect(page).toContain("months after the school year ends");
+    // ...and the invalid one gets its own, rather than "-12 months".
+    expect(page).toContain("Retention needs configuration; automatic purge is blocked.");
+    expect(page).toContain('retention.status === "configured"');
+    expect(page).not.toMatch(/report\.school\.retentionMonths/);
+  });
+
+  it("leaves the CSV without account values, as it already was", () => {
+    const { db, cleanup } = malformed();
+    try {
+      const report = buildSchoolReport(db, DEMO_SCHOOL, new Date("2026-08-28T00:00:00.000Z"));
+      const csv = reportToCsv(report);
+      for (const value of ["classrooms", "-5", "-12", "licensedStudents", "retentionMonths"]) {
+        expect(csv, value).not.toContain(value);
+      }
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("states a guarantee the export route can actually keep", () => {
+    const route = readFileSync(
+      join(process.cwd(), "src/app/admin/report/export/route.ts"),
+      "utf8",
+    );
+    // The old claim was false in one direction and is not restated.
+    expect(route).not.toMatch(/can never contain something the screen was hiding\.\n \* Small/);
+    // The guarantee now rests on the object, which is the stronger property.
+    expect(route).toMatch(/carries no raw account metadata/);
+  });
+});

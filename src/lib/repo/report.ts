@@ -1,4 +1,5 @@
 import "server-only";
+import { isRecognisedRetention } from "@/lib/domain/retention";
 import type { Db } from "@/lib/db";
 import { COMPETENCY_BY_ID, COMPETENCY_IDS } from "@/content/competencies";
 import { MISSIONS, MISSION_BY_ID } from "@/content/missions";
@@ -48,9 +49,21 @@ export interface SchoolReport {
     schoolYear: string;
     termStartsOn: string;
     termRenewsOn: string;
-    plan: string;
-    licensedStudents: number;
-    retentionMonths: number;
+    /**
+     * Retention as policy, not as a stored number.
+     *
+     * Sprint 57: this object is buyer-facing output — the JSON download
+     * serialises all of it — and it carried `plan`, `licensedStudents` and
+     * `retentionMonths` raw. So a district-office export could assert
+     * `plan: "classrooms"`, `licensedStudents: -5` and `retentionMonths: -12`
+     * as though they were the contract, while Program, Overview and Data all
+     * correctly refused to present those same values. `plan` and
+     * `licensedStudents` are gone entirely: they are account metadata with no
+     * consumer in either export or on the printed report, and a report about
+     * demonstrated competencies is not where a school's commercial terms
+     * belong.
+     */
+    retention: { status: "configured"; months: number } | { status: "needs-configuration" };
   };
   totals: {
     classes: number;
@@ -192,9 +205,9 @@ export function buildSchoolReport(db: Db, schoolId: string, now = new Date()): S
       schoolYear: school.academic_year,
       termStartsOn: school.term_starts_on,
       termRenewsOn: school.term_renews_on,
-      plan: school.plan,
-      licensedStudents: school.licensed_students,
-      retentionMonths: school.retention_months,
+      retention: isRecognisedRetention(school.retention_months)
+        ? { status: "configured", months: school.retention_months }
+        : { status: "needs-configuration" },
     },
     totals: {
       classes: classes.length,

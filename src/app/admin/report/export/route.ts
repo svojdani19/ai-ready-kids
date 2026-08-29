@@ -7,8 +7,19 @@ import { recordAudit } from "@/lib/repo/school";
  * Report download.
  *
  * Both formats are built from the same aggregate object the on-screen report
- * renders, so an export can never contain something the screen was hiding.
- * Small groups are already suppressed upstream in buildSchoolReport.
+ * renders, and small groups are suppressed upstream in `buildSchoolReport`.
+ *
+ * That shared object is why the claim has to be narrower than it once was.
+ * This comment used to say an export "can never contain something the screen
+ * was hiding", which was false in one direction: the screen renders a chosen
+ * subset, and the JSON serialises the whole object. So account values the
+ * pages deliberately refused to present — a malformed plan, seat count or
+ * retention window — went out in the download anyway.
+ *
+ * The guarantee now rests on the object itself rather than on the rendering:
+ * `SchoolReport` carries no raw account metadata, and retention is a
+ * discriminated policy rather than a stored number. Nothing in it is unsafe to
+ * serialise, which is a stronger property than "the screen hides it".
  */
 export async function GET(request: Request) {
   const { user } = await requireAdmin();

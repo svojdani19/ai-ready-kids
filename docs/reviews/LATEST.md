@@ -7,6 +7,71 @@ likely to be.
 
 ---
 
+## Sprint 57 — correction to sprint 56: the export was the buyer-facing surface
+
+- **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-28-sprint-56.md`](2026-08-28-sprint-56.md), sprint 57
+  section.
+
+### The defect
+
+Sprints 53, 54 and 56 stopped Program, Overview and Data presenting a malformed
+plan, seat count or retention window as contract or policy. **The annual report
+was missed — and it is the artefact that leaves the building.**
+`buildSchoolReport` copied all three raw, and the JSON download serialises the
+whole object, so a district-office export could assert `plan: "classrooms"`,
+`licensedStudents: -5`, `retentionMonths: -12`. The printed report also rendered
+*"Data retention is set to -12 months after the school year ends."*
+
+The route's own comment claimed an export **"can never contain something the
+screen was hiding"** — false in one direction: the screen renders a chosen
+subset; the JSON serialises everything.
+
+### The correction
+
+- **`plan` and `licensedStudents` removed from the report entirely.** No consumer
+  in the page, the CSV or the JSON's intended use. Account metadata does not
+  belong in a report about demonstrated competencies.
+- **Retention is discriminated**: `{ status: "configured"; months }` or
+  `{ status: "needs-configuration" }`, never the stored number. A valid window
+  keeps the existing truthful sentence; an invalid one reads *"Retention needs
+  configuration; automatic purge is blocked."*
+- **The route comment now states a guarantee it can keep** — resting on the
+  object carrying no raw account metadata rather than on the screen hiding
+  things, which is the stronger and truer property.
+
+### Already verified — please do not redo
+
+- Typecheck, lint, **622 tests** (up from 616), Turbopack production build.
+- Six cases, **five failing against the previous code**: no account keys on the
+  object; the serialised account block free of all three malformed values and
+  reading `needs-configuration`; a valid window still
+  `{"status":"configured","months":24}`; the printed report keeping the truthful
+  sentence and never rendering `retentionMonths`; the CSV clean; and the route's
+  narrower guarantee.
+- One assertion needed scoping: **`-5` appears legitimately in authored mission
+  ids** like `m-privacy-5`, so the value check is scoped to `report.school` while
+  the key check stays document-wide.
+- **Browser at 1280×800 and 768×1024** with all three malformed: the report reads
+  *"Retention needs configuration; automatic purge is blocked."*, `-12`/`-5`/
+  `classrooms` appear **nowhere**, print-visible copy displayed, no overflow.
+- **The fetched JSON body's `school` block**: name, district, city, state,
+  schoolYear, termStartsOn, termRenewsOn, `retention: {status:
+  "needs-configuration"}` — and nothing else. CSV clean too.
+- **Valid case**: *"Data retention is set to 12 months…"* and
+  `{"status":"configured","months":12}`.
+- Demo restored: plan school, 120 seats, retention 12, four classes, 90 students,
+  885 attempts.
+
+### Where this is most likely still wrong
+
+- **The family is closed on the three columns, across four surfaces now.** The
+  date fields remain unswept — a malformed `term_renews_on` or `year_ends_on`
+  reaches both the report and `subscriptionState` unchecked.
+- Everything under sprint 56 below still stands.
+
+---
+
 ## Sprint 56 — P1: the seat count nobody checked
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
