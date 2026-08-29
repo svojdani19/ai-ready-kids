@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { SCHEMA_SQL } from "@/lib/db/schema";
 import {
@@ -94,8 +94,10 @@ describe("the student data inventory is the schema, not a summary of it", () => 
     // check-in ones on neither.
     expect(what).toMatch(/when a mission was opened and when it was finished/);
     expect(what).toMatch(/when a check-in was opened and when it was finished/);
-    // Roster enrolment time — absent from both.
-    expect(what).toMatch(/when the teacher added them to that roster/);
+    // The roster row's creation timestamp — absent from both. Named for what
+    // it is, not for a purpose it does not serve; see the visibility test
+    // below.
+    expect(what).toMatch(/a creation timestamp on the roster row itself/);
   });
 
   it("keeps the inventory to student scope on both surfaces", () => {
@@ -141,6 +143,13 @@ describe("no surface draws a risk conclusion the product cannot support", () => 
     /entire value of what sits behind it/i,
     /production[- ]ready/i,
     /secure by design/i,
+    // Sprint 66 acceptance: the replacement posture was the same conclusion
+    // drawn narrower. An adult in the room does not stop a photographed code
+    // being reused, and a small roster does not stop the holder picking a
+    // different child on it.
+    /supervised pilot/i,
+    /adult is in the room/i,
+    /small and known/i,
   ];
 
   it.each(Object.entries(SURFACES))("%s draws none of them", (_name, path) => {
@@ -172,11 +181,80 @@ describe("no surface draws a risk conclusion the product cannot support", () => 
       expect(line).not.toMatch(/worth stealing|proportionate|sufficient|harmless/i);
     }
 
-    // The posture is a supervised pilot, and it still says what is not built.
-    expect(CLASS_CODE_POSTURE).toMatch(/supervised pilot|local demonstration/i);
+    // The posture still says what is not built, and what this build is.
     expect(CLASS_CODE_POSTURE).toMatch(/roster sync and single sign-on/i);
     expect(CLASS_CODE_POSTURE).toMatch(/not production access control/i);
     expect(CLASS_CODE_POSTURE).not.toMatch(/certifi|recommend|approved for/i);
+  });
+
+  it("names no deployment this build is judged good enough for", () => {
+    // A local demonstration may be named, and only alongside fictional data.
+    expect(CLASS_CODE_POSTURE).toMatch(/local demonstration/i);
+    expect(CLASS_CODE_POSTURE).toMatch(/local demonstration running fictional data/i);
+
+    // Nothing is called adequate for real student records — not by this word,
+    // and not by a hedged version of it.
+    for (const word of [
+      /\benough\b/i,
+      /\bsuitable\b/i,
+      /\bapproved\b/i,
+      /\bsafe\b/i,
+      /\bproportionate\b/i,
+      /\bsupervised pilot\b/i,
+      /\bfine for\b/i,
+      /\bacceptable\b/i,
+    ]) {
+      expect(CLASS_CODE_POSTURE).not.toMatch(word);
+    }
+
+    // The real-student question is handed to the school, as its judgement.
+    expect(CLASS_CODE_POSTURE).toMatch(/real student records/i);
+    expect(CLASS_CODE_POSTURE).toMatch(/the school has to weigh/i);
+    expect(CLASS_CODE_POSTURE).toMatch(/decision belongs to the school/i);
+    expect(CLASS_CODE_POSTURE).toMatch(/nothing here is a vendor assurance/i);
+  });
+
+  it("claims no visibility or purpose for a column nothing reads", () => {
+    const entry = STUDENT_RECORD.find((e) => e.columns.includes("students.created_at"))!;
+    const line = `${entry.what} ${entry.why}`;
+
+    // The claim as written was "so an administrator can see when a record
+    // entered the system". No route renders it.
+    expect(line).not.toMatch(/so an administrator can see/i);
+    expect(line).not.toMatch(/shown to|displayed to|visible to/i);
+
+    // What is true instead, and stated as a boundary rather than a benefit.
+    expect(line).toMatch(/no screen in this product displays it/i);
+    expect(line).toMatch(/nothing computes from it/i);
+    expect(line).toMatch(/deletion dates come from the class's own recorded year-end/i);
+  });
+
+  it("proves that column is rendered nowhere, rather than asserting it", () => {
+    // A copy assertion about invisibility is only as good as the code, so this
+    // walks the routed surfaces. The audit log's own `created_at` is the one
+    // timestamp the product does render, and it is not a student's.
+    const roots = ["src/app/admin", "src/app/teacher", "src/app/student"];
+    const offenders: string[] = [];
+
+    const walk = (dir: string) => {
+      for (const item of readdirSync(join(process.cwd(), dir), { withFileTypes: true })) {
+        const rel = `${dir}/${item.name}`;
+        if (item.isDirectory()) walk(rel);
+        else if (/\.tsx?$/.test(item.name)) {
+          src(rel)
+            .split("\n")
+            .forEach((line, i) => {
+              if (!/created_at/.test(line)) return;
+              // The audit entry, which is a staff action and not a child.
+              if (/entry\.created_at/.test(line)) return;
+              offenders.push(`${rel}:${i + 1}`);
+            });
+        }
+      }
+    };
+    roots.forEach(walk);
+
+    expect(offenders).toEqual([]);
   });
 
   it("still says plainly that unauthorised access reaches education records", () => {

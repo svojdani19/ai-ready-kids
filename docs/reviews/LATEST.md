@@ -33,10 +33,32 @@ Replaced by `CLASS_CODE_BOUNDARY` in `src/content/data-inventory.ts`, used on
 all three surfaces: a code is **shared classroom access, not proof of who is
 using it**; anyone with it can see that roster, choose any child on it, and open
 that child's progress; it reaches one class and no further; rotate it when it
-travels. `CLASS_CODE_POSTURE` names the deployment posture once — enough for a
-**supervised pilot or local demonstration**, explicitly **not production access
-control**. The accurate existing statements (no password, no recovery flow,
-roster sync and SSO not built) are kept.
+travels. `CLASS_CODE_POSTURE` names the posture once — **not production access control**,
+this build is a **local demonstration running fictional data**, and putting real
+student records behind a class code is the **school's** judgement to weigh
+against its own policies, with no vendor assurance offered. The accurate
+existing statements (no password, no recovery flow, roster sync and SSO not
+built) are kept.
+
+### Correction during acceptance (two claims still ahead of the evidence)
+
+**The replacement posture was the same conclusion, narrower.** It first said a
+class code was *"enough for a supervised pilot… where an adult is in the room
+and the roster is fictional or small and known"*. Neither clause mitigates: an
+adult in the room does not stop a photographed code being used that evening, and
+a small roster does not stop the holder choosing a different child on it. Only
+the local demonstration on fictional data is named now; the real-student
+question goes to the school.
+
+**`students.created_at` was given a purpose it does not have.** The entry said
+it existed *"so an administrator can see when a record entered the system"*.
+Traced: written by the `INSERT`, read back only by `SELECT *`, rendered by no
+route (the one `.created_at` rendered under the routed roots is the audit log's,
+a staff action), and used by neither retention (which reads the class's
+`year_ends_on`) nor `buildSchoolReport`. Corrected to the boundary — database
+metadata, displayed nowhere, computed from by nothing, *"listed because it is in
+the database, not because it does anything"*. The column is kept; dropping it
+would mean a schema change and a migration, which is out of scope here.
 
 ### Defect 2 — two absolute inventories, neither matching the schema
 
@@ -60,14 +82,17 @@ school's account settings or the audit log.
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      690 passed (17 files)   — up from 678
+tests      693 passed (17 files)   — up from 678
 build      ✓ Compiled successfully
-revert 4 page files → 6 of 12 new tests fail (every copy assertion)
+revert 4 page files  → 6 of 12 fail   (original sprint, every copy assertion)
+against b56aeb2      → 5 of 15 fail   (acceptance correction, both phrases)
 ```
 
 Browser on :3210 — `/`, `/privacy`, `/admin/data`, `/admin/classes` at 1280×800
 and 768×1024. All eight: banned phrases absent, boundary and posture present,
-the previously-omitted facts rendered, no horizontal overflow.
+the previously-omitted facts rendered, no horizontal overflow. The corrected
+`/privacy`, `/admin/data` and `/admin/classes` were rechecked at both widths
+after the acceptance fix.
 
 ### Where to push hardest
 
@@ -87,10 +112,14 @@ the previously-omitted facts rendered, no horizontal overflow.
    guarantee sitting next to a stronger one on the same panel.
 4. **The limitation is now a commercial fact on a buyer-facing page.** A
    district administrator reading `/privacy` is told that anyone with a class
-   code can open any listed child's progress, and that this build suits a
-   supervised pilot rather than a production rollout. That is the honest
-   position and it may cost deals. The alternative was a security claim the code
-   did not support.
-5. **Nothing was fixed about the access model itself.** Class codes remain the
+   code can open any listed child's progress, that this build is a local
+   demonstration on fictional data, and that any real-student pilot is theirs to
+   evaluate. That is the honest position and it may cost deals. The alternative
+   was a security claim the code did not support.
+5. **`SURROUNDING_RECORD` may hold the same defect I just fixed one entry
+   deep.** Its three `why` lines were written the same way `students.created_at`
+   was — from what the field is for, not from what the code does with it. I
+   traced `created_at` because the review named it; I did not trace the others.
+6. **Nothing was fixed about the access model itself.** Class codes remain the
    only student credential. If the reviewer's next finding is "then build roster
    sync", that is a build, not a copy sprint, and should be scoped as one.

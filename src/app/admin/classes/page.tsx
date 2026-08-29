@@ -200,9 +200,11 @@ export default async function AdminClasses() {
           and nothing else about the class changes. The teacher of record can do the same
           from their own class page. Deleting a class is never the way to change its code.
           Roster sync and single sign-on would replace codes in a production deployment;
-          neither is built, so a class code is the only credential in the product &mdash;
-          enough for a supervised pilot or a local demonstration, not production access
-          control.
+          neither is built, so a class code is the only credential in the product and it is
+          not production access control. This build is a local demonstration on fictional
+          data. Putting real student records behind a class code is a decision for the
+          school, which has to weigh the shared access described above against its own
+          policies first.
         </Note>
       </div>
     </div>

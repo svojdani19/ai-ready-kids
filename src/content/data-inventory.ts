@@ -50,8 +50,14 @@ export const STUDENT_RECORD: InventoryEntry[] = [
   },
   {
     columns: ["students.created_at"],
-    what: "When the teacher added them to that roster.",
-    why: "So an administrator can see when a record entered the system.",
+    what: "A creation timestamp on the roster row itself.",
+    // Not "so an administrator can see when a record entered the system". It
+    // is written by the INSERT and read back only by `SELECT *`; no route
+    // renders it, `retentionRows` and `runScheduledPurge` calculate from the
+    // class's own `year_ends_on`, and `buildSchoolReport` never touches it.
+    // Inventing a buyer benefit for an unused column is how an inventory
+    // starts describing a product that does not exist.
+    why: "Database metadata written when the row is inserted. No screen in this product displays it, and nothing computes from it: deletion dates come from the class's own recorded year-end, and no report or export includes it. It is listed because it is in the database, not because it does anything.",
   },
   {
     columns: ["attempts.id", "attempts.student_id", "attempts.mission_id"],
@@ -141,8 +147,18 @@ export const CLASS_CODE_BOUNDARY = [
 ];
 
 /**
- * The deployment posture this build supports. Stated once, so no surface
- * upgrades it into a recommendation.
+ * What this build is, and who decides the rest.
+ *
+ * The first version of this constant said a class code was "enough for a
+ * supervised pilot ... where an adult is in the room and the roster is
+ * fictional or small and known". That was the same risk conclusion the sprint
+ * had just removed, drawn narrower: an adult in the room does not stop a code
+ * photographed off a whiteboard from being used that evening, and a small
+ * roster does not stop the holder from choosing a different child on it.
+ *
+ * So this says what the build *is* — a local demonstration on fictional data —
+ * and hands the real-student question to the school, which is the only party
+ * that can weigh it. No vendor assurance, in either direction.
  */
 export const CLASS_CODE_POSTURE =
-  "Roster sync and single sign-on would replace class codes in a production deployment. Neither is built here, so a class code is the only credential in the product. That is enough for a supervised pilot or a local demonstration, where an adult is in the room and the roster is fictional or small and known; it is not production access control, and this build does not claim to be.";
+  "Roster sync and single sign-on would replace class codes in a production deployment. Neither is built here, so a class code is the only credential in the product, and it is not production access control. What this build is, is a local demonstration running fictional data. Before any pilot that puts real student records behind a class code, the school has to weigh the shared-access limitation above against its own policies and decide what operational controls it requires. That decision belongs to the school, and nothing here is a vendor assurance that a class code meets its bar.";

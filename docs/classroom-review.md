@@ -567,6 +567,19 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       decays silently at the next migration, and the surface that decays is the
       one a school reads before signing.
 
+- [ ] **Removing a risk conclusion means removing it, not narrowing it.** The
+      replacement for "nothing worth stealing" was "enough for a supervised
+      pilot where an adult is in the room" — the same judgement with
+      qualifiers, and the qualifiers were not controls. Say what the build is
+      and who decides the rest; a deployment posture the vendor grades is still
+      a vendor assurance.
+- [ ] **An inventory entry must describe what the code does with a field, not
+      what the field is for.** A column written by an INSERT and read by
+      nothing was documented as existing "so an administrator can see when a
+      record entered the system". Trace each field to a route or a calculation
+      before writing its purpose; where there is neither, that absence is the
+      honest entry.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same
