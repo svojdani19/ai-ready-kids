@@ -69,11 +69,25 @@ real `currentStudent` with a mocked cookie jar and a seeded fixture behind
 own class code rotates, and invalid after"* fails — `currentStudent()` returns
 the student and classroom after rotation, which is the defect exactly.
 
-**Browser, end to end:** joined with the real code, tapped a name, rendered
-`/student`; rotated the code under the live session; reload landed on `/join`
-with no 500 and no stale data. Then signed in as administrator, pressed **New
-code** on Room 4, and read the corrected audit entry on `/admin/data`. Both
-widths checked on `/admin/classes`, `/privacy`, `/admin/data`. Demo restored.
+**Browser** — recorded per width, and claimed only where actually driven:
+
+- **Student join → rotate → recover at 1280×800**, and again **at 768×1024**.
+  The tablet run was added during acceptance: the first pass drove the flow only
+  at desktop and checked the tablet layout for copy alone, which did not prove
+  the recovery path on the Chromebook layout these children use. At 768×1024 the
+  child reached `/student` (*"Hello, Elias"*, 16 of 18 missions, badge strip),
+  the code was rotated underneath, and navigating landed on `/join` with
+  `serverError:false`, no stale name/missions/badges, no horizontal overflow, and
+  the **Go** button visible, in viewport and unobscured (`elementFromPoint` at
+  its centre returns the button). The rejoin screen was then used at that width
+  and returned the child to the roster.
+- **Administrator rotation at 1280×800** — pressed **New code** on Room 4,
+  confirmed, and read the corrected audit entry on `/admin/data`. That
+  interaction was **not** re-driven at 768×1024; only its copy was checked there.
+- **Copy at both widths** on `/admin/classes`, `/privacy`, `/admin/data`.
+
+Demo restored after each run. The tablet run exposed no defect, so no code
+changed and the gate above was not re-run.
 
 ### Where to push hardest
 
@@ -86,13 +100,18 @@ widths checked on `/admin/classes`, `/privacy`, `/admin/data`. Demo restored.
    the child navigates. The copy now says so; if a reviewer thinks a school
    would still read "rejected on the next request" as stronger than it is, that
    is worth pushing on.
-3. **The one-time rejoin.** Every pre-existing student session is invalidated. In
+3. **The administrator rotation *interaction* has only been driven at 1280×800.**
+   Its copy is checked at both widths, but nobody has pressed **New code** and
+   confirmed at 768×1024. The confirm control is the shared `ConfirmAction`,
+   covered by its own tests, which is a reason to expect it works and not
+   evidence that it does.
+4. **The one-time rejoin.** Every pre-existing student session is invalidated. In
    a local demonstration that costs nothing; a deployment would owe teachers
    advance notice, and nothing in the product delivers that notice.
-4. **`enterDemo` reads the class code at issue time; `chooseStudent` uses the
+5. **`enterDemo` reads the class code at issue time; `chooseStudent` uses the
    grant's.** They are equivalent today because the grant is re-verified against
    the class immediately before. If that re-verification ever moves, the two
    issuers stop agreeing.
-5. **Nothing shortens the twelve-hour session.** Rotation now bounds a leaked
+6. **Nothing shortens the twelve-hour session.** Rotation now bounds a leaked
    code to "until the next request", which is a real improvement and is not the
    same as short-lived sessions or SSO.

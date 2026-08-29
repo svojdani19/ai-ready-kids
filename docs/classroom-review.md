@@ -612,6 +612,12 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       when the check actually runs — "rejected on the next request" — and say
       plainly what it cannot reach, such as a page already open on a screen.
 
+- [ ] **A flow is verified at a width only if it was driven at that width.**
+      Checking a page's copy at 768×1024 and driving its interaction at 1280×800
+      is two different pieces of evidence, and reporting them together reads as
+      one. Say which width each run used, and never summarise "checked at both"
+      unless both were exercised end to end.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same
