@@ -762,12 +762,14 @@ one of them has not tested the thing that was built.
       write "assigned" for a mission the class already had. Return whether a row
       actually changed, and make the audit conditional on it — an event that did
       not happen is worse in a log than a gap.
-- [ ] **When a brief asks you to test a refusal, check the refusal exists.** The
-      archived-class case turned out not to be refused at all. Asserting the
-      requested behaviour would have been fabricating it; asserting the real
-      behaviour under a neutral name would have hidden it. Record what the code
-      does, name the test so it reads as a finding, and say plainly why the fix
-      was left for its own sprint.
+- [ ] **When a brief asks you to test a refusal, check the refusal exists** — and
+      then think past the current moment before calling its absence harmless.
+      Assigning missions to an archived class looked safe because archiving signs
+      the children out; it was not, because archiving parks a class rather than
+      emptying it. The roster and assignments stay stored, and a change made while
+      parked goes live the instant somebody restores, with nobody having decided
+      it. Ask what a paused state becomes when it is resumed, not only what it is
+      while paused.
 
 ## Recording a review
 

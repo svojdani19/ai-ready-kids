@@ -116,6 +116,20 @@ export const RETENTION_FAILED =
   "and no records were deleted. Try again.";
 
 /**
+ * Archiving parks a class; it does not empty it.
+ *
+ * Sprint 69 closed the student sessions, so nobody is inside an archived class
+ * while it is archived — but the roster, the attempts and the assignments all
+ * remain stored, and the class can be restored. A mission assigned or withdrawn
+ * while parked therefore becomes effective for children **the moment somebody
+ * restores it**, without the restoring administrator or the teacher ever making
+ * a post-restore decision about it. Sprint 76 first recorded that as a
+ * consistency gap; it is a lifecycle one.
+ */
+export const ASSIGNMENT_CLASS_ARCHIVED =
+  "That class is archived. Restore it before changing its missions.";
+
+/**
  * Assigning or withdrawing a mission decides which authored practice a class may
  * open. The message names what a teacher would otherwise have to go and check —
  * the mission list, and whether any child's saved work moved — and says outright

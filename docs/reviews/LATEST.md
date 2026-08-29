@@ -64,23 +64,35 @@ broken alone → 2; no-op audit made unconditional → both no-op tests;
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      822 passed (27 files)   — up from 810
+tests      825 passed (27 files)   — up from 810
 build      ✓ Compiled successfully
 ```
 
-### A gap I found and deliberately did not fix
+### A lifecycle hole, found here and fixed during acceptance
 
-The brief asked for an archived-class refusal test. **There is no such refusal.**
-`requireOwnActiveClass` is named "active" but checks ownership and the term only
-— never `archived_at` — so assigning to an archived class succeeds, while
-`createStudent` refuses one outright. No child is exposed (sprint 69 closed
-student sessions on archive), so it is a consistency gap rather than an access
-hole, and fixing it is an authorization change deserving its own sprint. Rather
-than assert a refusal that does not exist, the test **records the actual
-behaviour** under a name that says so.
+There was no archived-class refusal: `requireOwnActiveClass` reads ownership and
+the subscription term but never `archived_at`, so a teacher could change an
+archived class's missions through the public server action.
 
-### Browser
+**My first assessment was wrong.** I called it harmless because an archived class
+"has nobody in it" — true only *while* archived. Sprint 69 closes the student
+**sessions**; the **roster, attempts and assignments remain stored** and the class
+can be restored, so a mission changed while a cohort is parked goes live the
+moment somebody restores it, with nobody having decided that after the restore.
 
+Corrected in `setAssignmentAction` only, after validity/ownership/term and
+**before** `auditedWrite`: *"That class is archived. Restore it before changing
+its missions."* `requireOwnActiveClass` is deliberately not widened. The pinning
+test is replaced by four real ones — assign refused, unassign refused with a
+child's half-finished attempt byte-identical, refused **above the transaction**
+(the archived message wins even with the audit trigger armed), and assigning
+succeeds again after `restoreClass`. Removing the refusal fails all four; moving
+it inside `auditedWrite` also fails all four.
+
+### Browser### Browser
+
+Retained from the pre-correction run — this is a server-action boundary change
+and an archived class renders no assignment control, so no new pass was needed.
 Trigger armed in place, no file swapping. Toggling **The Study Group** for Room
 12 at both widths: switch rolls back to `Assign`, message readable and within the
 viewport, retry usable, no overflow, and the switch is still `Assign` with no
@@ -101,9 +113,11 @@ re-run-until-green — a gate that passes on the second try has not passed.
 
 ### Where to push hardest
 
-1. **The archived-class inconsistency** — named above, unfixed by choice. If the
-   reviewer thinks it belongs in this sprint rather than its own, that is a fair
-   push.
+1. **Only `setAssignmentAction` refuses an archived class.** Every other
+   classroom mutation still goes through `requireOwnActiveClass`, which does not
+   read `archived_at`. `renameStudentAction`, `removeStudentAction` and
+   `rotateJoinCodeAction` are the ones to audit next — the same parked-then-
+   restored reasoning may or may not apply to each, and I have not checked.
 2. **A no-op returns success**, so a teacher cannot tell "I changed it" from "it
    was already so". That is the honest trade against reporting a failure that did
    not occur, but it is a UX decision made here rather than asked about.

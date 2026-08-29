@@ -22,6 +22,7 @@ import {
   unassignMission,
 } from "@/lib/repo/classroom";
 import {
+  ASSIGNMENT_CLASS_ARCHIVED,
   ASSIGNMENT_FAILED,
   auditedWrite,
   REMOVE_STUDENT_FAILED,
@@ -425,6 +426,18 @@ export async function setAssignmentAction(input: {
     const mission = MISSION_BY_ID[input.missionId];
     if (!mission) throw new Error("Unknown mission.");
     const { db, user, classroom } = await requireOwnActiveClass(input.classId);
+
+    // Archived classes are parked, not empty. The roster, attempts and
+    // assignments are all still stored and the class can be restored, so a
+    // mission changed while it is parked would go live for children the moment
+    // it comes back — with nobody having decided that after the restore.
+    //
+    // Refused here, above the transaction, and only for this action: widening
+    // `requireOwnActiveClass` would change every classroom mutation at once,
+    // which is a different correction.
+    if (classroom.archived_at) {
+      return { error: ASSIGNMENT_CLASS_ARCHIVED };
+    }
 
     // The change and its record commit together. Sprint 76: these were two
     // separate commits, so a failing audit insert could expose a mission to a

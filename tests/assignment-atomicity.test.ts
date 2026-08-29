@@ -42,13 +42,14 @@ import { listAudit } from "@/lib/repo/school";
 import {
   archiveClass,
   getClass,
+  restoreClass,
   listAssignments,
   normaliseJoinCode,
 } from "@/lib/repo/classroom";
 import { getAttempt } from "@/lib/repo/progress";
 import { expectedDecisionSceneId } from "@/lib/domain/missionPath";
 import { MISSIONS } from "@/content/missions";
-import { ASSIGNMENT_FAILED } from "@/lib/repo/audited";
+import { ASSIGNMENT_CLASS_ARCHIVED, ASSIGNMENT_FAILED } from "@/lib/repo/audited";
 
 let db: Db;
 let cleanup: () => void;
@@ -376,24 +377,95 @@ describe("the existing refusals still refuse, and write nothing", () => {
     await asTeacher();
   });
 
-  it("does NOT currently refuse an archived class — recorded, not asserted as correct", async () => {
-    // Found while writing this sprint, and deliberately not fixed here.
-    //
-    // `requireOwnActiveClass` is named "active" but checks ownership and the
-    // subscription term only; it never looks at `archived_at`. So assigning to
-    // an archived class succeeds, even though `createStudent` refuses one
-    // outright ("That class is archived. Restore it before adding.").
-    //
-    // No child is exposed by it — sprint 69 made archiving close student
-    // sessions, so an archived class has nobody in it — which is why this is a
-    // consistency gap rather than an access hole, and why fixing it is an
-    // authorization change belonging to its own sprint rather than a quiet
-    // widening of this one. This test exists so the behaviour is written down
-    // and a later fix has to change it deliberately.
+  it("refuses to assign to an archived class, changing nothing", async () => {
+    // Archiving parks a class; it does not empty it. The roster, attempts and
+    // assignments stay stored and the class can be restored, so a mission
+    // assigned while parked would go live for children the moment somebody
+    // restores it — without the restoring administrator or the teacher deciding
+    // that afterwards.
     await asTeacher();
     const mission = unassignedMission();
     archiveClass(db, DEMO_CLASS);
+    const before = snapshot();
+    const codeBefore = getClass(db, DEMO_CLASS)!.join_code;
+    const archivedAtBefore = getClass(db, DEMO_CLASS)!.archived_at;
 
+    const result = await setAssignmentAction({
+      classId: DEMO_CLASS,
+      missionId: mission.id,
+      assigned: true,
+    });
+
+    expect(result.error).toBe(ASSIGNMENT_CLASS_ARCHIVED);
+    // Distinct from the operational failure and from the term refusal.
+    expect(result.error).not.toBe(ASSIGNMENT_FAILED("Room 12"));
+    expect(result.error).not.toMatch(/subscription/i);
+
+    // Roster, attempts, badges, assignments and every audit row, byte for byte.
+    expect(snapshot()).toEqual(before);
+    expect(assignedIds()).not.toContain(mission.id);
+    // Archiving's own credential rotation is not disturbed either.
+    expect(getClass(db, DEMO_CLASS)!.join_code).toBe(codeBefore);
+    expect(getClass(db, DEMO_CLASS)!.archived_at).toBe(archivedAtBefore);
+    expect(auditsOf("mission.assigned")).toHaveLength(0);
+  });
+
+  it("refuses to unassign from an archived class, changing nothing", async () => {
+    await asTeacher();
+    const mission = assignedUnfinished();
+    // A child's half-finished work on that mission, which must survive.
+    await asChild();
+    await beginMission(mission.slug);
+    await asTeacher();
+    const attemptBefore = JSON.stringify(getAttempt(db, DEMO_STUDENT, mission.id));
+
+    archiveClass(db, DEMO_CLASS);
+    const before = snapshot();
+    const baseline = auditsOf("mission.unassigned").length;
+
+    const result = await setAssignmentAction({
+      classId: DEMO_CLASS,
+      missionId: mission.id,
+      assigned: false,
+    });
+
+    expect(result.error).toBe(ASSIGNMENT_CLASS_ARCHIVED);
+    expect(snapshot()).toEqual(before);
+    expect(assignedIds()).toContain(mission.id);
+    expect(JSON.stringify(getAttempt(db, DEMO_STUDENT, mission.id))).toBe(attemptBefore);
+    expect(auditsOf("mission.unassigned")).toHaveLength(baseline);
+  });
+
+  it("refuses above the transaction, so a broken audit cannot even be reached", async () => {
+    // If the refusal sat inside `auditedWrite`, an audit-insert failure would
+    // surface as ASSIGNMENT_FAILED instead. The archived message proves the
+    // check ran first, before any write lock was taken.
+    await asTeacher();
+    const mission = unassignedMission();
+    archiveClass(db, DEMO_CLASS);
+    const before = snapshot();
+
+    failAuditFor("mission.assigned");
+    const result = await setAssignmentAction({
+      classId: DEMO_CLASS,
+      missionId: mission.id,
+      assigned: true,
+    });
+    removeFailure();
+
+    expect(result.error).toBe(ASSIGNMENT_CLASS_ARCHIVED);
+    expect(snapshot()).toEqual(before);
+  });
+
+  it("assigns again once the class is restored", async () => {
+    // The refusal is about the parked state, not a permanent lock.
+    await asTeacher();
+    const mission = unassignedMission();
+    archiveClass(db, DEMO_CLASS);
+    expect((await setAssignmentAction({ classId: DEMO_CLASS, missionId: mission.id, assigned: true })).error)
+      .toBe(ASSIGNMENT_CLASS_ARCHIVED);
+
+    restoreClass(db, DEMO_CLASS);
     const result = await setAssignmentAction({
       classId: DEMO_CLASS,
       missionId: mission.id,
@@ -402,9 +474,7 @@ describe("the existing refusals still refuse, and write nothing", () => {
 
     expect(result.error).toBeUndefined();
     expect(assignedIds()).toContain(mission.id);
-    // What this sprint does guarantee about it: the write and its audit still
-    // commit together, so the log matches the data either way.
-    expect(auditsOf("mission.assigned").some((a) => a.detail.includes(mission.title))).toBe(true);
+    expect(auditsOf("mission.assigned")).toHaveLength(1);
   });
 
   it("refuses while the subscription is lapsed, and writes nothing", async () => {
