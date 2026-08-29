@@ -237,7 +237,7 @@ export default async function AdminData() {
                         question={`Delete ${row.className} and all ${row.studentCount} student records right now? This cannot be undone.`}
                         action={async () => {
                           "use server";
-                          await deleteClassDataAction(row.classId);
+                          return deleteClassDataAction(row.classId);
                         }}
                       />
                     </td>

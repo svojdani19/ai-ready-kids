@@ -187,7 +187,7 @@ export default async function AdminClasses() {
                             question={`Delete ${classroom.name}, its ${students} student records, all mission history and both check-ins? This cannot be undone.`}
                             action={async () => {
                               "use server";
-                              await deleteClassDataAction(classroom.id);
+                              return deleteClassDataAction(classroom.id);
                             }}
                           />
                         </div>

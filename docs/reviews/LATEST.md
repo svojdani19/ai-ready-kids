@@ -7,110 +7,88 @@ likely to be.
 
 ---
 
-## Sprint 70 — the school-year rollover was four commits pretending to be one
+## Sprint 71 — a school operation and its audit entry were two facts
 
-- **Reviewed against:** HEAD `4d447b0`
+- **Reviewed against:** HEAD `0a09050`
 - **Repository:** <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-29-sprint-70.md`](2026-08-29-sprint-70.md)
+- **Full review:** [`2026-08-29-sprint-71.md`](2026-08-29-sprint-71.md)
 
 ### The finding
 
-`rolloverYearAction` ran a sequence of independently committed writes:
-`archiveClass` per class (each opening its own `BEGIN IMMEDIATE` when there was
-no outer transaction), then `setAcademicYear`, `setBenchmarkWindow` and
-`recordAudit`. A failure on the second class or any later write left the school
-half transitioned — some cohorts archived and **their join codes rotated**,
-others active, dates still last year's, and no trustworthy audit either way.
-Sprint 69 raised the cost: a partial rollover now signs some rooms' children out
-and not others, with nothing recording which.
+`/privacy` promises *"Every configuration change and every deletion writes an
+audit entry"*; the admin Audit log and the plans page say the same. All four
+class operations mutated first and audited afterwards, each committing
+separately. When `recordAudit` failed: **delete** had already cascade-removed
+the class, roster, attempts, check-ins and assignments — and the administrator
+saw an unhandled failure over a class that no longer existed; **archive** had
+rotated the code and signed the room out; **rotate** had invalidated the
+credential; **restore** had reactivated the roster. All unrecorded. Someone
+reading the log for "who deleted Room 12" would find nothing while Room 12 was
+gone.
 
 ### The correction
 
-`src/lib/repo/rollover.ts` → `performRollover`, one `BEGIN IMMEDIATE` over the
-whole thing, with the school and classes **re-read inside it** and the preview
-recomputed there — the page's preview stays informational, the action's is
-transactional. `archiveClass` already honoured an outer transaction, so it
-participates rather than committing around it, and a test now pins that. The
-audit row is written inside the transaction: exactly once on success, never on
-failure. A thrown failure rolls back and the action returns an inline
-`ROLLOVER_FAILED` with the retry path intact, not a 500.
+`auditedWrite(db, write, audit)` — one `BEGIN IMMEDIATE` over the mutation and
+its audit insert. Repository operations check `db.isTransaction` and
+participate; a test pins that. Each action returns a calm inline error naming
+the unchanged state, with deletion saying **"no records were removed"**
+explicitly. No message promises support, monitoring or diagnostics, and a test
+forbids each phrasing.
 
-**Corrected during acceptance.** That message ended *"if it keeps happening your
-account contact can look at it"* — a support promise this product cannot keep.
-The programme contact is the school-side person for quotes and invoices, there
-is no technical support destination in the build, and a failed rollover
-deliberately writes no audit row or diagnostic, so there would be nothing to
-look at even if there were somewhere to send them. It now ends: *"Try again. If
-it still does not work, leave the school year as it is — your classes, rosters
-and codes carry on unchanged, and you can roll over later."* True because of the
-rollback the tests prove: stopping costs nothing. The test forbids `account
-contact`, `can look at it`, `support`, `we will look/investigate/fix`,
-`reported`, `within N hours`, `logged` and `diagnostic`, and fails against the
-old wording. No behaviour changed, so the destructive exercise was not repeated;
-the corrected message was read through the live form at both widths.
+Restore refusals are untouched: a plan/cap/licence refusal throws before
+anything is written, and its refusal audit is recorded separately afterwards
+because it records that nothing happened. `deleteClassDataAction` now returns
+`{ error?: string }` and both call sites return it rather than discarding, so
+`ConfirmAction` can render the error.
 
 ### Failing-before
 
-A SQLite trigger counts archives and raises `ABORT` on the second, so the first
-class is archived and rotated before the failure. Against the pre-fix sequence,
-**3 of 4 fail**:
-
-```
-× rolls back the archives and codes already written
-    AssertionError: expected 1 to be +0     ← the counter survived the abort,
-                                              proving an independent commit
-- Room 4 … "archived_at": null, "join_code": "ACORN-BADGER-208"
-+ Room 4 … "archived_at": "2026-…", "join_code": "BUTTON-HERON-775"
-```
-
-One room archived and re-credentialled, three untouched, year unchanged, no
-audit. The test asserts the fixture has at least two classes to archive, so
-"after the first write" cannot be vacuous.
+A `BEFORE INSERT` trigger on `audit_log` raises `ABORT` for one action, after
+the mutation has run. Against the pre-fix sequence, **4 of 15 fail** — one per
+operation — with the delete diff showing 23 children's records gone and
+`data.deleted` audits at 0.
 
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      737 passed (21 files)   — up from 733
+tests      752 passed (22 files)   — up from 737
 build      ✓ Compiled successfully
 ```
 
+Snapshots are `toEqual` over stringified rows of `classes` (including
+`archived_at` and `join_code`), `students`, `attempts`, `benchmarks`,
+`assignments`, `audit_log` and `schools`, table-driven across all four
+operations both after the injected failure and after the retry.
+
 ### Browser
 
-Demo file-copied first so restoration is exact. Trigger installed on it, and the
-rollover driven through the **live form** at 1280×800 and 768×1024:
-`errorPage false`, inline recovery message, retry button unobscured, still
-"Moving from 2025-2026", no overflow. Database after: no class archived, no code
-rotated, school still `2025-2026`, `year.rolled` audits **0**, and the trigger's
-own counter **0** — even that rolled back. Failure removed, same button pressed
-again: all four classes archived with rotated codes, `year_ends_on` unmoved,
-school on `2026-2027`, subscription and retention untouched, exactly one audit
-row. Demo then restored from the file copy and verified column by column, with
-no test trigger left in the schema.
+Trigger installed **in place** — no file swap, so no repeat of sprint 70's
+stale-inode mistake. At both widths, the real Delete confirmation on Room 12:
+`errorPage false`, inline "no records were removed" message, Room 12 still
+listed with 23 students, confirmation reopenable, no overflow. Database after:
+4 classes / 90 students / 884 attempts / 6 audit rows, `data.deleted` audits
+**0**. Trigger dropped and the demo verified **on disk and in the running
+process**. A successful destructive deletion was not re-driven in the browser;
+the retry-success integration test is that evidence.
 
 ### Where to push hardest
 
-1. **The page preview can still be stale by design.** An administrator can see
-   "4 classes archived" and the transaction act on 3 if someone archives one
-   meanwhile. The result message reports what happened, not what was predicted —
-   but nobody is told the numbers differed.
-2. **`ROLLOVER_FAILED` is one message for every failure mode**, and **failures
-   write no audit row at all**. That is deliberate — a school cannot act on a
-   lock timeout — but a repeatedly failing rollover leaves nothing to read, and
-   there is no support channel in this build to read it. The message now points
-   nowhere, which is honest and is also the whole remedy on offer.
-3. **File-copying the demo database out from under a running dev server leaves
-   the process reading a deleted inode.** It happened during this sprint's
-   browser run: the file was correctly restored while the server kept serving
-   the rolled-over school until I restarted it. `reset.ts` warns about this and
-   truncates through SQLite instead. Verifying a restore with `node` proves the
-   file, not the process.
-4. **The rollover is the only multi-write action wrapped this way.**
-   `archiveClassAction` still calls `recordAudit` outside `archiveClass`'s
-   transaction, so a failure between them leaves an archive with no audit row.
-   Much narrower, same shape, not fixed here.
-5. **The atomicity test's failure injection is a trigger on `archived_at`.** It
-   proves the class loop is covered; it does not exercise a failure landing
-   between `setAcademicYear` and `recordAudit`. Those are inside the same
-   transaction by construction, but by construction is not by test.
-6. **Nothing retries automatically.** If the cause is transient, the
-   administrator presses the button again, and there is no queue or backoff.
+1. **Non-class operations are unchanged.** `setRetentionAction`,
+   `setAcademicDatesAction`, staff removal and the report export still audit
+   outside a transaction. Same shape, smaller consequence — a configuration
+   write rather than a cascading deletion — but not fixed, and the brief scoped
+   me to four.
+2. **The buyer-promise guard names four actions by name.** A fifth class
+   operation added later would not be noticed by it. A lint rule or a repository
+   boundary that made auditing impossible outside a transaction would be the
+   durable version.
+3. **Failures still write nothing.** An administrator who retries successfully
+   gets a log showing one clean operation, with no sign the first attempt failed.
+   Consistent with sprint 70, and still a gap in the story an auditor could read.
+4. **`revalidatePath` runs after the commit.** The atomicity claim stops at the
+   transaction boundary; a revalidation failure would leave the write done.
+5. **One pre-existing assertion was replaced, not deleted.** `admin-journey`
+   checked that the restore success audit appeared *after* `return {` in the
+   source — a text-position proxy that the move into the transaction invalidated.
+   It is now a behavioural assertion in the new file. Worth confirming I replaced
+   it with something stronger rather than something quieter.

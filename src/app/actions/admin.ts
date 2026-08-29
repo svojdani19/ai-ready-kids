@@ -18,6 +18,13 @@ import {
   RestoreExceedsLicenceError,
 } from "@/lib/repo/entitlement";
 import {
+  ARCHIVE_FAILED,
+  auditedWrite,
+  DELETE_FAILED,
+  RESTORE_FAILED,
+  ROTATE_FAILED,
+} from "@/lib/repo/audited";
+import {
   asExpectedError,
   assertSubscriptionActive,
   lapsedRefusal,
@@ -473,16 +480,29 @@ async function ownActiveClass(classId: string) {
 export async function rotateJoinCodeAsAdminAction(classId: string): Promise<{ error?: string }> {
   try {
     const { db, user, classroom } = await ownActiveClass(classId);
-    const code = rotateJoinCode(db, classroom.id);
-    if (!code) throw new Error("That class no longer exists.");
-    recordAudit(db, {
-      schoolId: user.school_id,
-      actorLabel: user.name,
-      // No child is named here, and none needs to be: what happened is that a
-      // class credential changed, which is a fact about the class.
-      action: "class.code_rotated",
-      detail: `${classroom.name} has a new class code. The old one is now rejected on its next use, for new joins and for browsers already signed in with it. The roster and all student records are unchanged.`,
-    });
+    // The rotation and its audit entry commit together. A credential that
+    // changed without a record of it changing is the worst of both.
+    try {
+      auditedWrite(
+        db,
+        () => {
+          const code = rotateJoinCode(db, classroom.id);
+          if (!code) throw new Error("That class no longer exists.");
+          return code;
+        },
+        () => ({
+          schoolId: user.school_id,
+          actorLabel: user.name,
+          // No child is named here, and none needs to be: what happened is
+          // that a class credential changed, which is a fact about the class.
+          action: "class.code_rotated",
+          detail: `${classroom.name} has a new class code. The old one is now rejected on its next use, for new joins and for browsers already signed in with it. The roster and all student records are unchanged.`,
+        }),
+      );
+    } catch (error) {
+      if (asExpectedError(error)) throw error;
+      return { error: ROTATE_FAILED(classroom.name) };
+    }
     revalidatePath("/admin/classes");
     revalidatePath(`/teacher/class/${classId}`);
     return {};
@@ -496,13 +516,21 @@ export async function rotateJoinCodeAsAdminAction(classId: string): Promise<{ er
 export async function archiveClassAction(classId: string): Promise<{ error?: string }> {
   try {
     const { db, user, classroom } = await ownActiveClass(classId);
-    archiveClass(db, classId);
-    recordAudit(db, {
-      schoolId: user.school_id,
-      actorLabel: user.name,
-      action: "class.archived",
-      detail: `${classroom.name} archived. Students cannot join and those already signed in are rejected on their next request; the class was issued a new join code, so the old one stays invalid even if the class is restored. The roster, records and the scheduled deletion date are unchanged.`,
-    });
+    try {
+      auditedWrite(
+        db,
+        () => archiveClass(db, classId),
+        () => ({
+          schoolId: user.school_id,
+          actorLabel: user.name,
+          action: "class.archived",
+          detail: `${classroom.name} archived. Students cannot join and those already signed in are rejected on their next request; the class was issued a new join code, so the old one stays invalid even if the class is restored. The roster, records and the scheduled deletion date are unchanged.`,
+        }),
+      );
+    } catch (error) {
+      if (asExpectedError(error)) throw error;
+      return { error: ARCHIVE_FAILED(classroom.name) };
+    }
     revalidatePath("/admin/classes");
     revalidatePath("/admin/data");
     return {};
@@ -526,8 +554,22 @@ export async function restoreClassAction(classId: string): Promise<{ error?: str
 
     // Catch rather than pre-check: the rule is in the repository, and asking
     // first would leave a window between the answer and the write.
+    //
+    // The restore and its success audit are one transaction. A refusal throws
+    // out of it before anything is written, and its own refusal audit is
+    // recorded afterwards on its own — those entries record that nothing
+    // happened, so they must survive the rollback of the nothing that happened.
     try {
-      restoreClass(db, classId);
+      auditedWrite(
+        db,
+        () => restoreClass(db, classId),
+        () => ({
+          schoolId: user.school_id,
+          actorLabel: user.name,
+          action: "class.restored",
+          detail: `${classroom.name} restored to active.`,
+        }),
+      );
     } catch (error) {
       if (error instanceof PlanNotRecognisedError) {
         recordAudit(db, {
@@ -576,15 +618,12 @@ export async function restoreClassAction(classId: string): Promise<{ error?: str
             "and plan page.",
         };
       }
-      throw error;
+      // Not a refusal the rules define: the write itself failed, and the
+      // transaction has already rolled back both it and its audit row.
+      if (asExpectedError(error)) throw error;
+      return { error: RESTORE_FAILED(classroom.name) };
     }
 
-    recordAudit(db, {
-      schoolId: user.school_id,
-      actorLabel: user.name,
-      action: "class.restored",
-      detail: `${classroom.name} restored to active.`,
-    });
     revalidatePath("/admin/classes");
     revalidatePath("/admin/data");
     return {};
@@ -595,18 +634,35 @@ export async function restoreClassAction(classId: string): Promise<{ error?: str
   }
 }
 
-/** Irreversible. Removes the roster, every attempt and every check-in. */
-export async function deleteClassDataAction(classId: string): Promise<void> {
+/**
+ * Irreversible. Removes the roster, every attempt and every check-in.
+ *
+ * Returns a result rather than `void`. It used to return nothing and both call
+ * sites awaited and discarded it, so `ConfirmAction` had nothing to render —
+ * which mattered most here: the deletion could have happened while the audit
+ * insert failed, and the administrator would see an unhandled failure over a
+ * class that was already gone.
+ */
+export async function deleteClassDataAction(classId: string): Promise<{ error?: string }> {
   const { db, user, classroom } = await ownClass(classId);
   const count = listStudents(db, classId).length;
-  deleteClass(db, classId);
-  recordAudit(db, {
-    schoolId: user.school_id,
-    actorLabel: user.name,
-    action: "data.deleted",
-    detail: `${classroom.name} permanently deleted, including ${count} student records, their mission history and their check-ins.`,
-  });
+  try {
+    auditedWrite(
+      db,
+      () => deleteClass(db, classId),
+      () => ({
+        schoolId: user.school_id,
+        actorLabel: user.name,
+        action: "data.deleted",
+        detail: `${classroom.name} permanently deleted, including ${count} student records, their mission history and their check-ins.`,
+      }),
+    );
+  } catch (error) {
+    if (asExpectedError(error)) throw error;
+    return { error: DELETE_FAILED(classroom.name) };
+  }
   revalidatePath("/admin/classes");
   revalidatePath("/admin/data");
   revalidatePath("/admin");
+  return {};
 }

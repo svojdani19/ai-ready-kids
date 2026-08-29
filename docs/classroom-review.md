@@ -674,6 +674,19 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       let that be the whole message. Check the sprint's own stated limitations
       against the copy it ships: they contradicted each other here.
 
+- [ ] **If the product promises a record of every operation, the record commits
+      with the operation.** Mutating and then auditing means the consequential
+      change can land while the log of it does not — and the administrator is
+      shown a failure for something that already happened. Worst where the
+      mutation is irreversible or rotates a credential: "who deleted this class"
+      has no answer while the class is gone. Put the audit insert inside the same
+      transaction, and let the failure message name the state that did not
+      change.
+- [ ] **An action whose result is discarded cannot report anything.** A
+      `Promise<void>` server action awaited by its caller gives the confirmation
+      control nothing to render, so every failure becomes an unhandled crash.
+      Return the result, and return it from the wrapper too.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

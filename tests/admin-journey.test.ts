@@ -1349,10 +1349,13 @@ describe("restoring an archived cohort cannot take a school past its licence", (
     expect(restore).toMatch(/stays archived/);
     const audit = restore.slice(restore.indexOf("class.restore_blocked_by_licence"));
     expect(audit.slice(0, audit.indexOf("});"))).not.toMatch(/display_name|displayName/);
-    // And no success audit is written on the refused path.
-    expect(restore.indexOf('action: "class.restored"')).toBeGreaterThan(
-      restore.indexOf("return {"),
-    );
+    // And no success audit is written on the refused path. Sprint 71 moved the
+    // success audit inside the transaction with the restore itself, so this can
+    // no longer be a question about where the string sits in the file — it is a
+    // question about what the transaction commits, asserted behaviourally in
+    // `tests/audited-writes.test.ts`.
+    expect(restore).toContain("auditedWrite");
+    expect(restore).toContain('action: "class.restored"');
   });
 
   it("leaves enrolment and retention behaviour alone", () => {
