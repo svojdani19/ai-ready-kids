@@ -9,6 +9,7 @@ import {
   hasVerifiableTerm,
   instructionClosed,
   isContractDate,
+  LAPSED_STAFF_BODY,
   staffHandoff,
   subscriptionNotice,
   UNVERIFIED_STAFF_BODY,
@@ -27,6 +28,10 @@ import {
   SubscriptionLapsedError,
 } from "@/lib/auth/subscription-gate";
 import { getPrimarySchool } from "@/lib/repo/school";
+import { purgeDateFor, retentionRows } from "@/lib/domain/retention";
+import { runScheduledPurge } from "@/lib/domain/purge";
+import { deleteClass, getClass, listClasses } from "@/lib/repo/classroom";
+
 import { buildSchoolReport, reportToCsv } from "@/lib/repo/report";
 import { getAttempt, listBenchmarksForStudent } from "@/lib/repo/progress";
 import { listStudents } from "@/lib/repo/classroom";
@@ -687,8 +692,12 @@ describe("an unverifiable term closes new classroom work and writes nothing", ()
     expect(program).toMatch(/needs-configuration"\s*\n?\s*\?\s*null/);
     expect(overview).toMatch(/needs-configuration" \? null : daysBetween/);
     expect(program).toMatch(/Subscription dates|Need configuration/);
-    expect(overview).toMatch(/Subscription dates need configuration/);
-    expect(overview).toMatch(/Classroom changes are paused/);
+    // The literal moved into the shared constant in sprint 65.
+    expect(overview).toMatch(/UNVERIFIED_STAFF_TITLE/);
+    // Sprint 65 moved this text into the shared constant so the overview and
+    // the shell cannot drift apart, so the property is asserted where it lives.
+    expect(overview).toMatch(/UNVERIFIED_STAFF_BODY/);
+    expect(UNVERIFIED_STAFF_BODY).toMatch(/classroom changes are paused/i);
   });
 
   it("exports no account dates at all", () => {
@@ -815,5 +824,149 @@ describe("the closed-for-work notice routes the reader somewhere they can go", (
     expect(shell).not.toMatch(/Request renewal on the Program and plan page/);
     // The role comes from the user the shell was given, not assumed.
     expect(shell).toMatch(/user\.role === "admin"/);
+  });
+});
+
+
+/**
+ * Sprint 65. Every subscription notice said "nothing has been deleted", and the
+ * lapsed one added that everything the school already has "stays here and stays
+ * readable".
+ *
+ * Audited against `subscription-gate.ts` and the purge, none of that holds. The
+ * term gate covers instructional and classroom writes **only** — sprint 49
+ * deliberately left retention outside it, because holding a school's own
+ * records hostage to an invoice would be the wrong product. So
+ * `runScheduledPurge` has no subscription check at all, `deleteClassDataAction`
+ * is on the allowed list, and a due cohort may already have been purged before
+ * the notice was read, or be deleted while it is on screen.
+ */
+describe("a paused term does not pause retention, and the copy says so", () => {
+  const LAPSED = new Date("2026-09-02T00:30:00.000Z");
+
+  const school = (over: Record<string, string>) => {
+    const { db, cleanup } = createTestDb();
+    const sets = Object.entries(over)
+      .map(([k]) => `${k} = ?`)
+      .join(", ");
+    db.prepare(`UPDATE schools SET ${sets} WHERE id = ?`).run(
+      ...Object.values(over),
+      DEMO_SCHOOL,
+    );
+    return { db, cleanup };
+  };
+
+  const overdueEverything = (db: Db) => {
+    db.prepare("UPDATE schools SET retention_months = 3 WHERE id = ?").run(DEMO_SCHOOL);
+    db.prepare("UPDATE classes SET year_ends_on = '2020-06-19' WHERE school_id = ?").run(
+      DEMO_SCHOOL,
+    );
+  };
+
+  it.each([
+    ["lapsed", { term_starts_on: "2025-09-01", term_renews_on: "2026-09-01" }],
+    ["needs-configuration", { term_starts_on: "2025-09-01", term_renews_on: "soon" }],
+  ] as const)("still purges due cohorts while %s", (_state, dates) => {
+    const { db, cleanup } = school(dates as unknown as Record<string, string>);
+    try {
+      overdueEverything(db);
+      // The gate is closed for instruction...
+      expect(schoolInstructionClosed(db, DEMO_SCHOOL, LAPSED)).not.toBeNull();
+      expect(() => assertSubscriptionActive(db, DEMO_SCHOOL, LAPSED)).toThrow();
+
+      // ...and the purge deletes anyway, which is the behaviour sprint 49 chose
+      // and the copy was contradicting.
+      const before = (db.prepare("SELECT COUNT(*) AS n FROM classes").get() as { n: number }).n;
+      const result = runScheduledPurge(db, LAPSED);
+      expect(result.classesDeleted).toBeGreaterThan(0);
+      expect((db.prepare("SELECT COUNT(*) AS n FROM classes").get() as { n: number }).n).toBeLessThan(before);
+      expect(result.blocked).toEqual([]);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it.each([
+    ["lapsed", { term_starts_on: "2025-09-01", term_renews_on: "2026-09-01" }],
+    ["needs-configuration", { term_starts_on: "2025-09-01", term_renews_on: "soon" }],
+  ] as const)("leaves retention dates and admin deletion working while %s", (_state, dates) => {
+    const { db, cleanup } = school(dates as unknown as Record<string, string>);
+    try {
+      // Retention still calculates: nothing about the term reaches it.
+      const current = getPrimarySchool(db);
+      expect(purgeDateFor(current)).toBeInstanceOf(Date);
+      const rows = retentionRows(
+        current,
+        listClasses(db, DEMO_SCHOOL, true).map((c) => ({ ...c, studentCount: 0 })),
+        LAPSED,
+      );
+      expect(rows.every((r) => r.purgeOn instanceof Date)).toBe(true);
+
+      // And the administrator's own deletion control still works, because a
+      // school owns its records whatever the invoice says.
+      const target = listClasses(db, DEMO_SCHOOL, true)[0];
+      expect(() => deleteClass(db, target.id)).not.toThrow();
+      expect(getClass(db, target.id)).toBeUndefined();
+
+      // Meanwhile the gate every instructional write goes through refuses.
+      // (The check is on the shared resolvers, not on the repository call —
+      // `createStudent` enforces seats and rooms, not the term.)
+      expect(() => assertClassSubscriptionActive(db, DEMO_CLASS, LAPSED)).toThrow();
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("promises nothing about what has been deleted or what remains", () => {
+    const copy = [
+      LAPSED_STAFF_BODY,
+      UNVERIFIED_STAFF_BODY,
+      subscriptionNotice("lapsed", "admin").body,
+      subscriptionNotice("needs-configuration", "admin").body,
+    ].join(" ");
+
+    // The historical claim, and the unconditional one about what survives.
+    expect(copy).not.toMatch(/nothing has been deleted/i);
+    expect(copy).not.toMatch(/nothing is deleted and nothing is hidden/i);
+    expect(copy).not.toMatch(/stays here and stays readable/i);
+    expect(copy).not.toMatch(/everything the school already has/i);
+
+    // What it says instead: causal, and about the schedule continuing.
+    expect(copy).toMatch(/does not itself delete or hide anything/i);
+    expect(copy).toMatch(/still inside the school's retention window/i);
+    expect(copy).toMatch(/retention schedule the school configured/i);
+    expect(copy).toMatch(/deletion controls carry on/i);
+
+    // The real distinction between the two states survives.
+    expect(UNVERIFIED_STAFF_BODY).toMatch(/not an expiry/i);
+    expect(LAPSED_STAFF_BODY).not.toMatch(/not an expiry/i);
+  });
+
+  it("keeps 'nothing has been changed' only where it is transactionally true", () => {
+    // A refusal is about the attempt the gate just rejected, before any write.
+    expect(LAPSED_WRITE_REFUSAL).toMatch(/nothing has been changed/i);
+    expect(UNVERIFIED_WRITE_REFUSAL).toMatch(/nothing has been changed/i);
+    // The standing notices make no such claim about the school.
+    expect(LAPSED_STAFF_BODY).not.toMatch(/nothing has been changed/i);
+    expect(UNVERIFIED_STAFF_BODY).not.toMatch(/nothing has been changed/i);
+  });
+
+  it("uses the shared copy rather than a second version of it", () => {
+    const overview = readFileSync(join(process.cwd(), "src/app/admin/page.tsx"), "utf8");
+    expect(overview).toContain("UNVERIFIED_STAFF_BODY");
+    expect(overview).not.toMatch(/nothing has been deleted/i);
+
+    const program = readFileSync(join(process.cwd(), "src/app/admin/program/page.tsx"), "utf8");
+    expect(program).not.toMatch(/Nothing is deleted and nothing is hidden/i);
+    // And it states the thing the old paragraph got wrong.
+    expect(program).toMatch(/does not itself delete or hide anything/i);
+    expect(program).toMatch(/schedule you configured carries on/i);
+  });
+
+  it("says nothing to a child about any of it", () => {
+    for (const word of ["subscription", "renew", "retention", "deleted", "configuration"]) {
+      expect(LAPSED_STUDENT_MESSAGE.toLowerCase()).not.toContain(word);
+    }
+    expect(LAPSED_STUDENT_MESSAGE).toBe("Your class isn't open right now. Ask your teacher.");
   });
 });

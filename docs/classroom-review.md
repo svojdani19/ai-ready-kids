@@ -535,6 +535,16 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       a new one", that is a data-loss defect wearing the costume of a help
       note — doubly so when the delete button is on the same screen.
 
+- [ ] **A reassurance is a claim about the whole system, not about the
+      feature that prints it.** "Nothing has been deleted" written on a
+      subscription notice is a promise about every deletion path in the
+      product — the scheduled purge, the admin delete button, the retention
+      schedule — and a term gate can only speak for the writes it blocks. Say
+      causally what this state does and does not do ("this does not itself
+      delete or hide anything"), and let the other paths keep their own copy.
+      The test for it: name every mechanism that could falsify the sentence,
+      and check the gate actually covers each one.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

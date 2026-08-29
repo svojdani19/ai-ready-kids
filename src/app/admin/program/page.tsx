@@ -292,10 +292,12 @@ export default async function AdminProgram() {
         <Note tone="denim" title="What renewal actually changes">
           The day after the renewal date, classroom changes pause: nobody can start or
           record new work, and rosters, assignments, class codes and check-in windows stop
-          accepting changes. Nothing is deleted and nothing is hidden. Your records,
+          accepting changes. Lapsing does not itself delete or hide anything, and your
           reports, exports, retention settings and staff administration all keep working,
-          because the school owns its records whatever the invoice says. Renewing lifts the
-          pause and every class carries on where it stopped.
+          because the school owns its records whatever the invoice says. What it does not do
+          is suspend retention: the schedule you configured carries on, so a class already
+          past its deletion date is still deleted on time. Renewing lifts the pause and
+          every class carries on where it stopped.
         </Note>
         <Note tone="neutral" title="Programme contact">
           {school.contact_name} · {school.contact_email}. Quotes, purchase orders and

@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { licenceStatus } from "@/lib/repo/entitlement";
 import { getSchool } from "@/lib/repo/school";
-import { subscriptionState } from "@/lib/domain/subscription";
+import {
+  subscriptionState,
+  UNVERIFIED_STAFF_BODY,
+  UNVERIFIED_STAFF_TITLE,
+} from "@/lib/domain/subscription";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/session";
@@ -77,10 +81,11 @@ export default async function AdminOverview() {
 
       {term.kind === "needs-configuration" && (
         <div className="mt-6">
-          <Note tone="berry" title="Subscription dates need configuration">
-            Classroom changes are paused: nobody can start or record new work. Nothing has
-            ended and nothing has been deleted — records, reports and exports are all still
-            available. Ask your account contact to correct the subscription dates.
+          {/* The shared text, not a second copy of it. This paragraph had
+              drifted into its own claim that nothing had been deleted, which
+              the term gate has never guaranteed. */}
+          <Note tone="berry" title={UNVERIFIED_STAFF_TITLE}>
+            {UNVERIFIED_STAFF_BODY}
           </Note>
         </div>
       )}

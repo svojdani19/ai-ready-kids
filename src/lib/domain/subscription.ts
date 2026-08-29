@@ -122,27 +122,56 @@ export function instructionClosed(
  */
 export const LAPSED_STAFF_TITLE = "This subscription has ended";
 
+/**
+ * What a paused term does and does not do to records, stated causally.
+ *
+ * Sprint 65: every one of these notices said "nothing has been deleted", and
+ * the lapsed one added that everything the school already has "stays here and
+ * stays readable". Audited against `subscription-gate.ts` and the purge, all of
+ * that is unsupported.
+ *
+ * The term gate covers **instructional and classroom writes only**. Sprint 49
+ * deliberately left retention outside it: `runScheduledPurge` has no
+ * subscription check at all, `deleteClassDataAction` is on the allowed list,
+ * and so are the retention settings. That was the right call — holding a
+ * school's own records hostage to an invoice would be the wrong product — but
+ * it means a due cohort may **already have been purged** before the notice was
+ * read, and another may be deleted **while it is on screen**.
+ *
+ * So the claim is narrowed to the one this product can actually make: the
+ * pause itself is not a deletion, and the schedule the school configured
+ * carries on. Nothing here promises what still exists.
+ */
+const RETENTION_UNAFFECTED =
+  "This does not itself delete or hide anything. Records still inside the school's retention " +
+  "window remain available, along with reports and exports, and the retention schedule the " +
+  "school configured and the administrator's own deletion controls carry on as before.";
+
 export const LAPSED_STAFF_BODY =
   "Classroom changes are paused: nobody can start or record new work, and rosters, " +
-  "assignments, class codes and check-in windows cannot be changed. Everything the " +
-  "school already has stays here and stays readable — records, reports and exports are " +
-  "all still available, and nothing has been deleted. An administrator can request " +
-  "renewal on the Program and plan page.";
+  "assignments, class codes and check-in windows cannot be changed. " +
+  RETENTION_UNAFFECTED;
 
-/** Shown to staff when a write is refused, and returned by the server actions. */
+/**
+ * Shown to staff when a write is refused, and returned by the server actions.
+ *
+ * "Nothing has been changed" stays in the refusal messages, because there it is
+ * transactionally true of the action that was just rejected — the gate refuses
+ * before any write. It is a statement about this attempt, not about the school.
+ */
 export const LAPSED_WRITE_REFUSAL =
-  "This school's subscription has ended, so classroom changes are paused. Records, " +
-  "reports and exports are still available. An administrator can request renewal on " +
-  "the Program and plan page.";
+  "This school's subscription has ended, so classroom changes are paused. Nothing has been " +
+  "changed. Records, reports and exports are still available. An administrator can request " +
+  "renewal on the Program and plan page.";
 
 export const UNVERIFIED_STAFF_TITLE = "Subscription dates need configuration";
 
 export const UNVERIFIED_STAFF_BODY =
   "This school's subscription dates cannot be read, so classroom changes are paused: nobody " +
   "can start or record new work, and rosters, assignments, class codes and check-in windows " +
-  "cannot be changed. This is not an expiry — nothing has ended and nothing has been deleted. " +
-  "Records, reports and exports are all still available. Ask your account contact to correct " +
-  "the subscription dates on the account.";
+  "cannot be changed. This is not an expiry — nothing has ended. " +
+  RETENTION_UNAFFECTED +
+  " Ask your account contact to correct the subscription dates on the account.";
 
 /** Returned by the server actions when the term cannot be verified. */
 export const UNVERIFIED_WRITE_REFUSAL =
