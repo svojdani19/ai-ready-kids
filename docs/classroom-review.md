@@ -394,6 +394,16 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       a correct block under an incorrect all-clear is still a lie. A transcript
       pasted into a review is a claim, and deserves the same scepticism as any
       other — especially your own.
+- [ ] **When a rule says "we will not invent X", check whether the fallback
+      invents not-X.** Refusing to act on missing data is a decision; so is
+      continuing to act on it. A default that looks like restraint — "we won't
+      assume it lapsed" — may be asserting the opposite with equal force. If
+      neither answer is verifiable, say so as a third state.
+- [ ] **A string comparison is not a date comparison.** Lexicographic order on
+      unvalidated text silently picks a winner, and the winner flatters whichever
+      side the malformed value happens to sort on. Validate the shape before
+      comparing, and ask which way a bad value would fail — one direction is
+      found in a day, the other runs for years.
 - [ ] **When output is derived from a shared object, audit the object, not the
       view.** A page renders a chosen subset; an export serialises everything.
       Fixing what the screen shows leaves the download untouched, and a comment

@@ -47,8 +47,6 @@ export interface SchoolReport {
   generatedAt: string;
   school: Pick<School, "name" | "district" | "city" | "state"> & {
     schoolYear: string;
-    termStartsOn: string;
-    termRenewsOn: string;
     /**
      * Retention as policy, not as a stored number.
      *
@@ -203,8 +201,6 @@ export function buildSchoolReport(db: Db, schoolId: string, now = new Date()): S
       // sorted first meant a mixed-cohort school got labelled by an accident
       // of ordering.
       schoolYear: school.academic_year,
-      termStartsOn: school.term_starts_on,
-      termRenewsOn: school.term_renews_on,
       retention: isRecognisedRetention(school.retention_months)
         ? { status: "configured", months: school.retention_months }
         : { status: "needs-configuration" },

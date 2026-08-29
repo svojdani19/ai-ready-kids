@@ -7,6 +7,88 @@ likely to be.
 
 ---
 
+## Sprint 58 — P1: "soon" was a subscription that never ended
+
+- **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-29-sprint-58.md`](2026-08-29-sprint-58.md)
+- **Review trail:** sprints 49–51 made the subscription term real; 52–53 the
+  classroom limit and its fail-open correction; 54–55 retention and its CLI
+  wording; 56–57 the seat count and the export that leaked it. **Sprint 58 does
+  the term dates — the gap this file had listed as outstanding twice.**
+
+### What changed
+
+1. **`subscriptionState` compared the renewal string lexicographically without
+   validating it.** `"soon"` sorts after every `YYYY-MM-DD`, so a school with
+   that value stayed **active indefinitely** — a paid term that could never end.
+   `"2026-13-45"` and `"2026-02-30"` were ordinary deadlines; Program rendered
+   `Invalid Date` and `in NaN days`; Overview silently dropped its renewal
+   warning because `NaN <= 60` is false; the annual JSON exported the raw values.
+2. **A strict validator**: exactly `YYYY-MM-DD` and a real day, checked by UTC
+   round-trip — `2026-02-30` parses to March 2nd and does not stringify back,
+   while **real leap days survive**. The pair is ordered: a term cannot renew
+   before it starts. **Non-coercive** — no `trim`, no `Date.parse`, asserted.
+3. **Three states.** `needs-configuration` is **neither active nor lapsed** and
+   must never be called ended or overdue. Sprint 49 was right that an empty field
+   cannot lapse a school — and **active is a commercial decision too**.
+4. **Fails closed with `TermNotConfiguredError`**, distinct from the lapse error,
+   converted by `asExpectedError` so no gated action produces an error page.
+   Every gate reads one rule; **children see only the generic class-not-open
+   sentence** for either reason. Staff get the distinction, including *"This is
+   not an expiry."*
+5. **Buyer pages compute no day count for an unreadable term** — the source of
+   `Invalid Date` and `NaN` — and show *"Needs configuration"* / *"Classroom
+   changes are paused"* with no raw value.
+6. **`termStartsOn` and `termRenewsOn` removed from `SchoolReport`**, sprint 57's
+   finding applied one field over. Its single consumer sits inside a block that
+   only renders for a verifiable term and now reads the school directly.
+
+### Already verified — please do not redo
+
+- Typecheck, lint, **635 tests** (up from 622), Turbopack production build.
+- Eleven cases, **all failing against the previous code**: sweep of `""`, `" "`,
+  `"soon"`, `"2026-13-45"`, `"2026-02-30"`, `"2026-9-1"`, leading/trailing
+  whitespace, a timestamp, `"26-09-01"`, `"2026/09/01"`, plus `null`,
+  `undefined`, a number, `{}`, `[]`; leap days both ways; start-after-renewal; a
+  whole-database snapshot proving a refusal writes nothing; recovery restoring
+  both active and lapsed; child surfaces carrying no configuration detail; gate
+  consumers pinned; buyer pages free of raw dates/`Invalid Date`/`NaN`; export
+  clean and CSV unchanged; quote request neither gated nor rewriting dates.
+- **Browser at 1280×800 and 768×1024** with `term_renews_on = 'soon'`: staff
+  notice with *"This is not an expiry"*; Overview note and *"Classroom changes
+  are paused"*; Program showing *"Needs configuration"* / *"Need configuration"*;
+  **no `Invalid Date`, `NaN` or `soon`** anywhere; a code rotation refused with
+  the configuration message and the code **unchanged** in the database; a correct
+  class code giving a child only *"Your class isn't open right now. Ask your
+  teacher."* with **no** subscription/configuration/renewal/dates wording; the
+  JSON `school` block carrying **no term dates and no `soon`**; CSV clean; and
+  recovery immediately restoring *"RENEWS | September 1, 2026 | in 3 days"*.
+- Demo restored: plan school, 120 seats, retention 12, term 2025-08-18 →
+  2026-09-01, four classes, 90 students, 885 attempts, 16 audit rows.
+- **No schema, billing, child fields, LMS/SIS, chatbot, telemetry or risk
+  scoring.**
+
+### Where this is most likely still wrong — best places to push
+
+- **The columns are still unconstrained.** Safe and recoverable; not prevented.
+- **`year_starts_on` and `year_ends_on` are the remaining pair.** Retention
+  already blocks on an *empty* year-end and an unrecognised window, but a
+  **malformed** year-end (`"2026-13-45"`) would reach `addMonths` and produce an
+  Invalid Date rather than a refusal. That is the next one.
+- **Classroom Mode still opens for a closed school.** It records nothing by
+  design, so no gate refuses it; arguably correct, still a judgement call —
+  outstanding since sprint 49.
+- Everything under sprints 49–57 still stands.
+- **Twenty-four mission guides have not been read for the real-material defect
+  class** — sprints 37–41. **Twenty-six missions have untraced shared scenes** —
+  sprint 36.
+- **`src/app/(site)/privacy/page.tsx` has two unused-import lint warnings.**
+- **Only one previous schema shape is recognised** — sprint 34.
+- **The limiter is per process** — sprint 30. **The instrument is unequated** —
+  sprint 24. **Every mission has been read once, none twice.**
+
+---
+
 ## Sprint 57 — correction to sprint 56: the export was the buyer-facing surface
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>

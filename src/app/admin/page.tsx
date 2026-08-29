@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { licenceStatus } from "@/lib/repo/entitlement";
+import { getSchool } from "@/lib/repo/school";
+import { subscriptionState } from "@/lib/domain/subscription";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/session";
@@ -29,7 +31,10 @@ export default async function AdminOverview() {
   const now = new Date();
   const report = buildSchoolReport(db, user.school_id, now);
   const licence = licenceStatus(db, user.school_id);
-  const renewalInDays = daysBetween(now, new Date(report.school.termRenewsOn));
+  const school = getSchool(db, user.school_id)!;
+  const term = subscriptionState(school, now);
+  const renewalInDays =
+    term.kind === "needs-configuration" ? null : daysBetween(now, new Date(school.term_renews_on));
 
   return (
     <div>
@@ -70,17 +75,30 @@ export default async function AdminOverview() {
         />
       </div>
 
-      {renewalInDays <= 60 && (
+      {term.kind === "needs-configuration" && (
+        <div className="mt-6">
+          <Note tone="berry" title="Subscription dates need configuration">
+            Classroom changes are paused: nobody can start or record new work. Nothing has
+            ended and nothing has been deleted — records, reports and exports are all still
+            available. Ask your account contact to correct the subscription dates.
+          </Note>
+        </div>
+      )}
+
+      {renewalInDays !== null && renewalInDays <= 60 && (
         <div className="mt-5">
           <Note
-            tone={renewalInDays < 0 ? "berry" : "marigold"}
+            tone={renewalInDays !== null && renewalInDays < 0 ? "berry" : "marigold"}
             title={
-              renewalInDays < 0
+              renewalInDays !== null && renewalInDays < 0
                 ? `Subscription lapsed ${Math.abs(renewalInDays)} days ago`
                 : `Renewal due in ${renewalInDays} days`
             }
           >
-            The {report.school.schoolYear} subscription renews {formatDate(report.school.termRenewsOn)}.
+            {/* Reads the school, not the report: this block only renders for a
+                verifiable term, and the report no longer carries account
+                dates at all. */}
+            The {report.school.schoolYear} subscription renews {formatDate(school.term_renews_on)}.
             Your annual report for the year is ready to export for the district office.{" "}
             <Link href="/admin/program" className="font-semibold underline underline-offset-2">
               Review the program status

@@ -2,7 +2,11 @@ import "server-only";
 import { getDb, type Db } from "@/lib/db";
 import { getClass } from "@/lib/repo/classroom";
 import { getSchool } from "@/lib/repo/school";
-import { hasLapsed, LAPSED_WRITE_REFUSAL } from "@/lib/domain/subscription";
+import {
+  instructionClosed,
+  LAPSED_WRITE_REFUSAL,
+  UNVERIFIED_WRITE_REFUSAL,
+} from "@/lib/domain/subscription";
 
 /**
  * The server-side half of the subscription term.
@@ -29,16 +33,45 @@ export class SubscriptionLapsedError extends Error {
   }
 }
 
-/** True when this school may not make classroom changes right now. */
-export function schoolHasLapsed(db: Db, schoolId: string, now = new Date()): boolean {
-  const school = getSchool(db, schoolId);
-  if (!school) return false;
-  return hasLapsed(school, now);
+/**
+ * Raised when the term dates cannot be read at all.
+ *
+ * Distinct from `SubscriptionLapsedError` because nothing has ended: telling a
+ * school its subscription expired when the truth is that a date field says
+ * `"soon"` is a different — and wrong — commercial claim.
+ */
+export class TermNotConfiguredError extends Error {
+  constructor() {
+    super(UNVERIFIED_WRITE_REFUSAL);
+    this.name = "TermNotConfiguredError";
+  }
 }
 
-/** Throw if the school's term has ended. For actions that already throw. */
+/** Why classroom work is closed for this school, or null when it is open. */
+export function schoolInstructionClosed(
+  db: Db,
+  schoolId: string,
+  now = new Date(),
+): "lapsed" | "needs-configuration" | null {
+  const school = getSchool(db, schoolId);
+  if (!school) return null;
+  return instructionClosed(school, now);
+}
+
+/**
+ * True when this school may not make classroom changes right now, for either
+ * reason. Child-facing surfaces use this: a class that is not open is not open,
+ * and a seven-year-old is told the same sentence whichever it is.
+ */
+export function schoolHasLapsed(db: Db, schoolId: string, now = new Date()): boolean {
+  return schoolInstructionClosed(db, schoolId, now) !== null;
+}
+
+/** Throw if the school may not make classroom changes. For actions that throw. */
 export function assertSubscriptionActive(db: Db, schoolId: string, now = new Date()): void {
-  if (schoolHasLapsed(db, schoolId, now)) throw new SubscriptionLapsedError();
+  const closed = schoolInstructionClosed(db, schoolId, now);
+  if (closed === "needs-configuration") throw new TermNotConfiguredError();
+  if (closed === "lapsed") throw new SubscriptionLapsedError();
 }
 
 /** The same check by class, for the many actions that hold a class id. */
@@ -54,7 +87,10 @@ export function assertClassSubscriptionActive(db: Db, classId: string, now = new
  * `const lapsed = lapsedRefusal(...); if (lapsed) return { error: lapsed };`
  */
 export function lapsedRefusal(db: Db, schoolId: string, now = new Date()): string | null {
-  return schoolHasLapsed(db, schoolId, now) ? LAPSED_WRITE_REFUSAL : null;
+  const closed = schoolInstructionClosed(db, schoolId, now);
+  if (closed === "needs-configuration") return UNVERIFIED_WRITE_REFUSAL;
+  if (closed === "lapsed") return LAPSED_WRITE_REFUSAL;
+  return null;
 }
 
 /** Convenience for actions that only have the request's own db handle. */
@@ -73,5 +109,7 @@ export function currentDb(): Db {
  * new action that forgets this fails loudly rather than writing.
  */
 export function asExpectedError(error: unknown): { error: string } | null {
-  return error instanceof SubscriptionLapsedError ? { error: error.message } : null;
+  if (error instanceof SubscriptionLapsedError) return { error: error.message };
+  if (error instanceof TermNotConfiguredError) return { error: error.message };
+  return null;
 }

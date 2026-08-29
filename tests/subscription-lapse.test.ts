@@ -6,6 +6,11 @@ import { createTestDb, DEMO_CLASS, DEMO_SCHOOL, DEMO_STUDENT } from "./helpers";
 import {
   calendarDate,
   hasLapsed,
+  hasVerifiableTerm,
+  instructionClosed,
+  isContractDate,
+  UNVERIFIED_STAFF_BODY,
+  UNVERIFIED_WRITE_REFUSAL,
   LAPSED_STUDENT_MESSAGE,
   LAPSED_WRITE_REFUSAL,
   subscriptionState,
@@ -13,11 +18,14 @@ import {
 import {
   assertClassSubscriptionActive,
   assertSubscriptionActive,
+  schoolInstructionClosed,
+  TermNotConfiguredError,
   lapsedRefusal,
   schoolHasLapsed,
   SubscriptionLapsedError,
 } from "@/lib/auth/subscription-gate";
 import { getPrimarySchool } from "@/lib/repo/school";
+import { buildSchoolReport, reportToCsv } from "@/lib/repo/report";
 import { getAttempt, listBenchmarksForStudent } from "@/lib/repo/progress";
 import { listStudents } from "@/lib/repo/classroom";
 
@@ -35,7 +43,9 @@ const SEP_01 = new Date("2026-09-01T12:00:00.000Z");
 const SEP_02 = new Date("2026-09-02T00:30:00.000Z");
 
 describe("the subscription term has one meaning", () => {
-  const school = { term_renews_on: "2026-09-01" };
+  // Both dates now, because sprint 57 validates the pair: a term that renews
+  // before it starts is not a term this product can read.
+  const school = { term_starts_on: "2025-09-01", term_renews_on: "2026-09-01" };
 
   it("keeps the school active through the renewal date itself", () => {
     // The product's own wording is "renews on", and a school that has paid
@@ -65,10 +75,13 @@ describe("the subscription term has one meaning", () => {
     expect(calendarDate(new Date("2026-09-01T23:59:59.000Z"))).toBe("2026-09-01");
   });
 
-  it("never lapses a school with no renewal date recorded", () => {
-    // Refusing to teach because a field is empty would be the software
-    // inventing a commercial fact.
-    expect(hasLapsed({ term_renews_on: "" }, SEP_02)).toBe(false);
+  it("treats a school with no renewal date as unverifiable, not active", () => {
+    // Sprint 49 said an empty field cannot lapse a school, which is true — and
+    // active is a commercial decision too. Sprint 57 makes it a third state.
+    // Sprint 57 changed this answer deliberately; see the sprint 57 block below.
+    expect(subscriptionState({ term_starts_on: "", term_renews_on: "" }, SEP_02)).toEqual({
+      kind: "needs-configuration",
+    });
   });
 });
 
@@ -467,5 +480,244 @@ describe("a lapsed restore refuses in the same words as the others", () => {
       expect(resolve, name).toBeGreaterThan(tryAt);
       expect(body, name).toContain("asExpectedError(error)");
     }
+  });
+});
+
+
+/**
+ * Sprint 57. `term_starts_on` and `term_renews_on` are unconstrained text, and
+ * `subscriptionState` compared the renewal string lexicographically without
+ * ever asking whether it was a date.
+ *
+ * So `"soon"` sorts after every real `YYYY-MM-DD` and kept a school **active
+ * indefinitely**. `"2026-13-45"` and `"2026-02-30"` were ordinary deadlines. A
+ * timestamp or a padded string compared as text. Program rendered `Invalid
+ * Date` and `in NaN days`, Overview dropped the renewal warning, and the annual
+ * JSON exported the raw values to a district office.
+ *
+ * Sprint 49's rule was that an empty field cannot lapse a school, because
+ * refusing to teach over a blank would invent a commercial fact. That is true
+ * and it was half an answer: **active is a commercial decision too.**
+ */
+describe("a term that cannot be read is neither active nor lapsed", () => {
+  const MALFORMED = [
+    "",
+    " ",
+    "soon",
+    "2026-13-45",
+    "2026-02-30",
+    "2026-9-1",
+    " 2026-09-01",
+    "2026-09-01 ",
+    "2026-09-01T00:00:00.000Z",
+    "26-09-01",
+    "2026/09/01",
+  ];
+  const NON_STRINGS = [null, undefined, 20260901, {}, []];
+
+  it("accepts only an exact, real calendar date", () => {
+    for (const value of ["2026-09-01", "2025-01-31", "2024-02-29", "2000-02-29"]) {
+      expect(isContractDate(value), value).toBe(true);
+    }
+    // A real leap day survives; a fake one does not, because 2026-02-30 parses
+    // to March 2nd and does not stringify back to what was written.
+    expect(isContractDate("2026-02-29")).toBe(false);
+    expect(isContractDate("2023-02-29")).toBe(false);
+    for (const value of MALFORMED) expect(isContractDate(value), JSON.stringify(value)).toBe(false);
+    for (const value of NON_STRINGS) {
+      expect(isContractDate(value), JSON.stringify(value)).toBe(false);
+    }
+  });
+
+  it("does not coerce a nearly-right value into a right one", () => {
+    const src = readFileSync(join(process.cwd(), "src/lib/domain/subscription.ts"), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/(^|\s)\/\/[^\n]*/g, "$1");
+    expect(src).not.toMatch(/\.trim\(\)/);
+    expect(src).not.toMatch(/Date\.parse/);
+  });
+
+  it("refuses a term that renews before it starts", () => {
+    expect(hasVerifiableTerm({ term_starts_on: "2026-09-01", term_renews_on: "2025-09-01" })).toBe(
+      false,
+    );
+    // Equal is fine: a one-day term is odd, not unreadable.
+    expect(hasVerifiableTerm({ term_starts_on: "2026-09-01", term_renews_on: "2026-09-01" })).toBe(
+      true,
+    );
+  });
+
+  it("reports needs-configuration, and never calls it ended or overdue", () => {
+    for (const value of MALFORMED) {
+      const school = { term_starts_on: "2025-09-01", term_renews_on: value };
+      expect(subscriptionState(school, SEP_02), value).toEqual({ kind: "needs-configuration" });
+      // Emphatically not lapsed: nothing expired.
+      expect(hasLapsed(school, SEP_02), value).toBe(false);
+      expect(instructionClosed(school, SEP_02), value).toBe("needs-configuration");
+    }
+    // A malformed *start* date is just as unreadable as a malformed renewal.
+    expect(
+      subscriptionState({ term_starts_on: "soon", term_renews_on: "2030-09-01" }, SEP_02),
+    ).toEqual({ kind: "needs-configuration" });
+    // And the staff copy says so without claiming an expiry.
+    expect(UNVERIFIED_STAFF_BODY).toMatch(/not an expiry/i);
+    expect(UNVERIFIED_WRITE_REFUSAL).toMatch(/nothing has ended/i);
+    expect(UNVERIFIED_WRITE_REFUSAL).not.toMatch(/subscription has ended|lapsed|overdue/i);
+  });
+
+  it("leaves valid active and lapsed behaviour exactly as it was", () => {
+    const school = { term_starts_on: "2025-09-01", term_renews_on: "2026-09-01" };
+    expect(subscriptionState(school, SEP_01)).toEqual({ kind: "active", renewsOn: "2026-09-01" });
+    expect(subscriptionState(school, SEP_02)).toEqual({ kind: "lapsed", renewedOn: "2026-09-01" });
+    // The UTC boundary is untouched.
+    expect(hasLapsed(school, new Date("2026-09-01T23:59:59.000Z"))).toBe(false);
+    expect(hasLapsed(school, new Date("2026-09-02T00:00:00.000Z"))).toBe(true);
+  });
+});
+
+describe("an unverifiable term closes new classroom work and writes nothing", () => {
+  let dbT: Db;
+  let cleanupT: () => void;
+
+  const setTerm = (starts: string, renews: string) =>
+    dbT
+      .prepare("UPDATE schools SET term_starts_on = ?, term_renews_on = ? WHERE id = ?")
+      .run(starts, renews, DEMO_SCHOOL);
+
+  const snapshot = () => {
+    const tables = (
+      dbT
+        .prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
+        .all() as { name: string }[]
+    ).map((t) => t.name);
+    return tables
+      .map((t) => `${t}:${JSON.stringify(dbT.prepare(`SELECT * FROM ${t}`).all())}`)
+      .join("\n");
+  };
+
+  beforeAll(() => {
+    ({ db: dbT, cleanup: cleanupT } = createTestDb());
+  });
+  afterAll(() => cleanupT());
+
+  it("throws a configuration error, distinct from the lapse one", () => {
+    setTerm("2025-09-01", "soon");
+    expect(schoolInstructionClosed(dbT, DEMO_SCHOOL, SEP_02)).toBe("needs-configuration");
+    expect(() => assertSubscriptionActive(dbT, DEMO_SCHOOL, SEP_02)).toThrow(
+      TermNotConfiguredError,
+    );
+    expect(() => assertSubscriptionActive(dbT, DEMO_SCHOOL, SEP_02)).not.toThrow(
+      SubscriptionLapsedError,
+    );
+    expect(() => assertClassSubscriptionActive(dbT, DEMO_CLASS, SEP_02)).toThrow(
+      TermNotConfiguredError,
+    );
+    expect(lapsedRefusal(dbT, DEMO_SCHOOL, SEP_02)).toBe(UNVERIFIED_WRITE_REFUSAL);
+    setTerm("2025-09-01", "2030-09-01");
+  });
+
+  it("writes absolutely nothing when it refuses", () => {
+    setTerm("2025-09-01", "2026-13-45");
+    const before = snapshot();
+    expect(() => assertSubscriptionActive(dbT, DEMO_SCHOOL, SEP_02)).toThrow(
+      TermNotConfiguredError,
+    );
+    expect(() => assertClassSubscriptionActive(dbT, DEMO_CLASS, SEP_02)).toThrow(
+      TermNotConfiguredError,
+    );
+    // No audit row, no flag, no record that anybody tried.
+    expect(snapshot()).toBe(before);
+    setTerm("2025-09-01", "2030-09-01");
+  });
+
+  it("recovers the moment the vendor restores real dates", () => {
+    setTerm("2025-09-01", "2026-02-30");
+    expect(schoolInstructionClosed(dbT, DEMO_SCHOOL, SEP_02)).toBe("needs-configuration");
+    setTerm("2025-09-01", "2030-09-01");
+    expect(schoolInstructionClosed(dbT, DEMO_SCHOOL, SEP_02)).toBeNull();
+    expect(() => assertSubscriptionActive(dbT, DEMO_SCHOOL, SEP_02)).not.toThrow();
+    // And a genuinely lapsed term still lapses.
+    setTerm("2025-09-01", "2026-09-01");
+    expect(schoolInstructionClosed(dbT, DEMO_SCHOOL, SEP_02)).toBe("lapsed");
+    setTerm("2025-08-18", "2026-09-01");
+  });
+
+  it("tells a child nothing but the class-not-open sentence", () => {
+    // Both reasons close the same doors for a seven-year-old, and the child
+    // surfaces ask one question rather than two.
+    const gate = readFileSync(join(process.cwd(), "src/lib/auth/subscription-gate.ts"), "utf8");
+    expect(gate).toMatch(/schoolHasLapsed[\s\S]{0,400}schoolInstructionClosed\(db, schoolId, now\) !== null/);
+    for (const file of [
+      "src/app/actions/auth.ts",
+      "src/app/join/[classId]/page.tsx",
+      "src/app/student/layout.tsx",
+      "src/app/student/page.tsx",
+    ]) {
+      const src = readFileSync(join(process.cwd(), file), "utf8");
+      expect(src, file).toContain("schoolHasLapsed");
+      // No configuration or billing detail anywhere a child can read.
+      expect(src, file).not.toContain("UNVERIFIED_STAFF_BODY");
+      expect(src, file).not.toContain("UNVERIFIED_WRITE_REFUSAL");
+      expect(src, file).not.toMatch(/needs-configuration/);
+    }
+  });
+
+  it("keeps every gate consumer on the shared rule", () => {
+    const gate = readFileSync(join(process.cwd(), "src/lib/auth/subscription-gate.ts"), "utf8");
+    // One place decides; the three entry points all read from it.
+    expect(gate).toContain("TermNotConfiguredError");
+    expect(gate).toMatch(/assertSubscriptionActive[\s\S]{0,300}needs-configuration/);
+    expect(gate).toMatch(/lapsedRefusal[\s\S]{0,300}UNVERIFIED_WRITE_REFUSAL/);
+    // The expected-error converter handles both, so no gated action can turn a
+    // configuration refusal into an error page.
+    expect(gate).toMatch(/asExpectedError[\s\S]{0,300}TermNotConfiguredError/);
+  });
+
+  it("keeps the buyer pages free of raw dates, Invalid Date and NaN", () => {
+    const program = readFileSync(join(process.cwd(), "src/app/admin/program/page.tsx"), "utf8");
+    const overview = readFileSync(join(process.cwd(), "src/app/admin/page.tsx"), "utf8");
+
+    for (const [src, page] of [[program, "program"], [overview, "overview"]] as const) {
+      expect(src, page).toContain("subscriptionState");
+      expect(src, page).toMatch(/needs-configuration/);
+    }
+    // The day count is never computed from an unreadable date.
+    expect(program).toMatch(/needs-configuration"\s*\n?\s*\?\s*null/);
+    expect(overview).toMatch(/needs-configuration" \? null : daysBetween/);
+    expect(program).toMatch(/Subscription dates|Need configuration/);
+    expect(overview).toMatch(/Subscription dates need configuration/);
+    expect(overview).toMatch(/Classroom changes are paused/);
+  });
+
+  it("exports no account dates at all", () => {
+    const { db, cleanup } = createTestDb();
+    try {
+      db.prepare(
+        "UPDATE schools SET term_starts_on = 'soon', term_renews_on = '2026-13-45' WHERE id = ?",
+      ).run(DEMO_SCHOOL);
+      const report = buildSchoolReport(db, DEMO_SCHOOL, SEP_02);
+      const account = JSON.stringify(report.school);
+
+      // Removed entirely: the printed report has no consumer for them, and
+      // they are account metadata rather than curriculum outcomes.
+      expect(Object.hasOwn(report.school, "termStartsOn")).toBe(false);
+      expect(Object.hasOwn(report.school, "termRenewsOn")).toBe(false);
+      expect(account).not.toContain("soon");
+      expect(account).not.toContain("2026-13-45");
+      expect(JSON.stringify(report)).not.toMatch(/termStartsOn|termRenewsOn/);
+      // CSV unchanged and still clean.
+      expect(reportToCsv(report)).not.toMatch(/soon|2026-13-45|termRenewsOn/);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("leaves the quote request usable and does not rewrite the dates", () => {
+    const admin = readFileSync(join(process.cwd(), "src/app/actions/admin.ts"), "utf8");
+    const start = admin.indexOf("export async function requestPlanChangeAction");
+    const body = admin.slice(start, admin.indexOf("\nexport ", start + 10));
+    expect(body).not.toMatch(/term_starts_on|term_renews_on/);
+    expect(body).not.toContain("assertSubscriptionActive");
+    expect(body).not.toContain("lapsedRefusal");
   });
 });

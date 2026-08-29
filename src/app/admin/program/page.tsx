@@ -17,6 +17,7 @@ import { WindowForm } from "./WindowForm";
 import { RolloverForm } from "./RolloverForm";
 import { AcademicDatesForm } from "./AcademicDatesForm";
 import { previewRollover } from "@/lib/domain/rollover";
+import { subscriptionState } from "@/lib/domain/subscription";
 import { listClasses } from "@/lib/repo/classroom";
 
 export const metadata: Metadata = { title: "Program and plan" };
@@ -28,7 +29,13 @@ export default async function AdminProgram() {
   const now = new Date();
   const report = buildSchoolReport(db, user.school_id, now);
   const bench = summariseCohortBenchmark(listBenchmarksForSchool(db, user.school_id));
-  const renewalIn = daysBetween(now, new Date(school.term_renews_on));
+  // Only computed for a term that can be read. `new Date("soon")` is Invalid
+  // Date, and the difference of two of those is NaN — which is how this page
+  // rendered "Invalid Date" and "in NaN days".
+  const term = subscriptionState(school, now);
+  const renewalIn = term.kind === "needs-configuration"
+    ? null
+    : daysBetween(now, new Date(school.term_renews_on));
 
   const checklist = [
     {
@@ -137,12 +144,38 @@ export default async function AdminProgram() {
           }
           tone={!licence.recognised || licence.remaining === 0 ? "berry" : "neutral"}
         />
-        <Stat label="Term started" value={formatDate(school.term_starts_on)} />
         <Stat
-          label={renewalIn < 0 ? "Renewal overdue" : "Renews"}
-          value={formatDate(school.term_renews_on)}
-          hint={renewalIn < 0 ? `${Math.abs(renewalIn)} days ago` : `in ${renewalIn} days`}
-          tone={renewalIn < 0 ? "berry" : "neutral"}
+          label="Term started"
+          value={term.kind === "needs-configuration" ? "Needs configuration" : formatDate(school.term_starts_on)}
+          tone={term.kind === "needs-configuration" ? "berry" : "neutral"}
+        />
+        <Stat
+          label={
+            term.kind === "needs-configuration"
+              ? "Subscription dates"
+              : renewalIn !== null && renewalIn < 0
+                ? "Renewal overdue"
+                : "Renews"
+          }
+          // Never the raw stored text, and never an invented renewal status:
+          // an unreadable term has not ended and is not overdue.
+          value={
+            term.kind === "needs-configuration"
+              ? "Need configuration"
+              : formatDate(school.term_renews_on)
+          }
+          hint={
+            term.kind === "needs-configuration"
+              ? "Classroom changes are paused"
+              : renewalIn !== null && renewalIn < 0
+                ? `${Math.abs(renewalIn)} days ago`
+                : `in ${renewalIn} days`
+          }
+          tone={
+            term.kind === "needs-configuration" || (renewalIn !== null && renewalIn < 0)
+              ? "berry"
+              : "neutral"
+          }
         />
       </div>
 

@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { hasLapsed, LAPSED_STAFF_BODY, LAPSED_STAFF_TITLE } from "@/lib/domain/subscription";
+import {
+  instructionClosed,
+  LAPSED_STAFF_BODY,
+  LAPSED_STAFF_TITLE,
+  UNVERIFIED_STAFF_BODY,
+  UNVERIFIED_STAFF_TITLE,
+} from "@/lib/domain/subscription";
 import { signOut } from "@/app/actions/auth";
 import { LogoMark } from "@/components/Logo";
 import type { School, User } from "@/lib/types";
@@ -29,6 +35,11 @@ export function StaffShell({
   area: string;
   children: React.ReactNode;
 }) {
+  // Why new classroom work is closed, if it is. Both reasons pause the same
+  // things and say different sentences: one subscription ended, the other
+  // cannot be read at all.
+  const closed = instructionClosed(school, new Date());
+
   return (
     <div className="min-h-dvh bg-paper lg:flex">
       <aside className="border-b border-sand-deep bg-surface lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r ark-no-print">
@@ -88,13 +99,17 @@ export function StaffShell({
               page that happens not to carry it. `role="status"` rather than
               "alert": it is a standing condition a teacher should be told
               about, not an emergency interrupting what they are doing. */}
-          {hasLapsed(school, new Date()) && (
+          {closed && (
             <div
               role="status"
               className="mb-6 rounded-lg border-2 border-berry bg-berry-wash px-4 py-3 text-sm leading-relaxed text-ink"
             >
-              <p className="font-semibold text-berry-deep">{LAPSED_STAFF_TITLE}</p>
-              <p className="mt-1">{LAPSED_STAFF_BODY}</p>
+              <p className="font-semibold text-berry-deep">
+                {closed === "needs-configuration" ? UNVERIFIED_STAFF_TITLE : LAPSED_STAFF_TITLE}
+              </p>
+              <p className="mt-1">
+                {closed === "needs-configuration" ? UNVERIFIED_STAFF_BODY : LAPSED_STAFF_BODY}
+              </p>
               <p className="mt-2">
                 <Link
                   href="/admin/program"
