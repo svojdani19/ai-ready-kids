@@ -2,6 +2,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 const { AcademicDatesForm } = await import("@/app/admin/program/AcademicDatesForm");
 const { academicSettingsState } = await import("@/lib/domain/calendar");
@@ -65,15 +67,68 @@ describe("the academic form tells missing data apart from a broken record", () =
     expect(screen.getByText(/settings cannot be read/i)).toBeInTheDocument();
   });
 
-  it("reassures without echoing the stored value", () => {
+  it("does not echo the stored value back", () => {
     render(
       <AcademicDatesForm academicYear={null} startsOn={null} endsOn={null} settingsState="unreadable" />,
     );
     const note = screen.getByText(CORRECTION).closest("aside")!;
-    expect(note.textContent).toMatch(/Nothing has been deleted/i);
-    expect(note.textContent).toMatch(/no class or student record has changed/i);
     // Naming the bad value back is how a wrong record gets copied into a fix.
     expect(note.textContent).not.toMatch(/2026-13-45|2025-2027|\d{4}-\d{2}-\d{2}/);
+  });
+
+  /**
+   * Sprint 63. The first version of this copy said "rollover and automatic
+   * deletion are paused" and "Nothing has been deleted".
+   *
+   * Both overstate, on a privacy control where that matters. Retention is per
+   * cohort: a class carries its own snapshotted year-end, and
+   * `runScheduledPurge` deliberately keeps deleting cohorts whose own date is
+   * valid and past — the partial purge sprint 60 built. An unreadable school
+   * calendar blocks the rollover preview and the current-year summary date, and
+   * nothing else. And "Nothing has been deleted" is a claim about history the
+   * product cannot make: a purge may well have run last week.
+   */
+  it.each(["absent", "unreadable"] as const)(
+    "describes what is actually blocked, in the %s state",
+    (settingsState) => {
+      render(
+        <AcademicDatesForm academicYear={null} startsOn={null} endsOn={null} settingsState={settingsState} />,
+      );
+      const note = screen
+        .getByText(settingsState === "absent" ? MIGRATION : CORRECTION)
+        .closest("aside")!;
+      const copy = note.textContent ?? "";
+
+      // What is genuinely blocked.
+      expect(copy).toMatch(/rollover and this year's retention date cannot be worked out/i);
+      // What is not: a cohort with its own valid date keeps its schedule.
+      expect(copy).toMatch(/valid recorded year-end still follow their own deletion dates/i);
+      // And a cohort without one stays blocked.
+      expect(copy).toMatch(/without one is not deleted automatically/i);
+      // Present tense about this page, never a claim about what has happened.
+      expect(copy).toMatch(/does not itself delete any student work/i);
+
+      // The overbroad phrasings, forbidden explicitly.
+      expect(copy).not.toMatch(/nothing has been deleted/i);
+      expect(copy).not.toMatch(/no class or student record has changed/i);
+      expect(copy).not.toMatch(/automatic deletion (is|are) paused/i);
+      expect(copy).not.toMatch(/nothing is deleted automatically until/i);
+      expect(copy).not.toMatch(/retention (is|are) (blocked|paused)/i);
+    },
+  );
+
+  it("keeps the Program page from repeating the overstatement", () => {
+    const page = readFileSync(
+      join(process.cwd(), "src/app/admin/program/page.tsx"),
+      "utf8",
+    )
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/(^|\s)\/\/[^\n]*/g, "$1");
+
+    expect(page).toMatch(/rollover and this year's retention date can be worked out/i);
+    expect(page).toMatch(/Classes with a valid recorded year-end keep their own deletion dates/i);
+    expect(page).not.toMatch(/before rollover and retention can work/i);
+    expect(page).not.toMatch(/Retention and rollover are blocked/i);
   });
 
   it("shows no note at all when the settings are usable", () => {

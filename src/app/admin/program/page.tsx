@@ -103,7 +103,9 @@ export default async function AdminProgram() {
         description={
           academicOk
             ? `Where ${school.name} is in the ${school.academic_year} programme year, and what happens at renewal.`
-            : `${school.name}. The programme year needs configuring below before rollover and retention can work.`
+            // "before retention can work" was too broad: cohorts with a valid
+            // recorded year-end keep their own schedules regardless.
+            : `${school.name}. The programme year needs configuring below before rollover and this year's retention date can be worked out.`
         }
         actions={
           <ButtonLink href="/admin/report" variant="secondary">
@@ -230,7 +232,7 @@ export default async function AdminProgram() {
               // Never echoes the stored value back: a malformed label is not a
               // fact about the school year, and this panel is the recovery
               // surface, so it has to stay readable and say what to do.
-              : `${ACADEMIC_NEEDS_CONFIGURATION}. Retention and rollover are blocked until the year and both dates are set below.`
+              : `${ACADEMIC_NEEDS_CONFIGURATION}. Rollover and this year's retention date cannot be worked out until the year and both dates are set below. Classes with a valid recorded year-end keep their own deletion dates.`
           }
         >
           <PanelBody className="space-y-6">

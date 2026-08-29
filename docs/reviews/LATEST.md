@@ -7,6 +7,64 @@ likely to be.
 
 ---
 
+## Sprint 63 — correction to sprint 62: the new copy overstated what was blocked
+
+- **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-29-sprint-62.md`](2026-08-29-sprint-62.md), sprint 63
+  section.
+
+### The defect
+
+The unreadable note said *"rollover and automatic deletion are paused"* and
+*"Nothing has been deleted and no class or student record has changed"*; the
+Program page repeated it as *"before rollover and retention can work"* and
+*"Retention and rollover are blocked"*.
+
+**Retention is per cohort.** A class carries its own snapshotted `year_ends_on`,
+and `runScheduledPurge` **deliberately keeps deleting** cohorts whose own date is
+valid and past — the partial purge sprint 60 built, which I then described as
+stopped. An unreadable school calendar blocks the rollover preview, the
+current-year summary date, and cohorts with no usable date of their own. And
+*"Nothing has been deleted"* is a claim about history the product cannot make.
+
+### The correction
+
+One shared `RETENTION_SCOPE` sentence, used by **both** notes so they cannot
+drift: rollover and **this year's retention date** cannot be worked out; classes
+with a valid recorded year-end **still follow their own deletion dates**; a class
+without one is not deleted automatically; and — present tense — viewing or
+correcting this page **does not itself** delete any student work. The migration
+note carries it too; it previously ended with the same overstatement in the other
+state.
+
+**Deliberately unchanged:** the Data page's policy hint and per-row
+`unrecognised-policy` reason, and the report's retention line. Those describe an
+unrecognised **retention window**, which sprint 54 made skip the whole school —
+they are accurate.
+
+### Evidence
+
+- Typecheck clean; lint 0 errors (2 pre-existing warnings); **667 tests** (16
+  files, up from 664); Turbopack build **Compiled successfully**.
+- Three cases added, **all three failing against the sprint-62 copy**: an
+  `it.each` over both states asserting four accurate clauses and forbidding five
+  overbroad phrasings by regex, plus a guard that the Program page does not
+  reintroduce either of its two.
+- **Browser at 1280×800 and 768×1024, both states**: page summary, Academic year
+  panel, and both notes read as above; **all five overbroad phrasings absent**
+  from the rendered page in both states; no overflow.
+- Demo restored: 2025-2026 / 2025-08-25 / 2026-06-12, four classes, 90 students,
+  884 attempts, 6 audit rows.
+
+### Where this is most likely still wrong
+
+- **No other broken-state copy has been re-read against its mechanism.** The
+  subscription, seat and plan notes were written the same way and say what is
+  paused; whether each matches what the code actually stops has not been
+  re-checked since it was written.
+
+---
+
 ## Sprint 62 — a provenance claim the product could not support, and a real flake
 
 - **Commit:** on `main` — <https://github.com/svojdani19/ai-ready-kids>

@@ -148,6 +148,32 @@ export function academicSettingsState(school: {
   return bothDatesAbsent && labelNotCorrupt ? "absent" : "unreadable";
 }
 
+/**
+ * What an unusable school calendar actually stops, said accurately.
+ *
+ * Sprint 63: the first version of this copy claimed "rollover and automatic
+ * deletion are paused" and "Nothing has been deleted". Both overstate, and on a
+ * privacy control that matters.
+ *
+ * Retention is per cohort and always has been: a class carries its own
+ * snapshotted `year_ends_on`, and `runScheduledPurge` deliberately keeps
+ * deleting cohorts whose own date is valid and past — that partial-purge
+ * behaviour is exactly what sprint 60 built. What an unreadable school calendar
+ * blocks is narrower: the rollover preview, and the current-year summary date
+ * on the Data page. A cohort without a usable date of its own is blocked too,
+ * and stays that way.
+ *
+ * And "Nothing has been deleted" is a claim about history this product cannot
+ * make — a purge may well have run last week. The present-tense statement it
+ * can make is that looking at or fixing this page does not itself delete
+ * anything.
+ */
+const RETENTION_SCOPE =
+  "Rollover and this year's retention date cannot be worked out until it is corrected. " +
+  "Classes that already have a valid recorded year-end still follow their own deletion dates, " +
+  "and any class without one is not deleted automatically. Viewing or correcting this page " +
+  "does not itself delete any student work.";
+
 /** The note above the form, or null when there is nothing to explain. */
 export const ACADEMIC_STATE_NOTE: Record<
   Exclude<AcademicSettingsState, "ok">,
@@ -158,15 +184,14 @@ export const ACADEMIC_STATE_NOTE: Record<
     body:
       "Records brought forward from an earlier version arrive without them, because the old " +
       "database had nowhere to put them and a guess could have deleted a child's work early. " +
-      "Nothing is deleted automatically until you fill these in.",
+      RETENTION_SCOPE,
   },
   unreadable: {
     // No provenance claim, and no echo of what is stored: naming the bad value
     // back is how a wrong record gets copied into a correction.
     title: "This school year's settings cannot be read",
     body:
-      "The school year or one of its dates is not in a form this product can use, so rollover " +
-      "and automatic deletion are paused. Nothing has been deleted and no class or student " +
-      "record has changed. Enter the year and both dates below to correct it.",
+      "The school year or one of its dates is not in a form this product can use. " +
+      RETENTION_SCOPE,
   },
 };

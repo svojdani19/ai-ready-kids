@@ -404,6 +404,11 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       continuing to act on it. A default that looks like restraint — "we won't
       assume it lapsed" — may be asserting the opposite with equal force. If
       neither answer is verifiable, say so as a third state.
+- [ ] **On a broken-state screen, write a description, not reassurance.**
+      "Nothing has been deleted, nothing has changed" calms the reader and makes
+      two factual claims — one about the past you cannot check, one about scope
+      that may contradict a mechanism still running. Say exactly what is
+      blocked, what still proceeds, and keep claims about the past out of it.
 - [ ] **When a value is narrowed on its way to a component, ask what the
       component inferred from the width it used to have.** Sanitising a bad
       value to `null` can collapse two states a screen was distinguishing —
