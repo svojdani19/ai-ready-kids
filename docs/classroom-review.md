@@ -553,6 +553,20 @@ Run the same feature on a Chromebook and a tablet, at 1366×768 and 768×1024.
       the next time your deployment runs the purge job" — wherever the product
       cannot promise the clock.
 
+- [ ] **A risk conclusion is not a security control.** "Nothing worth
+      stealing", "as much security as this data warrants", "proportionate" —
+      each of these replaces a description of what an attacker reaches with an
+      assurance that it does not matter. Read them against what the code
+      actually hands out: here, a class code returned a roster of children's
+      names and a session as any one of them. Describe the boundary and the
+      mitigation, and let the buyer draw the conclusion.
+- [ ] **An absolute inventory has to be generated or tested, never written.**
+      Two pages each said "the complete list" over two different lists, and
+      neither matched the schema. If the word "every" is on a buyer-facing page,
+      something in CI must fail when a column is added — otherwise the claim
+      decays silently at the next migration, and the surface that decays is the
+      one a school reads before signing.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

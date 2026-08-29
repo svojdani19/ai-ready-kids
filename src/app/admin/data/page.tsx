@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
 import { isAcademicYearLabel } from "@/lib/domain/calendar";
+import {
+  NOT_COLLECTED,
+  STUDENT_RECORD,
+  SURROUNDING_RECORD,
+} from "@/content/data-inventory";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/session";
 import { listClasses, listStudents } from "@/lib/repo/classroom";
@@ -18,25 +23,6 @@ import { ConfirmAction } from "@/components/staff/ConfirmAction";
 import { RetentionForm } from "./RetentionForm";
 
 export const metadata: Metadata = { title: "Data and retention" };
-
-const COLLECTED = [
-  ["A class name, grade and join code", "So a child can find their own class."],
-  ["A first name and last initial per student", "So a child can find their own row on a screen of twenty-three."],
-  ["An assigned animal avatar", "So a pre-reader can find themselves faster. Chosen by us, never uploaded."],
-  ["Which authored choices a student tapped", "This is the competency evidence teachers act on."],
-  ["Which check-in options a student selected", "Aggregated into a group difference. Never shown per student to anyone."],
-  ["Staff name, school email and role", "So staff can sign in and own a class."],
-];
-
-const NOT_COLLECTED = [
-  "Surnames, dates of birth, addresses, phone numbers or student email addresses",
-  "Any text a child typed, because a child cannot type anything into this product",
-  "Photographs, audio, video, camera access or microphone access",
-  "Location, IP-based geolocation or device fingerprints",
-  "Time on task, idle time, keystroke timing or any behavioural telemetry",
-  "Risk scores, readiness bands, personality inferences or predictions about a child",
-  "Advertising identifiers, third-party analytics or any tracker of any kind",
-];
 
 export default async function AdminData() {
   const { user } = await requireAdmin();
@@ -114,16 +100,38 @@ export default async function AdminData() {
       </div>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-2">
-        <Panel title="What we collect" description="The complete list. There is nothing held back.">
-          <PanelBody>
+        {/* Enumerated from the schema rather than summarised from memory, and
+            from the same module the public privacy page reads. The old list
+            said "the complete list, nothing held back" over six lines that
+            omitted the class relationship, the derived per-attempt evidence and
+            the check-in timestamps — and the public page's list of six was a
+            different six. */}
+        <Panel
+          title="What we hold about a student"
+          description="Every column in the database that hangs off a student row, and the class and staff records those rows hang from. Not the school's own account settings, which are not student records."
+        >
+          <PanelBody className="space-y-5">
             <dl className="space-y-3">
-              {COLLECTED.map(([what, why]) => (
-                <div key={what}>
-                  <dt className="text-sm font-semibold text-ink">{what}</dt>
-                  <dd className="text-sm leading-relaxed text-ink-soft">{why}</dd>
+              {STUDENT_RECORD.map((entry) => (
+                <div key={entry.what}>
+                  <dt className="text-sm font-semibold text-ink">{entry.what}</dt>
+                  <dd className="text-sm leading-relaxed text-ink-soft">{entry.why}</dd>
                 </div>
               ))}
             </dl>
+            <div className="border-t border-sand pt-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-faint">
+                The records a student record hangs from
+              </p>
+              <dl className="mt-3 space-y-3">
+                {SURROUNDING_RECORD.map((entry) => (
+                  <div key={entry.what}>
+                    <dt className="text-sm font-semibold text-ink">{entry.what}</dt>
+                    <dd className="text-sm leading-relaxed text-ink-soft">{entry.why}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
           </PanelBody>
         </Panel>
 

@@ -192,14 +192,17 @@ export default async function AdminClasses() {
 
       <div className="mt-6">
         <Note tone="denim" title="Class codes">
-          A code is the only thing standing between a child and their own progress, which
-          is exactly as much security as this data warrants. Codes get read aloud and
+          A class code is shared classroom access, not proof of who is using it. Anyone
+          holding it can see that class&rsquo;s roster of first names and avatars, choose
+          any child on it, and open that child&rsquo;s progress. Codes get read aloud and
           photographed off whiteboards, so choose <strong>New code</strong> above whenever
           one has travelled further than the class. The old code stops working immediately
           and nothing else about the class changes. The teacher of record can do the same
           from their own class page. Deleting a class is never the way to change its code.
           Roster sync and single sign-on would replace codes in a production deployment;
-          neither is built, so this is how joining works here.
+          neither is built, so a class code is the only credential in the product &mdash;
+          enough for a supervised pilot or a local demonstration, not production access
+          control.
         </Note>
       </div>
     </div>

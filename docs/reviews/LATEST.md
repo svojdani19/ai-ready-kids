@@ -7,115 +7,90 @@ likely to be.
 
 ---
 
-## Sprint 65 — the subscription notices promised a freeze the gate never applied
+## Sprint 66 — a risk conclusion is not a security control, and "complete" was two different lists
 
-- **Reviewed against:** HEAD `cf0d312`
+- **Reviewed against:** HEAD `f9dc70c`
 - **Repository:** <https://github.com/svojdani19/ai-ready-kids>
-- **Full review:** [`2026-08-29-sprint-65.md`](2026-08-29-sprint-65.md)
+- **Full review:** [`2026-08-29-sprint-66.md`](2026-08-29-sprint-66.md)
 
-### The defect
+### Defect 1 — three surfaces dismissed unauthorised access
 
-The lapsed staff notice ended *"Nothing has been deleted and nothing is hidden.
-Everything the school already has stays here and stays readable."* — a claim
-about the entire store for the entire duration of the lapse. The term gate
-covers instructional and classroom writes only:
+Home: *"A first name and a last initial is the entire student record. Nothing to
+reset, nothing worth stealing."* Admin → Classes: *"exactly as much security as
+this data warrants."* Privacy: *"the security is proportionate to that."*
 
-- `runScheduledPurge` (`src/lib/domain/purge.ts`) has **no subscription check**;
-  a due cohort is deleted by the next run regardless of term state.
-- `deleteClassDataAction` and `setRetentionAction` are on the gate's **ALLOWED**
-  list.
+All three are conclusions about risk rather than descriptions of a control, and
+all three sat on a product that correctly calls the same records **education
+records under FERPA**. They also understated the reach, which I verified in code
+rather than inferring:
 
-So the notice could be on screen while `npm run purge` deleted a cohort that
-night. The Program & plan note carried the softer form of the same claim, and
-`admin/page.tsx` held a **second, drifted copy** of the unverified-term
-paragraph with its own version of the deletion promise.
+- `src/app/join/[classId]/page.tsx` renders every child in the class by name and
+  avatar to any holder of a valid grant.
+- `chooseStudent` in `src/app/actions/auth.ts` writes a **student session** for
+  any listed child — badges, finished missions, per-skill evidence.
 
-### The correction
+Replaced by `CLASS_CODE_BOUNDARY` in `src/content/data-inventory.ts`, used on
+all three surfaces: a code is **shared classroom access, not proof of who is
+using it**; anyone with it can see that roster, choose any child on it, and open
+that child's progress; it reaches one class and no further; rotate it when it
+travels. `CLASS_CODE_POSTURE` names the deployment posture once — enough for a
+**supervised pilot or local demonstration**, explicitly **not production access
+control**. The accurate existing statements (no password, no recovery flow,
+roster sync and SSO not built) are kept.
 
-One shared constant stating the causal fact:
+### Defect 2 — two absolute inventories, neither matching the schema
 
-> This does not itself delete or hide anything. Records still inside the
-> school's retention window remain available, along with reports and exports,
-> and the retention schedule the school configured and the administrator's own
-> deletion controls carry on as before.
+`/admin/data` said *"The complete list. There is nothing held back"* over six
+items; `/privacy` said *"Everything we hold about a student"* over a **different**
+six. Against the 18 columns of the three student-linked tables (`students` 5,
+`attempts` 7, `benchmarks` 6): the admin list accounted for **4**, the public
+list for **7**. Both omitted `attempts.evidence_json` (the derived per-skill
+judgement), the check-in timestamps, `students.created_at` and every id/FK; the
+admin list also omitted `students.class_id`.
 
-Appended to both `LAPSED_STAFF_BODY` and `UNVERIFIED_STAFF_BODY`, with the
-needs-configuration distinctions intact around it (*"This is not an expiry —
-nothing has ended"* before, *"Ask your account contact to correct the
-subscription dates"* after). The admin overview now renders the shared constant
-instead of its own paragraph. The Program note adds *"What it does not do is
-suspend retention: the schedule you configured carries on, so a class already
-past its deletion date is still deleted on time."*
-
-`LAPSED_WRITE_REFUSAL` keeps *"Nothing has been changed."* — transactionally
-true of the rejected write. Child copy unchanged and still billing-free.
-
-### Correction during acceptance
-
-My first version of that Program note ended *"a class already past its deletion
-date is still **deleted on time**."* — a promise about a schedule this build
-does not run. `admin/data/page.tsx` has always said the opposite: nothing here
-runs the purge on a timer, a deployment schedules `npm run purge`, and until it
-runs, records past the date are still present. I had replaced one unsupported
-claim with another on the same subject.
-
-Corrected to keep **due** and **deleted** as separate facts and name the actor:
-
-> …so a class past its deletion date **stays due**, and it is deleted **the next
-> time your deployment runs the purge job**. Pausing neither brings that forward
-> nor holds it back, and nothing in this build runs the job on a timer, so due
-> is not yet deleted.
-
-The shared subscription constants needed no change — they speak of the schedule
-*carrying on*, never of when a deletion happens. Retention behaviour untouched.
-`tests/subscription-lapse.test.ts` → *"claims no deletion timeline this build
-does not run"* forbids `deleted on time` / `deleted on schedule`, requires the
-four mechanism phrases, and forbids any timeline phrase in the shared bodies. It
-fails on the pre-correction file.
+Both pages now read one module. `tests/data-inventory.test.ts` parses
+`SCHEMA_SQL` and fails when any column of any student-linked table is unclaimed,
+so `ALTER TABLE` breaks the build until the new column is described. Scope is
+stated on both pages instead of assumed — student-linked rows plus, on the admin
+page only, the class and staff records they hang from; explicitly **not** the
+school's account settings or the audit log.
 
 ### Evidence
 
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      678 passed (16 files)   — up from 669
+tests      690 passed (17 files)   — up from 678
 build      ✓ Compiled successfully
-stash 3 source files      → 4 failures  (failing-before, copy correction)
-stash program/page.tsx    → 1 failure   (failing-before, timeline correction)
+revert 4 page files → 6 of 12 new tests fail (every copy assertion)
 ```
 
-Browser on :3210 — `/admin` and `/admin/program`, lapsed and
-needs-configuration, at 1280×800 and 768×1024. All eight combinations: banned
-claims absent, causal + retention-window + schedule sentences present, no
-`Invalid Date`/`NaN`, raw stored `soon` never echoed, no horizontal overflow.
-The acceptance correction was re-checked scoped to Program & plan at both
-widths: `deleted on time` absent, all four mechanism phrases present, no
-`Invalid Date`/`NaN`, no overflow.
-Demo restored (plan `school`, 120 seats, retention 12, 2025-2026 /
-2025-08-25 → 2026-06-12, term → 2026-09-01, 4 classes, 90 students, 884
-attempts, 6 audit rows).
+Browser on :3210 — `/`, `/privacy`, `/admin/data`, `/admin/classes` at 1280×800
+and 768×1024. All eight: banned phrases absent, boundary and posture present,
+the previously-omitted facts rendered, no horizontal overflow.
 
 ### Where to push hardest
 
-1. **Two of the six new tests pass before the fix.** The behaviour tests
-   (`runScheduledPurge` still deletes; retention + `deleteClass` still work
-   while `assertClassSubscriptionActive` throws) do not fail-before, because the
-   product was already right and only the copy was wrong. They exist to force a
-   future behaviour change to confront the copy in the same commit. If that is
-   not a good enough reason to keep them, say so.
-2. **The gap itself is unfixed, deliberately.** A scheduled purge can delete a
-   cohort while the term is paused. The Program note now says this out loud
-   rather than hiding it. Whether retention *should* be suspended by a lapse is
-   a product decision this sprint did not take.
-3. **Other surfaces may still carry global reassurance.** This sprint cleared
-   the subscription notices and the Program renewal note. Sprint 64 cleared the
-   Data page's academic-date branch. The pattern — a feature-local notice making
-   a whole-system promise — is worth sweeping for elsewhere.
-4. **The refusal/notice boundary.** *"Nothing has been changed"* is now allowed
-   only in the refusal constants. Check that distinction holds in the rendered
-   product, not just in the constants file.
-5. **Other timeline claims.** The acceptance correction found one sentence
-   promising a run time the build does not schedule. The same question is worth
-   asking of every surface that mentions deletion, rollover or check-in windows:
-   does the copy name a *state* the product can guarantee, or an *event* that
-   depends on somebody's cron?
+1. **Six of the twelve new tests cannot fail-before, and I say so in the
+   review.** The schema-coverage assertions had nothing to check before this
+   sprint, because no list was schema-linked. The evidence that the defect was
+   real is the column count (4/18 and 7/18), not those tests.
+2. **The coverage test is only as good as `STUDENT_LINKED_TABLES`.** It is a
+   hand-maintained list of three table names. A future table with a `student_id`
+   foreign key that nobody adds to that constant is invisible to the test —
+   deriving it from the FK declarations in `SCHEMA_SQL` would close that, and I
+   did not.
+3. **`SURROUNDING_RECORD` is grouped, not enumerated.** Its entries name tables
+   (`classes`, `assignments`, `users`) rather than columns, and no test enforces
+   coverage there. That is deliberate — those are not student records and the
+   heading does not claim column-completeness for them — but it is a weaker
+   guarantee sitting next to a stronger one on the same panel.
+4. **The limitation is now a commercial fact on a buyer-facing page.** A
+   district administrator reading `/privacy` is told that anyone with a class
+   code can open any listed child's progress, and that this build suits a
+   supervised pilot rather than a production rollout. That is the honest
+   position and it may cost deals. The alternative was a security claim the code
+   did not support.
+5. **Nothing was fixed about the access model itself.** Class codes remain the
+   only student credential. If the reviewer's next finding is "then build roster
+   sync", that is a build, not a copy sprint, and should be scoped as one.

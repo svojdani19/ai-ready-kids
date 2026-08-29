@@ -3,6 +3,11 @@ import Link from "next/link";
 import { MISSIONS } from "@/content/missions";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
 import { MIN_REPORTABLE_GROUP } from "@/lib/repo/report";
+import {
+  CLASS_CODE_BOUNDARY,
+  CLASS_CODE_POSTURE,
+  STUDENT_RECORD,
+} from "@/content/data-inventory";
 import { ButtonLink } from "@/components/ui/Button";
 import { Note } from "@/components/ui/Bits";
 
@@ -16,16 +21,12 @@ const SECTIONS = [
   {
     id: "collected",
     title: "Everything we hold about a student",
-    body: [
-      "A display name, which is a first name and a last initial, entered by the teacher.",
-      "An animal avatar, assigned automatically from a set of ten. Never uploaded, never a photo.",
-      "The class they belong to.",
-      "Which authored choices they tapped in each mission, stored as content identifiers.",
-      "Which option they selected for each check-in item.",
-      "The timestamps at which a mission was opened and finished.",
-    ],
+    // The same module the administrator's own Data & retention page reads.
+    // These two lists used to be written separately and had drifted into two
+    // different sixes, each calling itself complete.
+    body: STUDENT_RECORD.map((entry) => entry.what),
     footnote:
-      "That is the complete list. There is no free-text field anywhere in the student experience, so there is nothing a child could type that we would then be storing.",
+      "That is every column in the database that hangs off a student row, enumerated rather than summarised, and a test fails the build if a column is added without appearing here. It is not everything the product stores: a school's own account settings, its staff records and the audit log are not records about a child, and this list does not cover them. There is no free-text field anywhere in the student experience, so there is nothing a child could type that we would then be storing.",
   },
   {
     id: "refused",
@@ -47,8 +48,11 @@ const SECTIONS = [
     body: [
       "A student joins by typing a class code their teacher shows the room, then tapping their own name.",
       "There is no password to reset, no email address to verify and no recovery flow to attack.",
-      "A class code protects a child's own progress list. That is the entire value of what sits behind it, and the security is proportionate to that.",
-      "Roster sync and single sign-on would replace class codes in a production deployment. Neither is built in this demonstration, so the class code is how a child gets in, and it is the only credential in the product.",
+      // Not "the security is proportionate to that". A seven year old cannot
+      // tell a shared classroom credential from a personal one, and a buyer
+      // needs the limitation described rather than dismissed.
+      ...CLASS_CODE_BOUNDARY,
+      CLASS_CODE_POSTURE,
     ],
   },
   {

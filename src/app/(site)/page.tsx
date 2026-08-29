@@ -138,8 +138,8 @@ export default function LandingPage() {
             <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
               {[
                 [
-                  "A class code is all they need",
-                  "A first name and a last initial is the entire student record. Nothing to reset, nothing worth stealing.",
+                  "A class code, not a child's password",
+                  "Shared classroom access: whoever holds the code can see that roster and open any listed child's progress. Rotate it when it travels. Roster sync and single sign-on are not built here.",
                 ],
                 [
                   "Evidence, not surveillance",
