@@ -16,7 +16,7 @@ export default function ApproachPage() {
         eyebrow="How it works"
         tone="grape"
         title="The first request for a home address should not be the first time a child has thought about it."
-        lede="Elementary students already meet these systems, in a sibling's phone, a smart speaker, a game, a search box that now answers in sentences. Schools cannot control that exposure. What a school can do is make sure the decision has been rehearsed first."
+        lede="Children are already meeting systems built for adults: on a sibling's tablet, on a parent's phone, in a smart speaker, inside a video game, and in a search box that now answers the question instead of helping them learn from it. No school can control that exposure. What a school can be is the place where the decision is formed first."
       >
         <div className="flex flex-wrap gap-3">
           <ButtonLink href="/curriculum">Read the curriculum</ButtonLink>
