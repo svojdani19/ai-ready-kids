@@ -141,6 +141,25 @@ export const ASSIGNMENT_FAILED = (className: string) =>
   `no child's saved mission work or badge has changed, and nothing was written to ` +
   `the audit log. It is safe to try again.`;
 
+/**
+ * Removing a child from a parked class is permanent, and archiving is not.
+ *
+ * Archiving closes the student sessions and takes the cohort out of the active
+ * seat count. It does not empty the class: the roster, every attempt, every
+ * check-in and every badge stay stored, and the class can be restored. The
+ * archive and retention promises both rest on that — records remain unchanged
+ * until a restore, a scheduled purge or an explicit administrator deletion.
+ *
+ * `removeStudentAction` bypassed all three. It cascades a child's row to every
+ * attempt and check-in they have, permanently, and `requireOwnActiveClass`
+ * checks ownership and the subscription term but never `archived_at` — so a
+ * stale tab or a direct call could delete one child out of a parked cohort and
+ * quietly change what a school's history and exports say about a year that was
+ * supposed to be finished.
+ */
+export const REMOVE_STUDENT_CLASS_ARCHIVED =
+  "That class is archived. Restore the class before removing a student from it.";
+
 export const REMOVE_STUDENT_FAILED = (className: string) =>
   `That student was not removed, and no records were deleted: they are still on ` +
   `${className}'s roster with their mission history and check-ins exactly as they were. ` +

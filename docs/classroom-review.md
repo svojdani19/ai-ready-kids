@@ -803,6 +803,26 @@ one of them has not tested the thing that was built.
       Capture the actual failure first; a bigger budget hides a real race exactly
       as well as it hides a slow test.
 
+- [ ] **Ask what a paused state still permits, one verb at a time.** Archiving
+      was made to close student sessions and free seats; it was never made to
+      close the teacher's own destructive actions. Assignment was fixed, and
+      removal — which permanently deletes a child and everything cascading from
+      them — was left open for three more sprints. When a state is introduced,
+      list every action that can still reach the thing it parks, and say for each
+      one whether that is intended.
+- [ ] **Capture the failure before theorising about it.** Three times I called
+      intermittent test failures contention or timeouts without reading the error.
+      Once read, it said `Test timed out in 5000ms` on trivial synchronous tests,
+      which ruled out races immediately; then each hypothesis fell in turn — dev
+      server, fork count, machine load, fixture cost — until fsync on throwaway
+      databases was the answer. Every one of those was cheap to test and none of
+      them was tested while I was guessing.
+- [ ] **A gate you re-run until it is green is not a gate.** The suite was
+      failing about seven runs in ten while I quoted the passing ones. The number
+      was accurate and the impression was false. If a suite fails intermittently,
+      that is the finding, and it outranks whatever sprint you were trying to
+      land.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

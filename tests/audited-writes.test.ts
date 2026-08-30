@@ -35,6 +35,8 @@ import type { Db } from "@/lib/db";
 import {
   ARCHIVE_FAILED,
   auditedWrite,
+  REMOVE_STUDENT_CLASS_ARCHIVED,
+  REMOVE_STUDENT_FAILED,
   DELETE_FAILED,
   RESTORE_FAILED,
   ROTATE_FAILED,
@@ -829,5 +831,123 @@ describe("no destructive or credential-changing action audits outside a transact
       ]),
     );
     expect(wrapped.length).toBeGreaterThanOrEqual(11);
+  });
+});
+
+
+describe("sprint 79: a parked class does not lose a child", () => {
+  const auditsOf = (action: string) =>
+    listAudit(db, DEMO_SCHOOL, 500).filter((a) => a.action === action);
+
+  async function asTeacher() {
+    jar.store.clear();
+    await writeSession({ kind: "staff", userId: DEMO_TEACHER });
+  }
+
+  /**
+   * Everything an archived class is promised to keep, for one child and for the
+   * class around them. Archiving closes sessions; it does not empty the room.
+   */
+  function everything(studentId: string) {
+    const dump = (sql: string, ...a: unknown[]) =>
+      JSON.stringify(db.prepare(sql).all(...(a as never[])));
+    return {
+      classRow: JSON.stringify(db.prepare("SELECT * FROM classes WHERE id = ?").get(DEMO_CLASS)),
+      theStudent: JSON.stringify(db.prepare("SELECT * FROM students WHERE id = ?").get(studentId)),
+      roster: dump("SELECT * FROM students WHERE class_id = ? ORDER BY id", DEMO_CLASS),
+      // Attempts carry the badge and the skill evidence, so this covers both.
+      theirAttempts: dump("SELECT * FROM attempts WHERE student_id = ? ORDER BY id", studentId),
+      theirCheckIns: dump("SELECT * FROM benchmarks WHERE student_id = ? ORDER BY id", studentId),
+      allAttempts: dump("SELECT * FROM attempts ORDER BY id"),
+      allBenchmarks: dump("SELECT * FROM benchmarks ORDER BY id"),
+      audit: dump("SELECT action, detail FROM audit_log ORDER BY created_at, id"),
+    };
+  }
+
+  it("refuses removal while the class is archived, changing nothing at all", async () => {
+    await asTeacher();
+    const victim = listStudents(db, DEMO_CLASS)[0];
+    // Give them work worth losing, so the assertion has something to protect.
+    expect(
+      (db.prepare("SELECT COUNT(*) AS n FROM attempts WHERE student_id = ?").get(victim.id) as {
+        n: number;
+      }).n,
+    ).toBeGreaterThan(0);
+
+    archiveClass(db, DEMO_CLASS);
+    const before = everything(victim.id);
+
+    const result = await removeStudentAction(DEMO_CLASS, victim.id);
+
+    expect(result.error).toBe(REMOVE_STUDENT_CLASS_ARCHIVED);
+    expect(result.error).toMatch(/restore the class before removing a student/i);
+    // Distinct from the operational failure and from the mismatched-pair message.
+    expect(result.error).not.toBe(REMOVE_STUDENT_FAILED("Room 12"));
+    expect(result.error).not.toMatch(/not on this class's roster/i);
+
+    // The class, the child, the roster around them, their attempts, their
+    // check-ins, and every audit row: byte for byte.
+    expect(everything(victim.id)).toEqual(before);
+    expect(listStudents(db, DEMO_CLASS).map((s) => s.id)).toContain(victim.id);
+    expect(auditsOf("roster.removed")).toHaveLength(0);
+  });
+
+  it("refuses above the transaction, so an armed audit trigger is never reached", async () => {
+    // If the check sat inside `auditedWrite`, a failing audit insert would
+    // surface as REMOVE_STUDENT_FAILED instead. The archived message winning
+    // proves nothing was attempted and no write lock was taken.
+    await asTeacher();
+    const victim = listStudents(db, DEMO_CLASS)[0];
+    archiveClass(db, DEMO_CLASS);
+    const before = everything(victim.id);
+
+    failAuditFor("roster.removed");
+    const result = await removeStudentAction(DEMO_CLASS, victim.id);
+    removeFailure();
+
+    expect(result.error).toBe(REMOVE_STUDENT_CLASS_ARCHIVED);
+    expect(result.error).not.toBe(REMOVE_STUDENT_FAILED("Room 12"));
+    expect(everything(victim.id)).toEqual(before);
+    expect(auditsOf("roster.removed")).toHaveLength(0);
+  });
+
+  it("removes normally once the class is restored, cascade and audit intact", async () => {
+    await asTeacher();
+    const victim = listStudents(db, DEMO_CLASS)[0];
+    const attemptsBefore = (
+      db.prepare("SELECT COUNT(*) AS n FROM attempts WHERE student_id = ?").get(victim.id) as {
+        n: number;
+      }
+    ).n;
+    expect(attemptsBefore).toBeGreaterThan(0);
+
+    archiveClass(db, DEMO_CLASS);
+    expect((await removeStudentAction(DEMO_CLASS, victim.id)).error).toBe(
+      REMOVE_STUDENT_CLASS_ARCHIVED,
+    );
+
+    restoreClass(db, DEMO_CLASS);
+    const rosterBefore = listStudents(db, DEMO_CLASS).length;
+    const auditBefore = listAudit(db, DEMO_SCHOOL, 500).length;
+
+    const result = await removeStudentAction(DEMO_CLASS, victim.id);
+
+    // The refusal was about the parked state, not a permanent lock.
+    expect(result.error).toBeUndefined();
+    expect(listStudents(db, DEMO_CLASS)).toHaveLength(rosterBefore - 1);
+    // The existing atomic cascade, checked by the id captured beforehand so an
+    // orphan cannot hide behind an empty subquery.
+    expect(
+      (db.prepare("SELECT COUNT(*) AS n FROM attempts WHERE student_id = ?").get(victim.id) as {
+        n: number;
+      }).n,
+    ).toBe(0);
+    expect(
+      (db.prepare("SELECT COUNT(*) AS n FROM benchmarks WHERE student_id = ?").get(victim.id) as {
+        n: number;
+      }).n,
+    ).toBe(0);
+    expect(auditsOf("roster.removed")).toHaveLength(1);
+    expect(listAudit(db, DEMO_SCHOOL, 500).length).toBe(auditBefore + 1);
   });
 });

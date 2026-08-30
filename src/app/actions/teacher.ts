@@ -25,6 +25,7 @@ import {
   ASSIGNMENT_CLASS_ARCHIVED,
   ASSIGNMENT_FAILED,
   auditedWrite,
+  REMOVE_STUDENT_CLASS_ARCHIVED,
   REMOVE_STUDENT_FAILED,
   ROTATE_FAILED,
 } from "@/lib/repo/audited";
@@ -330,6 +331,18 @@ export async function renameStudentAction(
 export async function removeStudentAction(classId: string, studentId: string): Promise<{ error?: string }> {
   try {
     const { db, user, classroom } = await requireOwnActiveClass(classId);
+
+    // Archived classes are parked, not empty. This deletion is permanent and
+    // cascades, and archiving promises the roster and records stay put until a
+    // restore, a scheduled purge or an explicit administrator deletion — so it
+    // is refused here, above the transaction, before anything is attempted.
+    //
+    // Scoped to this action deliberately. Widening `requireOwnActiveClass`
+    // would change every classroom mutation at once, and rename and rotate
+    // semantics are their own question.
+    if (classroom.archived_at) {
+      return { error: REMOVE_STUDENT_CLASS_ARCHIVED };
+    }
 
     // Authorizing the class is not authorizing the child. The delete is scoped
     // by both ids and reports whether it actually removed anything, so a

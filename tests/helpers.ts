@@ -14,6 +14,19 @@ import { completeAttempt, getAttempt, recordDecision, startAttempt } from "@/lib
 export function createTestDb(): { db: Db; cleanup: () => void } {
   const dir = mkdtempSync(join(tmpdir(), "airk-test-"));
   const db = openDatabase(join(dir, "test.db"));
+  /**
+   * A test database is thrown away at the end of the test, so it does not need
+   * to survive a power cut. The schema sets WAL, which fsyncs on every commit,
+   * and this suite commits constantly — `BEGIN IMMEDIATE` runs in the seat
+   * check, the purge, every audited write. When the disk stalls, trivial
+   * synchronous tests were blocking past the 5s timeout and failing as
+   * timeouts, moving around the suite at random.
+   *
+   * Durability is the only thing being given up, and only for a file that is
+   * deleted moments later. Every transaction, lock and rollback still behaves
+   * exactly as it does in production, which is what the tests are about.
+   */
+  db.exec("PRAGMA synchronous = OFF");
   seed(db);
   // Sprint 42 made enrollment check the school's licensed seats. Almost no test
   // in this suite is about entitlement, and many enrol far more children than

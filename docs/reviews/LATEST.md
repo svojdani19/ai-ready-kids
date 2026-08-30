@@ -7,6 +7,90 @@ likely to be.
 
 ---
 
+## Sprint 79 — a parked class could still lose a child permanently
+
+- **Reviewed against:** HEAD `39878a5`
+- **Repository:** <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-30-sprint-79.md`](2026-08-30-sprint-79.md)
+
+### The finding
+
+`removeStudentAction` accepted an archived class: `requireOwnActiveClass` checks
+ownership and the subscription term, never `archived_at`. A teacher calling the
+exported action from a stale tab or a direct request could **permanently delete
+one child** out of a parked cohort, cascading to every attempt, check-in and
+badge. That contradicts the archive promise, the retention schedule and the
+administrator-deletion path at once, and it is invisible — nobody is looking at a
+parked class, so a school's history and exports quietly stop matching the year
+they describe. This is the destructive member of the group named at the end of
+sprint 76.
+
+### The correction
+
+After the owned, active-term class resolves and **before** `auditedWrite`: refuse
+with *"That class is archived. Restore the class before removing a student from
+it."* `requireOwnActiveClass` is not widened, and rename and rotate semantics are
+untouched.
+
+### Acceptance
+
+Three tests through the real exported action with a real teacher session:
+refusal leaves the class, the child, the roster, **their attempts and check-ins**,
+all attempts, all benchmarks and every audit row byte-identical with zero
+`roster.removed`; with a `roster.removed` trigger **armed** the archived message
+still wins, proving the refusal is above the transaction; and after
+`restoreClass` the same removal succeeds with its existing atomic cascade and
+exactly one audit. Badges and skill evidence live in the attempt rows, which are
+covered. Removing the refusal fails all three, and moving it inside
+`auditedWrite` also fails all three.
+
+### The gate was unreliable, and this is what it was
+
+Twice I called intermittent failures "contention"; once I raised the timeout on
+an unverified inference and withdrew it. This time I captured the error first —
+`Error: Test timed out in 5000ms` — on tests that are a few synchronous
+`createStudent` calls and cannot race. Then tested each hypothesis:
+
+- dev server competing → stopped it: **worse**, 4 of 5 runs failed
+- fork oversubscription → `maxForks: 4`: **no help**, 5 of 5 failed
+- machine overload → load 3.9 on 8 cores, not enough
+- fixture cost → measured: open 6ms, seed 130ms, not it
+- **fsync stalls** → `PRAGMA synchronous = OFF` on throwaway test databases:
+  **10 of 10 clean**
+
+The schema uses WAL, which fsyncs every commit, and this suite commits
+constantly. A test database is deleted moments after creation, so durability is
+all that is given up; every transaction, lock and rollback behaves as in
+production. **No timeout was raised and no production code touched** — the 5s
+default stands, so a real hang still fails.
+
+```
+typecheck  ✓
+lint       0 errors, 2 pre-existing warnings
+tests      859 passed (30 files) × 10 consecutive runs at the default 5s timeout
+build      ✓ Compiled successfully
+```
+
+No browser rerun: no rendered UI changed.
+
+### Where to push hardest
+
+1. **`renameStudentAction` and `rotateJoinCodeAction` still accept an archived
+   class.** Neither destroys anything, which is why they are not here — but
+   neither has been audited for the parked-then-restored reasoning.
+2. **The refusal is per-action for the third time.** A resolver that took the
+   caller's intent — read, reversible write, destructive write — would be the
+   durable shape. That is a refactor, not a correction, and it should be someone's
+   deliberate decision rather than my drift.
+3. **I have been quoting green gates from lucky runs.** The suite was failing
+   roughly 70% of full runs before this sprint and I reported "856 passed" from
+   the runs that happened to pass. The number was true and the impression it gave
+   was not.
+4. **The fixture is still expensive.** fsync removal bought margin, not
+   cheapness; each fixture still seeds a whole demo school.
+
+---
+
 ## Sprint 78 — a persisted identifier is data, not prose
 
 - **Reviewed against:** HEAD `49363a1`
