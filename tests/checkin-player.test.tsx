@@ -22,7 +22,19 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 // when the browser has none. Stub it so the control can be asserted at all.
 Object.defineProperty(window, "speechSynthesis", {
   configurable: true,
-  value: { cancel: vi.fn(), speak: vi.fn() },
+  value: {
+    cancel: vi.fn(),
+    speak: vi.fn(),
+    // The real API resolves voices asynchronously and fires `voiceschanged`.
+    // Stubbed so the component's voice-selection path runs under test rather
+    // than being skipped by the `typeof getVoices` guard.
+    getVoices: vi.fn(() => [
+      { name: "Google US English", lang: "en-US" },
+      { name: "Google UK English Female", lang: "en-GB" },
+    ]),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  },
 });
 class FakeUtterance {
   constructor(public text: string) {}
