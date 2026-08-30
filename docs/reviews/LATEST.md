@@ -15,7 +15,7 @@ likely to be.
 
 ### The finding
 
-Sprint 77's American-English conversion swept four **stored machine
+The American-English conversion in commit `6c6bfb7` swept four **stored machine
 identifiers** along with the prose: `class.restore_blocked_by_licence`, its
 `_config` variant, `roster.blocked_by_licence` and its `_config` variant all
 became `_license`. Those values live in `audit_log.action` in a school's own
@@ -84,7 +84,7 @@ and `### Browser### Browser` here.
    actions had to draw from would be durable; this pins the four that exist.
 2. **No other stored identifier is pinned.** A dozen other `audit_log.action`
    values — `class.archived`, `year.dates_set`, `data.deleted` — have no
-   protection from the same kind of sweep. They survived sprint 77 only by
+   protection from the same kind of sweep. They survived that conversion only by
    containing no British spelling.
 3. **I shipped this knowing the risk.** The commit message for `6c6bfb7` names
    the split explicitly and ships anyway. Worth asking why I recorded the concern
