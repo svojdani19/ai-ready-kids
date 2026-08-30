@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDb } from "@/lib/db";
-import { requireStaff } from "@/lib/auth/session";
 import { listClasses, listClassesForTeacher, listAssignments } from "@/lib/repo/classroom";
 import { getMission } from "@/content/missions";
 import { SESSION_SHAPES } from "@/content/session-guide";
@@ -13,6 +12,8 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Note, Tag } from "@/components/ui/Bits";
 import { AssignToggle } from "@/components/staff/AssignToggle";
 import { endSentence } from "@/lib/domain/sentence";
+import { requireOpenCurriculum } from "@/lib/auth/instruction-access";
+import { CurriculumClosed } from "@/components/staff/CurriculumClosed";
 
 export async function generateMetadata({
   params,
@@ -34,6 +35,8 @@ export default async function MissionPreview({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const gate = await requireOpenCurriculum();
+  if (!gate.open) return <CurriculumClosed reason={gate.reason} role={gate.user.role} />;
   const { slug } = await params;
   const mission = getMission(slug);
   if (!mission) notFound();
@@ -43,7 +46,7 @@ export default async function MissionPreview({
     mission.segment === "foundation" ? sh.id === "first-look" : sh.id === "core-mission",
   )!;
 
-  const { user } = await requireStaff();
+  const user = gate.user;
   const db = getDb();
   const classes =
     user.role === "admin" ? listClasses(db, user.school_id) : listClassesForTeacher(db, user.id, user.school_id);

@@ -6,6 +6,8 @@ import { SESSION_SHAPES } from "@/content/session-guide";
 import { COMPETENCY_BY_ID, SKILL_BY_ID } from "@/content/competencies";
 import { PrintButton } from "@/components/PrintButton";
 import { LogoMark } from "@/components/Logo";
+import { requireOpenCurriculum } from "@/lib/auth/instruction-access";
+import { CurriculumClosed } from "@/components/staff/CurriculumClosed";
 
 export async function generateMetadata({
   params,
@@ -22,6 +24,11 @@ export default async function PrintableGuide({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  // This route had no authentication call of its own at all: it relied
+  // entirely on the teacher layout's `requireStaff`, which is a redirect in a
+  // sibling component rather than a check on this page's own data path.
+  const gate = await requireOpenCurriculum();
+  if (!gate.open) return <CurriculumClosed reason={gate.reason} role={gate.user.role} />;
   const { slug } = await params;
   const mission = getMission(slug);
   if (!mission) notFound();

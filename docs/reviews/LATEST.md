@@ -7,6 +7,138 @@ likely to be.
 
 ---
 
+## Sprint 81 — an annual subscription that granted perpetual use
+
+- **Reviewed against:** HEAD `834632d`
+- **Repository:** <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-30-sprint-81.md`](2026-08-30-sprint-81.md)
+
+### The finding
+
+Sprint 49's subscription gate refuses classroom **writes** after the term ends,
+and that was treated as the whole of enforcement. Every authored teaching route
+asked only `requireStaff`, so a signed-in teacher at a school whose term ended a
+year ago could still open the mission library, read every branch of all 27
+missions, print the discussion guides, run Classroom Mode on a projector and take
+the educator orientation — all of which the plans page sells **per year**.
+
+**Classroom Mode is what makes this more than an oversight.** It records nothing,
+so no write ever happens and the write gate never fires. The product's primary
+use in front of a class ran indefinitely on one year's fee. An annual
+subscription that grants perpetual use of the thing it sells is not an annual
+subscription.
+
+Found while reading those routes: **`/teacher/guides/[slug]` had no
+authentication call of its own at all**, relying entirely on the teacher layout's
+`requireStaff` — a redirect in a sibling component rather than a check on its own
+data path. Never exploitable; not what the other eight pages do.
+
+### The correction
+
+One resolver, `requireOpenCurriculum`, called first in six page components. It
+authenticates before anything else — a signed-out visitor never learns whether
+the school exists, let alone whether it has paid — then applies the same
+`instructionClosed` rule the write gate uses, failing closed on both non-active
+states and on a staff row whose school cannot be read at all.
+
+It returns a result rather than redirecting, so the page keeps its URL and a
+renewal or a date correction puts the teacher back on the page they were on. Six
+routes gated: mission library, mission detail, printable guides, Classroom Mode,
+orientation, and "how to run a session" — the last not in the finding's list, and
+gated because it is the same kind of authored content.
+
+**The boundary is ownership, not leverage.** Open and untouched: the teacher and
+administrator dashboards, class history, reports, exports, retention, deletion,
+staff administration, sign-out, and **an orientation certificate already earned** —
+that last deliberately, because it is the reader's and not the vendor's. Both
+refusal messages say in those words that renewing is never a condition for
+reaching the school's own records.
+
+The two states never borrow each other's claim: `lapsed` says a term ended and
+offers renewal; `needs-configuration` says outright *"This is not an expiry"* and
+asks for the dates to be corrected. Recovery is role-appropriate — an
+administrator gets `/admin/program`, a teacher gets a person rather than a link
+that would bounce them — and a route back to the reader's own dashboard is always
+there. Child-facing copy is untouched.
+
+### Where I did not do what was asked
+
+**Family take-homes are not gated.** `/family/[slug]` takes no session at all: 33
+statically prerendered pages, linked from the public demo, whose own file comment
+says *"Public by design: no account, no login."* Gating it for a signed-in teacher
+would block one reader of a page the whole internet can fetch, be defeated by a
+private window, and turn 33 static pages dynamic to do it. That is the appearance
+of an entitlement boundary, not one. If family sheets are meant to be paid
+content, the change is that they stop being public — a product decision with a
+real cost to caregivers. Recorded as the first known gap rather than quietly
+satisfied.
+
+### Acceptance
+
+`tests/instruction-entitlement.test.ts`, 40 tests, running the **real page
+components** with a real signed session. Two mechanisms carry the claim: the tree
+is actually **rendered** (a page returning `<CurriculumClosed/>` returns a
+function that has not run — an unrendered walk would pass just as happily if the
+page had returned the whole mission library), and **props are read, not just
+children** (`ClassroomPage` passes the entire authored mission as a prop, which a
+children-only walk cannot see).
+
+Six routes × two closed states each prove their own reason's panel, never the
+other's title, and none of six distinctive authored strings read from the content
+modules. Plus: the boundary day, signed-out redirect before disclosure,
+role-appropriate recovery, records staying open, reopening in the same request,
+no billing language in the mission player, and no second live region.
+
+**Mutation-checked four ways, one at a time:** removing the Classroom Mode gate
+fails exactly 2; treating `needs-configuration` as open fails 10; letting it
+borrow the lapsed copy fails 8; adding a new ungated `/teacher/new-thing`
+page fails 2, naming the file.
+
+The inventory enumerates every `page.tsx` under `/teacher` **from disk** — each
+gated or listed in `OPEN_BY_DESIGN` with its reason, never both, every exemption
+still authenticating, and the gate required before the component's first `return`.
+
+### Evidence
+
+```
+typecheck  ✓
+lint       0 errors, 2 pre-existing warnings
+tests      912 passed (32 files)
+build      ✓ Compiled successfully
+```
+
+Browser, both widths and both states plus recovery. **1280×800 lapsed:** all six
+protected routes fetched in one pass, each 200 with the panel and no authored
+content; seven record-owning routes in the same pass, none blocked. **1280×800
+needs-configuration:** the unverified title, *"This is not an expiry"*, one `h1`
+and **one** live region; administrator and teacher recovery each verified.
+**768×1024:** both states on library and guide, `overflow: false`. **Recovery:**
+with the original dates back, the guide and library render in full at both widths
+with no restart or reseed.
+
+**Demo data restored exactly** — term dates compared byte-for-byte against the
+values recorded before the first change; attempts 1078, students 90, classes 4,
+audit log 6, benchmarks 129, assignments 65, and zero rows dated today anywhere,
+checked by sweeping every `*_at` column of every table.
+
+### Where to push hardest
+
+1. **Family take-homes**, above. Settle whether they are paid content before
+   anything else here.
+2. **The gate is per-page, six times over** — the same shape as the `archived_at`
+   checks sprints 76 and 79 added one at a time, and the same objection: an
+   intent-aware resolver would be durable. The inventory test stands in for it,
+   and a test is not a mechanism.
+3. **The inventory only walks `/teacher`.** `/admin` is exempt wholesale on the
+   reasoning that it holds no curriculum — true today, an assumption, not an
+   invariant.
+4. **A page-level test that forgets `globalThis.__airkDb = db` reads the
+   developer's real `data/` directory.** The first run of this suite did exactly
+   that. It only read, and the counts confirm it, but a test that mutated would
+   have written to real demo data, and nothing in the harness prevents it.
+
+---
+
 ## Sprint 80 — session one taught a definition session two contradicts
 
 - **Reviewed against:** HEAD `f1532f6`

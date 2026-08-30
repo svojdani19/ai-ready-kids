@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
-import { requireStaff } from "@/lib/auth/session";
 import { getCertification } from "@/lib/repo/progress";
 import {
   CERTIFICATION_MINUTES,
@@ -14,11 +13,15 @@ import { Meter } from "@/components/ui/Meter";
 import { Note } from "@/components/ui/Bits";
 import { CertificationModuleCard } from "./CertificationModule";
 import { CompleteButton } from "./CompleteButton";
+import { requireOpenCurriculum } from "@/lib/auth/instruction-access";
+import { CurriculumClosed } from "@/components/staff/CurriculumClosed";
 
 export const metadata: Metadata = { title: CERTIFICATION_TITLE };
 
 export default async function CertificationPage() {
-  const { user } = await requireStaff();
+  const gate = await requireOpenCurriculum();
+  if (!gate.open) return <CurriculumClosed reason={gate.reason} role={gate.user.role} />;
+  const user = gate.user;
   const record = getCertification(getDb(), user.id);
   const answers = record?.answers ?? {};
   const answered = CERTIFICATION_MODULES.filter((m) => answers[m.id]).length;

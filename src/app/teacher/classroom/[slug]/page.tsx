@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getMission } from "@/content/missions";
-import { requireStaff } from "@/lib/auth/session";
 import { ClassroomMode } from "./ClassroomMode";
+import { requireOpenCurriculum } from "@/lib/auth/instruction-access";
+import { CurriculumClosed } from "@/components/staff/CurriculumClosed";
 
 export async function generateMetadata({
   params,
@@ -19,10 +20,11 @@ export default async function ClassroomPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const gate = await requireOpenCurriculum();
+  if (!gate.open) return <CurriculumClosed reason={gate.reason} role={gate.user.role} />;
   const { slug } = await params;
   const mission = getMission(slug);
   if (!mission) notFound();
-  await requireStaff();
 
   return <ClassroomMode mission={mission} />;
 }

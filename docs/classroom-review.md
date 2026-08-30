@@ -850,6 +850,43 @@ one of them has not tested the thing that was built.
       failing on your own new copy as the system working, and split the sentence
       rather than reaching for the cap.
 
+- [ ] **A paid product needs a read boundary as well as a write one.** The
+      subscription gate refused every classroom write after the term ended and
+      was taken for the whole of enforcement, while the authored curriculum the
+      plans page sells by the year stayed fully readable. The surface that made
+      it worst was the one that records nothing: Classroom Mode never writes, so
+      a write gate can never fire on it. When a feature is gated by intercepting
+      mutations, list what the feature does that is not a mutation.
+- [ ] **Separate what the vendor owns from what the customer owns before
+      gating anything.** The curriculum is licensed by the year; the roster,
+      reports, exports, retention, deletion and an earned certificate are the
+      school's, and a product that withholds those to force a renewal is holding
+      records hostage. Write the line down explicitly, both in the gate and in
+      the sentence the customer reads, so the next gate inherits it.
+- [ ] **A gate you cannot enforce is worse than an admitted gap.** Family
+      take-homes are public static pages linked from the marketing site. Blocking
+      a signed-in teacher from one would stop a single reader of a page anyone can
+      fetch, be defeated by a private window, and cost 33 pages their static
+      rendering. Refusing the request and recording why is more honest than
+      shipping a boundary whose only real effect is to be claimed in a review.
+- [ ] **A test that walks an unrendered component tree proves almost nothing.**
+      A page returning `<Blocked/>` returns a function that has not run: a walk
+      finds its two props and none of its copy, and passes identically if the page
+      had returned the whole library. Render the tree, and walk props as well as
+      children — a server component can pass an entire authored mission as a prop
+      where a children-only walk will never see it.
+- [ ] **Enumerate from disk, not from a list you maintain.** A fixed set of
+      known routes passes forever while somebody adds the next one. Walk the
+      directory, require every entry to be either gated or on an explicit
+      exemption list carrying its reason, and forbid being on both — an exemption
+      that is also gated means the list has gone stale.
+- [ ] **A page-level test that forgets to bind the global database reads the
+      developer's real data directory.** Pages call `getDb()` rather than being
+      handed a handle. The first run of a new page test did exactly this; it only
+      read, but a test that mutated would have written to real demo data. Bind
+      `globalThis.__airkDb` in `beforeAll` and check the real database is
+      untouched afterwards.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

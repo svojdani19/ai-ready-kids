@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { requireStaff } from "@/lib/auth/session";
 import {
   NOT_THIS,
   ROOM_SETUPS,
@@ -10,11 +9,14 @@ import {
 } from "@/content/session-guide";
 import { PageHeader, Panel, PanelBody } from "@/components/ui/Panel";
 import { Note, Tag } from "@/components/ui/Bits";
+import { requireOpenCurriculum } from "@/lib/auth/instruction-access";
+import { CurriculumClosed } from "@/components/staff/CurriculumClosed";
 
 export const metadata: Metadata = { title: "How to run a session" };
 
 export default async function HowToRunASession() {
-  await requireStaff();
+  const gate = await requireOpenCurriculum();
+  if (!gate.open) return <CurriculumClosed reason={gate.reason} role={gate.user.role} />;
 
   return (
     <div>

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
-import { requireStaff } from "@/lib/auth/session";
 import { listAssignments, listClasses, listClassesForTeacher } from "@/lib/repo/classroom";
 import { COMPETENCIES } from "@/content/competencies";
 import { FOUNDATIONS_BY_TRACK, FOUNDATION_TRACKS, MISSIONS } from "@/content/missions";
@@ -10,6 +9,8 @@ import type { Mission } from "@/content/types";
 import { PageHeader, Panel, PanelBody } from "@/components/ui/Panel";
 import { Note, Tag } from "@/components/ui/Bits";
 import { AssignToggle } from "@/components/staff/AssignToggle";
+import { requireOpenCurriculum } from "@/lib/auth/instruction-access";
+import { CurriculumClosed } from "@/components/staff/CurriculumClosed";
 
 export const metadata: Metadata = { title: "Mission library" };
 
@@ -140,7 +141,9 @@ function SessionCard({
 }
 
 export default async function MissionLibrary() {
-  const { user } = await requireStaff();
+  const gate = await requireOpenCurriculum();
+  if (!gate.open) return <CurriculumClosed reason={gate.reason} role={gate.user.role} />;
+  const user = gate.user;
   const db = getDb();
   const classes =
     user.role === "admin" ? listClasses(db, user.school_id) : listClassesForTeacher(db, user.id, user.school_id);

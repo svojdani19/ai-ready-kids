@@ -242,3 +242,57 @@ export function staffHandoff(reason: "lapsed" | "needs-configuration"): string {
     ? "Ask your school administrator to have the account team correct the subscription dates."
     : "Ask your school administrator, who can request renewal for the school.";
 }
+
+/**
+ * The read side of the term, which sprint 49 never built.
+ *
+ * `subscription-gate.ts` refuses classroom **writes** after the term ends, and
+ * that was taken to be the whole enforcement. It was half of it. The plans page
+ * sells "All 27 missions", the discussion guides, Classroom Mode, the educator
+ * orientation and the family take-homes **per year**; a lapsed school kept every
+ * one of them, because each authored teaching route asked only `requireStaff`.
+ * Classroom Mode records nothing, so the product's primary projector use carried
+ * on indefinitely on one year's fee. An annual subscription that grants
+ * perpetual use of the thing it sells is not an annual subscription.
+ *
+ * The line drawn here is the same one the write gate draws, and for the same
+ * reason: **the authored curriculum is the vendor's; the records are the
+ * school's.** Nothing below touches a dashboard, a roster, class history, a
+ * report, an export, retention, deletion, staff administration, sign-out or a
+ * certificate somebody already earned. Renewal must never be a condition for a
+ * school to reach its own data.
+ */
+const RECORDS_STAY_OPEN =
+  "Your dashboard, class history, school reports and exports, retention settings, deletion " +
+  "controls, staff administration and any orientation certificate already earned are all " +
+  "still open. Nothing here is deleted or hidden, and renewing is never a condition for " +
+  "reaching the school's own records.";
+
+/** What the paid curriculum is, named so a refusal is legible rather than vague. */
+const CURRICULUM_SCOPE =
+  "the mission library, the individual missions, the printable discussion guides, " +
+  "Classroom Mode and the educator orientation";
+
+export const LAPSED_CURRICULUM_TITLE = "This subscription has ended";
+
+export const LAPSED_CURRICULUM_BODY =
+  `The authored curriculum — ${CURRICULUM_SCOPE} — is licensed for the subscription term, ` +
+  `and this school's term has ended. ${RECORDS_STAY_OPEN}`;
+
+export const UNVERIFIED_CURRICULUM_TITLE = "Subscription dates need configuration";
+
+export const UNVERIFIED_CURRICULUM_BODY =
+  `This school's subscription dates cannot be read, so the authored curriculum — ` +
+  `${CURRICULUM_SCOPE} — is not available. This is not an expiry: nothing has ended and ` +
+  `nothing is overdue. The dates on the account are unreadable, and only the account team ` +
+  `can correct them. ${RECORDS_STAY_OPEN}`;
+
+/** Title and body for a blocked authored teaching page, by reason. */
+export function curriculumBlock(reason: "lapsed" | "needs-configuration"): {
+  title: string;
+  body: string;
+} {
+  return reason === "needs-configuration"
+    ? { title: UNVERIFIED_CURRICULUM_TITLE, body: UNVERIFIED_CURRICULUM_BODY }
+    : { title: LAPSED_CURRICULUM_TITLE, body: LAPSED_CURRICULUM_BODY };
+}
