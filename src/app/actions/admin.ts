@@ -673,7 +673,7 @@ export async function restoreClassAction(classId: string): Promise<{ error?: str
         recordAudit(db, {
           schoolId: user.school_id,
           actorLabel: user.name,
-          action: "class.restore_blocked_by_license_config",
+          action: "class.restore_blocked_by_licence_config",
           detail: `Restoring ${classroom.name} was declined: the school's seat license is not a recognized number. Nothing was changed.`,
         });
         return { error: licenseNotRecognizedRefusal("restore", school.contact_name) };
@@ -684,7 +684,7 @@ export async function restoreClassAction(classId: string): Promise<{ error?: str
         recordAudit(db, {
           schoolId: user.school_id,
           actorLabel: user.name,
-          action: "class.restore_blocked_by_license",
+          action: "class.restore_blocked_by_licence",
           detail: `Restoring ${classroom.name} was declined. ${error.used} of ${error.licensed} licensed students active, ${error.roster} in the archived class.`,
         });
         return {

@@ -783,6 +783,26 @@ one of them has not tested the thing that was built.
       absent. Copy about what is stored is a claim about the database, and the
       database is the only place to check it.
 
+- [ ] **A stored identifier is data, and data does not get spell-checked.**
+      A sweep that Americanized the product's prose also renamed four
+      `audit_log.action` values, splitting one event type across two spellings
+      in any database that already held it. Nothing rendered changed and no
+      query broke, which is what made it easy to wave through. Before a
+      find-and-replace crosses into strings, ask which of them are written to a
+      database, sent to another system, or matched on later — those are a
+      migration, not an edit.
+- [ ] **"Nothing queries it today" is not a property of the data.** It is a
+      property of the current feature set, and it expires the moment somebody
+      writes an export, a migration or a report. Judge a stored value by what it
+      promises to whoever reads the database next, not by what the present UI
+      happens to do with it.
+- [ ] **Do not widen a timeout to explain a failure you did not read.** Three
+      intermittent failures at 5.0-5.4 seconds looked like the 5s default, so I
+      raised it fourfold — without ever seeing the error text. Retested, it would
+      not reproduce idle or under concurrent load, so the change was withdrawn.
+      Capture the actual failure first; a bigger budget hides a real race exactly
+      as well as it hides a slow test.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

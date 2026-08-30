@@ -7,6 +7,95 @@ likely to be.
 
 ---
 
+## Sprint 78 — a persisted identifier is data, not prose
+
+- **Reviewed against:** HEAD `49363a1`
+- **Repository:** <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-30-sprint-78.md`](2026-08-30-sprint-78.md)
+
+### The finding
+
+Sprint 77's American-English conversion swept four **stored machine
+identifiers** along with the prose: `class.restore_blocked_by_licence`, its
+`_config` variant, `roster.blocked_by_licence` and its `_config` variant all
+became `_license`. Those values live in `audit_log.action` in a school's own
+database, so an existing database keeps the old spelling while new events use
+the new one — one event type, two taxonomies, nothing recording why.
+
+I noticed the risk and shipped it anyway, reasoning that the UI does not query
+by action name. That was wrong: not querying it today is a property of the
+current feature set, not of the data. An export, a migration, a support query or
+any later reporting feature would see both.
+
+### The correction
+
+All four restored, 18 occurrences across five files plus one stale comment. **The
+prose beside them stays American** — that split is the point: the key is data,
+the sentence a school reads is prose. No rendered message, detail or label
+changed, and neither the broader copy conversion nor the in-memory TypeScript
+renames were reverted.
+
+### Compatibility: nothing to reconcile, nothing rewritten
+
+Schema, migrations and seed reference `blocked_by_lic` **not at all**, so no
+migration was needed. The demo database holds `benchmark.opened` ×2,
+`class.created`, `program.activated`, `report.exported`, `retention.updated` —
+**zero** rows matching `_license`, **zero** matching `_licence`. No history
+existed to preserve and none was touched; had a `_license` row existed it would
+have been left in place and documented, not deleted.
+
+### Coverage
+
+`tests/audit-event-keys.test.ts`, 10 tests, driven **through the real refusal
+paths** rather than source text — a source assertion would still pass if the
+value were rewritten on the way to the database. `addStudentAction` covers both
+roster keys (over-license and malformed-license), `restoreClassAction` covers the
+class key; the two class keys already had real-path coverage in
+`audited-writes.test.ts`, the roster keys had source-text only.
+
+**Mutation-checked one key at a time:** re-normalizing each single `action:`
+value fails 2–3 tests and no others.
+
+### The voice sprint's timeout change is withdrawn
+
+`49363a1` raised `testTimeout` to 20s on my claim that three intermittent
+failures were timeouts. **I never saw the error text** — I inferred it from
+durations of 5.0–5.4s. Tested this sprint at the original 5s: four consecutive
+clean runs idle, and two full suites run **concurrently** (the load present when
+it first appeared) both clean at 846/846. Could not reproduce, so the increase is
+unjustified and is reverted. A 4× global timeout on an unproven hypothesis is how
+a real race gets masked.
+
+```
+typecheck  ✓
+lint       0 errors, 2 pre-existing warnings
+tests      856 passed (30 files) × 3 consecutive runs at the default 5s timeout
+build      ✓ Compiled successfully
+```
+
+No browser pass: no rendered copy changed. Sprint 76's browser evidence stands.
+Also fixed the duplicated `## Browser## Browser` heading in the Sprint 76 review
+and `### Browser### Browser` here.
+
+### Where to push hardest
+
+1. **The rule is a test, not a mechanism.** Nothing stops a future action
+   inventing a fifth key spelled however it likes. A stored-key registry the
+   actions had to draw from would be durable; this pins the four that exist.
+2. **No other stored identifier is pinned.** A dozen other `audit_log.action`
+   values — `class.archived`, `year.dates_set`, `data.deleted` — have no
+   protection from the same kind of sweep. They survived sprint 77 only by
+   containing no British spelling.
+3. **I shipped this knowing the risk.** The commit message for `6c6bfb7` names
+   the split explicitly and ships anyway. Worth asking why I recorded the concern
+   rather than acting on it, because the reasoning that let it through — "nothing
+   queries it" — will look equally plausible next time.
+4. **The suite still runs close to its 5s default**, ~2.7s for the heaviest
+   fixture. Unproven as a cause of anything; the fix if it recurs is cheaper
+   fixtures, not a wider ceiling.
+
+---
+
 ## Sprint 77 — a teacher's guide to running a session
 
 - **Reviewed against:** HEAD `a12032a`
@@ -176,7 +265,7 @@ child's half-finished attempt byte-identical, refused **above the transaction**
 succeeds again after `restoreClass`. Removing the refusal fails all four; moving
 it inside `auditedWrite` also fails all four.
 
-### Browser### Browser
+### Browser
 
 Retained from the pre-correction run — this is a server-action boundary change
 and an archived class renders no assignment control, so no new pass was needed.

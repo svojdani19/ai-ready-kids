@@ -1145,8 +1145,8 @@ describe("licensed student places are the vendor's record and are enforced", () 
       action.indexOf("\n}", action.indexOf("export async function addStudentAction")),
     );
     expect(add).toContain("LicenseExceededError");
-    expect(add).toContain('action: "roster.blocked_by_license"');
-    const blocked = add.slice(add.indexOf("roster.blocked_by_license"));
+    expect(add).toContain('action: "roster.blocked_by_licence"');
+    const blocked = add.slice(add.indexOf("roster.blocked_by_licence"));
     expect(blocked.slice(0, blocked.indexOf("});"))).not.toContain("displayName");
     // The teacher is told the numbers and where to go, without a child's name.
     expect(add).toMatch(/licensed student places are in use/);
@@ -1344,14 +1344,14 @@ describe("restoring an archived cohort cannot take a school past its license", (
       action.indexOf("\n}", action.indexOf("export async function restoreClassAction")),
     );
     expect(restore).toContain("RestoreExceedsLicenseError");
-    expect(restore).toContain('action: "class.restore_blocked_by_license"');
+    expect(restore).toContain('action: "class.restore_blocked_by_licence"');
     // Four facts and a route out, and no child named in the audit.
     expect(restore).toMatch(/error\.roster/);
     expect(restore).toMatch(/error\.used/);
     expect(restore).toMatch(/error\.licensed/);
     expect(restore).toMatch(/contact_name/);
     expect(restore).toMatch(/stays archived/);
-    const audit = restore.slice(restore.indexOf("class.restore_blocked_by_license"));
+    const audit = restore.slice(restore.indexOf("class.restore_blocked_by_licence"));
     expect(audit.slice(0, audit.indexOf("});"))).not.toMatch(/display_name|displayName/);
     // And no success audit is written on the refused path. Sprint 71 moved the
     // success audit inside the transaction with the restore itself, so this can
@@ -2194,8 +2194,8 @@ describe("an unrecognized seat license enrols nobody and claims nothing", () => 
     const teacher = readFileSync(join(process.cwd(), "src/app/actions/teacher.ts"), "utf8");
     const admin = readFileSync(join(process.cwd(), "src/app/actions/admin.ts"), "utf8");
     for (const [src, action] of [
-      [teacher, "roster.blocked_by_license_config"],
-      [admin, "class.restore_blocked_by_license_config"],
+      [teacher, "roster.blocked_by_licence_config"],
+      [admin, "class.restore_blocked_by_licence_config"],
     ] as const) {
       const at = src.indexOf(action);
       expect(at, action).toBeGreaterThan(-1);

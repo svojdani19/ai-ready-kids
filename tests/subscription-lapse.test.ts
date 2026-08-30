@@ -473,7 +473,7 @@ describe("a lapsed restore refuses in the same words as the others", () => {
   it("still handles the license refusal it already had", () => {
     const body = bodyOf("restoreClassAction");
     expect(body).toContain("RestoreExceedsLicenseError");
-    expect(body).toContain('action: "class.restore_blocked_by_license"');
+    expect(body).toContain('action: "class.restore_blocked_by_licence"');
     // The success audit is still only on the success path.
     expect(body).toContain('action: "class.restored"');
   });

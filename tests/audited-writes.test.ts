@@ -397,7 +397,7 @@ describe("restore refusals go through the real action", () => {
     expect(protectedRecords()).toEqual(before.records);
 
     // Written by the action, not by this test.
-    expect(auditsOf("class.restore_blocked_by_license")).toHaveLength(1);
+    expect(auditsOf("class.restore_blocked_by_licence")).toHaveLength(1);
     expect(auditsOf("class.restored")).toHaveLength(0);
     expect(listAudit(db, DEMO_SCHOOL, 200).length).toBe(auditBefore + 1);
   });
@@ -472,7 +472,7 @@ describe("restore refusals go through the real action", () => {
     expect(classRow()).toEqual(before.class);
     expect(protectedRecords()).toEqual(before.records);
 
-    expect(auditsOf("class.restore_blocked_by_license_config")).toHaveLength(1);
+    expect(auditsOf("class.restore_blocked_by_licence_config")).toHaveLength(1);
     expect(auditsOf("class.restored")).toHaveLength(0);
     expect(listAudit(db, DEMO_SCHOOL, 200).length).toBe(auditBefore + 1);
   });

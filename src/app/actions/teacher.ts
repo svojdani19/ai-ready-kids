@@ -225,10 +225,10 @@ export async function addStudentAction(
       recordAudit(db, {
         schoolId: user.school_id,
         actorLabel: user.name,
-        // Not "blocked_by_license": nothing was exceeded. And the malformed
+        // Not "blocked_by_licence": nothing was exceeded. And the malformed
         // value is not written here either — an audit is a record of what
         // happened, and what happened is that the account needs fixing.
-        action: "roster.blocked_by_license_config",
+        action: "roster.blocked_by_licence_config",
         detail: `An enrollment was declined in ${classroom.name}: the school's seat license is not a recognized number. Nothing was changed.`,
       });
       return { error: licenseNotRecognizedRefusal("enrol", school.contact_name) };
@@ -241,7 +241,7 @@ export async function addStudentAction(
         recordAudit(db, {
           schoolId: user.school_id,
           actorLabel: user.name,
-          action: "roster.blocked_by_license",
+          action: "roster.blocked_by_licence",
           detail: `An enrollment was declined in ${classroom.name}. ${error.used} of ${error.licensed} licensed students in use.`,
         });
         return {
