@@ -7,6 +7,98 @@ likely to be.
 
 ---
 
+## Sprint 80 — session one taught a definition session two contradicts
+
+- **Reviewed against:** HEAD `f1532f6`
+- **Repository:** <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-30-sprint-80.md`](2026-08-30-sprint-80.md)
+
+### The finding
+
+First Look session one told a class that has never been told what AI is:
+*"AI is a computer program that fills in what usually comes next."* That sentence
+sat in the big idea, a learning goal, the board narration, the wrap-up, the
+family summary and the family rule — six places. Session two, a week later,
+correctly calls a video recommendation, a face filter and a smart speaker AI.
+None of them fills in a word.
+
+To a six year old that is a contradiction, and what survives it is **AI =
+autocomplete** — a category every later mission then builds on and none of them
+fits. The example was never the problem; a next-word predictor is the right first
+encounter. The defect is that an example was given the grammar of a definition.
+
+### The correction
+
+Category first, example second, everywhere: *"An AI program finds patterns in
+lots and lots of examples and uses them to make a guess. This one guesses a
+word."* The board, the wrap-up cards, the family rule and the three learning
+goals all now separate what generalises from what was met. Session two says
+outright that it *"guesses more than just words"* and adds *"One guesses a word.
+One guesses what you will like. One guesses where your face is."*; its callback
+changed from *"the same trick from last time"* to *"Guessing words is one kind of
+guess."*
+
+**The widened category needed a floor**, so a new misconception answers *"So
+everything on a screen is AI"* by contrasting a calculator following a written
+rule with a guessing machine working from patterns — *"Fast is not the test;
+guessing from examples is."* The upper track's *"An AI tool produces what usually
+follows"* was scoped the same way, as were the foundations overview and the
+educator orientation, which asserted the narrow version **to teachers**.
+
+One line was left deliberately: the choice label *"Mat, because that is what
+usually comes next"* is a child predicting one word, not defining a category.
+
+### Acceptance
+
+`tests/first-look-concept.test.ts`, 13 tests, flattening everything a child hears
+and everything an adult reads so a categorical definition cannot hide in a corner
+nobody asserted on: an `it.each` over all six sessions in both tiers; the example
+still teaching patterns, "likely", the limit and no personal knowledge; session
+two reading as expansion; the not-everything-is-AI guard; the upper-track
+scoping; both adult surfaces. **Mutation-checked twice** — restoring the old big
+idea fails 2 tests, deleting session two's expansion line fails 1.
+
+### The guardrails caught me three times
+
+My first draft broke the grades 1–2 rules the repo already enforces: a 16-word
+sentence against the cap of 14, and two 3-sentence narration paragraphs against
+the cap of 2. Lint caught `const module = …` in the new test. Writing a more
+accurate sentence made it a harder sentence, and the age caps are the reason the
+result is still readable to a six year old.
+
+### Evidence
+
+```
+typecheck  ✓
+lint       0 errors, 2 pre-existing warnings
+tests      872 passed (31 files)
+build      ✓ Compiled successfully
+```
+
+Browser, both widths, driven rather than inferred: **1280×800** and **768×1024**
+both render the corrected copy with `overflow: false`, and Classroom Mode was
+stepped through part by part — part 3, part 5 and **part 7's board line and all
+four wrap-up cards** — plus session two's expansion list. **Demo data restored
+exactly:** the one incomplete attempt row my student-side check created was the
+only row dated today anywhere in the database (checked by sweeping every `*_at`
+column of every table) and was deleted; attempts back to 1078, audit log 6.
+
+### Where to push hardest
+
+1. **Nothing stops the next categorical sentence.** The tests pin four phrasings
+   that exist; a fifth, worded differently, passes. A mechanical rule requiring
+   the category before any example — the way the word and sentence caps already
+   work — would be durable. This is a denylist.
+2. **The 27 core missions were not audited for this.** They assume the category
+   rather than defining it, which is why they were out of scope — but "assume"
+   is exactly the state First Look was invented to fix.
+3. **Session three was read, not swept.** It carries no definition, but the
+   sweep was driven by the two sessions the finding named.
+4. **No child has read any of this.** The claim that a more accurate sentence is
+   still age-appropriate rests on a word cap, not a classroom.
+
+---
+
 ## Sprint 79 — a parked class could still lose a child permanently
 
 - **Reviewed against:** HEAD `39878a5`

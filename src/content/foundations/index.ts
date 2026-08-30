@@ -7,7 +7,8 @@ import { upperFoundations } from "./upper";
  *
  * Six sessions in two grade tiers, for a class that has not been told what AI
  * is. The core twenty-seven missions all assume three things a child arrives
- * with: that AI is a program which produces what usually comes next, that it
+ * with: that an AI program works from patterns in many examples to make a guess,
+ * of which producing a likely next word is one kind, that it
  * is already inside ordinary tools, and that a person decides when it is used
  * and is answerable for the result. Before this segment existed those three
  * were assumed and never taught, which meant a mission about declining a

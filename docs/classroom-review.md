@@ -823,6 +823,33 @@ one of them has not tested the thing that was built.
       that is the finding, and it outranks whatever sprint you were trying to
       land.
 
+- [ ] **Do not let an example wear the grammar of a definition.** First Look
+      taught six year olds that "AI is a computer program that fills in what
+      usually comes next" and then, a week later, correctly called a face filter
+      and a video recommendation AI. The example was the right one; putting it
+      in the sentence that starts with *AI is* was the error, and what survives
+      in a child is the definition, not the caveat. When copy introduces a
+      category through one instance, say the category first and mark the
+      instance as one of them — *this one guesses a word* — and then check every
+      other place the same idea is stated: it was in six.
+- [ ] **Widening a category creates the opposite error, so ship the floor with
+      it.** Telling children AI is inside ordinary things they already use
+      invites "so everything on a screen is AI". The correction needs a test a
+      child can apply — a calculator follows a rule somebody wrote, a guessing
+      machine works from patterns in examples — not a longer list of examples.
+- [ ] **A test that pins the wrong phrasings is a denylist, not a rule.** The
+      four categorical sentences that existed are now asserted against. A fifth,
+      worded differently, would pass. Where a constraint can be expressed
+      mechanically — the way the word and sentence caps for grades 1-2 are —
+      prefer that, and say plainly in the review when you have shipped the
+      denylist instead.
+- [ ] **Age constraints are what keep a correction readable.** The more accurate
+      sentence was immediately a longer and harder one: the first draft broke the
+      14-word cap and the 2-sentence narration cap that the repository already
+      enforces. Those rules caught it, not the author. Treat a content guardrail
+      failing on your own new copy as the system working, and split the sentence
+      rather than reaching for the cap.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

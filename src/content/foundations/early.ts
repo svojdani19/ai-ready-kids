@@ -34,12 +34,13 @@ export const theGuessingMachine: Mission = {
   gradeBand: "1-2",
   estimatedMinutes: 7,
   teaser: "The whole class knows the next word. So does a computer. Find out why.",
-  bigIdea: "AI is a computer program that fills in what usually comes next.",
+  bigIdea:
+    "An AI program finds patterns in lots and lots of examples and uses them to make a guess. This one guesses a word.",
   summary:
     "The first session of the program, for a class that has not been told what AI is. Students see that they themselves fill in a familiar word from having heard it often, then meet a program that does the same thing from millions of sentences. It closes on the part that matters most later: the program has never met them.",
   learningGoals: [
-    "Say in their own words that AI fills in what usually comes next",
-    "Explain that it learned that from lots and lots of examples",
+    "Say in their own words that an AI program uses patterns from lots of examples to make a guess",
+    "Explain that the one they met guesses which word is likely to come next, and that likely is not the same as sure",
     "State that the program has never met them and has no feelings",
   ],
   badge: {
@@ -112,7 +113,8 @@ export const theGuessingMachine: Mission = {
       narration: [
         "Ms. Okafor opens a program on the big screen.",
         "She says it has read millions of sentences.",
-        "It fills in what usually comes next. People call it AI.",
+        "It found patterns in all of them. Now it can guess.",
+        "This one guesses words.",
       ],
       next: "s4",
     },
@@ -221,11 +223,12 @@ export const theGuessingMachine: Mission = {
       art: "classroom",
       narration: [
         "At home time Ms. Okafor writes one line on the board.",
-        "A guessing machine fills in what usually comes next.",
+        "A guessing machine uses patterns to guess. This one guesses words.",
       ],
       wrapUp: [
-        "AI is a computer program that fills in what usually comes next.",
-        "It learned that from lots and lots of examples.",
+        "An AI program finds patterns in lots of examples. Then it guesses.",
+        "This one guesses the word that is likely to come next.",
+        "Likely is not the same as sure.",
         "It has never met you, and it does not have feelings.",
       ],
     },
@@ -258,7 +261,7 @@ export const theGuessingMachine: Mission = {
       {
         student: "So it is always right.",
         response:
-          "Keep this one short at this age. Usually comes next is not the same as true, and the next two sessions build on that rather than settling it here.",
+          "Keep this one short at this age. A likely next word is not the same as a true one, and the next two sessions build on that rather than settling it here.",
       },
     ],
     extension:
@@ -266,7 +269,7 @@ export const theGuessingMachine: Mission = {
   },
   family: {
     summary:
-      "This week we found out what AI actually is. Your child learned that a guessing machine is a computer program that fills in what usually comes next, after reading an enormous number of examples, and that it has never met them.",
+      "This week we found out what AI actually is. Your child learned that an AI program finds patterns in an enormous number of examples and uses them to make a guess, that the one they met guesses which word is likely to come next, and that it has never met them.",
     questions: [
       "What does a guessing machine do?",
       "Peanut butter and what? How did you know?",
@@ -274,7 +277,7 @@ export const theGuessingMachine: Mission = {
     ],
     tryAtHome:
       "Say the first half of a phrase your family says often and let your child finish it. Then ask how they knew.",
-    familyRule: "A guessing machine fills in what usually comes next. It has not met us.",
+    familyRule: "A guessing machine guesses from patterns it has seen. It has not met us.",
   },
 };
 
@@ -290,11 +293,12 @@ export const youHaveMetItAlready: Mission = {
   gradeBand: "1-2",
   estimatedMinutes: 7,
   teaser: "Theo thinks AI is a robot with red eyes. Room 12 goes looking for the real thing.",
-  bigIdea: "You have already met AI. It is inside things you use every day.",
+  bigIdea:
+    "You have already met AI. It is inside things you use every day, and it guesses more than just words.",
   summary:
     "Second First Look session. Students find out that AI is not a robot in a film but something already inside ordinary things: the keyboard that finishes a word, the app that picks the next video, the sticker that puts ears on a face. They practice noticing which things take in a picture or a voice.",
   learningGoals: [
-    "Name three everyday things with a guessing machine inside",
+    "Name three everyday things with a guessing machine inside, guessing different things",
     "Say that AI is not the same as a robot in a film",
     "Notice when a thing is taking in a picture, a voice or words",
   ],
@@ -332,7 +336,7 @@ export const youHaveMetItAlready: Mission = {
           feedback: {
             tone: "strong",
             headline: "Yes, that is one",
-            body: "It fills in what usually comes next. That is the same trick from last time.",
+            body: "It guesses your word from patterns, like the one last time. Guessing words is one kind of guess.",
           },
           next: "s3",
         },
@@ -352,7 +356,7 @@ export const youHaveMetItAlready: Mission = {
           feedback: {
             tone: "rethink",
             headline: "A hook just hangs there",
-            body: "A hook does not fill anything in. Look for something that guesses. Have another go.",
+            body: "A hook does not guess anything. Look for something that makes a guess. Have another go.",
           },
           next: "s2",
           retry: true,
@@ -367,6 +371,8 @@ export const youHaveMetItAlready: Mission = {
         "Ms. Okafor writes a list on the board.",
         "The keyboard that finishes words. The app that picks the next video.",
         "The sticker that puts cat ears on your face. The speaker that answers you.",
+        "One guesses a word. One guesses what you will like.",
+        "One guesses where your face is.",
       ],
       next: "s4",
     },
@@ -497,6 +503,11 @@ export const youHaveMetItAlready: Mission = {
       "Who would you ask if you wanted to know what was inside an app?",
     ],
     misconceptions: [
+      {
+        student: "So everything on a screen is AI.",
+        response:
+          "The most useful correction in this session, and worth making even though no scene asks for it. A calculator is not guessing: somebody wrote down exactly what to do and it does that, the same way, every time. A guessing machine works out patterns from lots of examples first, then guesses. Fast is not the test; guessing from examples is.",
+      },
       {
         student: "It is not AI, it is just my tablet.",
         response:
@@ -702,7 +713,7 @@ export const whoDoesTheThinking: Mission = {
           feedback: {
             tone: "rethink",
             headline: "It does not decide anything",
-            body: "It fills in what comes next. It cannot pick when to be used. Have another go.",
+            body: "It only makes a guess. It cannot pick when to be used. Have another go.",
           },
           next: "s6",
           retry: true,
@@ -762,7 +773,7 @@ export const whoDoesTheThinking: Mission = {
       {
         student: "The machine wants to help me.",
         response:
-          "Return to session one. It fills in what usually comes next; it has no wants. Helpful is a thing people do with it, not a thing it feels.",
+          "Return to session one. It makes a guess from patterns; it has no wants. Helpful is a thing people do with it, not a thing it feels.",
       },
     ],
     extension:

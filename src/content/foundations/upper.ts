@@ -32,11 +32,11 @@ export const whereTheGuessesComeFrom: Mission = {
   estimatedMinutes: 10,
   teaser: "Room 20 asks a tool about a swimming team that does not exist. It answers anyway.",
   bigIdea:
-    "An AI tool produces what usually follows, which is why it can be smooth, fast and wrong at the same time.",
+    "An AI tool works from patterns in a huge number of examples. A writing tool uses them to produce what usually follows, which is why it can be smooth, fast and wrong at the same time.",
   summary:
     "The first upper-track First Look session, for a class that has used AI tools without being told how they work. Students find out that the output is assembled from patterns in an enormous amount of writing rather than looked up in a checked list, and see a confident, detailed, completely invented answer about their own school.",
   learningGoals: [
-    "Explain that an AI tool produces what usually follows a prompt",
+    "Explain that AI tools work from patterns in examples, and that a writing tool uses them to produce what usually follows a prompt",
     "Give a reason why a confident answer can still be invented",
     "Say that nothing inside an answer settles whether the answer is right",
   ],
@@ -231,7 +231,7 @@ export const whereTheGuessesComeFrom: Mission = {
         "It did not look wrong. It looked like every other answer.",
       ],
       wrapUp: [
-        "An AI tool produces what usually follows the words you gave it.",
+        "AI tools work from patterns in a huge number of examples. A writing tool uses them to produce what usually follows the words you gave it.",
         "That is why an invented answer can look exactly like a right one.",
         "The check comes from outside the answer, and it is often quick.",
       ],
@@ -273,9 +273,9 @@ export const whereTheGuessesComeFrom: Mission = {
   },
   family: {
     summary:
-      "This week we found out how AI tools actually produce their answers: by working out what usually follows, based on an enormous amount of writing. Your child saw a tool invent a detailed, confident description of a school swimming team that has never existed.",
+      "This week we found out how AI tools actually produce their answers. They work from patterns in an enormous number of examples; a writing tool uses those patterns to produce what usually follows what you typed. Your child saw a tool invent a detailed, confident description of a school swimming team that has never existed.",
     questions: [
-      "What is an AI tool actually doing when it answers you?",
+      "What is a writing tool actually doing when it answers you?",
       "Why can a made-up answer look exactly like a right one?",
       "If the answer itself cannot tell you, what can?",
     ],
