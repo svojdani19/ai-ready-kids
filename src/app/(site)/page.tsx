@@ -118,13 +118,19 @@ export default function LandingPage() {
           <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div>
               <h2 className="font-display text-3xl text-ink">
-                What your school can show
+                What this means for your school
               </h2>
               <p className="mt-3 max-w-xl text-[1.05rem] leading-relaxed text-ink-soft">
-                That your students have practiced specific decisions and can name them.
-                That they were measured in the fall and again in the spring, on situations
-                the lessons never used. That is a claim you can take to a board meeting
-                with a report behind it.
+                Your students learn what these tools are, how to use one well and when to
+                decline &mdash; before they ever turn a thought into a prompt. The
+                decisions come first, so the habit is already there the day a real tool
+                asks them for something.
+              </p>
+              <p className="mt-3 max-w-xl text-[1.05rem] leading-relaxed text-ink-soft">
+                Teachers and families build that with them rather than watching for it.
+                Every mission sends home a page in plain language, and you see which of
+                nine named skills a child has shown. Nothing generative runs in this
+                product: no model improvising at a child, and no behavior to track.
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <ButtonLink href="/approach" variant="secondary">
