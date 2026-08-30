@@ -49,6 +49,9 @@ import { MISSIONS, FOUNDATIONS } from "@/content/missions";
 import { CERTIFICATION_MODULES } from "@/content/certification";
 import { SESSION_SHAPES } from "@/content/session-guide";
 
+import { PLANS } from "@/app/(site)/plans/page";
+import { ROLES } from "@/app/(site)/for-schools/page";
+import { CURRICULUM_SCOPE } from "@/lib/domain/subscription";
 import MissionLibrary from "@/app/teacher/missions/page";
 import MissionPreview from "@/app/teacher/missions/[slug]/page";
 import PrintableGuide from "@/app/teacher/guides/[slug]/page";
@@ -315,6 +318,93 @@ describe("the two states never share a sentence", () => {
     );
     expect(player).not.toContain("CURRICULUM");
     expect(player).not.toContain("subscription");
+  });
+});
+
+/**
+ * The public-route decision and the commercial claim are one fact.
+ *
+ * Sprint 81 gated the authored curriculum and deliberately left `/family/[slug]`
+ * public — statically generated, no session, nothing to collect from a
+ * caregiver. It left the Single classroom plan card still selling "Printable
+ * family take-homes" by the year, which is a buyer-facing contradiction: the
+ * product was charging annually for pages it hands to anyone with the link.
+ *
+ * Sprint 81's acceptance correction resolved it on the copy, not on the page.
+ * These tests hold the two halves together so neither can drift alone: a paid
+ * claim about take-homes
+ * fails here, and so does a session check on the family route. Whichever way
+ * somebody breaks the boundary, the same suite tells them.
+ */
+describe("family take-homes are a free public resource, and the copy says so", () => {
+  const familySource = readFileSync(
+    join(process.cwd(), "src/app/family/[slug]/page.tsx"),
+    "utf8",
+  );
+
+  const FAMILY_CLAIM = /family take-?home|take-?home for famil/i;
+
+  it("no plan sells a family take-home", () => {
+    for (const plan of PLANS) {
+      for (const feature of plan.features) {
+        expect(feature, `${plan.name} sells "${feature}"`).not.toMatch(FAMILY_CLAIM);
+      }
+      // Nor as a thing coming later, which would be the same claim deferred.
+      for (const planned of plan.planned ?? []) {
+        expect(planned, `${plan.name} promises "${planned}"`).not.toMatch(FAMILY_CLAIM);
+      }
+    }
+  });
+
+  it("the plans page says outright that they are free and need no subscription", () => {
+    const plansSource = readFileSync(
+      join(process.cwd(), "src/app/(site)/plans/page.tsx"),
+      "utf8",
+    );
+    expect(plansSource).toMatch(/free public resource/i);
+    expect(plansSource).toMatch(/not part of any plan/i);
+    expect(plansSource).toMatch(/no subscription/i);
+  });
+
+  it("the gated scope does not include them", () => {
+    // The sentence a blocked teacher reads names what is licensed. If a family
+    // take-home ever appears in it, the gate and the copy have diverged again.
+    expect(CURRICULUM_SCOPE).not.toMatch(FAMILY_CLAIM);
+    expect(CURRICULUM_SCOPE).toContain("discussion guides");
+  });
+
+  it("only the Families card claims them, and calls them free", () => {
+    const families = ROLES.find((r) => r.id === "families")!;
+    expect(families.points.join(" ")).toMatch(/free public resources?, not part of any plan/i);
+    expect(families.points.join(" ")).toMatch(/no subscription is needed/i);
+
+    // A paid-audience card may mention the take-home, but never as something
+    // that stops when the term does.
+    for (const role of ROLES.filter((r) => r.id !== "families")) {
+      for (const point of role.points) {
+        if (!FAMILY_CLAIM.test(point)) continue;
+        expect(point, `${role.title}: "${point}"`).toMatch(/free|either way|without a subscription/i);
+      }
+    }
+  });
+
+  it("the route takes no session and collects nothing", () => {
+    // The other half of the same fact. Were this to gain a session check, the
+    // free claim above would become false while still passing on its own.
+    expect(familySource).not.toMatch(/require(Staff|Teacher|Admin|OpenCurriculum)\(/);
+    expect(familySource).not.toContain("@/lib/auth/session");
+    expect(familySource).not.toContain("instruction-access");
+    expect(familySource).not.toMatch(/\bcookies\(/);
+    // Nothing to submit: no form, no input, no server action.
+    expect(familySource).not.toMatch(/<form|<input|<textarea|"use server"/);
+  });
+
+  it("stays statically generated for every session and mission", () => {
+    expect(familySource).toContain("export function generateStaticParams");
+    // Prerendered for all of them, not a subset somebody has to maintain.
+    expect(familySource).toContain("ALL_SESSIONS.map");
+    // `force-dynamic` or a dynamic params opt-out would silently undo it.
+    expect(familySource).not.toMatch(/force-dynamic|revalidate\s*=\s*0/);
   });
 });
 

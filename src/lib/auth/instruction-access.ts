@@ -25,6 +25,11 @@ import type { User } from "@/lib/types";
  * staff administration, sign-out, and an orientation certificate already issued.
  * A school must never have to renew to reach its own records.
  *
+ * Family take-homes are outside this by design, not by omission. `/family/[slug]`
+ * is statically generated with no session at all, and this sprint's acceptance
+ * correction removed it from the paid plan cards, so what the product sells and
+ * what this gate protects are the same set.
+ *
  * Fail-closed on both non-active states, and they are kept distinct all the way
  * to the sentence a teacher reads: "your subscription ended" is a false and
  * damaging thing to tell a school whose only problem is that somebody typed

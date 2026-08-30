@@ -61,17 +61,42 @@ administrator gets `/admin/program`, a teacher gets a person rather than a link
 that would bounce them — and a route back to the reader's own dashboard is always
 there. Child-facing copy is untouched.
 
-### Where I did not do what was asked
+### Family take-homes: resolved, not deferred
 
-**Family take-homes are not gated.** `/family/[slug]` takes no session at all: 33
-statically prerendered pages, linked from the public demo, whose own file comment
-says *"Public by design: no account, no login."* Gating it for a signed-in teacher
-would block one reader of a page the whole internet can fetch, be defeated by a
-private window, and turn 33 static pages dynamic to do it. That is the appearance
-of an entitlement boundary, not one. If family sheets are meant to be paid
-content, the change is that they stop being public — a product decision with a
-real cost to caregivers. Recorded as the first known gap rather than quietly
-satisfied.
+The first pass gated the curriculum and left `/family/[slug]` public — right
+about the route, half an answer overall. The Single classroom plan card was still
+selling **"Printable family take-homes"** by the year while the product
+prerendered those pages for anyone with the link.
+
+**Resolved on the commercial claim, not on the page.** Privatizing the caregiver
+pages to justify a bullet would have made the product worse in the one direction
+it has always refused: a session check there collects a reader nobody collects
+today, costs 33 pages their static rendering, and stops a caregiver holding a
+photocopy — to enforce a boundary a private window defeats.
+
+- **Plans:** the bullet is gone, and a section — *"Free for families,
+  subscription or not"* — names them a **free public resource**, **not part of any
+  plan**, needing **no subscription**, readable whether or not the term is current.
+- **For your school:** the Teachers bullet no longer couples the paid guide to the
+  free take-home; the Families card says outright that no subscription is needed.
+- **Comments** in `subscription.ts`, `instruction-access.ts` and
+  `family/[slug]/page.tsx` that described take-homes as sold per year are
+  corrected, and `CURRICULUM_SCOPE` — the sentence a blocked teacher reads — is now
+  exported so a test can hold it.
+
+The gate is unchanged. `/family/[slug]` is unchanged too, and that is the point:
+still `generateStaticParams` over every session and mission, no session, no
+cookie read, no form, no server action.
+
+**Six tests couple the two halves**, so neither can move alone: no plan's
+`features` *or* `planned` list mentions a take-home; the plans page carries the
+free wording; `CURRICULUM_SCOPE` excludes them and still names the discussion
+guides; only the Families card claims them, and any other card mentioning one
+must qualify it as free; the route takes no session; it stays statically
+generated with no `force-dynamic`. **Mutation-checked four ways:** restoring the
+plan bullet, adding `requireStaff` to the family route, re-coupling the Teachers
+bullet, and adding take-homes to `CURRICULUM_SCOPE` each fail exactly one test,
+naming what moved.
 
 ### Acceptance
 
@@ -103,7 +128,7 @@ still authenticating, and the gate required before the component's first `return
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      912 passed (32 files)
+tests      918 passed (32 files)
 build      ✓ Compiled successfully
 ```
 
@@ -114,7 +139,13 @@ needs-configuration:** the unverified title, *"This is not an expiry"*, one `h1`
 and **one** live region; administrator and teacher recovery each verified.
 **768×1024:** both states on library and guide, `overflow: false`. **Recovery:**
 with the original dates back, the guide and library render in full at both widths
-with no restart or reseed.
+with no restart or reseed. The corrected buyer copy was checked at both widths
+on **Plans** and **For your school** — no `<li>` matching a take-home claim, the
+free wording present, `overflow: false` — and `/family/four-doors` fetched with
+`credentials: "omit"` returns **200** with content, no form and no sign-in.
+Screenshots below the fold could not be captured: the browser pane was hidden for
+part of the pass and painted blank when scrolled, so that evidence is geometry
+and rendered text read at each emulated viewport rather than pixels.
 
 **Demo data restored exactly** — term dates compared byte-for-byte against the
 values recorded before the first change; attempts 1078, students 90, classes 4,
@@ -123,8 +154,10 @@ checked by sweeping every `*_at` column of every table.
 
 ### Where to push hardest
 
-1. **Family take-homes**, above. Settle whether they are paid content before
-   anything else here.
+1. **The free/paid split lives in prose, held by a test.** Nothing structural
+   distinguishes a free public page from a licensed one — `OPEN_BY_DESIGN` and the
+   plan-card assertions are conventions the suite enforces. A route-level marker
+   the plan cards were generated from would make them impossible to separate.
 2. **The gate is per-page, six times over** — the same shape as the `archived_at`
    checks sprints 76 and 79 added one at a time, and the same objection: an
    intent-aware resolver would be durable. The inventory test stands in for it,

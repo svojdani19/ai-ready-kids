@@ -863,12 +863,21 @@ one of them has not tested the thing that was built.
       school's, and a product that withholds those to force a renewal is holding
       records hostage. Write the line down explicitly, both in the gate and in
       the sentence the customer reads, so the next gate inherits it.
-- [ ] **A gate you cannot enforce is worse than an admitted gap.** Family
-      take-homes are public static pages linked from the marketing site. Blocking
-      a signed-in teacher from one would stop a single reader of a page anyone can
-      fetch, be defeated by a private window, and cost 33 pages their static
-      rendering. Refusing the request and recording why is more honest than
-      shipping a boundary whose only real effect is to be claimed in a review.
+- [ ] **A gate you cannot enforce is worse than an admitted gap — but the
+      admission is not the end of the job.** Family take-homes are public static
+      pages linked from the marketing site. Blocking a signed-in teacher from one
+      would stop a single reader of a page anyone can fetch, be defeated by a
+      private window, and cost 33 pages their static rendering, so the route was
+      left alone. What that first pass missed is that the plan card was still
+      selling those pages by the year: declining to gate something is only half a
+      decision until the commercial claim matches it. **When you refuse to enforce
+      a boundary, go and find every place the product promised it.**
+- [ ] **Free and paid are one fact, so test them together.** The routing decision
+      and the price list can each look correct in isolation and contradict each
+      other. Couple them: assert the plan features contain no claim about the free
+      thing *and* that the free route takes no session, in the same suite, so
+      whichever half somebody moves, the same tests object. Check the deferred
+      list too — a feature promised as "coming" is the same claim with a delay.
 - [ ] **A test that walks an unrendered component tree proves almost nothing.**
       A page returning `<Blocked/>` returns a function that has not run: a walk
       finds its two props and none of its copy, and passes identically if the page

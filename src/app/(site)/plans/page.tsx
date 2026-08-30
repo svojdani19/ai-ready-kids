@@ -9,7 +9,26 @@ export const metadata: Metadata = {
     "Annual subscription plans for classrooms, schools and districts. Quote, purchase order, invoice — no card details anywhere.",
 };
 
-const PLANS = [
+/**
+ * What a school is actually buying, per year.
+ *
+ * Family take-homes were on the Single classroom list until this sprint's
+ * acceptance correction and are not any more. Sprint 81 gated the authored
+ * curriculum behind the term and deliberately left `/family/[slug]` public:
+ * 33 statically generated pages, no
+ * session, nothing to sign into and nothing to submit, so a caregiver reaches
+ * one from a paper sheet without an account existing anywhere. That is worth
+ * keeping — it is the reason no parent is ever collected — but it meant the
+ * plans page was selling by the year something the product hands out for free
+ * to anyone with the link.
+ *
+ * The gap was closed on the copy rather than on the page, because privatizing
+ * the caregiver pages to justify the bullet would have made the product worse
+ * to protect a sentence. Exported so `tests/instruction-entitlement.test.ts`
+ * can assert on this list rather than on rendered prose: the public-route
+ * decision and the commercial claim are one fact, and must move together.
+ */
+export const PLANS = [
   {
     name: "Single classroom",
     price: "$390",
@@ -20,7 +39,6 @@ const PLANS = [
       "Teacher dashboard and discussion guides",
       "Classroom Mode for projector lessons",
       "Educator orientation, five modules",
-      "Printable family take-homes",
     ],
   },
   {
@@ -123,6 +141,29 @@ export default function PlansPage() {
             </div>
           ))}
         </div>
+      </Section>
+
+      <Section tone="marigold" title="Free for families, subscription or not">
+        <p className="max-w-3xl text-[1.05rem] leading-relaxed text-ink">
+          The one-page family take-home for every session and mission is a{" "}
+          <strong>free public resource</strong> and is not part of any plan. The pages
+          need no subscription, no account and no sign-in: they are ordinary links a
+          school can print, photocopy or send home, and they stay readable whether or not
+          the school has a current subscription. Nothing on them collects anything from a
+          family, which is the reason they work this way.
+        </p>
+        <p className="mt-4 max-w-3xl text-[1.05rem] leading-relaxed text-ink">
+          What a subscription buys is the classroom side: the missions themselves and
+          their branches, the printable discussion guides, Classroom Mode and the educator
+          orientation. Those are licensed for the term. A school’s own records — rosters,
+          class history, reports, exports, retention and deletion — are the school’s and
+          stay reachable either way.
+        </p>
+        <p className="mt-4">
+          <ButtonLink href="/family/four-doors" variant="secondary">
+            Read a family take-home
+          </ButtonLink>
+        </p>
       </Section>
 
       <Section tone="grape" title="What this build does not do">

@@ -10,7 +10,19 @@ export const metadata: Metadata = {
     "What students, teachers, administrators and families each get from AI Ready Kids.",
 };
 
-const ROLES = [
+/**
+ * What each audience gets, by role.
+ *
+ * The Families card is deliberately the one card that promises nothing
+ * term-limited. This sprint's acceptance correction: the Teachers bullet used
+ * to read "a printable discussion guide and a family take-home for every
+ * mission", which put a free
+ * public page inside a sentence about what a subscribing teacher gets. The
+ * guide is licensed for the term and the take-home is not, so the two are named
+ * separately. Exported so `tests/instruction-entitlement.test.ts` can hold the
+ * split to the routing decision behind it.
+ */
+export const ROLES = [
   {
     id: "students",
     title: "Students",
@@ -33,7 +45,7 @@ const ROLES = [
       "Every branch of every mission written out in one page, including coach notes students never see.",
       "Classroom Mode for the projector: teacher-paced, any branch revealable, hands-up tally, nothing recorded.",
       "Completion and demonstrated-skill evidence per student, framed as next teaching steps.",
-      "A printable discussion guide and a family take-home for every mission.",
+      "A printable discussion guide for every mission, and a family take-home that goes home free either way.",
       `A ${CERTIFICATION_MODULES.length}-module educator orientation, about ${CERTIFICATION_MINUTES} minutes, with a printable certificate of completion.`,
     ],
   },
@@ -54,9 +66,10 @@ const ROLES = [
     id: "families",
     title: "Families",
     tone: "grape" as const,
-    lede: "One page per mission, in plain language, with nothing to sign up for.",
+    lede: "One page per mission, in plain language, with nothing to sign up for and nothing to buy.",
     points: [
       `A printable take-home for each of the ${ALL_SESSIONS.length} sessions and missions: what was practiced, three questions, one thing to try.`,
+      "Free public resources, not part of any plan: no subscription is needed to read, print or send one home, and they keep working whether or not the school's subscription is current.",
       "No parent account, because creating one would mean collecting a parent.",
       "Public links with nothing behind them to log into and nothing on them to submit.",
       "One sentence per mission worth keeping, like “Sounding sure is not the same as being right.”",

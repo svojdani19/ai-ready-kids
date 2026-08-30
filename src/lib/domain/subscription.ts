@@ -248,9 +248,15 @@ export function staffHandoff(reason: "lapsed" | "needs-configuration"): string {
  *
  * `subscription-gate.ts` refuses classroom **writes** after the term ends, and
  * that was taken to be the whole enforcement. It was half of it. The plans page
- * sells "All 27 missions", the discussion guides, Classroom Mode, the educator
- * orientation and the family take-homes **per year**; a lapsed school kept every
- * one of them, because each authored teaching route asked only `requireStaff`.
+ * sells "All 27 missions", the discussion guides, Classroom Mode and the
+ * educator orientation **per year**; a lapsed school kept every one of them,
+ * because each authored teaching route asked only `requireStaff`.
+ *
+ * Family take-homes are **not** on that list and never should have been. They
+ * are free public pages — statically generated, no session, nothing to sign
+ * into — and this sprint's acceptance correction removed them from the plan
+ * cards rather than privatizing them, so what is sold and what is gated are the
+ * same set.
  * Classroom Mode records nothing, so the product's primary projector use carried
  * on indefinitely on one year's fee. An annual subscription that grants
  * perpetual use of the thing it sells is not an annual subscription.
@@ -268,8 +274,14 @@ const RECORDS_STAY_OPEN =
   "still open. Nothing here is deleted or hidden, and renewing is never a condition for " +
   "reaching the school's own records.";
 
-/** What the paid curriculum is, named so a refusal is legible rather than vague. */
-const CURRICULUM_SCOPE =
+/**
+ * What the paid curriculum is, named so a refusal is legible rather than vague.
+ *
+ * Exported because it is the authoritative list of what a subscription buys,
+ * and `tests/instruction-entitlement.test.ts` asserts family take-homes are not
+ * in it — the same test that asserts the family route takes no session.
+ */
+export const CURRICULUM_SCOPE =
   "the mission library, the individual missions, the printable discussion guides, " +
   "Classroom Mode and the educator orientation";
 

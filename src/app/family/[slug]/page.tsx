@@ -24,6 +24,24 @@ export function generateStaticParams() {
  * Family take-home. Public by design: no account, no login, nothing to
  * collect. A caregiver who gets this as a paper sheet or a link sees the
  * same thing either way.
+ *
+ * **A free public resource, deliberately outside the subscription.** Sprint 81
+ * gated the authored curriculum — the mission library, the missions, the
+ * discussion guides, Classroom Mode and the educator orientation — behind the
+ * term, and left this route alone. Its acceptance correction finished the job
+ * on the other side: the plans page had been selling "Printable family
+ * take-homes" by the
+ * year while this page was, and remains, prerendered for anyone with the link.
+ *
+ * The contradiction was resolved by correcting the commercial claim rather than
+ * by privatizing this page, because a session check here would collect a reader
+ * the product has always refused to collect, cost 33 pages their static
+ * rendering, and stop a caregiver with a photocopy — all to enforce a boundary
+ * a private browser window defeats. So: no `requireStaff`, no
+ * `requireOpenCurriculum`, no cookie read, no form, and it stays that way
+ * whether or not a school's subscription is current.
+ * `tests/instruction-entitlement.test.ts` holds both halves together, so the
+ * paid claim cannot drift back in without the routing decision changing too.
  */
 export default async function FamilyPage({
   params,
