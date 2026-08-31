@@ -1038,6 +1038,28 @@ one of them has not tested the thing that was built.
       means no assertion about a rendered *sentence* can ever match — keep a
       dense join for that, and a padded one for presence checks.
 
+- [ ] **Hiding a control does not fix the copy that points at it.** Removing
+      `AddStudentForm` and the join code from an archived class left the empty
+      roster still saying "Add students below. They join by typing the class
+      code" — two sentences aimed at things the same page had just taken away.
+      When you remove an affordance conditionally, grep for every string that
+      names it and check which of them are also conditional.
+- [ ] **The empty case is a state, not an edge case.** An archived class with
+      nobody on it is exactly the one somebody opens expecting to set up, so it is
+      where incoherent guidance does the most damage — not the rare path to skip.
+      Any surface with a zero state and a mode has two zero states.
+- [ ] **Verify a mutation hit the line you meant before reporting it.**
+      Replacing `{archived ? (` blindly matched the first of several occurrences
+      and failed four tests belonging to a different branch, which would have
+      shipped as evidence for a claim it had not tested. Anchor the replacement
+      on something unique to the target, and sanity-check that the failures are
+      the ones the mutation should cause.
+- [ ] **Check the reviewer's diagnosis in the code before implementing it.**
+      This one held — nothing in `archiveClass` or `archiveClassAction` requires a
+      roster, so the state is reachable — but the check is what makes the fix
+      worth shipping rather than a guess dressed as a correction, and the test
+      that proves reachability is now part of the coverage.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

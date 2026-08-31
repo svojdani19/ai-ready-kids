@@ -427,3 +427,112 @@ describe("the dashboard leads to archived records without mixing them in", () =>
     );
   });
 });
+
+/**
+ * A class can be archived before anybody joins it.
+ *
+ * Nothing requires a roster to archive: `archiveClass` checks only
+ * `archived_at`, and `archiveClassAction` checks only ownership and the term.
+ * So the zero-student archived class is reachable — a cohort created and parked
+ * before enrollment, or emptied and then archived.
+ *
+ * Sprint 84 hid `AddStudentForm` and replaced the join code with "Inactive", and
+ * left the roster's empty state unconditional. It went on saying *"Add students
+ * below. They join by typing the class code…"* on a page rendering neither
+ * control. A teacher or substitute is then told to use an affordance that is not
+ * there and a code that admits nobody, at exactly the moment they most need the
+ * read-only state to be coherent.
+ */
+describe("a class with no students at all", () => {
+  /** An owned class with an empty roster, in whichever state the test needs. */
+  const emptyClass = () =>
+    createClass(db, {
+      schoolId: DEMO_SCHOOL,
+      teacherId: DEMO_TEACHER,
+      name: "Room 0",
+      grade: 3,
+      schoolYear: "2025-2026",
+      yearEndsOn: "2026-06-12",
+    });
+
+  const pageFor = (classId: string) => ClassPage({ params: Promise.resolve({ classId }) });
+
+  it("can be archived with an empty roster, which is what makes this reachable", () => {
+    const empty = emptyClass();
+    expect(listStudents(db, empty.id)).toHaveLength(0);
+    archiveClass(db, empty.id);
+    // No guard anywhere refused it.
+    expect(getClass(db, empty.id)!.archived_at).not.toBeNull();
+  });
+
+  it("active and empty is unchanged: the form and the code guidance stay", async () => {
+    const empty = emptyClass();
+    const tree = await pageFor(empty.id);
+    const text = await textOf(tree);
+
+    expect(text).toMatch(/Nobody on this roster yet/);
+    expect(text).toMatch(/Add students below/);
+    expect(text).toMatch(/typing the class code/);
+    // The control the copy points at is actually there.
+    expect(componentsIn(tree).has(AddStudentForm)).toBe(true);
+    expect(text).toContain(getClass(db, empty.id)!.join_code);
+    expect(text).not.toMatch(/No student records to review/);
+  });
+
+  it("archived and empty says there is nothing to review, and how to change that", async () => {
+    const empty = emptyClass();
+    archiveClass(db, empty.id);
+    const text = await textOf(await pageFor(empty.id));
+
+    expect(text).toMatch(/No student records to review/);
+    expect(text).toMatch(/Nobody joined this class before it was archived/);
+    expect(text).toMatch(/no roster, no completed work and no evidence/i);
+    expect(text).toMatch(/An administrator has to restore the class before anybody can be added/);
+  });
+
+  it("archived and empty never points at a control or a code", async () => {
+    const empty = emptyClass();
+    const code = getClass(db, empty.id)!.join_code;
+    archiveClass(db, empty.id);
+    const tree = await pageFor(empty.id);
+    const text = await textOf(tree);
+
+    // The two sentences that made the page contradict itself.
+    expect(text).not.toMatch(/Add students below/);
+    expect(text).not.toMatch(/typing the class code/);
+    expect(text).not.toMatch(/Nobody on this roster yet/);
+
+    // Component identity, not wording: the form is genuinely absent, and so is
+    // every other mutation control.
+    const present = componentsIn(tree);
+    for (const [name, component] of MUTATION_CONTROLS) {
+      expect(present.has(component), `${name} is offered on an empty archived class`).toBe(false);
+    }
+
+    // No code, old or new. The pre-archive code is checked too, because a page
+    // that printed the rotated one would still be printing a dead code.
+    expect(text).not.toContain(code);
+    expect(text).not.toContain(getClass(db, empty.id)!.join_code);
+    expect(text).toMatch(/Inactive/);
+  });
+
+  it("still carries the archived notice, so the state is stated once", async () => {
+    const empty = emptyClass();
+    archiveClass(db, empty.id);
+    const text = await textOf(await pageFor(empty.id));
+    expect(text).toContain(ARCHIVED_CLASS_TITLE);
+  });
+
+  it("leaves a non-empty archived class exactly as sprint 84 left it", async () => {
+    // The correction is scoped to the zero-student branch: a parked class with a
+    // roster still shows every child, their work and their evidence.
+    archiveClass(db, DEMO_CLASS);
+    const text = await textOf(await page());
+    expect(text).not.toMatch(/No student records to review/);
+    for (const student of listStudents(db, DEMO_CLASS)) {
+      expect(text).toContain(student.display_name);
+    }
+    expect(text).toMatch(/Competency evidence/);
+    expect(text).toMatch(/Check-in windows/);
+  });
+});

@@ -279,10 +279,25 @@ export default async function ClassPage({
         >
           {students.length === 0 ? (
             <PanelBody>
-              <EmptyState title="Nobody on this roster yet">
-                Add students below. They join by typing the class code and tapping their own
-                name, so there is nothing else to set up.
-              </EmptyState>
+              {archived ? (
+                // A class can be archived before anybody joins it — nothing in
+                // `archiveClass` or `archiveClassAction` requires a roster — and
+                // the active empty state then told a teacher to "add students
+                // below" using "the class code", on a page that renders neither.
+                // That is the one moment somebody most needs the read-only state
+                // to be coherent, and it was the one moment it contradicted
+                // itself.
+                <EmptyState title="No student records to review">
+                  Nobody joined this class before it was archived, so there is no roster,
+                  no completed work and no evidence here to look at. An administrator has
+                  to restore the class before anybody can be added to it.
+                </EmptyState>
+              ) : (
+                <EmptyState title="Nobody on this roster yet">
+                  Add students below. They join by typing the class code and tapping their
+                  own name, so there is nothing else to set up.
+                </EmptyState>
+              )}
             </PanelBody>
           ) : (
             <div className="overflow-x-auto">
