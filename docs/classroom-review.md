@@ -970,6 +970,19 @@ one of them has not tested the thing that was built.
       actually mean. That is not a loosened assertion — deleting the product's
       `focus()` call must still fail it, and it does.
 
+- [ ] **Storage and display are two facts; copy that merges them is wrong even
+      when both halves are true.** "The choices and the judgment live in one
+      place: your roster and dashboard" was written to fix a different location
+      error and introduced its own. The choice path is stored and read only to
+      resume a run and validate it; the roster renders a per-skill judgment
+      computed from recorded evidence and never the path. A teacher told
+      otherwise goes looking for a screen that does not exist. Say what is
+      recorded, then say separately what can be seen.
+- [ ] **When you deny a surface, deny the exports too.** "No screen shows you
+      which choices a child tapped" is half an answer while a CSV might. Naming
+      both is what stops the next person assuming the data is available somewhere
+      less visible.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

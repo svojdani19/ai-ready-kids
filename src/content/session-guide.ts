@@ -214,6 +214,24 @@ export const NOT_THIS = [
  * child — rather than being appended to a sentence about evidence. Nothing in
  * the product changed: no parent account, no messaging channel, no new data
  * flow. The page is exactly what it was.
+ *
+ * Sprint 83's acceptance correction: the first fix traded one location error for
+ * another. It said the choices and the judgment both "live in one place: your
+ * roster and dashboard", which collapses what is **stored** into what is
+ * **shown**. They are different facts. `attempt.path` — the sequence of choices
+ * — is read in exactly two places, neither of them staff-facing: `progress.ts`
+ * uses it to validate the next decision, spot a rethink and confirm the run
+ * reached an ending, and the student player uses it to resume. The teacher class
+ * page loads attempts and passes them to `summarizeStudent`/`summarizeCohort`,
+ * which read `attempt.evidence` and never the path, and renders demonstrated or
+ * developing per skill. No staff screen and no export contains a child-by-child
+ * choice history.
+ *
+ * A teacher told the choices are on their roster goes looking for something that
+ * is not there, which is the same defect as the take-home one in a smaller room.
+ * Storage and display are therefore separate rows, and the guide says outright
+ * that the run cannot be looked at — so nobody promises a colleague they will
+ * check.
  */
 export const WHAT_IS_RECORDED = [
   {
@@ -222,14 +240,19 @@ export const WHAT_IS_RECORDED = [
       "That the child opened and finished it, which counts toward completed work on your class page. No skill is marked demonstrated, so it moves no competency figure and appears in no competency total.",
   },
   {
-    shape: "A core mission",
+    shape: "A core mission — what is stored",
     recorded:
-      "Which authored choices the child tapped, and a per-skill judgment of demonstrated or developing worked out from those choices. That evidence lives in one place: your roster and dashboard. It is not sent anywhere and no family page shows it.",
+      "Two things. The authored choices the child tapped, which the product uses to carry them through the mission, to resume it if they stop, and to check the run reached a real ending. And the per-skill result each of those choices carried: demonstrated or developing.",
+  },
+  {
+    shape: "A core mission — what you can see",
+    recorded:
+      "The judgment, not the run. Your roster and dashboard show demonstrated or developing per skill, for one student and for the class. There is no screen anywhere in the product — and nothing in any export — that shows you which choices a particular child tapped, so do not go looking for one or promise a colleague you can check.",
   },
   {
     shape: "The family take-home",
     recorded:
-      "Nothing about any child. It is the same printed page for every family in the class — what the mission practiced, three questions to ask, one thing to try, and the rule worth keeping. If you want a family to know how their own child did, that comes from you, the way it always has.",
+      "Neither of those. It is the same printed page for every family in the class — what the mission practiced, three questions to ask, one thing to try, and the rule worth keeping — and it holds nothing about any child. If you want a family to know how their own child did, that comes from you, the way it always has.",
   },
   {
     shape: "Any session run on the board only",

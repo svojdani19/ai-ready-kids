@@ -58,22 +58,40 @@ function takeHomeClaims(): { where: string; text: string }[] {
 }
 
 describe("the teacher guide says where evidence actually lives", () => {
-  it("puts a core mission's evidence on the roster and nowhere else", () => {
-    const core = WHAT_IS_RECORDED.find((r) => /core mission/i.test(r.shape))!;
-    expect(core.recorded).toMatch(/roster/i);
-    // FAILING-BEFORE: this sentence ended "...on your roster and in the family
-    // take-home", which the route cannot support. The sentence may still
-    // mention the take-home — it now does, to deny it — so what is forbidden is
-    // the affirmative placement, not the word.
-    expect(core.recorded).not.toMatch(/\bin the family (take-home|page|sheet)\b/i);
-    expect(core.recorded).not.toMatch(/roster and .{0,20}(take-home|family)/i);
-    expect(core.recorded).toMatch(/not sent anywhere|no family page shows it/i);
+  it("separates what a core mission stores from what a teacher can see", () => {
+    // Two rows, deliberately. The first fix put both facts in one sentence —
+    // "that evidence lives in one place: your roster and dashboard" — which
+    // traded the family error for a smaller one in the same shape: a teacher
+    // goes looking for the choices on a page that renders only the judgment.
+    const stored = WHAT_IS_RECORDED.find((r) => /core mission.*stored/i.test(r.shape));
+    const shown = WHAT_IS_RECORDED.find((r) => /core mission.*(see|shown)/i.test(r.shape));
+    expect(stored, "the guide should say what a core mission stores").toBeDefined();
+    expect(shown, "the guide should say what a teacher can see").toBeDefined();
+
+    // Storage names both, and says what the choice path is actually for.
+    expect(stored!.recorded).toMatch(/choices/i);
+    expect(stored!.recorded).toMatch(/demonstrated or developing/i);
+    expect(stored!.recorded).toMatch(/resume|reached a real ending/i);
+
+    // Display names the judgment and denies the choice history outright.
+    expect(shown!.recorded).toMatch(/roster and dashboard/i);
+    expect(shown!.recorded).toMatch(/demonstrated or developing/i);
+    expect(shown!.recorded).toMatch(/no screen anywhere in the product/i);
+    expect(shown!.recorded).toMatch(/nothing in any export/i);
+
+    // The collapsed claims are gone from the guide entirely.
+    const all = WHAT_IS_RECORDED.map((r) => r.recorded).join(" ");
+    expect(all).not.toMatch(/lives in one place/i);
+    expect(all).not.toMatch(/it is not sent anywhere/i);
+    expect(all).not.toMatch(/\bin the family (take-home|page|sheet)\b/i);
   });
 
   it("gives the take-home its own row, saying it holds nothing about a child", () => {
     const sheet = WHAT_IS_RECORDED.find((r) => /take-home/i.test(r.shape));
     expect(sheet, "the guide should say outright what the take-home records").toBeDefined();
     expect(sheet!.recorded).toMatch(/nothing about any child/i);
+    // Neither the stored run nor the shown judgment.
+    expect(sheet!.recorded).toMatch(/neither/i);
     // Same page for everyone is the fact that makes the rest true.
     expect(sheet!.recorded).toMatch(/same .*page for every family|every family in the class/i);
   });
@@ -164,5 +182,56 @@ describe("the route the guide describes is generic, public and static", () => {
         /\b(demonstrated|developing|per-skill|their score|how they did on)\b/i,
       );
     }
+  });
+});
+
+/**
+ * The third half of the same fact: what the teacher's own pages render.
+ *
+ * The guide now claims the roster shows a demonstrated-or-developing judgment
+ * and no child-by-child choice history. That is a claim about
+ * `/teacher/class/[classId]`, so it is asserted there rather than believed.
+ */
+describe("the roster shows the judgment and not the run", () => {
+  const classPage = readFileSync(
+    join(process.cwd(), "src/app/teacher/class/[classId]/page.tsx"),
+    "utf8",
+  );
+
+  it("summarizes attempts into per-skill states", () => {
+    expect(classPage).toMatch(/summarizeStudent/);
+    expect(classPage).toMatch(/summarizeCohort/);
+    // The two states the guide names are the two the page renders.
+    expect(classPage).toMatch(/demonstrated/);
+    expect(classPage).toMatch(/developing/);
+  });
+
+  it("never renders a choice history", () => {
+    // FAILING-BEFORE would be meaningless here — this has always been true. The
+    // point is that the guide's new wording depends on it staying true.
+    for (const forbidden of [".path", "path_json", "choiceId", "sceneId"]) {
+      expect(classPage, `the class page must not reach for ${forbidden}`).not.toContain(forbidden);
+    }
+  });
+
+  it("derives the judgment from recorded evidence, not from the choice path", () => {
+    const evidence = readFileSync(join(process.cwd(), "src/lib/domain/evidence.ts"), "utf8");
+    expect(evidence).toMatch(/a\.evidence/);
+    // If summarizing ever started reading the path, "what is stored" and "what
+    // you can see" would no longer be the separate facts the guide describes.
+    expect(evidence).not.toMatch(/\.path\b/);
+  });
+
+  it("keeps the choice path to the two non-staff uses the guide names", () => {
+    // `resume it if they stop` and `check the run reached a real ending`.
+    const progress = readFileSync(join(process.cwd(), "src/lib/repo/progress.ts"), "utf8");
+    expect(progress).toMatch(/attempt\.path/);
+    expect(progress).toMatch(/hasReachedEnding/);
+
+    const player = readFileSync(
+      join(process.cwd(), "src/app/student/play/[slug]/page.tsx"),
+      "utf8",
+    );
+    expect(player).toMatch(/resumeSceneId\(mission, attempt\.path\)/);
   });
 });

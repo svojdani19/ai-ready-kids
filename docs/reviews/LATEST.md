@@ -39,19 +39,44 @@ page that cannot technically contain it.
 
 ### The correction
 
-Copy only, one file. The core-mission row now ends where the evidence ends —
-*"That evidence lives in one place: your roster and dashboard. It is not sent
-anywhere and no family page shows it."* — and the take-home gets **its own row**
-rather than being appended to a sentence about evidence: *"Nothing about any
-child. It is the same printed page for every family in the class… If you want a
-family to know how their own child did, that comes from you, the way it always
-has."*
+Copy only, one file. **Three separate facts, three rows**, because the first pass
+collapsed two of them (see the acceptance correction below):
+
+- *A core mission — what is stored.* The authored choices the child tapped, which
+  carry them through the mission, resume it if they stop and confirm the run
+  reached a real ending; and the per-skill result each choice carried.
+- *A core mission — what you can see.* The judgment, not the run. The roster and
+  dashboard show demonstrated or developing per skill. *"There is no screen
+  anywhere in the product — and nothing in any export — that shows you which
+  choices a particular child tapped, so do not go looking for one or promise a
+  colleague you can check."*
+- *The family take-home.* **Neither of those** — the same printed page for every
+  family in the class, holding nothing about any child. *"If you want a family to
+  know how their own child did, that comes from you, the way it always has."*
 
 That last sentence is deliberate. Having removed a channel a teacher believed
 existed, the guide has to say what replaces it, and the honest answer is that
 nothing does and nothing needs to. Inventing a parent account or a messaging
 channel to fill the gap would have been a new data flow in a product built to
 have as few as possible.
+
+### The acceptance correction: the first fix moved the error
+
+The replacement sentence said the choices **and** the judgment both *"live in one
+place: your roster and dashboard"*, collapsing what is stored into what is shown.
+Traced rather than assumed: `attempt.path` is read in exactly two non-staff
+places — `progress.ts` validates the next decision, spots a rethink and confirms
+the run reached an ending, and the student player resumes an unfinished attempt.
+`summarizeStudent`/`summarizeCohort` read `attempt.evidence` and never the path.
+The class page summarizes and renders demonstrated/developing. No export carries
+a path or a choice id.
+
+So a teacher could still go looking for the exact choices a child tapped and not
+find them — the same defect in a smaller room. Storage and display are now
+separate rows, the display row denies the choice history in the product **and**
+in exports, and "lives in one place" and "it is not sent anywhere" are gone with
+a test asserting neither can return. Nothing was added: no drill-down, no parent
+channel, no schema field, no export.
 
 `NOT_THIS` was reconciled rather than trimmed: it keeps the real instruction and
 adds the guard — *"Do not tell a child or a caregiver to look for their own
@@ -74,13 +99,20 @@ one. The route half asserts four authored fields and no reach for `getStudent`,
 `getAttempt`, `listStudents`, `evidence`, `competency_` or `studentId`; still
 static, still sessionless, the word *student* nowhere in the file; and all 33
 sessions carry an authored take-home whose own copy promises no result either.
+A third group couples the wording to the **real class page**: it imports
+`summarizeStudent`/`summarizeCohort` and renders demonstrated/developing, it
+contains none of `.path`, `path_json`, `choiceId` or `sceneId`, `evidence.ts`
+reads `a.evidence` and never the path, and the path keeps exactly the two
+non-staff uses the guide names.
 The extractor asserts it found at least two sentences, so it cannot pass
 vacuously.
 
-**Mutation-checked four ways:** restoring the original claim fails 1; making the
+**Mutation-checked seven ways:** restoring the original claim fails 1; making the
 take-home row promise demonstrated/developing fails 1; importing `getStudent`
 into the family page fails 1, naming the symbol; deleting the `NOT_THIS` guard
-fails 1.
+fails 1; restoring the collapsed "lives in one place" row fails 1; making the
+class page read `attempts[0].path[0].choiceId` fails 1, naming `.path`; making
+`summarizeStudent` read the path fails 1.
 
 ### The gate failed twice while landing this
 
@@ -105,14 +137,16 @@ component, which fails 4 tests including this one.
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      946 passed (34 files) × 11 consecutive runs
+tests      950 passed (34 files)
 build      ✓ Compiled successfully
 ```
 
 Browser, `/teacher/how-to-run-a-session` at **1280×800** and **768×1024**: all
-four rows render in order with the corrected sentence and the new take-home row
-present, the old claim and old `NOT_THIS` line absent, section 728px inside 768,
-`overflow: false`, screenshots clean at both. Demo data untouched — this sprint
+five rows render in order — First Look, *what is stored*, *what you can see*, the
+take-home, board-only — read back in full from the live page, with every retired
+phrase absent ("lives in one place", "not sent anywhere", "in the family
+take-home", "evidence is for you and their family"), section 728px inside 768,
+`overflow: false`. Demo data untouched — this sprint
 reads no records and writes none.
 
 ### Where to push hardest
@@ -125,9 +159,10 @@ reads no records and writes none.
 3. **"That comes from you, the way it always has" describes a practice, not a
    feature.** True, and the right answer — but a teacher who wanted to send a
    family something specific still has nothing but their own words.
-4. **Nothing checks the guide against the roster page.** That evidence lives on
-   "your roster and dashboard" is asserted as copy, not verified against what
-   those pages render.
+4. **The roster assertions are source-level** — the class page is read for
+   `summarizeStudent` and for the absence of `.path`, not rendered and inspected
+   the way sprint 81's entitlement tests are. A page that imported the
+   summarizers and rendered something else would pass.
 5. **One intermittent failure is still undiagnosed** — `checkin-player >
    restores the saved selection when going Back`, seen once, error not kept,
    absent for eleven runs. Same *shape* as the one fixed, but that is a
