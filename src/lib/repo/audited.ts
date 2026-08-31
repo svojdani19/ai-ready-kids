@@ -1,6 +1,7 @@
 import "server-only";
 import type { Db } from "@/lib/db";
 import { recordAudit } from "@/lib/repo/school";
+import { classArchivedRefusal } from "@/lib/auth/class-state";
 
 /**
  * A class operation and its audit entry, committed together or not at all.
@@ -126,8 +127,7 @@ export const RETENTION_FAILED =
  * a post-restore decision about it. Sprint 76 first recorded that as a
  * consistency gap; it is a lifecycle one.
  */
-export const ASSIGNMENT_CLASS_ARCHIVED =
-  "That class is archived. Restore it before changing its missions.";
+export const ASSIGNMENT_CLASS_ARCHIVED = classArchivedRefusal("set_assignment");
 
 /**
  * Assigning or withdrawing a mission decides which authored practice a class may
@@ -157,8 +157,7 @@ export const ASSIGNMENT_FAILED = (className: string) =>
  * quietly change what a school's history and exports say about a year that was
  * supposed to be finished.
  */
-export const REMOVE_STUDENT_CLASS_ARCHIVED =
-  "That class is archived. Restore the class before removing a student from it.";
+export const REMOVE_STUDENT_CLASS_ARCHIVED = classArchivedRefusal("remove_student");
 
 export const REMOVE_STUDENT_FAILED = (className: string) =>
   `That student was not removed, and no records were deleted: they are still on ` +

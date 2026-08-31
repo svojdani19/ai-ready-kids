@@ -7,6 +7,117 @@ likely to be.
 
 ---
 
+## Sprint 82 — three reviews said two actions; it was three
+
+- **Reviewed against:** HEAD `b4688ca`
+- **Repository:** <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-30-sprint-82.md`](2026-08-30-sprint-82.md)
+
+### The finding
+
+Sprint 69 made archiving an access boundary **for children** — sessions close,
+the code rotates, the cohort leaves the seat count. It never became one for
+staff: `requireOwnActiveClass` answered ownership and the subscription term and
+never read `archived_at`, so each action had to remember for itself.
+
+Three sprints then added the check one action at a time, and each wrote down
+what was left. **Sprint 76** fixed assignment and named rename, remove, rotate.
+**Sprint 79** fixed removal and named rename and rotate. **Sprint 81** listed
+rename and rotate as a known gap for the third time.
+
+All three lists were wrong the same way. Enumerating the file rather than the
+reviews: `addStudentAction` never checked either, and **was never named once** —
+while enrolling a child into a cohort whose year is finished, consuming a
+licensed seat, and putting that child on the roster the moment somebody restores
+the class. A list maintained by hand is a list that is quietly wrong.
+
+### The correction
+
+The resolver every classroom mutation already used now answers three questions —
+ownership, entitlement, **lifecycle** — and the third cannot be skipped, because
+there is no way to resolve a class for a mutation without naming the mutation.
+
+Checked one verb at a time rather than assumed: add, rename and remove all change
+what a finished year's roster and exports say; assignment goes live on restore.
+**Rotate is the only arguable one** — archiving already rotated the code and
+signed the room out — and it is refused anyway, because its audit entry claims
+the old code "is now rejected… for browsers already signed in with it" and on a
+parked class nobody is signed in. A true record of a pointless act is still a
+false sentence. Restore, delete and retention stay outside: they are how a parked
+class stops being parked, and gating them would make archiving a trap.
+
+The refusal still names what it is refusing — five sentences from one map, so a
+teacher is not left working out which of the things they tried was blocked. The
+two existing constants are now **derived** from that map rather than written out,
+so the two that existed cannot drift from the three that did not.
+
+**Entitlement is answered before lifecycle**, deliberately: a lapsed school gets
+told about its subscription, which explains why every other class is refusing
+too, rather than being sent to restore a class that would still refuse.
+
+### Acceptance
+
+`tests/class-lifecycle-gate.test.ts`, 19 tests, every one through the **real
+exported Server Action** with a real signed session. Five refusals leaving
+classes, students, attempts, benchmarks, assignments **and the audit log**
+byte-identical; five restores; an `ABORT` trigger **armed on `audit_log`**
+proving all five refuse above the transaction; distinct sentences; the map
+covered in both directions; entitlement ordering; `archived_at` appearing exactly
+**once** in `teacher.ts`; no exported action handling a `classId` bypassing the
+resolver; no call site omitting an operation.
+
+**Mutation-checked four ways:** removing the resolver check fails 13; answering
+lifecycle before entitlement fails 3, all in the ordering group; passing the
+wrong operation fails 5, naming the action; a new class-holding action that skips
+the resolver fails 1, naming the function.
+
+### Evidence
+
+```
+typecheck  ✓
+lint       0 errors, 2 pre-existing warnings
+tests      937 passed (33 files)
+build      ✓ Compiled successfully
+```
+
+Browser: Room 12 parked by setting `archived_at` directly — `archiveClass` also
+rotates the code, which cannot be undone to the original value. At **1280×800**,
+three refusals produced through the real controls rendered together (new code,
+missions, add a student); the code stayed `MAPLE-HERON-317` and the roster stayed
+23. Two of those three succeeded before this sprint. At **768×1024** the message
+renders at 352px, `overflow: false`. Recovery: with the class un-parked the
+assignment toggle moved 21 → 20 → 21 with no refusal. Screenshots were not
+capturable — the pane was hidden and painted blank — so that evidence is rendered
+text and geometry at each emulated viewport, not pixels.
+
+**Demo data restored exactly**, and it took work: the recovery toggle deleted the
+seeded assignment row and inserted a fresh one with a random id and today's date,
+plus two audit rows. The seed ladder is deterministic, so the original was
+reconstructed from the surviving rows — `asg_cls_room12_f-upper-1` at
+`2025-08-23T15:30:00.000Z` — and both audit rows removed. Attempts 1078, audit
+log 6, assignments 65, zero rows dated in the last three days.
+
+### Where to push hardest
+
+1. **An archived class looks active.** No badge, no banner, and the assignment
+   panel still promises children see a change "straight away". Every control is
+   live and every one refuses. The refusals are correct and specific, so nothing
+   is misleading after the fact — but a teacher learns the class is parked by
+   being refused, which is not the standard the rest of this product holds.
+2. **`getClass` still hands out archived classes.** The resolver reads
+   `archived_at` after the fact rather than the repository declining to resolve
+   one for a mutation. That layer would catch a caller that never goes through
+   the resolver at all.
+3. **The no-bypass test keys on the string `classId`.** An action naming that
+   parameter something else would not be enumerated — a heuristic over one file,
+   not a type.
+4. **"Toggle it back" did not put it back.** Verifying recovery against real demo
+   data restored the count and left a different row: new id, today's date. I
+   reconstructed the original, but the check that caught it was counting rows
+   afterwards, not the toggle itself.
+
+---
+
 ## Sprint 81 — an annual subscription that granted perpetual use
 
 - **Reviewed against:** HEAD `834632d`

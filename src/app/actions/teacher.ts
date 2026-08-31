@@ -22,10 +22,8 @@ import {
   unassignMission,
 } from "@/lib/repo/classroom";
 import {
-  ASSIGNMENT_CLASS_ARCHIVED,
   ASSIGNMENT_FAILED,
   auditedWrite,
-  REMOVE_STUDENT_CLASS_ARCHIVED,
   REMOVE_STUDENT_FAILED,
   ROTATE_FAILED,
 } from "@/lib/repo/audited";
@@ -44,6 +42,7 @@ import {
   assertSubscriptionActive,
   lapsedRefusal,
 } from "@/lib/auth/subscription-gate";
+import { ClassArchivedError, type ClassOperation } from "@/lib/auth/class-state";
 import {
   completeCertification,
   getCertification,
@@ -75,17 +74,31 @@ async function requireOwnClass(classId: string) {
 }
 
 /**
- * The same, plus the subscription term.
+ * The same, plus the subscription term, plus the class's own lifecycle.
  *
  * Every classroom mutation goes through here rather than through the plain
- * ownership check, so the gate is on the path and not on the page. Ownership
- * and entitlement are separate questions and both have to be answered: a
- * teacher's own class is still their own class after the term ends, and they
- * still cannot change it.
+ * ownership check, so the gate is on the path and not on the page. Three
+ * separate questions, all of which have to be answered before a write:
+ *
+ *   1. **Ownership** — is this the caller's own class? A teacher's own class is
+ *      still their own class after the term ends.
+ *   2. **Entitlement** — is the school's subscription active? Their own class,
+ *      and they still cannot change it.
+ *   3. **Lifecycle** — is the class archived? Theirs, paid for, and parked.
+ *
+ * The third was missing until sprint 82, and was being answered by whichever
+ * actions had remembered to answer it — which turned out to be two of five. It
+ * takes the operation because the refusal names what is being refused; see
+ * `class-state.ts` for why every classroom mutation is on the list.
  */
-async function requireOwnActiveClass(classId: string) {
+async function requireOwnActiveClass(classId: string, operation: ClassOperation) {
   const resolved = await requireOwnClass(classId);
   assertSubscriptionActive(resolved.db, resolved.user.school_id);
+  // Above every transaction, so a refusal attempts nothing and takes no write
+  // lock. Entitlement first: a lapsed school is told about its subscription
+  // rather than about one class's state, which is the more useful fact and the
+  // one that explains why the rest of the room is refusing too.
+  if (resolved.classroom.archived_at) throw new ClassArchivedError(operation);
   return resolved;
 }
 
@@ -209,7 +222,7 @@ export async function addStudentAction(
     const invalid = validateDisplayName(displayName);
     if (invalid) return { error: invalid };
 
-    const { db, user, classroom } = await requireOwnActiveClass(classId);
+    const { db, user, classroom } = await requireOwnActiveClass(classId, "add_student");
     const existing = listStudents(db, classId);
     if (existing.some((s) => s.display_name.toLowerCase() === displayName.toLowerCase())) {
       return { error: `${displayName} is already on this roster.` };
@@ -295,7 +308,7 @@ export async function renameStudentAction(
     const invalid = validateDisplayName(displayName);
     if (invalid) return { error: invalid };
 
-    const { db, user, classroom } = await requireOwnActiveClass(classId);
+    const { db, user, classroom } = await requireOwnActiveClass(classId, "rename_student");
     const students = listStudents(db, classId);
     const target = students.find((s) => s.id === studentId);
     // Same shape as the delete: authorizing the class is not authorizing the
@@ -330,19 +343,12 @@ export async function renameStudentAction(
 
 export async function removeStudentAction(classId: string, studentId: string): Promise<{ error?: string }> {
   try {
-    const { db, user, classroom } = await requireOwnActiveClass(classId);
-
     // Archived classes are parked, not empty. This deletion is permanent and
     // cascades, and archiving promises the roster and records stay put until a
-    // restore, a scheduled purge or an explicit administrator deletion — so it
-    // is refused here, above the transaction, before anything is attempted.
-    //
-    // Scoped to this action deliberately. Widening `requireOwnActiveClass`
-    // would change every classroom mutation at once, and rename and rotate
-    // semantics are their own question.
-    if (classroom.archived_at) {
-      return { error: REMOVE_STUDENT_CLASS_ARCHIVED };
-    }
+    // restore, a scheduled purge or an explicit administrator deletion. Sprint
+    // 79 refused it here in the action; sprint 82 moved the refusal into the
+    // resolver, where the other four mutations get it too.
+    const { db, user, classroom } = await requireOwnActiveClass(classId, "remove_student");
 
     // Authorizing the class is not authorizing the child. The delete is scoped
     // by both ids and reports whether it actually removed anything, so a
@@ -397,7 +403,7 @@ export async function removeStudentAction(classId: string, studentId: string): P
  */
 export async function rotateJoinCodeAction(classId: string): Promise<{ error?: string }> {
   try {
-    const { db, user, classroom } = await requireOwnActiveClass(classId);
+    const { db, user, classroom } = await requireOwnActiveClass(classId, "rotate_code");
     // Sprint 71 made the administrator's rotation atomic and left this one —
     // the same repository call, the same credential consequence, and the path
     // teachers actually use most. A code that changed without a record of it
@@ -438,19 +444,13 @@ export async function setAssignmentAction(input: {
   try {
     const mission = MISSION_BY_ID[input.missionId];
     if (!mission) throw new Error("Unknown mission.");
-    const { db, user, classroom } = await requireOwnActiveClass(input.classId);
-
     // Archived classes are parked, not empty. The roster, attempts and
     // assignments are all still stored and the class can be restored, so a
     // mission changed while it is parked would go live for children the moment
-    // it comes back — with nobody having decided that after the restore.
-    //
-    // Refused here, above the transaction, and only for this action: widening
-    // `requireOwnActiveClass` would change every classroom mutation at once,
-    // which is a different correction.
-    if (classroom.archived_at) {
-      return { error: ASSIGNMENT_CLASS_ARCHIVED };
-    }
+    // it comes back — with nobody having decided that after the restore. Sprint
+    // 76 refused it here in the action; sprint 82 moved the refusal into the
+    // resolver, which is where the other four mutations pick it up.
+    const { db, user, classroom } = await requireOwnActiveClass(input.classId, "set_assignment");
 
     // The change and its record commit together. Sprint 76: these were two
     // separate commits, so a failing audit insert could expose a mission to a

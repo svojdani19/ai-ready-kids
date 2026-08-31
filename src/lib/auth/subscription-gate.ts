@@ -7,6 +7,7 @@ import {
   LAPSED_WRITE_REFUSAL,
   UNVERIFIED_WRITE_REFUSAL,
 } from "@/lib/domain/subscription";
+import { ClassArchivedError } from "@/lib/auth/class-state";
 
 /**
  * The server-side half of the subscription term.
@@ -111,5 +112,10 @@ export function currentDb(): Db {
 export function asExpectedError(error: unknown): { error: string } | null {
   if (error instanceof SubscriptionLapsedError) return { error: error.message };
   if (error instanceof TermNotConfiguredError) return { error: error.message };
+  // Sprint 82: the archive refusal joins the same path. It is a different
+  // question from entitlement — a school in good standing has archived
+  // classes — but it reaches a teacher the same way, as a sentence rather
+  // than an error page.
+  if (error instanceof ClassArchivedError) return { error: error.message };
   return null;
 }

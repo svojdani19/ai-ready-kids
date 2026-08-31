@@ -896,6 +896,36 @@ one of them has not tested the thing that was built.
       `globalThis.__airkDb` in `beforeAll` and check the real database is
       untouched afterwards.
 
+- [ ] **Enumerate the code, not your own last review.** Three consecutive
+      sprints wrote down which actions still needed an archive check, and all
+      three lists were wrong in the same way — one action was never named once,
+      while it enrolled children into finished cohorts and consumed licensed
+      seats. Each list was copied forward from the one before it instead of being
+      re-derived from the file. Before you write "what remains", grep for the
+      thing itself and count.
+- [ ] **When you write "widening the resolver would change everything at once",
+      that is the correction, not a reason to defer it.** The same sentence
+      appeared in three reviews as a justification for adding one more per-action
+      check. Changing every caller at once is exactly what a shared rule is for;
+      the real question is whether every caller should change, and that is
+      answered one verb at a time, not by declining to ask.
+- [ ] **A shared refusal does not have to be a generic refusal.** The objection
+      to centralising was that the per-action wording was better, and it was.
+      Give the resolver the caller's intent and map it to the end of the
+      sentence: one rule, one variable, five specific messages, and no way to
+      call it without saying which one you meant.
+- [ ] **Order two refusals by what the reader can act on.** A lapsed school with
+      an archived class trips both rules. The subscription answer is the useful
+      one — it explains why the rest of the building is refusing too — and the
+      lifecycle answer would send them to restore a class that would still
+      refuse. Decide the order deliberately and assert it.
+- [ ] **"Toggle it back" is not a restore.** Verifying recovery against real demo
+      data by turning something off and on again put the count back and left a
+      different row: new random id, today's timestamp, plus two audit entries.
+      What caught it was counting rows and reading them afterwards, not the
+      toggle. Prefer the reversible one-column edit, and always diff the rows you
+      touched rather than the totals.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same
