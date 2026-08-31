@@ -58,6 +58,41 @@ is untouched.
 the archive still holds every control, so the server refusal is what stops the
 write. This sprint stops a teacher being sent to it.
 
+### The acceptance correction: the page was honest, and unreachable
+
+The first pass shipped a "known gap" claiming `/teacher` *"still lists an
+archived class like any other"*. **That is the opposite of what the code does,
+and I wrote it without reading the query** — `listClassesForTeacher` filters
+`archived_at IS NULL`.
+
+So the real defect was worse than the one I invented. Archiving removed the class
+from the dashboard, and the dashboard is the **only** navigation to
+`/teacher/class/[classId]`. The page was honest when reached and nothing led
+there: the owning teacher could see the roster, completed work and evidence only
+from a URL they had kept, and a school cannot train a substitute around a
+memorised URL. The claim that records "remain available" was true of the page and
+false of the product.
+
+**An archived-only query, not a flag.** `listArchivedClassesForTeacher` has the
+opposite filter and cannot return an active class. Deliberately a second function
+rather than an `includeArchived` parameter: the active-only filter is relied on
+by the dashboard counts, the seat usage and the mission library's assignment
+pickers, and a boolean would have put a parked cohort one wrong argument away
+from all of them. Every existing caller is untouched.
+
+**The section.** An **Archived classes** list at the bottom of `/teacher` — its
+own `aria-labelledby` region with an `h2` — holding name, a `Read-only` tag,
+grade, school year, roster count and **View records**. No join code (archiving
+rotated it; a code on a dashboard is a code somebody writes on a board), no
+`Open class`, no mutation control. Counted in nothing: a test reads the `Stat`
+**props** rather than the prose, so a number in a sentence cannot be mistaken for
+a figure.
+
+**One thing the browser found that the brief did not ask for:** with the class
+archived, the dashboard read *"You do not have a class yet"* directly above that
+teacher's own finished cohort. It now says *"You do not have an active class
+right now"* and points at the section, only when there is one to point at.
+
 ### Accessibility
 
 `<section role="status" aria-labelledby="archived-class-title">` — a standing
@@ -89,11 +124,19 @@ archived assertion and none of the active ones.
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      961 passed (35 files)
+tests      970 passed (35 files)
 build      ✓ Compiled successfully
 ```
 
-Browser, both states at **1280×800** and **768×1024**. Archived: notice renders,
+Browser, both states at **1280×800** and **768×1024**. **The dashboard,
+archived:** the section renders with the card reading exactly `Room 12 ·
+Read-only · Grade 3 · 2025-2026 · 23 students · View records`, `MAPLE-HERON-317`
+nowhere, no "Open class", Classes 0 / Students 0, the only tabbable control in
+the section being the link, card 358px inside 768, `overflow: false`. **Following
+that link** lands on the read-only class page with its notice and roster — the
+whole path a substitute would take, driven end to end. **Active, after
+restoring:** no section, code back, "Open class" back, Classes 1 / Students 23.
+**The class page, archived:** notice renders,
 code panel reads "Inactive" and `MAPLE-HERON-317` appears **nowhere**, no "New
 code", no "straight away", 23 `Read-only` cells, roster/evidence/check-ins all
 present, missions shown as `Was assigned`; notice 728px inside 768,
@@ -107,14 +150,17 @@ rotates the code, which cannot be undone. **Demo data restored exactly:** attemp
 
 ### Where to push hardest
 
-1. **`/teacher` still lists an archived class like any other.** Out of this
-   finding and unchanged, so a teacher still arrives without warning — they just
-   learn on arrival now instead of on the fifth refusal.
-2. **Nothing enumerates mutation controls.** Five components are a list in the
-   page and a matching list in the test. A sixth added tomorrow renders on an
-   archived class and nothing objects until somebody writes it into both — the
-   same shape as the `archived_at` list sprints 76–82 kept getting wrong, one
-   layer up.
+1. **I wrote a known gap without reading the query, and it was backwards.** The
+   claim that `/teacher` listed archived classes was the opposite of the truth,
+   and it sat in this file as documentation of behaviour the product did not
+   have. Corrected above. Worth asking how many other gap statements in this file
+   were written from memory of the code rather than from the code.
+2. **Nothing enumerates mutation controls, and there are now two surfaces.**
+   Five components are a list in the class page, a list on the dashboard card,
+   and a matching list in the test. A sixth added tomorrow renders on an archived
+   class and nothing objects until somebody writes it into all of them — the same
+   shape as the `archived_at` list sprints 76–82 kept getting wrong, one layer
+   up.
 3. **The notice is authored prose in a component**, not in the domain layer
    beside `LAPSED_STAFF_BODY`. Only the title is exported and asserted.
 4. **Screen-reader behaviour is asserted structurally, not heard.** Role, label,

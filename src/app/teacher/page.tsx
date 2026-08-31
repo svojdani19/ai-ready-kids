@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { requireTeacher } from "@/lib/auth/session";
-import { listAssignments, listClassesForTeacher, listStudents } from "@/lib/repo/classroom";
+import {
+  listArchivedClassesForTeacher,
+  listAssignments,
+  listClassesForTeacher,
+  listStudents,
+} from "@/lib/repo/classroom";
 import { getCertification, listAttemptsForClass } from "@/lib/repo/progress";
 import { nextTeachingFocus, summarizeCohort } from "@/lib/domain/evidence";
 import { COMPETENCY_BY_ID } from "@/content/competencies";
@@ -29,6 +34,26 @@ export default async function TeacherOverview() {
   // an administrator every class in the school, with a button through to each
   // roster — the second way into the same disclosure.
   const classes = listClassesForTeacher(db, user.id, user.school_id);
+
+  /**
+   * Sprint 85: archiving a class removed the only way to reach it.
+   *
+   * `listClassesForTeacher` filters `archived_at IS NULL`, so the moment an
+   * administrator archived a cohort it left this page — and this page is the
+   * only navigation to `/teacher/class/[classId]`. Sprint 84 made that page
+   * honest and read-only when reached; nothing led there. The records were
+   * available to whoever had kept the URL, which is not a workflow a school can
+   * train a substitute or a returning teacher around.
+   *
+   * Listed separately and counted nowhere: the stats above, the seat figures and
+   * every assignment surface stay active-only, because a parked cohort is not
+   * part of this year's teaching and must not quietly rejoin it.
+   */
+  const archivedClasses = listArchivedClassesForTeacher(db, user.id, user.school_id);
+  const archivedCards = archivedClasses.map((classroom) => ({
+    classroom,
+    studentCount: listStudents(db, classroom.id).length,
+  }));
 
   const cards = classes.map((classroom) => {
     const students = listStudents(db, classroom.id);
@@ -104,16 +129,24 @@ export default async function TeacherOverview() {
 
       <div className="mt-8 space-y-5">
         {cards.length === 0 ? (
+          // A teacher whose only classes are archived has taught here; telling
+          // them they "do not have a class yet" above a list of their own
+          // finished cohorts is both wrong and dismissive of the year they ran.
           <EmptyState
-            title="You do not have a class yet"
+            title={
+              archivedCards.length > 0
+                ? "You do not have an active class right now"
+                : "You do not have a class yet"
+            }
             action={
               <ButtonLink href="/admin/classes" variant="secondary">
                 Ask your administrator to create one
               </ButtonLink>
             }
           >
-            Classes are created by an administrator, or by you from the administrator
-            area if you have that access.
+            {archivedCards.length > 0
+              ? "Your archived classes are below and their records are still readable. A new class is created by an administrator, or by you from the administrator area if you have that access."
+              : "Classes are created by an administrator, or by you from the administrator area if you have that access."}
           </EmptyState>
         ) : (
           cards.map(({ classroom, students, assignments, cohort, focus }) => (
@@ -229,6 +262,50 @@ export default async function TeacherOverview() {
           ))
         )}
       </div>
+
+      {archivedCards.length > 0 && (
+        <section aria-labelledby="archived-classes" className="mt-10">
+          <h2
+            id="archived-classes"
+            className="font-display text-xl leading-tight text-ink"
+          >
+            Archived classes
+          </h2>
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-ink-soft">
+            Finished cohorts you taught. They are read-only: nobody can join them and
+            nothing in them can be changed, and they are not counted in the figures above.
+            Their records are still here.
+          </p>
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+            {archivedCards.map(({ classroom, studentCount }) => (
+              <li
+                key={classroom.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sand-deep bg-paper-deep px-4 py-3.5"
+              >
+                <div className="min-w-0">
+                  <p className="flex flex-wrap items-center gap-2 text-[0.95rem] font-semibold text-ink">
+                    {classroom.name}
+                    {/* No join code. Archiving rotated it and it admits nobody;
+                        printing it here is how a dead code reaches a board. */}
+                    <Tag>Read-only</Tag>
+                  </p>
+                  <p className="mt-0.5 text-sm text-ink-soft">
+                    Grade {classroom.grade} · {classroom.school_year} · {studentCount}{" "}
+                    students
+                  </p>
+                </div>
+                <ButtonLink
+                  href={`/teacher/class/${classroom.id}`}
+                  size="sm"
+                  variant="secondary"
+                >
+                  View records
+                </ButtonLink>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

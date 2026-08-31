@@ -35,6 +35,40 @@ export function listClassesForTeacher(db: Db, teacherId: string, schoolId: strin
   );
 }
 
+/**
+ * The archived half, as its own query rather than a flag on the active one.
+ *
+ * `listClassesForTeacher` filters `archived_at IS NULL`, which is correct and is
+ * relied on by every teaching surface: the dashboard's counts, the seat usage,
+ * the mission library's per-class assignment pickers. Sprint 85 needed archived
+ * classes on the dashboard and adding an `includeArchived` parameter would have
+ * put a parked cohort one wrong argument away from all of them.
+ *
+ * So this is a separate function with the opposite filter and no way to return
+ * an active class. A caller that wants both asks twice and keeps them apart,
+ * which is what the dashboard does — archived cohorts are listed in their own
+ * section and counted in none of the figures.
+ *
+ * Same school scoping as the active query, for the same reason: a class whose
+ * owner sits in another school must not surface on that person's overview,
+ * archived or not.
+ */
+export function listArchivedClassesForTeacher(
+  db: Db,
+  teacherId: string,
+  schoolId: string,
+): Classroom[] {
+  return rows<Classroom>(
+    db
+      .prepare(
+        `SELECT * FROM classes
+         WHERE teacher_id = ? AND school_id = ? AND archived_at IS NOT NULL
+         ORDER BY archived_at DESC, grade, name`,
+      )
+      .all(teacherId, schoolId),
+  );
+}
+
 export function getClass(db: Db, id: string): Classroom | undefined {
   return row<Classroom>(db.prepare("SELECT * FROM classes WHERE id = ?").get(id));
 }

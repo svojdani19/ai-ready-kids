@@ -1010,6 +1010,34 @@ one of them has not tested the thing that was built.
       Walking the rendered tree for the actual imported component function is the
       claim you meant.
 
+- [ ] **Do not write a known gap from memory of the code.** "The dashboard still
+      lists an archived class like any other" was the exact opposite of what the
+      query does, and it shipped in a review as documentation of behaviour the
+      product did not have. The real defect was worse: archiving removed the only
+      navigation to the records. One `grep` would have caught it. A gap statement
+      is a claim, and claims get checked like any other.
+- [ ] **Making a page honest is not the same as making it reachable.** A
+      read-only page nobody can navigate to is available only to whoever kept the
+      URL, and a school cannot train a substitute or a returning teacher around a
+      memorised URL. When a state changes what a surface does, ask separately how
+      somebody arrives at it.
+- [ ] **Add a second query rather than a boolean to the existing one.** An
+      `includeArchived` flag on the active-class query would have put a parked
+      cohort one wrong argument away from the seat counts, the dashboard figures
+      and the assignment pickers. A separate function with the opposite filter
+      cannot return the wrong rows, and callers that want both have to hold them
+      apart on purpose.
+- [ ] **Read figures from the component's props, not from the rendered text.**
+      Asserting a count is excluded by searching prose for a number matches any
+      number anywhere in a sentence. Walking to the `Stat` props is the claim you
+      meant.
+- [ ] **A tree walker that skips numbers reads `Grade {3}` as `Grade`.** Numeric
+      JSX children are content. A walker that drops them makes an assertion about
+      a rendered card impossible to write and makes any `not.toContain` about a
+      number pass for free. Likewise, joining collected strings with padding
+      means no assertion about a rendered *sentence* can ever match — keep a
+      dense join for that, and a padded one for presence checks.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same
