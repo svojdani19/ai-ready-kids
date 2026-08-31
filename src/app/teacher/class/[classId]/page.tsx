@@ -280,17 +280,23 @@ export default async function ClassPage({
           {students.length === 0 ? (
             <PanelBody>
               {archived ? (
-                // A class can be archived before anybody joins it — nothing in
-                // `archiveClass` or `archiveClassAction` requires a roster — and
-                // the active empty state then told a teacher to "add students
-                // below" using "the class code", on a page that renders neither.
-                // That is the one moment somebody most needs the read-only state
-                // to be coherent, and it was the one moment it contradicted
-                // itself.
+                // A class can reach this branch with an empty roster by more
+                // than one route — nothing in `archiveClass` or
+                // `archiveClassAction` requires a roster, and a teacher can
+                // remove the last student before it is archived — and the active
+                // empty state told a teacher to "add students below" using "the
+                // class code", on a page that renders neither. That is the one
+                // moment somebody most needs the read-only state to be coherent.
+                //
+                // Strictly present-tense, deliberately. `students.length === 0`
+                // proves the roster is empty now and nothing about how it got
+                // that way: an earlier version said "nobody joined this class
+                // before it was archived", which is a historical claim this page
+                // cannot support and would be flatly false for a cohort that was
+                // emptied first. The page says what is here, and what changes it.
                 <EmptyState title="No student records to review">
-                  Nobody joined this class before it was archived, so there is no roster,
-                  no completed work and no evidence here to look at. An administrator has
-                  to restore the class before anybody can be added to it.
+                  There are no student records on this roster to review. An administrator
+                  has to restore the class before anybody can be added to it.
                 </EmptyState>
               ) : (
                 <EmptyState title="Nobody on this roster yet">

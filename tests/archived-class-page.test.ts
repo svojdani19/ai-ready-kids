@@ -42,6 +42,7 @@ import ClassPage from "@/app/teacher/class/[classId]/page";
 import TeacherOverview from "@/app/teacher/page";
 import { listArchivedClassesForTeacher, listClassesForTeacher, createClass } from "@/lib/repo/classroom";
 import { createUser } from "@/lib/repo/school";
+import { removeStudentAction } from "@/app/actions/teacher";
 import { ButtonLink } from "@/components/ui/Button";
 
 let db: Db;
@@ -429,12 +430,14 @@ describe("the dashboard leads to archived records without mixing them in", () =>
 });
 
 /**
- * A class can be archived before anybody joins it.
+ * An archived class can have an empty roster, by more than one route.
  *
  * Nothing requires a roster to archive: `archiveClass` checks only
  * `archived_at`, and `archiveClassAction` checks only ownership and the term.
- * So the zero-student archived class is reachable — a cohort created and parked
- * before enrollment, or emptied and then archived.
+ * So a cohort can be created and parked before enrollment — **and** an active
+ * class can have its last student removed and then be archived. Both reach this
+ * branch, which is why the copy here has to be true of the state rather than of
+ * a history it cannot see.
  *
  * Sprint 84 hid `AddStudentForm` and replaced the join code with "Inactive", and
  * left the roster's empty state unconditional. It went on saying *"Add students
@@ -485,9 +488,50 @@ describe("a class with no students at all", () => {
     const text = await textOf(await pageFor(empty.id));
 
     expect(text).toMatch(/No student records to review/);
-    expect(text).toMatch(/Nobody joined this class before it was archived/);
-    expect(text).toMatch(/no roster, no completed work and no evidence/i);
+    expect(text).toMatch(/There are no student records on this roster to review/);
     expect(text).toMatch(/An administrator has to restore the class before anybody can be added/);
+  });
+
+  /**
+   * The copy must be true of the state, not of a story about it.
+   *
+   * `students.length === 0` proves the roster is empty now and nothing about how
+   * it got that way. An earlier version of this empty state said "nobody joined
+   * this class before it was archived", which is a historical inference the page
+   * cannot support — and is flatly false for the path below, where a class is
+   * taught, emptied and then archived.
+   */
+  const HISTORICAL_CLAIM =
+    /nobody (ever )?joined|before it was archived|never had|no[- ]one signed up|were removed|used to have|once had/i;
+
+  it("claims nothing about how the roster came to be empty", async () => {
+    const empty = emptyClass();
+    archiveClass(db, empty.id);
+    const text = await textOf(await pageFor(empty.id));
+    expect(text).not.toMatch(HISTORICAL_CLAIM);
+  });
+
+  it("says the same thing for a class emptied and then archived", async () => {
+    // The path the create-then-archive fixture cannot exercise: a real cohort,
+    // taught, emptied through the real action, then parked. Same branch, and a
+    // history-claiming sentence would be false here rather than merely
+    // unsupported.
+    await writeSession({ kind: "staff", userId: DEMO_TEACHER });
+    for (const student of listStudents(db, DEMO_CLASS)) {
+      const result = await removeStudentAction(DEMO_CLASS, student.id);
+      expect(result.error, `removing ${student.display_name} was refused`).toBeUndefined();
+    }
+    expect(listStudents(db, DEMO_CLASS)).toHaveLength(0);
+    archiveClass(db, DEMO_CLASS);
+
+    const text = await textOf(await page());
+    expect(text).toMatch(/There are no student records on this roster to review/);
+    expect(text).toMatch(/An administrator has to restore the class before anybody can be added/);
+    // The assertion that matters: nothing here narrates what happened.
+    expect(text).not.toMatch(HISTORICAL_CLAIM);
+    // And it is still the archived empty state, not the active one.
+    expect(text).not.toMatch(/Add students below/);
+    expect(text).toContain(ARCHIVED_CLASS_TITLE);
   });
 
   it("archived and empty never points at a control or a code", async () => {

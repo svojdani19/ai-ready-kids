@@ -1060,6 +1060,24 @@ one of them has not tested the thing that was built.
       worth shipping rather than a guess dressed as a correction, and the test
       that proves reachability is now part of the coverage.
 
+- [ ] **An empty collection proves the present, never the past.** "Nobody joined
+      this class before it was archived" was written from `students.length === 0`,
+      which shows only that the roster is empty now — the same state is reached by
+      a cohort that was taught and then emptied, where that sentence is flatly
+      false. Copy generated from a count may describe the count. Anything about
+      how the state came about needs a record that says so, and there usually
+      isn't one.
+- [ ] **Your own comment naming the other path is a review finding.** The test
+      comment said "created and parked before enrollment, **or emptied and then
+      archived**", two lines above an assertion locking in copy that only holds
+      for the first. Implementation, test and prose contradicted each other in one
+      commit. When you enumerate the ways a state is reached, check the copy
+      against every one of them, not the fixture you happened to build.
+- [ ] **Cover the second route, do not just reword for it.** The guard here is a
+      test that empties a real cohort through the real action and then archives
+      it. Rewording alone would leave the untested path free to regress, and the
+      fixture that renders a state is rarely the only thing that produces it.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

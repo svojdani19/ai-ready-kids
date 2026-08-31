@@ -97,9 +97,10 @@ right now"* and points at the section, only when there is one to point at.
 
 **Checked before implementing**, since the finding depends on the state being
 reachable: nothing requires a roster to archive a class — `archiveClass` reads
-only `archived_at`, `archiveClassAction` checks only ownership and the term — so
-a cohort parked before enrollment reaches `students.length === 0 && archived`. A
-test creates and archives exactly that class to prove no guard refuses.
+only `archived_at`, `archiveClassAction` checks only ownership and the term.
+**Two routes reach `students.length === 0 && archived`**: a cohort parked before
+enrollment, and an active class whose last student is removed before archiving.
+Both are driven by tests.
 
 There, the roster showed the **active** empty state: *"Nobody on this roster yet.
 Add students below. They join by typing the class code…"* — on a page that had
@@ -107,19 +108,32 @@ just removed `AddStudentForm` and replaced the code with "Inactive". Two
 sentences pointing at things the same page had deliberately taken away, at
 exactly the moment somebody most needs the read-only state to be coherent.
 
-Now: *"**No student records to review.** Nobody joined this class before it was
-archived, so there is no roster, no completed work and no evidence here to look
-at. An administrator has to restore the class before anybody can be added to
-it."* No control named, no code mentioned, the absence stated plainly, the one
-route out named. Active + empty untouched, form and code guidance included;
-archived + non-empty untouched.
+Now: *"**No student records to review.** There are no student records on this
+roster to review. An administrator has to restore the class before anybody can be
+added to it."* No control named, no code mentioned, the absence stated plainly,
+the one route out named. Active + empty untouched, form and code guidance
+included; archived + non-empty untouched.
+
+**Strictly present-tense, after a second acceptance correction.** The first
+version read *"Nobody joined this class before it was archived…"* — a
+**historical inference the page cannot support**. `students.length === 0` proves
+the roster is empty now and nothing about how it got that way, and for the second
+route above it is not merely unsupported but false. It also contradicted this
+entry's own text, which named the emptied-then-archived path in the paragraph
+above it. The copy now claims nothing about history: not whether anyone joined,
+not whether records were removed, not whether retention ran. A guard asserts the
+rendered page matches none of six history phrasings, and a test empties a real
+cohort through `removeStudentAction` one child at a time before archiving it —
+the path the create-then-archive fixture cannot exercise.
 
 Six tests through the real page on a class created in the test, asserting
 `AddStudentForm` present by **component identity** when active and all five
-mutation components absent when archived. **Mutation-checked three ways:**
+mutation components absent when archived. **Mutation-checked five ways:**
 skipping the archived branch fails exactly the 2 archived-empty tests; pointing
 the archived copy back at the form and code fails 2; rendering the archived empty
-state on an active class fails 1.
+state on an active class fails 1; restoring the retired "Nobody joined this class
+before it was archived" fails 3; and a history claim never shipped — "The
+students who were on this roster were removed" — also fails 3.
 
 **A note on that evidence, because my first attempt was wrong.** Replacing
 `{archived ? (` blindly hit the *first* occurrence in the file — the assignment
@@ -158,17 +172,19 @@ archived assertion and none of the active ones.
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      976 passed (35 files)
+tests      978 passed (35 files)
 build      ✓ Compiled successfully
 ```
 
 Browser, **empty class**, both states: a temporary empty class was created,
 driven and deleted. Active + empty at 1280×800 keeps "Nobody on this roster yet",
 "Add students below", "typing the class code", the code in the header and "Add to
-roster". Archived + empty at 1280×800 shows the new copy, none of the three
-retired phrases, no code, "Inactive", the archived notice, **Sign out as the only
-button on the page** and no roster table; at 768×1024 the block renders 686px
-inside 768 with the exact sentence and `overflow: false` — that width's
+roster". Archived + empty at 1280×800 reads exactly *"No student records to review | There
+are no student records on this roster to review. An administrator has to restore
+the class before anybody can be added to it."* with **no** history claim
+anywhere, none of the three retired phrases, no code, "Inactive", the archived
+notice, **Sign out as the only button on the page** and no roster table; at
+768×1024 the same block renders 686px inside 768 with `overflow: false` — that width's
 screenshot came back blank (the same below-the-fold paint problem as sprint 83),
 so its evidence is rendered text and geometry, not pixels.
 
@@ -194,25 +210,28 @@ rotates the code, which cannot be undone. **Demo data restored exactly:** attemp
 
 ### Where to push hardest
 
-1. **The archived notice still says "the roster below" on an empty class**, and
+1. **The history guard is a vocabulary, not a rule.** Six phrasings of "how the
+   roster came to be empty" are pinned; a seventh would pass — the same denylist
+   shape sprints 80, 81 and 83 ended on.
+2. **The archived notice still says "the roster below" on an empty class**, and
    promises "every mission each child completed" stays readable directly above
    "No student records to review". Not contradictory the way the empty state was
    — it is explained immediately — but generic copy meeting a specific state,
    which is this finding's shape. Left alone rather than widened into.
-2. **I wrote a known gap without reading the query, and it was backwards.** The
+3. **I wrote a known gap without reading the query, and it was backwards.** The
    claim that `/teacher` listed archived classes was the opposite of the truth,
    and it sat in this file as documentation of behaviour the product did not
    have. Corrected above. Worth asking how many other gap statements in this file
    were written from memory of the code rather than from the code.
-3. **Nothing enumerates mutation controls, and there are now two surfaces.**
+4. **Nothing enumerates mutation controls, and there are now two surfaces.**
    Five components are a list in the class page, a list on the dashboard card,
    and a matching list in the test. A sixth added tomorrow renders on an archived
    class and nothing objects until somebody writes it into all of them — the same
    shape as the `archived_at` list sprints 76–82 kept getting wrong, one layer
    up.
-4. **The notice is authored prose in a component**, not in the domain layer
+5. **The notice is authored prose in a component**, not in the domain layer
    beside `LAPSED_STAFF_BODY`. Only the title is exported and asserted.
-5. **Screen-reader behaviour is asserted structurally, not heard.** Role, label,
+6. **Screen-reader behaviour is asserted structurally, not heard.** Role, label,
    heading order and tab stops are checked; nothing has been run through an
    actual screen reader.
 
