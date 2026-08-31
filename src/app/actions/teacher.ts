@@ -43,7 +43,11 @@ import {
   lapsedRefusal,
 } from "@/lib/auth/subscription-gate";
 import { ClassArchivedError, type ClassOperation } from "@/lib/auth/class-state";
-import { assignmentBandRefusal, classMayBeAssigned } from "@/lib/domain/eligibility";
+import {
+  assignmentBandRefusal,
+  classMayBeAssigned,
+  CREATABLE_GRADES,
+} from "@/lib/domain/eligibility";
 import {
   completeCertification,
   getCertification,
@@ -120,7 +124,16 @@ export async function createClassAction(
   const grade = Number(formData.get("grade"));
 
   if (name.length < 2) return { error: "Give the class a name with at least two characters." };
-  if (![1, 2, 3, 4, 5].includes(grade)) return { error: "Choose a grade from 1 to 5." };
+  // Grades 2 to 4, refused here rather than by the database. `classes.grade` is
+  // constrained to that band and always has been, so accepting 1 or 5 meant the
+  // insert threw `CHECK constraint failed` and an administrator met a database
+  // error instead of a sentence. Checked before any repository call, so a
+  // refusal writes nothing.
+  if (!CREATABLE_GRADES.includes(grade)) {
+    return {
+      error: `Choose a grade from ${CREATABLE_GRADES[0]} to ${CREATABLE_GRADES.at(-1)}. The missions are written and reading-levelled for that band.`,
+    };
+  }
 
   const db = getDb();
   const lapsed = lapsedRefusal(db, user.school_id);

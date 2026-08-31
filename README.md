@@ -11,13 +11,13 @@ what AI is: six authored sessions in two tracks, of which a class runs the three
 written for its grade — a grades 1–2 track, or a grades 3–5 track. First Look
 records no skill evidence by design.
 
-Grade eligibility is a product invariant, not a claim: a class is offered only
-the First Look track written for its grade and the core missions only if its
-grade is inside the band, and a mission outside it cannot be assigned, listed for
-a child, opened or resumed. **This build creates classes in grades 2–4 only** —
-`classes.grade` is constrained to that range — so grade 1 and grade 5 classes
-cannot currently exist, and the class-creation form offering them is a known
-inconsistency recorded in the sprint 85 review.
+Grade eligibility is a product invariant, not a claim. **Classes are created in
+grades 2–4** — the form offers those three, the create action refuses anything
+else before touching the database, and `classes.grade` is constrained to the same
+range. Within it, a class is offered only the First Look track written for its
+grade (Grade 2 the early track, Grades 3 and 4 the upper one) and the core
+missions, and a mission outside a class's band cannot be assigned, listed for a
+child, opened or resumed.
 
 It is not an AI tutor, a chatbot, a coding course, or detection software. There
 is no generative model anywhere in the request path: every word a child can

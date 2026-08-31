@@ -92,9 +92,9 @@ function offeredTo(studentId: string) {
   const school = getSchool(db, DEMO_SCHOOL)!;
   const records = listBenchmarksForStudent(db, studentId);
   return {
-    next: nextBenchmarkFor(records, school.benchmark_window),
-    pre: canTakeBenchmark({ window: school.benchmark_window, form: "pre", records }),
-    post: canTakeBenchmark({ window: school.benchmark_window, form: "post", records }),
+    next: nextBenchmarkFor(records, school.benchmark_window, 3),
+    pre: canTakeBenchmark({ window: school.benchmark_window, form: "pre", records , grade: 3 }),
+    post: canTakeBenchmark({ window: school.benchmark_window, form: "post", records , grade: 3 }),
   };
 }
 

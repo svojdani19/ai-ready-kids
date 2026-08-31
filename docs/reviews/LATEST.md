@@ -78,31 +78,37 @@ check-ins close outside the band. Historical rows are hidden and refused, never
 deleted. Both teacher surfaces now band every card and replace an ineligible
 switch with a stated `Grades 1-2 · unavailable for Grade 3`.
 
-### The contradiction it ran into, reported rather than resolved
+### The contradiction it ran into, now closed
 
-Writing the tests surfaced something larger:
+Writing the enforcement tests surfaced something larger:
 
 ```
 schema.ts        grade INTEGER NOT NULL CHECK (grade BETWEEN 2 AND 4)
-teacher.ts:123   if (![1, 2, 3, 4, 5].includes(grade)) …
+teacher.ts       if (![1, 2, 3, 4, 5].includes(grade)) …
 CreateClassForm  <option value="1">Grade 1</option> … <option value="5">
 ```
 
-An administrator choosing Grade 1 gets no message — the action **throws**
-`CHECK constraint failed: grade BETWEEN 2 AND 4`, verified end to end. **Grade 1
-and grade 5 classes cannot be created at all**, and the demo database holds only
-2, 3 and 4. So sprint 85's own copy — "a grade 1 or grade 5 class can be created
-and taught First Look" — was false.
+Choosing Grade 1 gave no message — the action **threw**
+`CHECK constraint failed: grade BETWEEN 2 AND 4`, verified end to end. Those
+classes could not be created, and sprint 85's copy claiming they could was false.
 
-Resolving it is a product decision with two opposite answers (the schema is right
-and the form should stop offering those grades, or the form is right and the
-constraint needs a migration), both outside "narrowly about grade eligibility".
-This correction makes neither choice. It **corrects the false copy** — Plans and
-the README now say *"This build creates classes in grades 2 to 4 only"* — and
-**pins the contradiction in tests** so it is met deliberately.
+I first reported this as an open product decision. It is not: the product's niche
+is grades 2 to 4, the schema constraint is the intended boundary, and offering
+grades the database refuses is a **setup defect** handing an administrator a
+database error. Closed on that side, **no migration, no curriculum change**: the
+form offers exactly Grade 2, 3 and 4 with a hint that is true within the band
+(*"Grade 2 runs the early First Look track; grades 3 and 4 run the upper one"*),
+and `createClassAction` validates against a **derived** `CREATABLE_GRADES`
+**before any repository call**, so a refusal writes nothing and reads as a
+sentence. First Look still ships two authored reading-level tracks, described
+truthfully; nothing claims grade 1 or 5 class support.
 
-The eligibility invariant is correct under either resolution, which is why it
-ships.
+**The optional guard was not a guard.** `missionAccessFor`, `canTakeBenchmark`
+and `nextBenchmarkFor` took the new bound optionally, so the invariant failed open
+for any caller that forgot. All three are now **required** — which turned omission
+into a type error and immediately found 24 call sites across four files. The test
+that preserved the unbounded behaviour is deleted; a source assertion proves
+omission is impossible (no `grade?:`, no `eligible?:`, guards read unconditionally).
 
 ### Acceptance for the correction
 
@@ -116,12 +122,19 @@ allowed; a stale row absent from the map, redirecting from `/student/play`,
 throwing in `beginMission`, **and surviving as a row**; check-ins per grade; both
 surfaces banding every card and consulting the rule; and the contradiction.
 
-**Mutation-checked four ways:** dropping the server check fails 2; refusing
+**Mutation-checked seven ways:** dropping the server check fails 2; refusing
 unassignment too fails 1; letting a stale row open for a child fails 3; dropping
-the check-in grade fails 2.
+the check-in grade fails 2; the action accepting 1 and 5 again fails 3; Grade 1
+back in the form fails 2 on both asserting surfaces; the grade going back to
+optional fails 1.
 
-Browser: the brief asked for grades 1, 3 and 5 — grades 1 and 5 cannot be
-created, so the contrast was driven with grades 2 and 3. **Grade 3 library** at
+Browser: the brief asked for grades 1, 3 and 5 — those are not creatable grades
+in this product, so the contrast was driven with the ones that are. **The
+administrator class-creation flow** at both widths offers exactly Grade 2, 3 and
+4 with the corrected hint; a real Grade 4 creation succeeded with its class code
+and no constraint error; form 686px inside 768, `overflow: false`, table still
+scrolling in its own container. The verification class and its audit row were
+removed afterwards. **Grade 3 library** at
 both widths: 36 bands, `Grades 1-2 · unavailable for Grade 3` on three sessions,
 30 toggles, label 204px at 768, `overflow: false`. **Grade 2 library**: the mirror
 image. **Grade 2 class page**: 30 banded rows, 30 toggles, no unavailable state —
@@ -174,13 +187,14 @@ changed. **Demo data unchanged**: this sprint reads and writes no records.
 3. **`PROGRAM_SCOPE_SENTENCE` is derived, asserted and rendered nowhere.** The
    surfaces interpolate the parts, which reads better — so the composed sentence
    is currently dead weight and should either be used or removed.
-4. **Grade 1 and 5 classes cannot be created**, and this sprint did not decide
-   whether the schema or the form is right. The only live inconsistency in this
-   list rather than a limitation — and it is the next decision somebody has to
-   make deliberately.
-5. **`missionAccessFor` and `canTakeBenchmark` take the grade optionally.** Every
-   caller supplies it and a test pins the absent case, but a new caller that
-   forgets gets the unbounded behaviour.
+4. **`?? 0` is a sentinel.** The two production callers that may not resolve a
+   classroom pass grade `0` — outside every band, so it fails closed — but it is
+   a magic number standing in for "no class". A resolved-class type would say it
+   properly.
+5. **The band is enforced at assignment and play, not at the roster.** Nothing
+   stops a school putting an eight-year-old on a Grade 4 roster; the product
+   takes the class's grade as given. That is right for a product that collects no
+   ages, and worth stating rather than assuming.
 
 ---
 

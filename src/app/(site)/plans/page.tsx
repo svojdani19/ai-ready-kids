@@ -168,12 +168,11 @@ export default function PlansPage() {
           no competency figure and appears in no report total.
         </p>
         <p className="mt-4 max-w-3xl text-[1.05rem] leading-relaxed text-ink">
-          <strong>This build creates classes in {CORE_GRADE_LABEL} only.</strong> First
-          Look ships two tracks because those two reading levels are what the sessions are
-          written for, and a class is offered the one matching its grade — but grade 1 and
-          grade 5 classes cannot be created here, so the product this subscription
-          delivers today is a {CORE_GRADE_LABEL} program. If you are evaluating it for
-          grade 1 or grade 5, evaluate it on that.
+          <strong>Classes are created in {CORE_GRADE_LABEL}.</strong> First Look ships two
+          tracks because those are the two reading levels the sessions are written for,
+          and a class is offered the one matching its grade: a Grade 2 class runs the
+          early track, Grades 3 and 4 the upper one. This is a {CORE_GRADE_LABEL}{" "}
+          program, and the product is built to be exactly that rather than to stretch.
         </p>
         <p className="mt-4 max-w-3xl text-[1.05rem] leading-relaxed text-ink">
           Within those grades the boundary is enforced, not advertised: a class is offered

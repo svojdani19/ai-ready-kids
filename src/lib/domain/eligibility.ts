@@ -35,18 +35,20 @@ export function missionAccessFor(input: {
   assignedMissionIds: readonly string[];
   hasCompleted: boolean;
   /**
-   * Sprint 85's acceptance correction. Optional so every existing caller keeps
-   * its meaning, and supplied by all of them — a mission a class was never
-   * allowed to be given must not open for a child just because an assignment
-   * row exists. Rows made before the rule existed are the whole reason this is
-   * checked here rather than trusted from the toggle.
+   * **Required.** A mission a class was never allowed to be given must not open
+   * for a child because an assignment row exists — rows predating the rule are
+   * the whole reason this is checked here rather than trusted from the toggle.
+   *
+   * It was optional when sprint 85's correction introduced it, which meant the
+   * "invariant" failed open for any caller that forgot. A required field makes
+   * omission a type error instead.
    */
-  eligible?: boolean;
+  eligible: boolean;
 }): MissionAccess {
   // Fail closed on an out-of-band mission, including one already completed:
-  // "replay" is write-free, but offering a grade 1 child a grades 3-5 session
-  // to replay is the same reading-band problem in a quieter place.
-  if (input.eligible === false) return "denied";
+  // "replay" is write-free, but offering a child a session outside their
+  // reading band to replay is the same problem in a quieter place.
+  if (!input.eligible) return "denied";
   if (input.assignedMissionIds.includes(input.missionId)) return "assigned";
   if (input.hasCompleted) return "replay";
   return "denied";
@@ -62,15 +64,14 @@ export function canTakeBenchmark(input: {
   form: BenchmarkForm;
   records: readonly BenchmarkRecord[];
   /**
-   * The class's grade. Optional for the same reason as above, and supplied by
-   * every caller: the check-ins measure the nine skills the grades 2-4 core
-   * missions teach, so a grade 1 or grade 5 child has no business in them and
-   * their answers would enter a fall-to-spring comparison for a cohort that
-   * never played the curriculum being compared.
+   * The class's grade. **Required**, for the same reason as above: the check-ins
+   * measure the nine skills the core missions teach, so a child outside that
+   * band would enter a fall-to-spring comparison for a curriculum they never
+   * played — and an optional guard is not a guard.
    */
-  grade?: number;
+  grade: number;
 }): boolean {
-  if (input.grade !== undefined && !gradeIsInCoreBand(input.grade)) return false;
+  if (!gradeIsInCoreBand(input.grade)) return false;
   if (input.window === "closed") return false;
   if (input.window !== input.form) return false;
   const existing = input.records.find((r) => r.form === input.form);
@@ -81,9 +82,10 @@ export function canTakeBenchmark(input: {
 export function nextBenchmarkFor(
   records: readonly BenchmarkRecord[],
   window: BenchmarkWindow,
-  grade?: number,
+  /** Required, so a caller cannot omit the bound and get the unbounded answer. */
+  grade: number,
 ): { form: BenchmarkForm; resuming: boolean } | null {
-  if (grade !== undefined && !gradeIsInCoreBand(grade)) return null;
+  if (!gradeIsInCoreBand(grade)) return null;
   if (window === "closed") return null;
   const existing = records.find((r) => r.form === window);
   if (existing?.completed_at) return null;
@@ -124,6 +126,21 @@ function bandRange(band: string): [number, number] {
   const [low, high] = band.split("-").map(Number);
   return [low, high];
 }
+
+/**
+ * Every grade a class can be created in, derived from the assessed band.
+ *
+ * The schema has always said `CHECK (grade BETWEEN 2 AND 4)`; the form offered
+ * 1 and 5 anyway and the action accepted them, so an administrator choosing
+ * Grade 1 met a thrown `CHECK constraint failed` rather than a refusal. The
+ * product's niche is this band, so the band is the answer and this is where it
+ * is stated once. First Look still ships two reading-level tracks — within
+ * 2 to 4, grade 2 runs the early one and grades 3 and 4 the upper one.
+ */
+export const CREATABLE_GRADES: readonly number[] = (() => {
+  const [low, high] = bandRange(CORE_GRADE_BAND);
+  return Array.from({ length: high - low + 1 }, (_, i) => low + i);
+})();
 
 /** True when this grade sits inside the assessed core band. */
 export function gradeIsInCoreBand(grade: number): boolean {

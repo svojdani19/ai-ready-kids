@@ -1129,12 +1129,26 @@ one of them has not tested the thing that was built.
       throws instead of refusing, and the copy promising those classes was false.
       A test that cannot set up its own scenario is telling you something about
       the product, not about the test.
-- [ ] **Report a two-answer decision; do not pick one quietly.** Either the
-      schema is right and the form should stop offering grades 1 and 5, or the
-      form is right and the constraint needs a migration. Both are real product
-      directions with different costs. Ship the part that is correct under either
-      answer, correct the copy that is false under both, pin the contradiction in
-      a test, and say plainly that the choice is still open.
+- [ ] **Check whether a "product decision" is already decided.** The schema said
+      `grade BETWEEN 2 AND 4` while the form offered 1 and 5; I reported that as
+      an open choice between a migration and removing the options. It was not
+      open — the product's stated niche already picked the band, so the form was
+      simply wrong and was handing administrators a database error. Escalating is
+      right when two directions are genuinely live; it is avoidance when the
+      standing brief already answers it. Read the brief before calling something
+      undecided.
+- [ ] **A boundary offered by a form and refused by the database is a defect,
+      not a limitation.** The failure mode is the worst kind: no validation
+      message, just a thrown constraint at somebody setting up a classroom.
+      Validate in the layer the user is talking to, before the write, and let the
+      database constraint stay what it is — the last line, not the first.
+- [ ] **An optional guard is not a guard.** The grade bound shipped as an
+      optional parameter "supplied by every caller", which means the invariant
+      fails open for the next caller that forgets. Making it required turned
+      omission into a type error and found 24 call sites in one run. If a rule
+      matters, make it impossible to skip rather than conventional to include —
+      and delete the test that pinned the permissive behaviour, because it
+      documents the hole.
 
 ## Recording a review
 

@@ -28,7 +28,7 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 
-import { createTestDb, DEMO_SCHOOL, DEMO_TEACHER } from "./helpers";
+import { createTestDb, DEMO_ADMIN, DEMO_SCHOOL, DEMO_TEACHER } from "./helpers";
 import type { Db } from "@/lib/db";
 import { writeSession } from "@/lib/auth/session";
 import {
@@ -39,10 +39,11 @@ import {
   getClass,
 } from "@/lib/repo/classroom";
 import { assignMission } from "@/lib/repo/classroom";
-import { setAssignmentAction } from "@/app/actions/teacher";
+import { createClassAction, setAssignmentAction } from "@/app/actions/teacher";
 import { beginMission } from "@/app/actions/student";
 import {
   classMayBeAssigned,
+  CREATABLE_GRADES,
   gradeIsInCoreBand,
   canTakeBenchmark,
   nextBenchmarkFor,
@@ -52,6 +53,11 @@ import { FOUNDATIONS_BY_TRACK } from "@/content/foundations";
 import { CORE_GRADE_BAND } from "@/content/scope";
 import StudentHome from "@/app/student/page";
 import PlayPage from "@/app/student/play/[slug]/page";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+function readSource(p: string) {
+  return readFileSync(join(process.cwd(), p), "utf8");
+}
 
 let db: Db;
 let cleanup: () => void;
@@ -59,19 +65,6 @@ let cleanup: () => void;
 /** Every grade the product's copy talks about. */
 const GRADES = [1, 2, 3, 4, 5] as const;
 
-/**
- * The grades a class can actually be created in **today**.
- *
- * `schema.ts` constrains `classes.grade` to `CHECK (grade BETWEEN 2 AND 4)`,
- * so grades 1 and 5 are unreachable through class creation — see the
- * "the schema and the form disagree" block at the end of this file. The pure
- * rule is asserted for all five; the end-to-end paths use the three that exist.
- *
- * That is not a weaker test than it looks: the out-of-band case is fully
- * reachable inside 2 to 4, because a grade 2 class and the grades 3-5 First
- * Look track are a real mismatch a teacher can produce right now.
- */
-const CREATABLE_GRADES = [2, 3, 4] as const;
 
 beforeEach(async () => {
   ({ db, cleanup } = createTestDb());
@@ -273,10 +266,18 @@ describe("the check-ins stay inside the assessed band", () => {
     expect(next === null).toBe(!gradeIsInCoreBand(grade));
   });
 
-  it("does not change behaviour when no grade is supplied", () => {
-    // Every caller supplies one; the optional parameter keeps the pure rule
-    // testable on its own and keeps the old meaning for anything that does not.
-    expect(canTakeBenchmark({ window: "pre", form: "pre", records: [] })).toBe(true);
+  it("cannot be called without a grade at all", () => {
+    // The bound was optional when it was introduced, which meant the invariant
+    // failed open for any caller that forgot. `grade` is now required, so
+    // omitting it is a type error rather than an unbounded answer — asserted at
+    // the source, since a compile error cannot be caught at runtime.
+    const source = readSource("src/lib/domain/eligibility.ts");
+    expect(source).toMatch(/grade: number;\n\}\): boolean \{/);
+    expect(source).not.toMatch(/grade\?: number/);
+    expect(source).not.toMatch(/eligible\?: boolean/);
+    // And the guards read it unconditionally, with no "if supplied" escape.
+    expect(source).toContain("if (!gradeIsInCoreBand(input.grade)) return false;");
+    expect(source).toContain("if (!input.eligible) return \"denied\";");
   });
 });
 
@@ -305,62 +306,89 @@ describe("every teacher surface shows the band", () => {
   });
 });
 
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-function readSource(p: string) {
-  return readFileSync(join(process.cwd(), p), "utf8");
-}
 
 /**
- * The contradiction this correction ran into, pinned so it cannot be forgotten.
+ * Class creation is grades 2 to 4, refused rather than thrown.
  *
- * `CreateClassForm` offers Grade 1 and Grade 5, `createClassAction` validates
- * `[1, 2, 3, 4, 5]`, and `schema.ts` says
- * `grade INTEGER NOT NULL CHECK (grade BETWEEN 2 AND 4)`. So an administrator
- * choosing Grade 1 does not get a message — the Server Action throws
- * `CHECK constraint failed: grade BETWEEN 2 AND 4`. Grade 1 and grade 5 classes
- * cannot be created at all, and the live demo database holds only grades 2, 3
- * and 4.
- *
- * That makes sprint 85's own copy — "a grade 1 or grade 5 class can be created
- * and taught First Look" — false today, and it is a product decision to
- * resolve: either the schema is right and the form, the action and the copy
- * should stop offering those grades, or the form is right and the constraint
- * needs a migration. This correction deliberately makes neither choice; it
- * records the state so the next person meets it deliberately.
+ * `CreateClassForm` offered Grade 1 and Grade 5 and `createClassAction`
+ * validated `[1, 2, 3, 4, 5]`, while `classes.grade` has always been
+ * constrained to `CHECK (grade BETWEEN 2 AND 4)`. An administrator choosing
+ * Grade 1 therefore met a thrown `CHECK constraint failed: grade BETWEEN 2 AND
+ * 4` instead of a sentence. The product's niche is this band, so the band is the
+ * answer: the options are gone, the action refuses before any repository call,
+ * and the schema is untouched.
  */
-describe("the schema, the form and the action disagree about grades 1 and 5", () => {
-  it("the schema allows only the core band", () => {
-    const schema = readSource("src/lib/db/schema.ts");
-    expect(schema).toMatch(/grade\s+INTEGER NOT NULL CHECK \(grade BETWEEN 2 AND 4\)/);
+describe("class creation is bounded to the assessed band", () => {
+  const createForm = (grade: string) => {
+    const fd = new FormData();
+    // A name the seed does not already use — it ships a "Room 4" at grade 2.
+    fd.set("name", `New Grade ${grade} Room`);
+    fd.set("grade", grade);
+    fd.set("teacherId", DEMO_TEACHER);
+    return fd;
+  };
+
+  beforeEach(async () => {
+    await writeSession({ kind: "staff", userId: DEMO_ADMIN });
   });
 
-  it("the form and the action offer more than the schema accepts", () => {
-    expect(readSource("src/app/admin/classes/CreateClassForm.tsx")).toContain(
-      '<option value="1">Grade 1</option>',
+  it("the form exposes exactly grades 2, 3 and 4", () => {
+    const form = readSource("src/app/admin/classes/CreateClassForm.tsx");
+    const options = [...form.matchAll(/<option value="(\d)">Grade \d<\/option>/g)].map(
+      (m) => Number(m[1]),
     );
-    expect(readSource("src/app/actions/teacher.ts")).toContain("![1, 2, 3, 4, 5].includes(grade)");
+    expect(options).toEqual([...CREATABLE_GRADES]);
+    // And the hint no longer promises grades that cannot be created.
+    expect(form).not.toMatch(/Grades 1 and 5 get the First Look sessions/);
   });
 
-  it("creating a grade 1 class therefore throws rather than refusing", () => {
-    // Straight at the repository, which is where the constraint bites.
-    expect(() =>
-      createClass(db, {
-        schoolId: DEMO_SCHOOL,
-        teacherId: DEMO_TEACHER,
-        name: "Room 1",
-        grade: 1,
-        schoolYear: "2025-2026",
-        yearEndsOn: "2026-06-12",
-      }),
-    ).toThrow(/CHECK constraint failed: grade BETWEEN 2 AND 4/);
+  it.each([1, 5].map((g) => [g] as const))(
+    "refuses grade %i calmly, with no insert and no constraint error",
+    async (grade) => {
+      const before = db.prepare("select count(*) c from classes").get() as { c: number };
+      const result = await createClassAction({}, createForm(String(grade)));
+      // A sentence, not a thrown database error.
+      expect(result.error).toMatch(/Choose a grade from 2 to 4/);
+      expect(result.error).not.toMatch(/CHECK constraint/);
+      const after = db.prepare("select count(*) c from classes").get() as { c: number };
+      expect(after.c).toBe(before.c);
+    },
+  );
+
+  it.each([2, 3, 4].map((g) => [g] as const))(
+    "still creates a grade %i class unchanged",
+    async (grade) => {
+      const result = await createClassAction({}, createForm(String(grade)));
+      expect(result.error).toBeUndefined();
+      const made = (
+        db.prepare("select grade from classes where name = ?").get(`New Grade ${grade} Room`) as
+          | { grade: number }
+          | undefined
+      );
+      expect(made?.grade).toBe(grade);
+    },
+  );
+
+  it("refuses before touching the repository", () => {
+    // The check has to precede `createClass`, or the refusal is the database's.
+    const action = readSource("src/app/actions/teacher.ts");
+    const body = action.slice(action.indexOf("export async function createClassAction"));
+    const guard = body.indexOf("CREATABLE_GRADES.includes(grade)");
+    const write = body.indexOf("createClass(db");
+    expect(guard).toBeGreaterThan(-1);
+    expect(write).toBeGreaterThan(-1);
+    expect(guard).toBeLessThan(write);
   });
 
-  it("means the eligibility rule is currently exercised only inside 2 to 4", () => {
-    // Not a weakening: the wrong-track mismatch is fully reachable there, which
-    // is what the end-to-end tests above use.
+  it("leaves the schema constraint exactly as it was", () => {
+    expect(readSource("src/lib/db/schema.ts")).toMatch(
+      /grade\s+INTEGER NOT NULL CHECK \(grade BETWEEN 2 AND 4\)/,
+    );
+  });
+
+  it("derives the creatable grades from the assessed band", () => {
+    expect([...CREATABLE_GRADES]).toEqual([2, 3, 4]);
     for (const grade of CREATABLE_GRADES) expect(gradeIsInCoreBand(grade)).toBe(true);
-    expect(classMayBeAssigned(2, upperTrack[0])).toBe(false);
-    expect(classMayBeAssigned(4, earlyTrack[0])).toBe(false);
   });
 });
+

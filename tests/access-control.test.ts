@@ -421,23 +421,23 @@ describe("the join surfaces check the grant themselves", () => {
 describe("what a student may open is a rule, not a rendered card", () => {
   it("denies a mission the class was never assigned", () => {
     expect(
-      missionAccessFor({ missionId: "m-1", assignedMissionIds: ["m-2"], hasCompleted: false }),
+      missionAccessFor({ missionId: "m-1", assignedMissionIds: ["m-2"], hasCompleted: false , eligible: true }),
     ).toBe("denied");
   });
 
   it("allows an assigned mission, and a replay of one already finished", () => {
     expect(
-      missionAccessFor({ missionId: "m-1", assignedMissionIds: ["m-1"], hasCompleted: false }),
+      missionAccessFor({ missionId: "m-1", assignedMissionIds: ["m-1"], hasCompleted: false , eligible: true }),
     ).toBe("assigned");
     // Withdrawing an assignment must not delete access to completed work.
     expect(
-      missionAccessFor({ missionId: "m-1", assignedMissionIds: [], hasCompleted: true }),
+      missionAccessFor({ missionId: "m-1", assignedMissionIds: [], hasCompleted: true , eligible: true }),
     ).toBe("replay");
   });
 
   it("keeps both check-ins shut while the school has no window open", () => {
     for (const form of ["pre", "post"] as const) {
-      expect(canTakeBenchmark({ window: "closed", form, records: [] })).toBe(false);
+      expect(canTakeBenchmark({ window: "closed", form, records: [] , grade: 3 })).toBe(false);
     }
   });
 
@@ -445,14 +445,14 @@ describe("what a student may open is a rule, not a rendered card", () => {
     // The whole of the old rule: `nextBenchmarkFor` offered post the moment
     // pre was completed, with no window state anywhere in the product.
     const done = [{ form: "pre", completed_at: "2026-01-10" }] as unknown as BenchmarkRecord[];
-    expect(canTakeBenchmark({ window: "pre", form: "post", records: done })).toBe(false);
-    expect(nextBenchmarkFor(done, "pre")).toBeNull();
-    expect(nextBenchmarkFor(done, "post")).toEqual({ form: "post", resuming: false });
+    expect(canTakeBenchmark({ window: "pre", form: "post", records: done , grade: 3 })).toBe(false);
+    expect(nextBenchmarkFor(done, "pre", 3)).toBeNull();
+    expect(nextBenchmarkFor(done, "post", 3)).toEqual({ form: "post", resuming: false });
   });
 
   it("refuses to reopen a form that is already finished", () => {
     const done = [{ form: "post", completed_at: "2026-05-10" }] as unknown as BenchmarkRecord[];
-    expect(canTakeBenchmark({ window: "post", form: "post", records: done })).toBe(false);
+    expect(canTakeBenchmark({ window: "post", form: "post", records: done , grade: 3 })).toBe(false);
   });
 
   it("gates the student pages and every student action on those rules", () => {

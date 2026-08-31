@@ -32,21 +32,26 @@ export function CreateClassForm({
           <input id="name" name="name" required maxLength={40} className={inputClass} placeholder="Room 7" />
         </Field>
       </div>
-      {/* Grades 1 and 5 are here for First Look, which is written for them.
-          The twenty-seven core missions are reading-levelled for grades 2 to 4
-          and say so on every library card, so a grade 1 or grade 5 teacher can
-          see what they are assigning rather than finding out in the lesson. */}
+      {/* Grades 2 to 4, which is what the product is: the 27 core missions are
+          written and reading-levelled for that band and `classes.grade` has
+          always been constrained to it.
+
+          This offered Grade 1 and Grade 5 until sprint 85's final acceptance
+          correction, with a hint saying they "get the First Look sessions
+          written for them". Neither could be created — the insert hit
+          `CHECK (grade BETWEEN 2 AND 4)` and the Server Action threw a database
+          error at the administrator instead of refusing. First Look still ships
+          two reading-level tracks, and within this band a Grade 2 class runs the
+          early one and Grades 3 and 4 the upper one. */}
       <Field
         label="Grade"
         htmlFor="grade"
-        hint="Grades 1 and 5 get the First Look sessions written for them."
+        hint="Grade 2 runs the early First Look track; grades 3 and 4 run the upper one."
       >
         <select id="grade" name="grade" defaultValue="3" className={inputClass}>
-          <option value="1">Grade 1</option>
           <option value="2">Grade 2</option>
           <option value="3">Grade 3</option>
           <option value="4">Grade 4</option>
-          <option value="5">Grade 5</option>
         </select>
       </Field>
       <Field label="Teacher" htmlFor="teacherId">

@@ -48,8 +48,10 @@ async function requireOpenCheckIn(form: string) {
     window: school.benchmark_window,
     form: content.form,
     records: listBenchmarksForStudent(db, student.id),
-    // The check-ins measure the nine skills the grades 2-4 core missions teach.
-    grade: classroom?.grade,
+    // The check-ins measure the nine skills the core missions teach. A missing
+    // classroom is not a pass: `grade` is required, and 0 is outside every band,
+    // so an unresolvable class closes the check-in rather than opening it.
+    grade: classroom?.grade ?? 0,
   });
   if (!open) throw new Error("That check-in is not open.");
   return { content, student, db };

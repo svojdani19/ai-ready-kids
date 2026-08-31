@@ -170,8 +170,10 @@ describe("the plans page says what is purchased", () => {
     // The grade a buyer would be surprised by, said out loud — and stated as
     // what the build does, not as a capability it lacks. Sprint 85's acceptance
     // correction found that grade 1 and 5 classes cannot be created at all.
-    expect(plansSource).toContain("This build creates classes in {CORE_GRADE_LABEL} only");
-    expect(plansProse).toMatch(/grade 1 and grade 5 classes cannot be created here/);
+
+    expect(plansProse).toMatch(/Classes are created in \{CORE_GRADE_LABEL\}/);
+    // No claim, in either direction, about grades the build does not create.
+    expect(plansProse).not.toMatch(/grade 1 or grade 5 class/i);
   });
 
   it("builds those claims from the derived values, not from typed numbers", () => {
@@ -187,9 +189,14 @@ describe("the surfaces that were already accurate are left alone", () => {
     expect(read("src/app/(site)/for-schools/page.tsx")).toContain("Grades 2 to 4");
   });
 
-  it("the class creation form still explains why grades 1 and 5 exist", () => {
+  it("the class creation form offers only the assessed band", () => {
+    // Was "still explains why grades 1 and 5 exist". They did not exist: the
+    // schema refused them and the action threw. Sprint 85's final acceptance
+    // correction removed the options and the hint that promised them.
     const form = read("src/app/admin/classes/CreateClassForm.tsx");
-    expect(form).toMatch(/Grades 1 and 5 get the First Look sessions written for them/);
+    expect(form).not.toMatch(/Grades 1 and 5 get the First Look sessions written for them/);
+    expect(form).not.toMatch(/<option value="[15]">/);
+    expect(form).toMatch(/Grade 2 runs the early First Look track/);
   });
 
   it("the session guide still separates the two", () => {

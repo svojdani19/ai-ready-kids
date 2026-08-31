@@ -193,11 +193,11 @@ describe("student check-in", () => {
   it("offers nothing at all while both windows are closed", () => {
     // The default. Previously there was no window state, so the fall form was
     // permanently on offer to everybody.
-    expect(nextBenchmarkFor(listBenchmarksForStudent(db, studentId), "closed")).toBeNull();
+    expect(nextBenchmarkFor(listBenchmarksForStudent(db, studentId), "closed", 3)).toBeNull();
   });
 
   it("offers the fall check-in when the fall window is open", () => {
-    expect(nextBenchmarkFor(listBenchmarksForStudent(db, studentId), "pre")).toEqual({
+    expect(nextBenchmarkFor(listBenchmarksForStudent(db, studentId), "pre", 3)).toEqual({
       form: "pre",
       resuming: false,
     });
@@ -211,7 +211,7 @@ describe("student check-in", () => {
       itemId: form.items[0].id,
       optionId: form.items[0].options[0].id,
     });
-    expect(nextBenchmarkFor(listBenchmarksForStudent(db, studentId), "pre")).toEqual({
+    expect(nextBenchmarkFor(listBenchmarksForStudent(db, studentId), "pre", 3)).toEqual({
       form: "pre",
       resuming: true,
     });
@@ -231,14 +231,14 @@ describe("student check-in", () => {
     // The defect this replaces: a child could finish fall and start spring in
     // the same minute, and the report presented the difference as a year.
     const records = listBenchmarksForStudent(db, studentId);
-    expect(nextBenchmarkFor(records, "pre")).toBeNull();
-    expect(nextBenchmarkFor(records, "closed")).toBeNull();
-    expect(canTakeBenchmark({ window: "pre", form: "post", records })).toBe(false);
-    expect(canTakeBenchmark({ window: "closed", form: "post", records })).toBe(false);
+    expect(nextBenchmarkFor(records, "pre", 3)).toBeNull();
+    expect(nextBenchmarkFor(records, "closed", 3)).toBeNull();
+    expect(canTakeBenchmark({ window: "pre", form: "post", records , grade: 3 })).toBe(false);
+    expect(canTakeBenchmark({ window: "closed", form: "post", records , grade: 3 })).toBe(false);
   });
 
   it("offers the spring form once somebody opens the spring window", () => {
-    expect(nextBenchmarkFor(listBenchmarksForStudent(db, studentId), "post")).toEqual({
+    expect(nextBenchmarkFor(listBenchmarksForStudent(db, studentId), "post", 3)).toEqual({
       form: "post",
       resuming: false,
     });
@@ -286,9 +286,9 @@ describe("student check-in", () => {
     }
     completeBenchmark(db, studentId, "post");
     const done = listBenchmarksForStudent(db, studentId);
-    expect(nextBenchmarkFor(done, "post")).toBeNull();
+    expect(nextBenchmarkFor(done, "post", 3)).toBeNull();
     // A finished form cannot be reopened while its window is still open.
-    expect(canTakeBenchmark({ window: "post", form: "post", records: done })).toBe(false);
+    expect(canTakeBenchmark({ window: "post", form: "post", records: done , grade: 3 })).toBe(false);
   });
 });
 
