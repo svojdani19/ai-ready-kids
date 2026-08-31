@@ -926,6 +926,50 @@ one of them has not tested the thing that was built.
       toggle. Prefer the reversible one-column edit, and always diff the rows you
       touched rather than the totals.
 
+- [ ] **Copy that tells a teacher where data lives is a claim about a route, so
+      check the route.** The session guide said a child's choices and their
+      demonstrated-or-developing judgment appeared "on your roster and in the
+      family take-home". The take-home is one statically generated page per
+      mission with no session, no child id and no record lookup — it could not
+      carry an individual result if it wanted to. Nobody checked, because the
+      sentence sounded like a description of intent rather than of a page.
+- [ ] **Making one surface accurate can turn a loose sentence elsewhere into a
+      contradiction.** Tightening the buyer-facing copy to say the take-home is
+      generic and public did not create this defect, but it made the teacher
+      guide's opposite claim impossible to read charitably. After correcting how
+      the product describes something, re-read every other place that describes
+      the same thing — the newly precise version is the standard the rest now
+      has to meet.
+- [ ] **Weigh a copy defect by who repeats it.** A wrong sentence in a teacher's
+      guide is not a wrong sentence in a file: the teacher says it out loud to a
+      child and a caregiver, who then look for something that is not there. Copy
+      a person will relay carries further than copy a person will read, and is
+      worth fixing sooner.
+- [ ] **When you remove a channel somebody believed in, say what replaces it.**
+      Deleting "and in the family take-home" leaves a teacher wondering how a
+      family is supposed to find out. The honest answer was that nothing replaces
+      it and nothing needs to — they tell the family themselves, the way they
+      always have — and saying so is what stops the correction reading as a
+      feature being taken away. Inventing a parent account to fill the gap would
+      have been a new data flow bought with a sentence.
+- [ ] **Read the surfaces a sweep turns up; do not grep and assume.** Ten places
+      mention the family take-home and only two made the false claim. The other
+      eight were accurate and correcting them would have been damage. A match
+      list is where the work starts.
+
+- [ ] **Do not filter a failing run down to its summary lines.** A full suite
+      failed once in a file the sprint did not touch, and the command that ran it
+      grepped for `Tests`/`FAIL` and threw the error message away. The failure did
+      not recur and there is now nothing to diagnose it with. Capturing the
+      failure is not only about resisting a theory — it is about the shell command
+      you reach for. Write the run to a file, then filter the file.
+- [ ] **Read focus and state after the commit that produces them, not after a
+      different one.** `await waitFor(() => expect(el).toBeInTheDocument())` then
+      `expect(el).toHaveFocus()` is a race: the element returns to the document
+      one commit before the effect that focuses it runs. Await the outcome you
+      actually mean. That is not a loosened assertion — deleting the product's
+      `focus()` call must still fail it, and it does.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

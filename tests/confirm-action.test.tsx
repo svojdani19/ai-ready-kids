@@ -132,7 +132,13 @@ describe("the confirmation step is honest about what it can still stop", () => {
     const alert = screen.getByRole("alert");
     expect(alert).toHaveTextContent("That class is not part of your school.");
     // Recovery starts at the launcher, with the alert beside it.
-    expect(launcher()).toHaveFocus();
+    //
+    // Awaited rather than asserted outright: the launcher is back in the
+    // document one commit before the effect that focuses it runs, so reading
+    // focus synchronously here was a race the suite lost about one run in six.
+    // This asserts the same outcome — focus does land on the launcher — and
+    // fails just as hard if it never arrives.
+    await waitFor(() => expect(launcher()).toHaveFocus());
   });
 
   it("clears a previous error when the action is tried again", async () => {

@@ -177,7 +177,8 @@ export const WHEN_THINGS_HAPPEN = [
  */
 export const NOT_THIS = [
   "Do not tell the class the safe choice before they play. The practice is the choosing.",
-  "Do not read a child's choices out to the room, or compare two children's screens. Their evidence is for you and their family, not for an audience.",
+  "Do not read a child's choices out to the room, or compare two children's screens. What a child chose is for you to teach from, not for an audience.",
+  "Do not tell a child or a caregiver to look for their own result on the take-home sheet. It is the same page for the whole class and holds no individual result — promising one there is a promise the page cannot keep.",
   "Do not treat a rethink choice as a wrong answer. It is authored to be a normal step, and every one of them offers a way back.",
   "Do not add a timer, a race or a points chart on top of the mission. There is none in the product on purpose.",
   "Do not ask children to type anything about themselves, on paper or elsewhere, as an extension. Nothing in this product asks a child for personal information, and an activity that does undoes that.",
@@ -191,6 +192,28 @@ export const NOT_THIS = [
  * produce is skill evidence, because a comprehension answer on the board is
  * not a demonstrated safety skill. The educator orientation used to say First
  * Look "records nothing on the roster", which was wrong about the first half.
+ *
+ * Sprint 83: the core-mission entry was wrong in the same way, in the other
+ * direction. It told teachers a child's choices and their demonstrated-or-
+ * developing judgment were "on your roster **and in the family take-home**".
+ * They are not, and could not be: `/family/[slug]` is one statically generated
+ * page per mission, prerendered at build time with no session, no child id and
+ * no record lookup of any kind — it renders four authored fields, the same four
+ * for every family in the class. Sprint 81's acceptance correction made that
+ * public, generic boundary explicit, which turned a loose sentence into a plain
+ * contradiction.
+ *
+ * The cost of leaving it was not abstract. A teacher repeats what this guide
+ * says: a caregiver is told to look for their child's result on the sheet, a
+ * seven-year-old is told their family will see how they did, and both find
+ * generic curriculum. That is a promise made in a classroom that the product
+ * cannot keep, and it is the sort of thing that makes the rest of the data
+ * story look unreliable.
+ *
+ * So the take-home is now its own row, saying what it holds — nothing about any
+ * child — rather than being appended to a sentence about evidence. Nothing in
+ * the product changed: no parent account, no messaging channel, no new data
+ * flow. The page is exactly what it was.
  */
 export const WHAT_IS_RECORDED = [
   {
@@ -201,7 +224,12 @@ export const WHAT_IS_RECORDED = [
   {
     shape: "A core mission",
     recorded:
-      "Which authored choices the child tapped, and a per-skill judgment of demonstrated or developing worked out from those choices. That is the evidence on your roster and in the family take-home.",
+      "Which authored choices the child tapped, and a per-skill judgment of demonstrated or developing worked out from those choices. That evidence lives in one place: your roster and dashboard. It is not sent anywhere and no family page shows it.",
+  },
+  {
+    shape: "The family take-home",
+    recorded:
+      "Nothing about any child. It is the same printed page for every family in the class — what the mission practiced, three questions to ask, one thing to try, and the rule worth keeping. If you want a family to know how their own child did, that comes from you, the way it always has.",
   },
   {
     shape: "Any session run on the board only",

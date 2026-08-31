@@ -7,6 +7,134 @@ likely to be.
 
 ---
 
+## Sprint 83 — the guide promised families evidence the page cannot hold
+
+- **Reviewed against:** HEAD `a814294`
+- **Repository:** <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-30-sprint-83.md`](2026-08-30-sprint-83.md)
+
+### The finding
+
+`WHAT_IS_RECORDED` told teachers a core mission's authored choices and its
+demonstrated-or-developing judgment were *"the evidence on your roster **and in
+the family take-home**"*. `NOT_THIS` said the same from the other side — a
+child's evidence is *"for you and their family"*.
+
+Neither is true of the page. `/family/[slug]` is one statically generated page
+per mission: prerendered at build time, no session, no child id, no record lookup
+of any kind, four authored fields, the same four for every family in the class.
+It could not carry an individual result if it wanted to.
+
+This was always loose; **sprint 81's acceptance correction made it plainly
+contradictory**, because that correction went through the buyer-facing copy and
+said outright the take-home is a free public resource with nothing behind it. The
+product now describes that page accurately in five places and inaccurately in the
+one place a teacher reads before standing in front of a class.
+
+The damage is not a stale sentence. A teacher repeats this guide: a caregiver is
+told to look for their child's result and finds generic curriculum, a
+seven-to-ten-year-old is told their family will see how they did, and a buyer
+reading the product's own data explanation finds it promising child evidence on a
+page that cannot technically contain it.
+
+### The correction
+
+Copy only, one file. The core-mission row now ends where the evidence ends —
+*"That evidence lives in one place: your roster and dashboard. It is not sent
+anywhere and no family page shows it."* — and the take-home gets **its own row**
+rather than being appended to a sentence about evidence: *"Nothing about any
+child. It is the same printed page for every family in the class… If you want a
+family to know how their own child did, that comes from you, the way it always
+has."*
+
+That last sentence is deliberate. Having removed a channel a teacher believed
+existed, the guide has to say what replaces it, and the honest answer is that
+nothing does and nothing needs to. Inventing a parent account or a messaging
+channel to fill the gap would have been a new data flow in a product built to
+have as few as possible.
+
+`NOT_THIS` was reconciled rather than trimmed: it keeps the real instruction and
+adds the guard — *"Do not tell a child or a caregiver to look for their own
+result on the take-home sheet… promising one there is a promise the page cannot
+keep."*
+
+**The sweep found exactly two matches.** Every other surface that mentions the
+take-home — the printable guide, the mission page, cert-5, privacy, for-schools,
+plans, curriculum, demo — was read and is accurate. Nothing else was touched,
+which is the point of reading them rather than grepping and assuming.
+
+### Acceptance
+
+`tests/evidence-location.test.ts`, 9 tests, coupling the claim to the route.
+Every sentence in `WHAT_IS_RECORDED` or `NOT_THIS` that mentions the take-home is
+checked against a vocabulary of individualized-result language — `choices`,
+`demonstrated`, `developing`, `per-skill`, `per-child`, "their own result", "how
+they did", "skill evidence", "judgment" — and may **deny** one but never promise
+one. The route half asserts four authored fields and no reach for `getStudent`,
+`getAttempt`, `listStudents`, `evidence`, `competency_` or `studentId`; still
+static, still sessionless, the word *student* nowhere in the file; and all 33
+sessions carry an authored take-home whose own copy promises no result either.
+The extractor asserts it found at least two sentences, so it cannot pass
+vacuously.
+
+**Mutation-checked four ways:** restoring the original claim fails 1; making the
+take-home row promise demonstrated/developing fails 1; importing `getStudent`
+into the family page fails 1, naming the symbol; deleting the `NOT_THIS` guard
+fails 1.
+
+### The gate failed twice while landing this
+
+The first full run after the copy change failed a test in
+`tests/checkin-player.test.tsx`, a file this sprint does not touch — and **I did
+not capture the error**, because the command filtered output to summary lines.
+That is sprint 79's lesson made in a new way. It has not recurred in eleven runs
+and it is recorded as observed-once and undiagnosed, not as flake.
+
+Re-running with output kept produced a **different** failure, captured in full:
+`confirm-action.test.tsx > returns focus for recovery`, `expect(element)
+.toHaveFocus()`, received `<body>`. **Diagnosed, not guessed:** the test awaited
+the launcher being back in the document and then read focus synchronously, but
+the launcher returns one commit *before* the effect that focuses it runs. The
+product is fine — `ConfirmAction` sets `restoreFocus` before collapsing and
+guards a detached node. The fix awaits the outcome instead of the element, which
+asserts the same thing; **mutation-checked** by deleting `el.focus()` from the
+component, which fails 4 tests including this one.
+
+### Evidence
+
+```
+typecheck  ✓
+lint       0 errors, 2 pre-existing warnings
+tests      946 passed (34 files) × 11 consecutive runs
+build      ✓ Compiled successfully
+```
+
+Browser, `/teacher/how-to-run-a-session` at **1280×800** and **768×1024**: all
+four rows render in order with the corrected sentence and the new take-home row
+present, the old claim and old `NOT_THIS` line absent, section 728px inside 768,
+`overflow: false`, screenshots clean at both. Demo data untouched — this sprint
+reads no records and writes none.
+
+### Where to push hardest
+
+1. **The vocabulary is a denylist.** Nine phrasings of "individual result" are
+   pinned; a tenth would pass. The route half of the coupling is structural and
+   the copy half is not — the same shape sprint 81's correction ended on.
+2. **Only two files are swept by test.** Eight other surfaces were read by hand
+   this sprint; nothing stops one acquiring the claim tomorrow.
+3. **"That comes from you, the way it always has" describes a practice, not a
+   feature.** True, and the right answer — but a teacher who wanted to send a
+   family something specific still has nothing but their own words.
+4. **Nothing checks the guide against the roster page.** That evidence lives on
+   "your roster and dashboard" is asserted as copy, not verified against what
+   those pages render.
+5. **One intermittent failure is still undiagnosed** — `checkin-player >
+   restores the saved selection when going Back`, seen once, error not kept,
+   absent for eleven runs. Same *shape* as the one fixed, but that is a
+   hypothesis and sprint 79 said not to act on one.
+
+---
+
 ## Sprint 82 — three reviews said two actions; it was three
 
 - **Reviewed against:** HEAD `b4688ca`
