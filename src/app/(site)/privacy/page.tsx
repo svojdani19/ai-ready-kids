@@ -110,7 +110,8 @@ export default function PrivacyPage() {
             Privacy and data model
           </p>
           <h1 className="mt-2 font-display text-4xl leading-[1.1] text-ink sm:text-5xl">
-            The best protection we can offer is not collecting it.
+            The best protection of your personal information we can offer is not
+            collecting it.
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-relaxed text-ink-soft">
             This page is the whole story, not a summary of a longer document kept

@@ -90,7 +90,7 @@ export default function ForSchoolsPage() {
       <PageHero
         eyebrow="For your school"
         tone="grape"
-        title="Four people have to get something out of this."
+        title="Everyone has to get something out of this."
         lede="A product that only works for the child does not survive a term. Here is what each person actually gets, and what each one deliberately cannot see."
       >
         <div className="flex flex-wrap gap-3">
