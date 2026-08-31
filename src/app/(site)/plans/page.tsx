@@ -2,6 +2,13 @@ import type { Metadata } from "next";
 import { PageHero, Section } from "@/components/marketing/Page";
 import { ButtonLink } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Bits";
+import {
+  CORE_GRADE_LABEL,
+  CORE_MISSION_COUNT,
+  FIRST_LOOK_SESSIONS_PER_CLASS,
+  FIRST_LOOK_TOTAL_SESSIONS,
+  FIRST_LOOK_TRACK_LABELS,
+} from "@/content/scope";
 
 export const metadata: Metadata = {
   title: "Plans",
@@ -35,7 +42,8 @@ export const PLANS = [
     unit: "per classroom, per year",
     seats: "Up to 30 students",
     features: [
-      "All 27 missions and both check-in forms",
+      `All ${CORE_MISSION_COUNT} core missions and both check-in forms, written for ${CORE_GRADE_LABEL}`,
+      `First Look: ${FIRST_LOOK_TOTAL_SESSIONS} authored introductory sessions, of which a class runs the three written for its grade — a ${FIRST_LOOK_TRACK_LABELS[0]} track, or a ${FIRST_LOOK_TRACK_LABELS[1]} track`,
       "Teacher dashboard and discussion guides",
       "Classroom Mode for projector lessons",
       "Educator orientation, five modules",
@@ -141,6 +149,29 @@ export default function PlansPage() {
             </div>
           ))}
         </div>
+      </Section>
+
+      <Section tone="denim" title="What a subscription is for, and which grades">
+        <p className="max-w-3xl text-[1.05rem] leading-relaxed text-ink">
+          The assessed program is <strong>{CORE_GRADE_LABEL}</strong>. All{" "}
+          {CORE_MISSION_COUNT} core missions are written and reading-levelled for that
+          band, and so are the fall and spring check-ins, the nine-skill evidence, the
+          badges and the school report. Every mission card in the product says its grade
+          band on its face.
+        </p>
+        <p className="mt-4 max-w-3xl text-[1.05rem] leading-relaxed text-ink">
+          <strong>First Look is included and is not part of that.</strong> It is{" "}
+          {FIRST_LOOK_TOTAL_SESSIONS} authored sessions in two tracks, and a class runs the{" "}
+          {FIRST_LOOK_SESSIONS_PER_CLASS} written for its grade — {FIRST_LOOK_TRACK_LABELS[0]},
+          or {FIRST_LOOK_TRACK_LABELS[1]}. It is an introduction for a class that has not
+          been told what AI is, and it deliberately records no skill evidence, so it moves
+          no competency figure and appears in no report total.
+        </p>
+        <p className="mt-4 max-w-3xl text-[1.05rem] leading-relaxed text-ink">
+          So a grade 1 or grade 5 class can be created and taught First Look, and that is
+          what it gets: three sessions, not a year of assessed practice. If you are buying
+          for those grades, buy it for that.
+        </p>
       </Section>
 
       <Section tone="marigold" title="Free for families, subscription or not">

@@ -8,7 +8,7 @@ import { Tag } from "@/components/ui/Bits";
 export const metadata: Metadata = {
   title: "Curriculum",
   description:
-    "Six First Look sessions for grades 1 to 5, then twenty-seven authored story missions across three competencies: privacy, verification and learning ownership.",
+    "Twenty-seven authored story missions for grades 2 to 4 across three competencies — privacy, verification and learning ownership — with First Look, three short introductory sessions per class in a grades 1 and 2 track or a grades 3 to 5 track.",
 };
 
 const LANE: Record<string, { wrap: string; text: string; chip: "pine" | "marigold" | "denim" }> = {
@@ -23,8 +23,8 @@ export default function CurriculumPage() {
       <PageHero
         eyebrow="Curriculum"
         tone="marigold"
-        title="An introduction, then three competencies and twenty-seven missions."
-        lede="First Look is where a class that has never been told what AI is starts, in a tier written for grades 1 and 2 or one for grades 3 to 5. After that: three competencies, three named skills each, three missions per skill. A mission takes seven to nine minutes, ends with a printable family take-home, and shares a cast and a setting with all the others."
+        title="Twenty-seven missions for grades 2 to 4, and an introduction before them."
+        lede="The assessed program is twenty-seven authored missions written and reading-levelled for grades 2 to 4: three competencies, three named skills each, three missions per skill. A mission takes seven to nine minutes, ends with a printable family take-home, and shares a cast and a setting with all the others. Before any of it, First Look gives a class that has never been told what AI is three short sessions — a grades 1 and 2 track, or a grades 3 to 5 track — which is also what a grade 1 or grade 5 class is offered."
       >
         <div className="flex flex-wrap gap-3">
           <ButtonLink href="/demo">Play one in the demo</ButtonLink>
@@ -37,7 +37,7 @@ export default function CurriculumPage() {
       <Section
         tone="surface"
         title="First Look: before any of it makes sense"
-        lede="Six sessions for a class that has not been told what AI is. The twenty-seven missions assume three things a child arrives with, and this is where those three get taught."
+        lede="Six authored sessions in two tracks, so a class runs the three written for its grade. The twenty-seven missions assume three things a child arrives with, and this is where those three get taught."
       >
         {/* One column until lg. At exactly 768 the two track cards were each
             about 350px wide and the session titles wrapped to three lines. */}

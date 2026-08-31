@@ -7,6 +7,110 @@ likely to be.
 
 ---
 
+## Sprint 85 — the repository sold two different products
+
+- **Reviewed against:** HEAD `af18893`
+- **Repository:** <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-31-sprint-85.md`](2026-08-31-sprint-85.md)
+
+### The finding, verified before changing anything
+
+All 27 core missions are `gradeBand: "2-4"` — 27 of 27, nothing else — and the
+check-ins, nine-skill evidence, badges and school report all key off them. First
+Look is two tracks of three, a class runs one, and it records no skill evidence
+by design. So the assessed product is **grades 2 to 4**, and a grade 1 or grade 5
+class gets three introductory sessions that move no competency figure.
+
+Six buyer-facing surfaces said otherwise: the README opening ("students in
+**grades 1–5**"), the root metadata, the `SiteFooter` ("An annual subscription…
+gives **grades 1 to 5**"), the Approach description (which attached 1–5 to *the
+story missions*), the Curriculum description ("**Six** First Look sessions for
+**grades 1 to 5**" — wrong range *and* wrong per-class count), and the Plans card
+selling "**All 27 missions and both check-in forms**" with no grade qualifier.
+
+**The consequence:** a grade 1 or grade 5 buyer prices an annual subscription for
+their students, buys it, and finds every library card saying grades 2 to 4 and
+their own track carrying no evidence. A failed setup in front of a class, a
+teacher left explaining it, and a district renewal objection — the public scope
+conflicts with the product's own content model.
+
+### The correction
+
+**A derived source of truth, not a phrase list.** `src/content/scope.ts` computes
+`CORE_GRADE_BAND`, `CORE_GRADE_LABEL`, `CORE_MISSION_COUNT`,
+`FIRST_LOOK_TOTAL_SESSIONS`, `FIRST_LOOK_SESSIONS_PER_CLASS` and
+`FIRST_LOOK_TRACK_LABELS` from the content. Both derivations **fail closed with a
+named cause**: a curriculum spanning two bands is not describable in one
+sentence, and uneven tracks make "a class receives three" unsayable. The footer
+and Plans consume the values, so the price list cannot drift from the curriculum.
+
+Every implicated surface now names the assessed band and describes First Look as
+an introduction with per-class counts. Plans gains a section — **"What a
+subscription is for, and which grades"** — stating that First Look is included
+and *is not part of* the assessed program, that it records no skill evidence,
+and plainly: *"a grade 1 or grade 5 class can be created and taught First Look,
+and that is what it gets: three sessions, not a year of assessed practice. If you
+are buying for those grades, buy it for that."* Nothing was removed — grade 1 and
+5 classes, First Look and the curriculum are untouched.
+
+**One thing the browser found that the source sweep did not:** `/approach` still
+rendered "grades 1 to 5" after every file was corrected — the orientation's first
+module was titled *"What grades 1 to 5 actually need"*, and that title renders in
+the module list on a buyer page. Retitled to "What 6 to 11 year olds actually
+need", the body's own opening, with a test covering it.
+
+### Acceptance
+
+`tests/program-scope.test.ts`, 21 tests: the derivation; seven buyer surfaces
+against a regex matching the **range attached to what is sold** rather than
+banning a phrase that is legitimately used to describe support; the band named
+where the product is described; no orientation title carrying the range; the
+Plans bullets and prose; that Plans is built from the derived values; and that
+the four already-accurate surfaces are unchanged.
+
+**Mutation-checked five ways.** The copy mutations fail one test each, naming the
+file. The two that matter are structural: changing **one core mission to
+`gradeBand: "3-5"`** makes the suite fail to load with *"The core curriculum spans
+2 grade bands (3-5, 2-4)"*, and **shortening one First Look track** fails with
+*"First Look tracks are uneven (2, 3 sessions)"*. The copy cannot outlive the
+content model, and the failure names the cause.
+
+### Evidence
+
+```
+typecheck  ✓
+lint       0 errors, 2 pre-existing warnings
+tests      999 passed (36 files)
+build      ✓ Compiled successfully
+```
+
+Browser at **1280×800** and **768×1024** with metadata read from the live pages.
+`/curriculum`: the new `h1`, the corrected meta description, no "grades 1 to 5"
+anywhere. `/plans`: both corrected bullets, 672px inside a 768px viewport,
+wrapping readably, plus the scope section and the grade 1 or 5 paragraph. `/`
+(footer-bearing): corrected root meta, footer naming grades 2 to 4 and both
+tracks. `/approach`: module 1 retitled, no range. `overflow: false` everywhere,
+screenshots clean. No child, teacher or admin workflow re-verified — none
+changed. **Demo data unchanged**: this sprint reads and writes no records.
+
+### Where to push hardest
+
+1. **The regex half is still a regex.** The derivation is structural; "no surface
+   attaches 1–5 to what is sold" is a pattern over seven named files. A surface
+   added tomorrow is not in the list. Enumerating `src/app/(site)/**` would close
+   half of that.
+2. **"Twenty-seven" is spelled out in prose in several places.** Only Plans
+   interpolates `CORE_MISSION_COUNT`; the README and the curriculum hero would go
+   stale without failing anything if the curriculum grew.
+3. **`PROGRAM_SCOPE_SENTENCE` is derived, asserted and rendered nowhere.** The
+   surfaces interpolate the parts, which reads better — so the composed sentence
+   is currently dead weight and should either be used or removed.
+4. **Grade 1 and 5 support is thin, and this sprint made that legible rather
+   than fixing it.** Whether those grades should have an assessed track is a
+   product decision deliberately not made here.
+
+---
+
 ## Sprint 84 — a parked class that looked open for business
 
 - **Reviewed against:** HEAD `41b8603`

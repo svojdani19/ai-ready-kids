@@ -6,7 +6,7 @@ import { ButtonLink } from "@/components/ui/Button";
 export const metadata: Metadata = {
   title: "How it works",
   description:
-    "Practice before exposure: why grades 1 to 5 rehearse AI decisions in authored story missions rather than being warned about them, starting with an introduction for children who have not been told what AI is.",
+    "Practice before exposure: why grades 2 to 4 rehearse AI decisions in twenty-seven authored story missions rather than being warned about them, and how First Look introduces the idea first to a class that has not been told what AI is.",
 };
 
 export default function ApproachPage() {

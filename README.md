@@ -1,10 +1,16 @@
 # AI Ready Kids
 
-An annual school-subscription platform that gives students in grades 1–5
+An annual school-subscription platform that gives students in **grades 2–4**
 rehearsed practice at the decisions AI actually puts in front of them, and
-gives their school something honest to report about it. It opens with **First
-Look**, an introduction for children who have not been told what AI is, and
-continues into twenty-seven assessed missions for grades 2–4.
+gives their school something honest to report about it. The assessed program is
+twenty-seven authored missions written and reading-levelled for that band, and
+so are the check-ins, the nine-skill evidence and the school report.
+
+It opens with **First Look**, an introduction for a class that has not been told
+what AI is: six authored sessions in two tracks, of which a class runs the three
+written for its grade — a grades 1–2 track, or a grades 3–5 track. A grade 1 or
+grade 5 class can be created and taught First Look, and that is what it gets;
+First Look records no skill evidence by design.
 
 It is not an AI tutor, a chatbot, a coding course, or detection software. There
 is no generative model anywhere in the request path: every word a child can
@@ -215,7 +221,8 @@ before the sprint is called complete.
 
 The review has three parts: **teacher-led group instruction** (projector
 legibility, teacher preview and control, branch reveal, whole-class prompts,
-transitions, driving without a mouse), **independent grade 1–5 use** (reading
+transitions, driving without a mouse), **independent student use across every
+grade the product touches, 1 to 5** (reading
 load, narration, 44px targets, no confusing states, keyboard and touch, calm
 feedback, no addictive mechanics), and a cross-cutting pass covering
 developmental appropriateness, instructional clarity, privacy, accessibility,

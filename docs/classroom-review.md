@@ -1078,6 +1078,29 @@ one of them has not tested the thing that was built.
       it. Rewording alone would leave the untested path free to regress, and the
       fixture that renders a state is rarely the only thing that produces it.
 
+- [ ] **A product can carry two commercial scopes at once, and the content model
+      is the one that is true.** Every core mission was `gradeBand: "2-4"` while
+      the README, the root metadata, the footer and a plan card sold an annual
+      grades 1–5 program. Nothing was ambiguous in the data; six sentences had
+      simply never been checked against it. Before trusting scope copy, grep the
+      field that decides it and count.
+- [ ] **Derive marketing claims from the content, do not restate them beside
+      it.** "Grades 2 to 4" is now computed from `MISSIONS` and interpolated into
+      the footer and the plan bullets, and the derivation throws if the curriculum
+      ever spans two bands. A restated claim goes stale silently; a derived one
+      takes the build down and names the cause.
+- [ ] **Fail closed on a fact you cannot summarise.** When the tracks are uneven
+      there is no honest way to say "a class receives three", so the code throws
+      rather than picking the first or the maximum. Copy that quietly narrows is
+      worse than a build that stops.
+- [ ] **A quantity in a marketing sentence has a denominator.** "Six First Look
+      sessions" is true of the catalogue and false of any class, which receives
+      three. Whenever copy counts something, ask "per what" and say it.
+- [ ] **Sweep the source, then look at the rendered page.** After every file was
+      corrected, `/approach` still showed "grades 1 to 5" — an orientation module
+      *title* rendered in a list on a buyer page. Content that lives in one layer
+      surfaces in another, and a grep over the obvious files will not find it.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "./Logo";
+import { CORE_GRADE_LABEL } from "@/content/scope";
 
 export function SiteFooter() {
   return (
@@ -9,8 +10,9 @@ export function SiteFooter() {
           <Logo />
           <p className="mt-3 text-sm leading-relaxed text-ink-soft">
             Practice before exposure. An annual subscription for elementary schools that
-            gives grades 1 to 5 rehearsed decisions about AI, and gives their school
-            something honest to report.
+            gives {CORE_GRADE_LABEL} rehearsed decisions about AI, and gives their school
+            something honest to report. First Look introduces the idea in a grades 1 and 2
+            track and a grades 3 to 5 track.
           </p>
         </div>
         <nav aria-label="Footer" className="grid gap-x-10 gap-y-6 sm:grid-cols-2">
