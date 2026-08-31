@@ -22,6 +22,7 @@ import { AssignToggle } from "@/components/staff/AssignToggle";
 import { AddStudentForm } from "@/components/staff/AddStudentForm";
 import { RemoveStudentButton } from "@/components/staff/RemoveStudentButton";
 import { RenameStudentForm } from "@/components/staff/RenameStudentForm";
+import { ArchivedClassNotice } from "@/components/staff/ArchivedClassNotice";
 
 export const metadata: Metadata = { title: "Class" };
 
@@ -52,6 +53,12 @@ export default async function ClassPage({
   const found = getClass(db, classId);
   if (!canTeachClass(user, found)) notFound();
   const classroom = found!;
+
+  // Sprint 84: the page is fully readable while archived — archiving parks a
+  // class, it does not take its history away — but every control that would be
+  // refused by the sprint 82 resolver is gone rather than present-and-refusing,
+  // and the join code is not presented as something to write on a board.
+  const archived = Boolean(classroom.archived_at);
 
   const teacher = getUser(db, classroom.teacher_id);
   const students = listStudents(db, classId);
@@ -88,25 +95,44 @@ export default async function ClassPage({
         title={classroom.name}
         description={`Grade ${classroom.grade} · ${classroom.school_year} · ${students.length} students`}
         actions={
-          <div className="rounded-lg border-2 border-denim bg-denim-wash px-4 py-2 text-center">
-            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-denim-deep">
-              Class code
-            </p>
-            <p className="font-display text-xl tracking-[0.1em] text-ink">
-              {classroom.join_code}
-            </p>
-            <div className="mt-1.5">
-              <ConfirmAction
-                tone="quiet"
-                label="New code"
-                confirmLabel="Change it"
-                question="Everybody will need the new code: anybody halfway through joining, and any student already signed in with the old one, who is asked to rejoin next time they load a page. Change it?"
-                action={rotateJoinCodeAction.bind(null, classroom.id)}
-              />
+          archived ? (
+            // The stored code is deliberately not shown. Archiving rotates it
+            // and nobody can join with it, so printing it here invites a
+            // teacher to write a dead code on the board — which is the failure
+            // this sprint exists to prevent, not a cosmetic one.
+            <div className="rounded-lg border-2 border-sand-deep bg-paper-deep px-4 py-2 text-center">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+                Class code
+              </p>
+              <p className="font-display text-lg leading-tight text-ink-soft">Inactive</p>
+              <p className="mt-0.5 max-w-[13rem] text-xs leading-snug text-ink-soft">
+                No code admits students to an archived class. Restoring the class issues a
+                working one.
+              </p>
             </div>
-          </div>
+          ) : (
+            <div className="rounded-lg border-2 border-denim bg-denim-wash px-4 py-2 text-center">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-denim-deep">
+                Class code
+              </p>
+              <p className="font-display text-xl tracking-[0.1em] text-ink">
+                {classroom.join_code}
+              </p>
+              <div className="mt-1.5">
+                <ConfirmAction
+                  tone="quiet"
+                  label="New code"
+                  confirmLabel="Change it"
+                  question="Everybody will need the new code: anybody halfway through joining, and any student already signed in with the old one, who is asked to rejoin next time they load a page. Change it?"
+                  action={rotateJoinCodeAction.bind(null, classroom.id)}
+                />
+              </div>
+            </div>
+          )
         }
       />
+
+      {archived && <ArchivedClassNotice className={classroom.name} />}
 
       <div className="grid gap-3 sm:grid-cols-4">
         <Stat label="Students" value={students.length} />
@@ -126,7 +152,11 @@ export default async function ClassPage({
       <div className="mt-8">
         <Panel
           title="Assigned missions"
-          description="Turn a mission on and it appears on every student's map in this class straight away."
+          description={
+            archived
+              ? "What this class was assigned when it was archived. Nothing can be turned on or off until an administrator restores it."
+              : "Turn a mission on and it appears on every student's map in this class straight away."
+          }
         >
           <PanelBody className="space-y-5">
             {/* The First Look track written for this class's grade. The other
@@ -174,13 +204,23 @@ export default async function ClassPage({
                           </Link>
                         </p>
                       </div>
-                      <AssignToggle
-                        classId={classroom.id}
-                        missionId={m.id}
-                        missionTitle={m.title}
-                        className={classroom.name}
-                        assigned={assignedIds.has(m.id)}
-                      />
+                      {archived ? (
+                        // Still worth reading — a teacher reviewing a parked
+                        // class wants to know what it was assigned — but as a
+                        // fact, not a control. No button, nothing focusable,
+                        // nothing to press five times.
+                        <Tag tone={assignedIds.has(m.id) ? "pine" : "neutral"}>
+                          {assignedIds.has(m.id) ? "Was assigned" : "Not assigned"}
+                        </Tag>
+                      ) : (
+                        <AssignToggle
+                          classId={classroom.id}
+                          missionId={m.id}
+                          missionTitle={m.title}
+                          className={classroom.name}
+                          assigned={assignedIds.has(m.id)}
+                        />
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -314,18 +354,22 @@ export default async function ClassPage({
                           </span>
                         </td>
                         <td className="px-5 py-2.5 text-right">
-                          <div className="flex flex-wrap items-center justify-end gap-2">
-                            <RenameStudentForm
-                              classId={classroom.id}
-                              studentId={student.id}
-                              displayName={student.display_name}
-                            />
-                            <RemoveStudentButton
-                              classId={classroom.id}
-                              studentId={student.id}
-                              displayName={student.display_name}
-                            />
-                          </div>
+                          {archived ? (
+                            <span className="text-xs text-ink-faint">Read-only</span>
+                          ) : (
+                            <div className="flex flex-wrap items-center justify-end gap-2">
+                              <RenameStudentForm
+                                classId={classroom.id}
+                                studentId={student.id}
+                                displayName={student.display_name}
+                              />
+                              <RemoveStudentButton
+                                classId={classroom.id}
+                                studentId={student.id}
+                                displayName={student.display_name}
+                              />
+                            </div>
+                          )}
                         </td>
                       </tr>
                     );
@@ -334,9 +378,11 @@ export default async function ClassPage({
               </table>
             </div>
           )}
-          <PanelBody className="border-t border-sand">
-            <AddStudentForm classId={classroom.id} />
-          </PanelBody>
+          {!archived && (
+            <PanelBody className="border-t border-sand">
+              <AddStudentForm classId={classroom.id} />
+            </PanelBody>
+          )}
         </Panel>
       </div>
 

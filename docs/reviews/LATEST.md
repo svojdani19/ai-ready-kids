@@ -7,6 +7,122 @@ likely to be.
 
 ---
 
+## Sprint 84 — a parked class that looked open for business
+
+- **Reviewed against:** HEAD `41b8603`
+- **Repository:** <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-08-30-sprint-84.md`](2026-08-30-sprint-84.md)
+
+### The finding
+
+Sprint 82 closed all five classroom mutations on an archived class, server-side,
+above every transaction. Correct, and half a workflow: the class page went on
+rendering a parked class as if it were live — join code and **New code** in the
+header, "appears on every student's map in this class straight away" in the
+assignment panel, live toggles, Add/Rename/Remove all present, and nothing
+anywhere saying the class was archived. The only way to find out was to try
+something and be refused.
+
+**The classroom cost is specific.** A covering teacher reads the code off this
+page and writes it on the board, and twenty-three children type a code that
+cannot admit them — archiving rotates it, so it is not stale, it is dead.
+Somebody promises a class a mission is on. Somebody meets five refusals in a row
+in front of seven-to-ten-year-olds. For a buyer, the server guard is necessary
+and the visible workflow still looks broken.
+
+### The correction
+
+One boolean, `archived`, read once. **The page stays fully readable** — no
+redirect, nothing hidden that the teacher owns: roster, completed missions,
+competency evidence, cohort figures and check-in numbers all render as before,
+for the same reason sprint 81 refused to gate a school's own records.
+
+**The state is stated first.** A notice under the header answers the three
+questions in the order a teacher has them: students cannot join and the code
+admits nobody; everything already here stays readable and nothing was deleted;
+an administrator has to restore before anything changes.
+
+**The code is not shown at all** — a code on this page is a code somebody writes
+on a board — replaced by "Class code · Inactive · No code admits students to an
+archived class."
+
+**Every mutation affordance is gone, not disabled:** New code → the inactive
+panel; assignment toggle → a static `Was assigned` / `Not assigned` tag (that one
+became a *fact* rather than disappearing, because a teacher reviewing a parked
+cohort wants to know what it had); Add student → the panel section is not
+rendered; Rename and Remove → a `Read-only` cell. The panel description changes
+too, since "straight away" is false for a class nobody can open. Active wording
+is untouched.
+
+**Sprint 82's resolver is untouched and still needed** — a tab rendered before
+the archive still holds every control, so the server refusal is what stops the
+write. This sprint stops a teacher being sent to it.
+
+### Accessibility
+
+`<section role="status" aria-labelledby="archived-class-title">` — a standing
+condition, not an interruption, and the only status region on the page — with its
+own `h2`, so headings run `h1 Room 12` → `h2 This class is archived` → `h2
+Assigned missions` with no skipped level, placed **before** the panels whose
+controls are missing. Verified in the browser: the only tabbable controls in
+`<main>` are links, and the roster table contains **zero** buttons.
+
+### Acceptance
+
+`tests/archived-class-page.test.ts`, 11 tests, rendering the **real page
+component** in both states. Controls are checked by **component identity** — the
+actual imported `AssignToggle`, `AddStudentForm`, `RemoveStudentButton`,
+`RenameStudentForm`, `ConfirmAction` — not by matching text, so renaming a label
+cannot make an assertion pass. Covers: active unchanged; archived still renders;
+the condition stated; no refusable control; the join code string absent; no
+"straight away"; roster, evidence and check-ins kept; a restore round-trip
+bringing all five controls back; the status/label semantics; and that
+`rotateJoinCodeAction` still returns sprint 82's refusal.
+
+**Mutation-checked five ways:** removing the notice fails 3; leaving
+`AddStudentForm` on fails 1 naming the component; printing the dead code fails 1;
+keeping "straight away" fails 1; forcing `archived = false` fails 6 — every
+archived assertion and none of the active ones.
+
+### Evidence
+
+```
+typecheck  ✓
+lint       0 errors, 2 pre-existing warnings
+tests      961 passed (35 files)
+build      ✓ Compiled successfully
+```
+
+Browser, both states at **1280×800** and **768×1024**. Archived: notice renders,
+code panel reads "Inactive" and `MAPLE-HERON-317` appears **nowhere**, no "New
+code", no "straight away", 23 `Read-only` cells, roster/evidence/check-ins all
+present, missions shown as `Was assigned`; notice 728px inside 768,
+`overflow: false`, and the wide roster still scrolls inside its own container.
+Active, after restoring: code back, "New code" back, 30 toggles, "straight away"
+back, 46 roster buttons, "Add to roster" back, no notice, `overflow: false`.
+
+Room 12 was parked by setting `archived_at` directly — `archiveClass` also
+rotates the code, which cannot be undone. **Demo data restored exactly:** attempts
+1078, audit log 6, assignments 65, join code unchanged, zero recent rows anywhere.
+
+### Where to push hardest
+
+1. **`/teacher` still lists an archived class like any other.** Out of this
+   finding and unchanged, so a teacher still arrives without warning — they just
+   learn on arrival now instead of on the fifth refusal.
+2. **Nothing enumerates mutation controls.** Five components are a list in the
+   page and a matching list in the test. A sixth added tomorrow renders on an
+   archived class and nothing objects until somebody writes it into both — the
+   same shape as the `archived_at` list sprints 76–82 kept getting wrong, one
+   layer up.
+3. **The notice is authored prose in a component**, not in the domain layer
+   beside `LAPSED_STAFF_BODY`. Only the title is exported and asserted.
+4. **Screen-reader behaviour is asserted structurally, not heard.** Role, label,
+   heading order and tab stops are checked; nothing has been run through an
+   actual screen reader.
+
+---
+
 ## Sprint 83 — the guide promised families evidence the page cannot hold
 
 - **Reviewed against:** HEAD `a814294`

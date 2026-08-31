@@ -983,6 +983,33 @@ one of them has not tested the thing that was built.
       both is what stops the next person assuming the data is available somewhere
       less visible.
 
+- [ ] **A correct server refusal is half a workflow.** Closing every mutation on
+      a parked class was right and left the page rendering as if the class were
+      live — code, New code, live toggles, Add, Rename, Remove, and nothing saying
+      it was archived. The only way to learn the state was to be refused. When a
+      state makes actions impossible, the surface has to say so **before** the
+      action, or the guard has just moved the discovery to the worst moment.
+- [ ] **Weigh a UI gap by where the person is standing.** This one is a covering
+      teacher writing a dead code on the board for twenty-three children, or
+      meeting five refusals in front of a class. Same defect class as a stale
+      label; completely different cost. Ask who hits it and what they are doing at
+      the time.
+- [ ] **Remove the control rather than disabling it, unless it carries
+      information.** A disabled button still reads as "this will work later, or
+      you lack permission". Four of the five affordances were removed outright.
+      The assignment toggle stayed as a static "Was assigned" tag, because what a
+      parked class was assigned is worth reading — the test is whether the thing
+      tells you something once it can no longer do anything.
+- [ ] **Do not print a dead credential.** The archived join code is not merely
+      stale, it was rotated: it admits nobody. Showing it invites somebody to
+      copy it out. If a value cannot be used, show its state instead of its
+      value.
+- [ ] **Assert the presence of controls by component identity, not by label
+      text.** `expect(tree).not.toContain("Remove")` passes the moment somebody
+      renames a button, and the copy under test also mentions removing a student.
+      Walking the rendered tree for the actual imported component function is the
+      claim you meant.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same
