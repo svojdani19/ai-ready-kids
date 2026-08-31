@@ -93,9 +93,13 @@ describe("the scope is derived from the content, not asserted beside it", () => 
  * The claim that was actually being made, and must not come back: an annual
  * program *for* grades 1 to 5.
  *
- * Not a ban on the phrase — grade 1 and grade 5 are real, supported, and named
- * accurately in several places. What is forbidden is the range attached to what
- * is sold or assessed, which is what a buyer prices.
+ * Not a ban on the phrase. "Grades 1 and 2" and "grades 3 to 5" are the names of
+ * two authored **reading levels** for First Look, and they stay. What is
+ * forbidden is the range attached to what is sold or assessed — which is what a
+ * buyer prices — and, since sprint 85's final acceptance correction, any claim
+ * that a Grade 1 or Grade 5 **class** exists: classes are created in grades 2 to
+ * 4 only, so a track's reading level and a creatable class grade are two
+ * different things and the copy has to keep them apart.
  */
 const UNQUALIFIED_ANNUAL_RANGE =
   /(annual|subscription|program|platform|missions|assessed|check-ins?)[^.]{0,80}\bgrades? 1[\s–-]+(to\s+)?5\b|\bgrades? 1[\s–-]+(to\s+)?5\b[^.]{0,80}(annual|subscription|assessed|twenty-seven|27 )/i;
@@ -116,6 +120,59 @@ describe("no buyer-facing surface sells an annual grades 1 to 5 program", () => 
     // renders in the module list on `/approach` beside the plan copy.
     const cert = read("src/content/certification/index.ts");
     expect(cert).not.toMatch(/title: "[^"]*grades 1 to 5[^"]*"/);
+  });
+
+  /**
+   * A class in a grade this build cannot create.
+   *
+   * Sprint 85's first pass ended the curriculum hero with "…which is also what a
+   * grade 1 or grade 5 class is offered", written before the boundary was
+   * settled and left behind when it was. A buyer reading the curriculum page
+   * could still take it as permission to buy for those grades, and their
+   * administrator would then fail at setup — the exact contradiction the sprint
+   * existed to close, surviving on the one buyer page nobody re-read.
+   *
+   * Track names are untouched: "grades 1 and 2" and "grades 3 to 5" name two
+   * authored reading levels and are true. What this forbids is a **class** in
+   * grade 1 or grade 5 being offered, created or supported.
+   */
+  const UNCREATABLE_CLASS_CLAIM =
+    /\bgrades? (1|5)( or (grade )?5)? (class|classes|room|cohort)|\b(a|any) grade (1|5) (class|classes)|(class|classes) (in|for) grades? (1|5)\b/i;
+
+  it.each(BUYER_SURFACES.map((f) => [f] as const))(
+    "%s never offers a class in a grade this build cannot create",
+    (file) => {
+      const prose = read(file).replace(/\s+/g, " ");
+      const match = prose.match(UNCREATABLE_CLASS_CLAIM);
+      expect(
+        match?.[0],
+        `${file} refers to a class in an uncreatable grade: "${match?.[0]}"`,
+      ).toBeUndefined();
+    },
+  );
+
+  it("the curriculum hero explains the tracks inside the creatable band", () => {
+    // FAILING-BEFORE: the lede ended "…which is also what a grade 1 or grade 5
+    // class is offered." It now says which creatable grade runs which track.
+    const prose = read("src/app/(site)/curriculum/page.tsx").replace(/\s+/g, " ");
+    expect(prose).not.toMatch(/which is also what a grade 1 or grade 5 class is offered/i);
+    expect(prose).toMatch(/two reading levels/i);
+    expect(prose).toMatch(
+      /a Grade 2 class runs the early one while Grades 3 and 4 run the upper one/i,
+    );
+  });
+
+  it("keeps the track names in the hero, because they are reading levels", () => {
+    // The correction must not overshoot into deleting accurate content names.
+    // Scoped to the lede: asserting on the whole file passed even with the
+    // names removed from the hero, because the metadata description also
+    // carries them — a test that could not see the change it was guarding.
+    const curriculum = read("src/app/(site)/curriculum/page.tsx");
+    const lede = curriculum.match(/lede="([^"]*)"/)?.[1] ?? "";
+    expect(lede, "no hero lede found to assert on").toMatch(/First Look/);
+    for (const label of FIRST_LOOK_TRACK_LABELS) {
+      expect(lede.toLowerCase(), `the hero dropped the ${label} track name`).toContain(label);
+    }
   });
 
   it("names the assessed band where the product is described", () => {

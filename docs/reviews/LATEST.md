@@ -110,6 +110,34 @@ into a type error and immediately found 24 call sites across four files. The tes
 that preserved the unbounded behaviour is deleted; a source assertion proves
 omission is impossible (no `grade?:`, no `eligible?:`, guards read unconditionally).
 
+### Third acceptance correction: the curriculum hero still offered an uncreatable class
+
+The boundary correction went through Plans, the README, the form and the action —
+and missed the one buyer page nobody re-read. The curriculum hero still ended
+*"…which is also what a grade 1 or grade 5 class is offered"*, written in the
+first pass before the boundary was settled and left behind when it was. Classes
+are created in grades 2 to 4 only, so a buyer could still read the curriculum
+page as permission to buy for those grades and have their administrator fail at
+setup.
+
+The hero now separates **reading level** from **creatable class grade**: *"It
+ships two reading levels — a grades 1 and 2 track and a grades 3 to 5 track — and
+within this program a Grade 2 class runs the early one while Grades 3 and 4 run
+the upper one."* A test comment calling grade 1 and 5 "real, supported" is
+corrected the same way. Every other `grades 1`/`grades 3 to 5` mention on a buyer
+surface was read: all name a **track**, none claims a class, all left alone.
+
+Three tests: every buyer surface is checked for a class/room/cohort claim in an
+uncreatable grade (whitespace normalized, so a JSX line-wrap cannot hide it); the
+hero's retired clause is gone and its replacement names which creatable grade
+runs which track; and the hero keeps the track names. **Mutation-checked three
+ways** — restoring the exact clause fails 2 quoting the match, adding a grade 5
+class claim to *Plans* fails 1 naming Plans, deleting the track names fails 1.
+
+That last one **passed on my first attempt**: the assertion read the whole file,
+and the track names also appear in the page metadata, so it could not see the
+change it was guarding. Rescoped to the lede.
+
 ### Acceptance for the correction
 
 `tests/grade-eligibility.test.ts`, 35 tests. The pure rule is asserted for **all
@@ -162,7 +190,7 @@ content model, and the failure names the cause.
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      1034 passed (37 files)
+tests      1048 passed (37 files)
 build      ✓ Compiled successfully
 ```
 
@@ -187,11 +215,14 @@ changed. **Demo data unchanged**: this sprint reads and writes no records.
 3. **`PROGRAM_SCOPE_SENTENCE` is derived, asserted and rendered nowhere.** The
    surfaces interpolate the parts, which reads better — so the composed sentence
    is currently dead weight and should either be used or removed.
-4. **`?? 0` is a sentinel.** The two production callers that may not resolve a
+4. **The sweep that missed this was a grep over named files.** The curriculum
+   hero survived three corrections because each swept only the surfaces its
+   finding named. The new guard runs over the buyer-surface list — still a list.
+5. **`?? 0` is a sentinel.** The two production callers that may not resolve a
    classroom pass grade `0` — outside every band, so it fails closed — but it is
    a magic number standing in for "no class". A resolved-class type would say it
    properly.
-5. **The band is enforced at assignment and play, not at the roster.** Nothing
+6. **The band is enforced at assignment and play, not at the roster.** Nothing
    stops a school putting an eight-year-old on a Grade 4 roster; the product
    takes the class's grade as given. That is right for a product that collects no
    ages, and worth stating rather than assuming.

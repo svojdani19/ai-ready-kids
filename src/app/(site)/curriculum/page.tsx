@@ -24,7 +24,7 @@ export default function CurriculumPage() {
         eyebrow="Curriculum"
         tone="marigold"
         title="Twenty-seven missions for grades 2 to 4, and an introduction before them."
-        lede="The assessed program is twenty-seven authored missions written and reading-levelled for grades 2 to 4: three competencies, three named skills each, three missions per skill. A mission takes seven to nine minutes, ends with a printable family take-home, and shares a cast and a setting with all the others. Before any of it, First Look gives a class that has never been told what AI is three short sessions — a grades 1 and 2 track, or a grades 3 to 5 track — which is also what a grade 1 or grade 5 class is offered."
+        lede="The assessed program is twenty-seven authored missions written and reading-levelled for grades 2 to 4: three competencies, three named skills each, three missions per skill. A mission takes seven to nine minutes, ends with a printable family take-home, and shares a cast and a setting with all the others. Before any of it, First Look gives a class that has never been told what AI is three short sessions. It ships two reading levels — a grades 1 and 2 track and a grades 3 to 5 track — and within this program a Grade 2 class runs the early one while Grades 3 and 4 run the upper one."
       >
         <div className="flex flex-wrap gap-3">
           <ButtonLink href="/demo">Play one in the demo</ButtonLink>
