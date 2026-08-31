@@ -9,6 +9,7 @@ import type { Mission } from "@/content/types";
 import { PageHeader, Panel, PanelBody } from "@/components/ui/Panel";
 import { Note, Tag } from "@/components/ui/Bits";
 import { AssignToggle } from "@/components/staff/AssignToggle";
+import { classMayBeAssigned } from "@/lib/domain/eligibility";
 import { requireOpenCurriculum } from "@/lib/auth/instruction-access";
 import { CurriculumClosed } from "@/components/staff/CurriculumClosed";
 
@@ -61,7 +62,9 @@ function SessionCard({
           <Tag tone="neutral">
             {mission.scenes.filter((s) => s.choices?.length).length} decisions
           </Tag>
-          {isFoundation && <Tag tone="neutral">Grades {mission.gradeBand}</Tag>}
+          {/* Sprint 85 acceptance: every card, not only First Look. The Plans
+              page says every mission card shows its grade band, and it did not. */}
+          <Tag tone="neutral">Grades {mission.gradeBand}</Tag>
         </span>
       }
     >
@@ -120,18 +123,30 @@ function SessionCard({
             Assign to
           </p>
           <ul className="mt-2 space-y-2">
-            {classes.map((c) => (
-              <li key={c.id} className="flex items-center justify-between gap-2">
-                <span className="text-sm text-ink">{c.name}</span>
-                <AssignToggle
-                  classId={c.id}
-                  missionId={mission.id}
-                  missionTitle={mission.title}
-                  className={c.name}
-                  assigned={assignedByClass.get(c.id)?.has(mission.id) ?? false}
-                />
-              </li>
-            ))}
+            {classes.map((c) => {
+              // An ineligible switch is a control that exists to be refused.
+              // The state is shown instead, naming the band and the grade, so
+              // the server refusal stays a backstop rather than the workflow.
+              const eligible = classMayBeAssigned(c.grade, mission);
+              return (
+                <li key={c.id} className="flex items-center justify-between gap-2">
+                  <span className="text-sm text-ink">{c.name}</span>
+                  {eligible ? (
+                    <AssignToggle
+                      classId={c.id}
+                      missionId={mission.id}
+                      missionTitle={mission.title}
+                      className={c.name}
+                      assigned={assignedByClass.get(c.id)?.has(mission.id) ?? false}
+                    />
+                  ) : (
+                    <span className="text-right text-xs leading-snug text-ink-faint">
+                      Grades {mission.gradeBand} · unavailable for Grade {c.grade}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
             {classes.length === 0 && <li className="text-sm text-ink-soft">No classes yet.</li>}
           </ul>
         </div>

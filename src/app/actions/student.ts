@@ -17,7 +17,7 @@ import {
 } from "@/lib/repo/progress";
 import { getClass, listAssignments } from "@/lib/repo/classroom";
 import { getSchool } from "@/lib/repo/school";
-import { canTakeBenchmark, missionAccessFor } from "@/lib/domain/eligibility";
+import { canTakeBenchmark, classMayBeAssigned, missionAccessFor } from "@/lib/domain/eligibility";
 import { assertClassSubscriptionActive } from "@/lib/auth/subscription-gate";
 
 /**
@@ -48,6 +48,8 @@ async function requireOpenCheckIn(form: string) {
     window: school.benchmark_window,
     form: content.form,
     records: listBenchmarksForStudent(db, student.id),
+    // The check-ins measure the nine skills the grades 2-4 core missions teach.
+    grade: classroom?.grade,
   });
   if (!open) throw new Error("That check-in is not open.");
   return { content, student, db };
@@ -60,10 +62,13 @@ async function requirePlayableMission(slug: string) {
   const { student } = await requireStudent();
   const db = getDb();
   assertClassSubscriptionActive(db, student.class_id);
+  const classroom = getClass(db, student.class_id);
   const access = missionAccessFor({
     missionId: mission.id,
     assignedMissionIds: listAssignments(db, student.class_id).map((a) => a.mission_id),
     hasCompleted: Boolean(getAttempt(db, student.id, mission.id)?.completed_at),
+    // Sprint 85: a stale out-of-band assignment does not make a mission open.
+    eligible: classroom ? classMayBeAssigned(classroom.grade, mission) : false,
   });
   if (access === "denied") throw new Error("That mission is not open for your class.");
   return { mission, student, db };

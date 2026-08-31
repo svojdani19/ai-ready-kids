@@ -43,6 +43,7 @@ import {
   lapsedRefusal,
 } from "@/lib/auth/subscription-gate";
 import { ClassArchivedError, type ClassOperation } from "@/lib/auth/class-state";
+import { assignmentBandRefusal, classMayBeAssigned } from "@/lib/domain/eligibility";
 import {
   completeCertification,
   getCertification,
@@ -451,6 +452,19 @@ export async function setAssignmentAction(input: {
     // 76 refused it here in the action; sprint 82 moved the refusal into the
     // resolver, which is where the other four mutations pick it up.
     const { db, user, classroom } = await requireOwnActiveClass(input.classId, "set_assignment");
+
+    // Sprint 85's commercial scope, enforced. Every core toggle rendered for
+    // every class and nothing checked the grade, so a grade 1 class could be
+    // given a grades 2-4 mission or the grades 3-5 First Look track — content
+    // outside the reading band it was authored for.
+    //
+    // Only `assigned: true` is refused. Withdrawing stays open on purpose: a
+    // class may already hold an out-of-band assignment made before this rule
+    // existed, and the fix for one is to remove it. Refusing that too would
+    // strand it permanently.
+    if (input.assigned && !classMayBeAssigned(classroom.grade, mission)) {
+      return { error: assignmentBandRefusal(classroom.grade, mission) };
+    }
 
     // The change and its record commit together. Sprint 76: these were two
     // separate commits, so a failing audit insert could expose a mission to a

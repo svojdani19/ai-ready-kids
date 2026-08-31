@@ -168,9 +168,18 @@ export default function PlansPage() {
           no competency figure and appears in no report total.
         </p>
         <p className="mt-4 max-w-3xl text-[1.05rem] leading-relaxed text-ink">
-          So a grade 1 or grade 5 class can be created and taught First Look, and that is
-          what it gets: three sessions, not a year of assessed practice. If you are buying
-          for those grades, buy it for that.
+          <strong>This build creates classes in {CORE_GRADE_LABEL} only.</strong> First
+          Look ships two tracks because those two reading levels are what the sessions are
+          written for, and a class is offered the one matching its grade — but grade 1 and
+          grade 5 classes cannot be created here, so the product this subscription
+          delivers today is a {CORE_GRADE_LABEL} program. If you are evaluating it for
+          grade 1 or grade 5, evaluate it on that.
+        </p>
+        <p className="mt-4 max-w-3xl text-[1.05rem] leading-relaxed text-ink">
+          Within those grades the boundary is enforced, not advertised: a class is offered
+          only the First Look track written for its grade, the core missions only if its
+          grade is inside the band, and a mission outside it cannot be assigned, listed for
+          a child, opened or resumed. Every mission card shows its grade band.
         </p>
       </Section>
 

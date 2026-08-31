@@ -23,6 +23,7 @@ import { AddStudentForm } from "@/components/staff/AddStudentForm";
 import { RemoveStudentButton } from "@/components/staff/RemoveStudentButton";
 import { RenameStudentForm } from "@/components/staff/RenameStudentForm";
 import { ArchivedClassNotice } from "@/components/staff/ArchivedClassNotice";
+import { classMayBeAssigned } from "@/lib/domain/eligibility";
 
 export const metadata: Metadata = { title: "Class" };
 
@@ -194,7 +195,10 @@ export default async function ClassPage({
                           {m.title}
                         </Link>
                         <p className="text-xs text-ink-soft">
-                          {m.estimatedMinutes} min · {completedByMission.get(m.id) ?? 0} of{" "}
+                          {/* Sprint 85 acceptance: the band on every row, so a
+                              teacher can see why a switch is missing. */}
+                          Grades {m.gradeBand} · {m.estimatedMinutes} min ·{" "}
+                          {completedByMission.get(m.id) ?? 0} of{" "}
                           {students.length} finished ·{" "}
                           <Link
                             href={`/teacher/classroom/${m.slug}`}
@@ -212,6 +216,12 @@ export default async function ClassPage({
                         <Tag tone={assignedIds.has(m.id) ? "pine" : "neutral"}>
                           {assignedIds.has(m.id) ? "Was assigned" : "Not assigned"}
                         </Tag>
+                      ) : !classMayBeAssigned(classroom.grade, m) ? (
+                        // Outside this class's reading band. Shown, previewable
+                        // and teachable on the board; not assignable to children.
+                        <span className="text-right text-xs leading-snug text-ink-faint">
+                          Grades {m.gradeBand} · unavailable for Grade {classroom.grade}
+                        </span>
                       ) : (
                         <AssignToggle
                           classId={classroom.id}

@@ -1101,6 +1101,41 @@ one of them has not tested the thing that was built.
       *title* rendered in a list on a buyer page. Content that lives in one layer
       surfaces in another, and a grep over the obvious files will not find it.
 
+- [ ] **A commercial claim you cannot enforce is a defect, not a sentence.**
+      Sprint 85 wrote "the assessed program is grades 2 to 4" and shipped a
+      product where every core mission's toggle rendered for every class, the
+      assignment action never read the grade, and neither the play guard nor the
+      check-in guard had ever seen one. Getting the copy right made the gap
+      bigger, not smaller: the product now contradicted a promise instead of
+      merely lacking one. After correcting scope copy, ask what enforces it.
+- [ ] **Refuse the write, allow the withdrawal.** A rule introduced after data
+      exists will meet rows that violate it. Refusing `assigned: true` and
+      `assigned: false` alike would strand every legacy row permanently, with no
+      way for a teacher to clear one. Bound what creates the problem; leave open
+      what fixes it.
+- [ ] **A refused toggle is not the same as a hidden one, and neither is the
+      answer alone.** The server refusal has to exist, because a stale tab still
+      holds the control — and it must not be the normal workflow, because a
+      teacher meeting a refusal per click learns the rule five errors at a time.
+      Show the state, keep the guard.
+- [ ] **Trace the state, not just the control.** Refusing the assignment does
+      nothing for a child already holding a card the class was given last term.
+      Every guard that reads "is it assigned" has to also read "is it allowed",
+      including the write-free replay path, which is the one everybody forgets
+      because nothing is recorded.
+- [ ] **When the tests will not run, read what the database said.** A CHECK
+      constraint failing in a fixture turned out to be the real finding: the
+      class-creation form offers grades the schema forbids, so choosing Grade 1
+      throws instead of refusing, and the copy promising those classes was false.
+      A test that cannot set up its own scenario is telling you something about
+      the product, not about the test.
+- [ ] **Report a two-answer decision; do not pick one quietly.** Either the
+      schema is right and the form should stop offering grades 1 and 5, or the
+      form is right and the constraint needs a migration. Both are real product
+      directions with different costs. Ship the part that is correct under either
+      answer, correct the copy that is false under both, pin the contradiction in
+      a test, and say plainly that the choice is still open.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

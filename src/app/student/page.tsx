@@ -5,11 +5,12 @@ import { requireStudent } from "@/lib/auth/session";
 import { listAssignments } from "@/lib/repo/classroom";
 import { listAttemptsForStudent, listBenchmarksForStudent } from "@/lib/repo/progress";
 import { summarizeStudent } from "@/lib/domain/evidence";
-import { nextBenchmarkFor } from "@/lib/domain/eligibility";
+import { classMayBeAssigned, nextBenchmarkFor } from "@/lib/domain/eligibility";
 import { getSchool } from "@/lib/repo/school";
 import { schoolHasLapsed } from "@/lib/auth/subscription-gate";
 import { COMPETENCIES } from "@/content/competencies";
 import { ALL_SESSIONS, FOUNDATIONS, MISSION_BY_ID, MISSIONS } from "@/content/missions";
+import type { Mission } from "@/content/types";
 import { COMPETENCY_BY_ID } from "@/content/competencies";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
 import { BadgeSticker } from "@/components/art/BadgeSticker";
@@ -65,14 +66,26 @@ export default async function StudentHome() {
   const benchmarks = listBenchmarksForStudent(db, student.id);
   // The window the school has open, not "whichever one is unfinished".
   const school = getSchool(db, classroom.school_id);
-  const nextCheckIn = nextBenchmarkFor(benchmarks, school?.benchmark_window ?? "closed");
+  // Sprint 85: the check-ins measure the nine skills the grades 2-4 core
+  // missions teach, so they are not offered outside that band.
+  const nextCheckIn = nextBenchmarkFor(
+    benchmarks,
+    school?.benchmark_window ?? "closed",
+    classroom.grade,
+  );
 
   // Two lists, because they are two different things. First Look is the way
   // in for a child who has not been told what AI is; the core missions are the
   // assessed curriculum. Counting them together would tell a first grader they
   // had finished 3 of 30 when their teacher has only opened three.
-  const assignedFoundations = FOUNDATIONS.filter((m) => assignedIds.has(m.id));
-  const assignedMissions = MISSIONS.filter((m) => assignedIds.has(m.id));
+  // Assigned **and** in this class's grade band. An out-of-band row made before
+  // sprint 85's rule is not listed, so a child is never offered a card that
+  // `/student/play/[slug]` would refuse. The row is left alone: a teacher
+  // removes it, and nothing a child did is touched.
+  const playable = (m: Mission) =>
+    assignedIds.has(m.id) && classMayBeAssigned(classroom.grade, m);
+  const assignedFoundations = FOUNDATIONS.filter(playable);
+  const assignedMissions = MISSIONS.filter(playable);
   const assignedAll = [...assignedFoundations, ...assignedMissions];
   // First Look comes first in this list, so an unfinished introduction is
   // always what Up next offers before any core mission.

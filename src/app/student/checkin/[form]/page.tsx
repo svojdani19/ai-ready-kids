@@ -40,6 +40,7 @@ export default async function CheckInPage({
         window: school.benchmark_window,
         form: content.form,
         records: listBenchmarksForStudent(db, student.id),
+        grade: classroom?.grade,
       }),
   );
   if (!open) redirect("/student");

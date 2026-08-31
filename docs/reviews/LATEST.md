@@ -59,6 +59,75 @@ module was titled *"What grades 1 to 5 actually need"*, and that title renders i
 the module list on a buyer page. Retitled to "What 6 to 11 year olds actually
 need", the body's own opening, with a test covering it.
 
+### The acceptance correction: the contract was not enforced by the product
+
+The first pass wrote a truthful scope and enforced it nowhere. Verified: the
+library tagged the band **only when `isFoundation`** — every core card untagged,
+while Plans said "every mission card says its grade band on its face"; it offered
+an `AssignToggle` for every class on every card; the class page rendered all 27
+core toggles regardless of grade; `setAssignmentAction` never checked the grade;
+and `missionAccessFor`/`canTakeBenchmark` had never seen one.
+
+**One derived predicate**, `classMayBeAssigned(grade, mission)`, keyed on the
+mission's own `segment`/`track`/`gradeBand` and `CORE_GRADE_BAND` rather than a
+list of ids. Enforced at four layers: the action refuses `assigned: true` naming
+both sides (**`assigned: false` stays open** so a stale row can be cleared rather
+than stranded); the student map lists only in-band assigned missions; play and
+the mission actions fail closed **including on a completed replay**; and the
+check-ins close outside the band. Historical rows are hidden and refused, never
+deleted. Both teacher surfaces now band every card and replace an ineligible
+switch with a stated `Grades 1-2 · unavailable for Grade 3`.
+
+### The contradiction it ran into, reported rather than resolved
+
+Writing the tests surfaced something larger:
+
+```
+schema.ts        grade INTEGER NOT NULL CHECK (grade BETWEEN 2 AND 4)
+teacher.ts:123   if (![1, 2, 3, 4, 5].includes(grade)) …
+CreateClassForm  <option value="1">Grade 1</option> … <option value="5">
+```
+
+An administrator choosing Grade 1 gets no message — the action **throws**
+`CHECK constraint failed: grade BETWEEN 2 AND 4`, verified end to end. **Grade 1
+and grade 5 classes cannot be created at all**, and the demo database holds only
+2, 3 and 4. So sprint 85's own copy — "a grade 1 or grade 5 class can be created
+and taught First Look" — was false.
+
+Resolving it is a product decision with two opposite answers (the schema is right
+and the form should stop offering those grades, or the form is right and the
+constraint needs a migration), both outside "narrowly about grade eligibility".
+This correction makes neither choice. It **corrects the false copy** — Plans and
+the README now say *"This build creates classes in grades 2 to 4 only"* — and
+**pins the contradiction in tests** so it is met deliberately.
+
+The eligibility invariant is correct under either resolution, which is why it
+ships.
+
+### Acceptance for the correction
+
+`tests/grade-eligibility.test.ts`, 35 tests. The pure rule is asserted for **all
+five grades**; the end-to-end paths use the three that can exist — not a
+weakening, because **a grade 2 class and the grades 3–5 track are a real mismatch
+a teacher can produce today**, and that is what the action and child tests use.
+Covers: the rule per grade; in-band assignment written, wrong track refused
+naming mission, band and grade with nothing written, and unassigning still
+allowed; a stale row absent from the map, redirecting from `/student/play`,
+throwing in `beginMission`, **and surviving as a row**; check-ins per grade; both
+surfaces banding every card and consulting the rule; and the contradiction.
+
+**Mutation-checked four ways:** dropping the server check fails 2; refusing
+unassignment too fails 1; letting a stale row open for a child fails 3; dropping
+the check-in grade fails 2.
+
+Browser: the brief asked for grades 1, 3 and 5 — grades 1 and 5 cannot be
+created, so the contrast was driven with grades 2 and 3. **Grade 3 library** at
+both widths: 36 bands, `Grades 1-2 · unavailable for Grade 3` on three sessions,
+30 toggles, label 204px at 768, `overflow: false`. **Grade 2 library**: the mirror
+image. **Grade 2 class page**: 30 banded rows, 30 toggles, no unavailable state —
+correct, since that page already scopes First Look to one track. **Child map**: 22
+cards unchanged at both widths. Demo data unchanged.
+
 ### Acceptance
 
 `tests/program-scope.test.ts`, 21 tests: the derivation; seven buyer surfaces
@@ -80,7 +149,7 @@ content model, and the failure names the cause.
 ```
 typecheck  ✓
 lint       0 errors, 2 pre-existing warnings
-tests      999 passed (36 files)
+tests      1034 passed (37 files)
 build      ✓ Compiled successfully
 ```
 
@@ -105,9 +174,13 @@ changed. **Demo data unchanged**: this sprint reads and writes no records.
 3. **`PROGRAM_SCOPE_SENTENCE` is derived, asserted and rendered nowhere.** The
    surfaces interpolate the parts, which reads better — so the composed sentence
    is currently dead weight and should either be used or removed.
-4. **Grade 1 and 5 support is thin, and this sprint made that legible rather
-   than fixing it.** Whether those grades should have an assessed track is a
-   product decision deliberately not made here.
+4. **Grade 1 and 5 classes cannot be created**, and this sprint did not decide
+   whether the schema or the form is right. The only live inconsistency in this
+   list rather than a limitation — and it is the next decision somebody has to
+   make deliberately.
+5. **`missionAccessFor` and `canTakeBenchmark` take the grade optionally.** Every
+   caller supplies it and a test pins the absent case, but a new caller that
+   forgets gets the unbounded behaviour.
 
 ---
 

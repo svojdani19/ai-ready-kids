@@ -137,6 +137,8 @@ describe("no buyer-facing surface sells an annual grades 1 to 5 program", () => 
 
 describe("the plans page says what is purchased", () => {
   const plansSource = read("src/app/(site)/plans/page.tsx");
+  /** JSX wraps prose across lines, so sentence assertions read it unwrapped. */
+  const plansProse = plansSource.replace(/\s+/g, " ");
   const features = PLANS.flatMap((p) => p.features);
 
   it("qualifies the core missions and the check-ins by grade", () => {
@@ -159,11 +161,17 @@ describe("the plans page says what is purchased", () => {
   });
 
   it("states the scope in prose as well as in a bullet", () => {
-    expect(plansSource).toMatch(/What a subscription is for, and which grades/);
-    expect(plansSource).toMatch(/First Look is included and is not part of that/);
-    expect(plansSource).toMatch(/records no skill evidence/);
-    // The grade a buyer would be surprised by, said out loud.
-    expect(plansSource).toMatch(/grade 1 or grade 5 class/);
+    expect(plansProse).toMatch(/What a subscription is for, and which grades/);
+    expect(plansProse).toMatch(/First Look is included and is not part of that/);
+    expect(plansProse).toMatch(/records no skill evidence/);
+    // The enforcement, stated where a buyer reads the promise.
+    expect(plansProse).toMatch(/cannot be assigned, listed for a child, opened or resumed/);
+    expect(plansProse).toMatch(/Every mission card shows its grade band/);
+    // The grade a buyer would be surprised by, said out loud — and stated as
+    // what the build does, not as a capability it lacks. Sprint 85's acceptance
+    // correction found that grade 1 and 5 classes cannot be created at all.
+    expect(plansSource).toContain("This build creates classes in {CORE_GRADE_LABEL} only");
+    expect(plansProse).toMatch(/grade 1 and grade 5 classes cannot be created here/);
   });
 
   it("builds those claims from the derived values, not from typed numbers", () => {

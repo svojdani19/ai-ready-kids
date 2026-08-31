@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { listAssignments } from "@/lib/repo/classroom";
-import { missionAccessFor } from "@/lib/domain/eligibility";
+import { getClass, listAssignments } from "@/lib/repo/classroom";
+import { classMayBeAssigned, missionAccessFor } from "@/lib/domain/eligibility";
 import { getDb } from "@/lib/db";
 import { getMission } from "@/content/missions";
 import { requireStudent } from "@/lib/auth/session";
@@ -33,10 +33,14 @@ export default async function PlayMissionPage({
   // Being a shipped mission is not the same as being open to this child. The
   // page used to accept any slug, so an unassigned mission could be played and
   // its evidence recorded by typing a URL.
+  // And being assigned is not the same as being in this class's grade band. A
+  // row made before sprint 85's rule existed must not open the mission.
+  const classroom = getClass(db, student.class_id);
   const access = missionAccessFor({
     missionId: mission.id,
     assignedMissionIds: listAssignments(db, student.class_id).map((a) => a.mission_id),
     hasCompleted: Boolean(getAttempt(db, student.id, mission.id)?.completed_at),
+    eligible: classroom ? classMayBeAssigned(classroom.grade, mission) : false,
   });
   if (access === "denied") redirect("/student");
 
