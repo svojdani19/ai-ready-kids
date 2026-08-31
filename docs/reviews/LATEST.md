@@ -18,8 +18,10 @@ likely to be.
 All 27 core missions are `gradeBand: "2-4"` — 27 of 27, nothing else — and the
 check-ins, nine-skill evidence, badges and school report all key off them. First
 Look is two tracks of three, a class runs one, and it records no skill evidence
-by design. So the assessed product is **grades 2 to 4**, and a grade 1 or grade 5
-class gets three introductory sessions that move no competency figure.
+by design. So the assessed product is **grades 2 to 4** — which, after the
+acceptance corrections below, is also the only band a class can be created in.
+First Look's two tracks are authored **reading levels**, not evidence that a
+class exists at every grade they name.
 
 Six buyer-facing surfaces said otherwise: the README opening ("students in
 **grades 1–5**"), the root metadata, the `SiteFooter` ("An annual subscription…
@@ -28,11 +30,13 @@ story missions*), the Curriculum description ("**Six** First Look sessions for
 **grades 1 to 5**" — wrong range *and* wrong per-class count), and the Plans card
 selling "**All 27 missions and both check-in forms**" with no grade qualifier.
 
-**The consequence:** a grade 1 or grade 5 buyer prices an annual subscription for
-their students, buys it, and finds every library card saying grades 2 to 4 and
-their own track carrying no evidence. A failed setup in front of a class, a
-teacher left explaining it, and a district renewal objection — the public scope
-conflicts with the product's own content model.
+**The consequence, as the copy then stood:** a grade 1 or grade 5 buyer would
+price an annual subscription for their students, buy it, and find every library
+card saying grades 2 to 4 and their own track carrying no evidence. A failed
+setup in front of a class, a teacher left explaining it, and a district renewal
+objection — the public scope conflicting with the product's own content model.
+(The failure was in fact sharper than that, as the second acceptance correction
+below found: those classes could not be created at all.)
 
 ### The correction
 
@@ -48,10 +52,12 @@ Every implicated surface now names the assessed band and describes First Look as
 an introduction with per-class counts. Plans gains a section — **"What a
 subscription is for, and which grades"** — stating that First Look is included
 and *is not part of* the assessed program, that it records no skill evidence,
-and plainly: *"a grade 1 or grade 5 class can be created and taught First Look,
-and that is what it gets: three sessions, not a year of assessed practice. If you
-are buying for those grades, buy it for that."* Nothing was removed — grade 1 and
-5 classes, First Look and the curriculum are untouched.
+and — **in this first pass, since superseded** — a paragraph beginning *"a grade 1
+or grade 5 class can be created and taught First Look…"*. That sentence was
+written before the boundary was settled and is **not on the page**: the
+acceptance corrections below removed it, because classes cannot be created in
+those grades. Nothing was removed from the product — First Look and the
+curriculum are untouched.
 
 **One thing the browser found that the source sweep did not:** `/approach` still
 rendered "grades 1 to 5" after every file was corrected — the orientation's first
@@ -59,7 +65,7 @@ module was titled *"What grades 1 to 5 actually need"*, and that title renders i
 the module list on a buyer page. Retitled to "What 6 to 11 year olds actually
 need", the body's own opening, with a test covering it.
 
-### The acceptance correction: the contract was not enforced by the product
+### First acceptance correction: the contract was not enforced by the product
 
 The first pass wrote a truthful scope and enforced it nowhere. Verified: the
 library tagged the band **only when `isFoundation`** — every core card untagged,
@@ -78,7 +84,7 @@ check-ins close outside the band. Historical rows are hidden and refused, never
 deleted. Both teacher surfaces now band every card and replace an ineligible
 switch with a stated `Grades 1-2 · unavailable for Grade 3`.
 
-### The contradiction it ran into, now closed
+### Second acceptance correction: the contradiction it exposed, closed
 
 Writing the enforcement tests surfaced something larger:
 
@@ -140,7 +146,7 @@ change it was guarding. Rescoped to the lede.
 
 ### Acceptance for the correction
 
-`tests/grade-eligibility.test.ts`, 35 tests. The pure rule is asserted for **all
+`tests/grade-eligibility.test.ts`, 40 tests. The pure rule is asserted for **all
 five grades**; the end-to-end paths use the three that can exist — not a
 weakening, because **a grade 2 class and the grades 3–5 track are a real mismatch
 a teacher can produce today**, and that is what the action and child tests use.
@@ -171,12 +177,14 @@ cards unchanged at both widths. Demo data unchanged.
 
 ### Acceptance
 
-`tests/program-scope.test.ts`, 21 tests: the derivation; seven buyer surfaces
-against a regex matching the **range attached to what is sold** rather than
-banning a phrase that is legitimately used to describe support; the band named
-where the product is described; no orientation title carrying the range; the
-Plans bullets and prose; that Plans is built from the derived values; and that
-the four already-accurate surfaces are unchanged.
+`tests/program-scope.test.ts`, **30 tests** as it now stands: the derivation;
+seven buyer surfaces against a regex matching the **range attached to what is
+sold** rather than banning a phrase that is legitimately used to describe
+support; the band named where the product is described; no orientation title
+carrying the range; the Plans bullets and prose; that Plans is built from the
+derived values; that the already-accurate surfaces are unchanged; and — added by
+the third acceptance correction — a seven-case matrix asserting no buyer surface
+offers a class in an uncreatable grade, plus two tests on the curriculum hero.
 
 **Mutation-checked five ways.** The copy mutations fail one test each, naming the
 file. The two that matter are structural: changing **one core mission to
@@ -197,7 +205,9 @@ build      ✓ Compiled successfully
 Browser at **1280×800** and **768×1024** with metadata read from the live pages.
 `/curriculum`: the new `h1`, the corrected meta description, no "grades 1 to 5"
 anywhere. `/plans`: both corrected bullets, 672px inside a 768px viewport,
-wrapping readably, plus the scope section and the grade 1 or 5 paragraph. `/`
+wrapping readably, plus the scope section. (That pass also recorded a "grade 1 or
+5 paragraph"; it was removed by the acceptance corrections below and Plans
+carries no such paragraph now.) `/`
 (footer-bearing): corrected root meta, footer naming grades 2 to 4 and both
 tracks. `/approach`: module 1 retitled, no range. `overflow: false` everywhere,
 screenshots clean. No child, teacher or admin workflow re-verified — none
