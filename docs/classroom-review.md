@@ -1150,6 +1150,29 @@ one of them has not tested the thing that was built.
       and delete the test that pinned the permissive behaviour, because it
       documents the hole.
 
+- [ ] **A guard's coverage is part of the guard.** The scope check was a careful
+      regex over a hand-written list of seven files — and the list was already
+      missing four marketing pages including the home page. Getting the pattern
+      right while the file list drifts is a guard that looks rigorous and covers
+      whatever somebody last remembered. Enumerate the directory; name only what
+      cannot be enumerated, and assert those names still resolve.
+- [ ] **Writing a lesson down is not implementing it.** The previous sprint
+      recorded "the sweep that missed this was a grep over named files" as its
+      top gap and left the guard as a grep over named files. A known gap in a
+      review is a to-do, not a mitigation, and the next reviewer reads it as
+      though something was done.
+- [ ] **A restore check that runs before the last interaction proves nothing.**
+      The demo database was verified clean at the end of a sprint and then gained
+      an assignment row from a browser session that was still open. The sweep was
+      honest and mistimed. Verify after the browser is genuinely done — and
+      better, make it a script that diffs against the seed rather than a query
+      written from memory each time.
+- [ ] **Check the column filter in your own audit query.** A sweep matching
+      `^assigned` also matches `assigned_by`, a user id. It produced no false
+      positives with a `LIKE '2026-08-3%'` prefix purely by luck, and reported all
+      65 rows as recent the moment the comparison changed to a range. Print the
+      columns a sweep actually checked, so the reader can see what it looked at.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

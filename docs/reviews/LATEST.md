@@ -7,6 +7,100 @@ likely to be.
 
 ---
 
+## Sprint 86 — the guard's coverage was a list, and the list was wrong
+
+- **Reviewed against:** HEAD `58cee66`
+- **Repository:** <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-09-01-sprint-86.md`](2026-09-01-sprint-86.md)
+
+### The finding
+
+Sprint 85 ended with this at the top of its own gaps: *"the pattern runs over
+seven named files; a surface added tomorrow is not in the list."* That
+understated it. The list was **already wrong by four of eight marketing pages** —
+it covered `approach`, `curriculum`, `plans` and `for-schools` while **the
+marketing home page**, `demo`, `benchmark` and `privacy` had no scope guard at
+all. The home page is the most-read buyer surface in the product.
+
+**This is the defect that produced the last three corrections.** The curriculum
+hero kept offering "a grade 1 or grade 5 class" through three consecutive passes
+because each sweep covered the surfaces its own finding named. Sprint 85 wrote
+the lesson down — *"the sweep that missed this was a grep over named files"* —
+and then left the guard as a grep over named files.
+
+**Latent, not live:** all four unguarded pages were read and none makes a
+grade-scope claim, so this fixes the mechanism rather than a buyer-facing lie.
+
+### The correction
+
+The marketing route group is **walked from disk**. Coverage goes from **7
+hand-written paths to 14 surfaces** — nine `page.tsx`/`layout.tsx` files under
+`(site)`, plus five that cannot be enumerated from it and stay named: `README.md`,
+the root `layout.tsx`, `SiteHeader`, `SiteFooter`, `marketing/Page.tsx`. Both
+guards — the annual-range one and the uncreatable-class one — now run over all
+fourteen, and the five named files are **asserted to exist**, so a rename fails
+here rather than quietly shrinking coverage.
+
+### Acceptance
+
+**47 tests** (was 30), three of them about the enumeration: the four pages the old
+list missed are covered; the walk finds every marketing page on disk; every named
+non-route file is present and readable.
+
+**Mutation-checked three ways.** Adding `src/app/(site)/pilot/page.tsx` selling
+*"an annual subscription for grades 1 to 5, with a grade 5 class on the upper
+track"* fails **2**, both naming the new file and quoting the match — a page that
+did not exist when the guard was written, which is the whole point. Renaming a
+named surface fails 3 including *"is named but missing"*. Reverting to a
+hand-written list fails 2, naming the home page as unchecked.
+
+### Evidence
+
+```
+typecheck  ✓
+lint       0 errors, 2 pre-existing warnings
+tests      1065 passed (37 files)
+build      ✓ Compiled successfully
+```
+
+**No browser check** — one modified test file, no product code, copy or content.
+
+### Demo data: a row I left behind, and a sweep that would not have found it
+
+The database had **drifted**: audit log 7, assignments 66, where the last three
+sprints each verified 6 and 65. The extra rows were a `mission.assigned` — *"The
+Study Group assigned to Room 12"* — and its assignment row, timestamped
+`2026-08-31T15:46:38Z` during the sprint 85 eligibility browser pass. Mine, left
+behind. Removed; back to 6 and 65, Room 12 at its seeded 21.
+
+**The end-of-sprint sweep reported zero recent rows, and this row is dated inside
+that range** — so it was written after the sweep ran. That is the flaw: the check
+runs once, before the browser session is actually over, and proves nothing about
+what follows.
+
+**The sweep's column filter was also sloppy**, matching `^assigned` and so
+catching `assigned_by`, a user-id column. The `like '2026-08-3%'` pattern hid it
+by luck; a `>=` range comparison reported all 65 assignments as recent. It now
+walks only columns ending `_at` and prints which twelve it checked. Zero rows
+dated 2026-08-30 or later across all of them.
+
+### Where to push hardest
+
+1. **The restore check is a habit, not a mechanism.** Nothing compares the demo
+   database against its seeded state — it is a script written from memory at the
+   end of a sprint, which is exactly how that row survived. A `demo:verify` that
+   diffs against a seeded snapshot would make it real, and would have caught this
+   without me noticing by eye.
+2. **`NON_ROUTE_SURFACES` is still five hand-written paths.** Unavoidable, since
+   they are outside the route group — but a sixth buyer-facing component added
+   elsewhere would be unguarded.
+3. **The guards are still regexes.** Enumeration fixed *which* files are checked,
+   not *how well*. A claim phrased outside both patterns passes on all fourteen.
+4. **`layout.tsx` counting as a buyer surface is a judgment in one line of
+   code**, not a tested decision.
+
+---
+
 ## Sprint 85 — the repository sold two different products
 
 - **Reviewed against:** HEAD `af18893`

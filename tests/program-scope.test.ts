@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { MISSIONS, ALL_SESSIONS } from "@/content/missions";
 import { FOUNDATIONS, FOUNDATIONS_BY_TRACK, FOUNDATION_TRACKS } from "@/content/foundations";
@@ -34,16 +34,47 @@ import { PLANS } from "@/app/(site)/plans/page";
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), "utf8");
 
-/** Every surface a buyer reads before deciding, plus the README. */
-const BUYER_SURFACES = [
+/**
+ * Every surface a buyer reads before deciding, **enumerated from disk**.
+ *
+ * This was a hand-written list of seven files, and it was already wrong by four:
+ * it covered `approach`, `curriculum`, `plans` and `for-schools` while the
+ * marketing home page, `demo`, `benchmark` and `privacy` were guarded by
+ * nothing. That is the defect that let the curriculum hero keep offering a
+ * grade 1 or grade 5 class through three consecutive corrections — each sweep
+ * covered the surfaces its own finding named, and the list never grew.
+ *
+ * So the route group is walked instead. A page added tomorrow is checked the day
+ * it exists, without anybody remembering to add it here. The three files outside
+ * the route group are named because they cannot be enumerated from it, and they
+ * are asserted to exist so a rename cannot silently drop one.
+ */
+function marketingPages(dir: string, base: string): string[] {
+  const out: string[] = [];
+  for (const entry of readdirSync(join(process.cwd(), dir))) {
+    const rel = `${dir}/${entry}`;
+    if (statSync(join(process.cwd(), rel)).isDirectory()) {
+      out.push(...marketingPages(rel, base));
+    } else if (entry === "page.tsx" || entry === "layout.tsx") {
+      out.push(rel);
+    }
+  }
+  return out;
+}
+
+/** Buyer-facing copy that does not live under the marketing route group. */
+const NON_ROUTE_SURFACES = [
   "README.md",
   "src/app/layout.tsx",
+  "src/components/SiteHeader.tsx",
   "src/components/SiteFooter.tsx",
-  "src/app/(site)/approach/page.tsx",
-  "src/app/(site)/curriculum/page.tsx",
-  "src/app/(site)/plans/page.tsx",
-  "src/app/(site)/for-schools/page.tsx",
+  "src/components/marketing/Page.tsx",
 ] as const;
+
+const BUYER_SURFACES: readonly string[] = [
+  ...NON_ROUTE_SURFACES,
+  ...marketingPages("src/app/(site)", "src/app/(site)").sort(),
+];
 
 describe("the scope is derived from the content, not asserted beside it", () => {
   it("every core mission is in one grade band, and that band is the label", () => {
@@ -103,6 +134,39 @@ describe("the scope is derived from the content, not asserted beside it", () => 
  */
 const UNQUALIFIED_ANNUAL_RANGE =
   /(annual|subscription|program|platform|missions|assessed|check-ins?)[^.]{0,80}\bgrades? 1[\s–-]+(to\s+)?5\b|\bgrades? 1[\s–-]+(to\s+)?5\b[^.]{0,80}(annual|subscription|assessed|twenty-seven|27 )/i;
+
+describe("the buyer surfaces are enumerated, not listed", () => {
+  it("walks the marketing route group rather than trusting a list", () => {
+    // The four this list used to miss, named so a regression is legible.
+    for (const page of [
+      "src/app/(site)/page.tsx",
+      "src/app/(site)/demo/page.tsx",
+      "src/app/(site)/benchmark/page.tsx",
+      "src/app/(site)/privacy/page.tsx",
+    ]) {
+      expect(BUYER_SURFACES, `${page} is not being checked`).toContain(page);
+    }
+    // And the four it did cover.
+    for (const page of ["approach", "curriculum", "plans", "for-schools"]) {
+      expect(BUYER_SURFACES).toContain(`src/app/(site)/${page}/page.tsx`);
+    }
+  });
+
+  it("finds every marketing page on disk", () => {
+    const onDisk = marketingPages("src/app/(site)", "src/app/(site)");
+    expect(onDisk.length).toBeGreaterThanOrEqual(8);
+    for (const file of onDisk) expect(BUYER_SURFACES).toContain(file);
+  });
+
+  it("still covers the surfaces outside the route group", () => {
+    // These cannot be walked from `(site)`, so they are named — and asserted to
+    // exist, because a rename would otherwise drop one silently.
+    for (const file of NON_ROUTE_SURFACES) {
+      expect(BUYER_SURFACES).toContain(file);
+      expect(() => read(file), `${file} is named but missing`).not.toThrow();
+    }
+  });
+});
 
 describe("no buyer-facing surface sells an annual grades 1 to 5 program", () => {
   it.each(BUYER_SURFACES.map((f) => [f] as const))("%s", (file) => {
