@@ -21,7 +21,29 @@ const SCHOOL_ID = "sch_brightwood";
 const SCHOOL_YEAR = "2025-2026";
 // Subscription dates: when money changes hands.
 const TERM_START = "2025-08-18";
-const TERM_RENEWS = "2026-09-01";
+/**
+ * One year from the day the database is seeded, not a fixed date.
+ *
+ * This was `"2026-09-01"`, and on 2026-09-02 UTC the demo school's subscription
+ * simply expired: 56 tests began failing on a suite nobody had touched, and
+ * every page of the demo started saying "This subscription has ended" with the
+ * curriculum gated behind sprint 81's entitlement check. A demonstration that
+ * dies on a calendar date is a demonstration that will be broken the first time
+ * somebody opens it after that date — which, for a build meant to be shared
+ * with schools, is the worst possible failure.
+ *
+ * The academic dates below stay fixed on purpose. They describe a completed
+ * 2025–26 school year, which is the fiction the seeded attempt history tells,
+ * and sprint 32 established that conflating "when the children arrive" with
+ * "when money changes hands" is its own defect. Only the commercial term
+ * follows the clock, so a freshly seeded school is always one a teacher could
+ * actually use.
+ */
+const TERM_RENEWS = (() => {
+  const renews = new Date();
+  renews.setUTCFullYear(renews.getUTCFullYear() + 1);
+  return renews.toISOString().slice(0, 10);
+})();
 // Academic dates: when the children arrive and go home. Deliberately different
 // from the two above, because conflating them was the sprint 32 defect and a
 // seed where they coincided would hide it.

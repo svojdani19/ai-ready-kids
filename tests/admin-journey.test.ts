@@ -815,7 +815,13 @@ describe("the academic year is not the subscription term", () => {
     // The old behavior anchored every class to the renewal date, which for
     // this cohort would have been 2027-09-01 — nine months before its own year
     // had even finished its retention window.
-    const fromOldTerm = addMonths(s.term_renews_on, s.retention_months);
+    //
+    // Written out rather than read from the school, because the seeded term now
+    // follows the clock: it renews a year from the day the database is seeded,
+    // so that a shared demo is never a lapsed one. Deriving this comparison
+    // from a moving date made the test pass or fail on what day it ran, which
+    // is the opposite of what it is checking.
+    const fromOldTerm = addMonths("2026-09-01", s.retention_months);
     const fromOwnYear = purgeDateForClass(nextYear, s.retention_months)!;
     expect(fromOwnYear.getTime()).toBeGreaterThan(fromOldTerm.getTime());
 
