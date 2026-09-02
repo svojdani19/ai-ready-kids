@@ -19,7 +19,7 @@ Railway, Render and Fly all work. The config here is Railway's.
 | `Dockerfile` | Node 24 build, `output: "standalone"`, database path pointed at `/data` |
 | `railway.json` | tells Railway to build from the Dockerfile |
 | `.env.example` | the two variables that matter, with what happens if each is unset |
-| `src/middleware.ts` | the site password, covering every route |
+| `src/middleware.ts` | HTTP Basic auth, covering every route **and every asset** |
 
 ## Steps
 
@@ -57,6 +57,10 @@ railway variables --set "AIRK_SITE_PASSWORD=choose-something-here"
 password in front of the whole site — pick it now; anyone you send the link to
 needs it.
 
+There is an optional third, `AIRK_SITE_USER`. Leave it unset and **any username
+works**, so the only thing to pass on is the password. Set it if you want a
+username too.
+
 **4. Deploy**
 
 ```bash
@@ -74,10 +78,11 @@ classes, 90 students and a year of fictional attempt history. Nothing to import.
 
 ## What a visitor sees
 
-1. The password page — and nothing else. Not the landing page, not the plans
-   page, not a family take-home. Every route is behind it.
-2. After the password, the site as you know it, landing on whatever link they
-   were sent rather than being bounced to the home page.
+1. The browser's own password prompt, before a single byte of the site is
+   served. Not the landing page, not the plans page, not a family take-home —
+   and not a stylesheet or a script either. Any username, then the password.
+2. After the password, the site as you know it, on whatever link they were sent.
+   The browser remembers the credential for the rest of the session.
 3. The sign-in page offers one-click **student**, **teacher** and
    **administrator** demo entry. Everyone past the password can be an
    administrator. That is deliberate for a demo — it is what makes it explorable
@@ -96,8 +101,13 @@ Or delete the volume and redeploy — first request re-seeds.
 
 ## Changing the password
 
-Update `AIRK_SITE_PASSWORD` and redeploy. Every existing cookie stops working
-immediately, because the cookie is signed with the password itself.
+Update `AIRK_SITE_PASSWORD` and redeploy. The old one stops working at once —
+there is no cookie or session to expire, because every single request carries
+the credential.
+
+To close a visitor's own access sooner, they close the browser; there is no
+sign-out for Basic auth. That is the honest limitation of this approach and the
+reason it suits a preview rather than a product.
 
 ## Two things worth knowing
 
@@ -106,9 +116,12 @@ from the day its database is created, so a fresh deploy is never a lapsed
 school. This was a fixed date until it expired on 2026-09-02 and turned the whole
 demo into a subscription-ended notice.
 
-**`/_next/` is served without the password.** The gate page is an ordinary Next
-route and needs its own stylesheet and chunks. Build artifacts are therefore
-reachable by anyone who can guess a hashed filename, and a chunk can contain page
-copy. It is the standard shape for this kind of curtain. If the requirement is
-that no byte is reachable, the answer is HTTP basic auth at a proxy in front of
-the app rather than middleware inside it — say so and I will set that up instead.
+**Nothing at all is served without the password.** This started as a styled
+password page, which forced `/_next/` to be public so the page could load its own
+stylesheet — and a Next chunk can contain page copy. Basic auth needs no assets
+before the prompt, so the allow-list is empty and the matcher is `/:path*`.
+Verified against a production build: every route **and a hashed JS chunk** return
+`401` without credentials, and `200` with them.
+
+The cost is the browser's plain dialog instead of a designed page, and no
+sign-out. For a preview handed to a named school, that is the right trade.

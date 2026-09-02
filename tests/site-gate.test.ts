@@ -1,36 +1,45 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { NextRequest } from "next/server";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-  GATE_COOKIE,
+  credentialsAreValid,
+  decodeBasicAuth,
   gateEnabled,
-  gateToken,
-  gateTokenIsValid,
-  isAlwaysAllowed,
+  GATE_REALM,
+  siteUser,
   sitePassword,
 } from "@/lib/auth/site-gate";
 
 /**
- * A shared password in front of the whole deployment.
+ * HTTP Basic authentication in front of the whole deployment.
  *
- * Not part of the product's authentication and easy to confuse with it: staff
- * sign in by email and children join by class code, and both of those are the
- * product. This is a curtain over the entire site — marketing pages, sign-in,
- * the staff and student areas, and the statically generated family take-homes —
- * so a build can be handed to a named school without being open to anybody who
- * finds the URL.
+ * Not the product's authentication and easy to confuse with it: staff sign in
+ * by email and children join by class code, and both of those are the product.
+ * This is a curtain over the entire site so a build can be handed to a named
+ * school without being open to anybody who finds the URL.
  *
- * The property that matters is that it covers **everything**, which is why it
- * lives in middleware rather than in a layout: `/family/[slug]` is prerendered
- * and never calls a server component, and the marketing pages are their own
- * route group.
+ * The property under test is **total coverage**. An earlier version was a
+ * styled `/gate` page, which forced `/_next/` to be served unauthenticated so
+ * the page could style itself — and a Next chunk can contain page copy. Basic
+ * auth needs no assets before the prompt, so the allow-list is empty and the
+ * matcher covers every path. These tests exist to stop that seam reopening.
  */
 
-const ORIGINAL = process.env.AIRK_SITE_PASSWORD;
+const ORIGINAL_PASSWORD = process.env.AIRK_SITE_PASSWORD;
+const ORIGINAL_USER = process.env.AIRK_SITE_USER;
+
+const basic = (user: string, password: string) =>
+  `Basic ${Buffer.from(`${user}:${password}`, "utf8").toString("base64")}`;
 
 afterEach(() => {
-  if (ORIGINAL === undefined) delete process.env.AIRK_SITE_PASSWORD;
-  else process.env.AIRK_SITE_PASSWORD = ORIGINAL;
+  for (const [key, value] of [
+    ["AIRK_SITE_PASSWORD", ORIGINAL_PASSWORD],
+    ["AIRK_SITE_USER", ORIGINAL_USER],
+  ] as const) {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
 });
 
 describe("the gate is off unless it is configured", () => {
@@ -49,142 +58,189 @@ describe("the gate is off unless it is configured", () => {
     }
   });
 
-  it("is on once a password is set", () => {
-    process.env.AIRK_SITE_PASSWORD = "a-shared-password";
-    expect(gateEnabled()).toBe(true);
+  it("refuses every credential while it is off, rather than waving them through", () => {
+    delete process.env.AIRK_SITE_PASSWORD;
+    // The middleware short-circuits first, but a helper that returned true here
+    // would be a trap for the next caller.
+    expect(credentialsAreValid(basic("anyone", "anything"))).toBe(false);
   });
 });
 
-describe("the cookie proves the password without carrying it", () => {
-  it("accepts a token minted from the current password", async () => {
+describe("credentials", () => {
+  it("accepts the password under any username by default", () => {
     process.env.AIRK_SITE_PASSWORD = "a-shared-password";
-    expect(await gateTokenIsValid(await gateToken("a-shared-password"))).toBe(true);
-  });
-
-  it("is not the password, so the cookie cannot leak it", async () => {
-    process.env.AIRK_SITE_PASSWORD = "a-shared-password";
-    const token = await gateToken("a-shared-password");
-    expect(token).not.toContain("a-shared-password");
-    expect(token).toMatch(/^[0-9a-f]{64}$/);
-  });
-
-  it("rejects a token minted from a different password", async () => {
-    process.env.AIRK_SITE_PASSWORD = "a-shared-password";
-    expect(await gateTokenIsValid(await gateToken("some-other-password"))).toBe(false);
-  });
-
-  it("rejects nothing, junk and a truncated token", async () => {
-    process.env.AIRK_SITE_PASSWORD = "a-shared-password";
-    const valid = await gateToken("a-shared-password");
-    for (const bad of [undefined, "", "deadbeef", valid.slice(0, -1), `${valid}0`]) {
-      expect(await gateTokenIsValid(bad), `accepted ${String(bad)}`).toBe(false);
+    delete process.env.AIRK_SITE_USER;
+    // One secret to pass on, and nobody stuck at the dialog wondering what to
+    // type on the top line.
+    for (const user of ["", "preview", "someone@example.com"]) {
+      expect(credentialsAreValid(basic(user, "a-shared-password"))).toBe(true);
     }
   });
 
-  it("stops accepting old cookies when the password changes", async () => {
+  it("rejects a wrong password under any username", () => {
+    process.env.AIRK_SITE_PASSWORD = "a-shared-password";
+    for (const user of ["", "preview", "admin"]) {
+      expect(credentialsAreValid(basic(user, "not-the-password"))).toBe(false);
+    }
+  });
+
+  it("requires the username too, once one is configured", () => {
+    process.env.AIRK_SITE_PASSWORD = "a-shared-password";
+    process.env.AIRK_SITE_USER = "brightwood";
+    expect(credentialsAreValid(basic("brightwood", "a-shared-password"))).toBe(true);
+    expect(credentialsAreValid(basic("someone-else", "a-shared-password"))).toBe(false);
+  });
+
+  it("rejects a missing or malformed header", () => {
+    process.env.AIRK_SITE_PASSWORD = "a-shared-password";
+    for (const header of [
+      null,
+      "",
+      "Basic",
+      "Bearer a-shared-password",
+      "Basic !!!not-base64!!!",
+      `Basic ${Buffer.from("no-colon-here", "utf8").toString("base64")}`,
+    ]) {
+      expect(credentialsAreValid(header), `accepted ${String(header)}`).toBe(false);
+    }
+  });
+
+  it("keeps a password that contains a colon intact", () => {
+    // Only the first colon separates the pair. Splitting on every one would
+    // silently truncate a perfectly good password.
+    process.env.AIRK_SITE_PASSWORD = "a:password:with:colons";
+    expect(decodeBasicAuth(basic("user", "a:password:with:colons"))?.password).toBe(
+      "a:password:with:colons",
+    );
+    expect(credentialsAreValid(basic("user", "a:password:with:colons"))).toBe(true);
+  });
+
+  it("is case-insensitive about the scheme, as the spec requires", () => {
+    process.env.AIRK_SITE_PASSWORD = "a-shared-password";
+    const encoded = Buffer.from(":a-shared-password", "utf8").toString("base64");
+    expect(credentialsAreValid(`basic ${encoded}`)).toBe(true);
+    expect(credentialsAreValid(`BASIC ${encoded}`)).toBe(true);
+  });
+
+  it("stops accepting the old password when it is rotated", () => {
     process.env.AIRK_SITE_PASSWORD = "first-password";
-    const old = await gateToken("first-password");
-    expect(await gateTokenIsValid(old)).toBe(true);
+    expect(credentialsAreValid(basic("x", "first-password"))).toBe(true);
     // Rotating the variable is the whole revocation story, so it has to work.
     process.env.AIRK_SITE_PASSWORD = "second-password";
-    expect(await gateTokenIsValid(old)).toBe(false);
-  });
-
-  it("refuses everything while the gate is off", async () => {
-    const token = await gateToken("a-shared-password");
-    delete process.env.AIRK_SITE_PASSWORD;
-    // Fail closed on the token check even though the middleware short-circuits
-    // first: a helper that returned true here would be a trap for a caller.
-    expect(await gateTokenIsValid(token)).toBe(false);
+    expect(credentialsAreValid(basic("x", "first-password"))).toBe(false);
+    expect(credentialsAreValid(basic("x", "second-password"))).toBe(true);
   });
 });
 
-describe("what the gate lets through unauthenticated", () => {
-  it("allows only the gate page and build output", () => {
-    for (const path of ["/gate", "/_next/static/chunk.js", "/favicon.ico", "/robots.txt"]) {
-      expect(isAlwaysAllowed(path), `${path} should be reachable`).toBe(true);
+describe("the middleware covers everything, with no exemptions", () => {
+  const raw = readFileSync(join(process.cwd(), "src/middleware.ts"), "utf8");
+  /**
+   * Comments discuss the seam this closed and therefore mention `/_next/`;
+   * only executable lines can reopen it. Asserting on the whole file matched my
+   * own explanation of the fix.
+   */
+  const middleware = raw
+    .split("\n")
+    .filter((l) => {
+      const t = l.trim();
+      return !t.startsWith("//") && !t.startsWith("*") && !t.startsWith("/*");
+    })
+    .join("\n");
+
+  it("matches every path, including build output", () => {
+    // The whole reason this replaced the password page. A matcher that spared
+    // `_next` would reopen the seam it was written to close.
+    expect(middleware).toContain('matcher: ["/:path*"]');
+    expect(middleware).not.toMatch(/_next/);
+    expect(middleware).not.toMatch(/favicon/);
+  });
+
+  it("has no allow-list left anywhere", () => {
+    const gateCode = readFileSync(join(process.cwd(), "src/lib/auth/site-gate.ts"), "utf8")
+      .split("\n")
+      .filter((l) => {
+        const t = l.trim();
+        return !t.startsWith("//") && !t.startsWith("*") && !t.startsWith("/*");
+      })
+      .join("\n");
+    for (const gone of ["isAlwaysAllowed", "GATE_COOKIE", "/_next/"]) {
+      expect(gateCode, `${gone} should not survive the swap`).not.toContain(gone);
+      expect(middleware, `${gone} should not survive the swap`).not.toContain(gone);
     }
   });
 
-  it("allows nothing else, including every real surface", () => {
+  it("challenges with Basic and a realm, so the browser prompts", () => {
+    expect(middleware).toMatch(/status:\s*401/);
+    expect(middleware).toContain("WWW-Authenticate");
+    expect(middleware).toContain("GATE_REALM");
+    expect(GATE_REALM.length).toBeGreaterThan(0);
+  });
+
+  it("actually refuses an unauthenticated request, on every path", async () => {
+    // Behaviour, not source order: the middleware is called with real requests.
+    process.env.AIRK_SITE_PASSWORD = "a-shared-password";
+    const { middleware: run } = await import("@/middleware");
     for (const path of [
       "/",
       "/plans",
-      "/curriculum",
       "/privacy",
-      "/for-schools",
-      "/approach",
-      "/benchmark",
-      "/demo",
       "/signin",
-      "/join",
-      "/student",
-      "/teacher",
-      "/teacher/missions",
-      "/admin",
       "/family/four-doors",
+      "/teacher",
+      "/admin",
+      "/student",
+      "/_next/static/chunks/main.js",
+      "/favicon.ico",
     ]) {
-      expect(isAlwaysAllowed(path), `${path} must not be reachable`).toBe(false);
+      const response = run(new NextRequest(new Request(`https://example.test${path}`)));
+      expect(response.status, `${path} was not refused`).toBe(401);
+      expect(response.headers.get("WWW-Authenticate")).toMatch(/^Basic realm=/);
     }
   });
 
-  it("covers every marketing page that exists, not a list of them", () => {
-    // Same reasoning as the buyer-surface guard: a page added later must be
-    // behind the gate without anybody remembering to add it here.
-    const walk = (dir: string): string[] => {
-      const out: string[] = [];
-      for (const entry of readdirSync(join(process.cwd(), dir))) {
-        const rel = `${dir}/${entry}`;
-        if (statSync(join(process.cwd(), rel)).isDirectory()) out.push(...walk(rel));
-        else if (entry === "page.tsx") out.push(rel);
-      }
-      return out;
-    };
-    const routes = walk("src/app/(site)").map((f) =>
-      f.replace("src/app/(site)", "").replace("/page.tsx", "") || "/",
-    );
-    expect(routes.length).toBeGreaterThanOrEqual(8);
-    for (const route of routes) {
-      expect(isAlwaysAllowed(route), `${route} must not be reachable`).toBe(false);
-    }
-  });
-});
-
-describe("the middleware is wired to see every request", () => {
-  const middleware = readFileSync(join(process.cwd(), "src/middleware.ts"), "utf8");
-
-  it("matches all paths except build output", () => {
-    // A matcher scoped to a subtree would leave the rest of the site open,
-    // which is the one mistake that makes the whole feature decorative.
-    expect(middleware).toContain('matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"]');
-  });
-
-  it("rewrites rather than redirects, so a shared deep link survives", () => {
-    expect(middleware).toContain("NextResponse.rewrite");
-    expect(middleware).not.toContain("NextResponse.redirect");
-  });
-
-  it("checks the cookie before letting anything render", () => {
-    const body = middleware.slice(middleware.indexOf("export async function middleware"));
-    expect(body.indexOf("gateTokenIsValid")).toBeLessThan(body.indexOf("NextResponse.rewrite"));
-    expect(body).toContain(GATE_COOKIE.length > 0 ? "GATE_COOKIE" : "");
-  });
-});
-
-describe("the gate page gives nothing away", () => {
-  const page = readFileSync(join(process.cwd(), "src/app/gate/page.tsx"), "utf8");
-
-  it("is not indexable", () => {
-    expect(page).toMatch(/robots:\s*\{\s*index:\s*false/);
-  });
-
-  it("describes nothing behind it", () => {
-    // No curriculum, no grades, no pricing, no school name — the point of the
-    // curtain is that none of that is readable yet.
-    for (const leak of ["grades 2 to 4", "27", "mission", "Brightwood", "subscription"]) {
-      expect(page.toLowerCase(), `the gate mentions "${leak}"`).not.toContain(
-        leak.toLowerCase(),
+  it("lets a correct credential through, on those same paths", async () => {
+    process.env.AIRK_SITE_PASSWORD = "a-shared-password";
+    const { middleware: run } = await import("@/middleware");
+    for (const path of ["/", "/family/four-doors", "/_next/static/chunks/main.js"]) {
+      const response = run(
+        new NextRequest(
+          new Request(`https://example.test${path}`, {
+            headers: { authorization: basic("anyone", "a-shared-password") },
+          }),
+        ),
       );
+      expect(response.status, `${path} was refused with the right password`).toBe(200);
     }
+  });
+
+  it("serves everything untouched when no password is configured", async () => {
+    delete process.env.AIRK_SITE_PASSWORD;
+    const { middleware: run } = await import("@/middleware");
+    const response = run(new NextRequest(new Request("https://example.test/plans")));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("WWW-Authenticate")).toBeNull();
+  });
+
+  it("does not let a 401 be cached or indexed", () => {
+    expect(middleware).toContain("no-store");
+    expect(middleware).toContain("noindex");
+  });
+});
+
+describe("the password page is gone", () => {
+  it("leaves no route that renders without credentials", () => {
+    // A leftover `/gate` route would be a second, unauthenticated entry point.
+    for (const path of ["src/app/gate/page.tsx", "src/app/actions/gate.ts"]) {
+      expect(() => readFileSync(join(process.cwd(), path), "utf8"), `${path} still exists`).toThrow();
+    }
+  });
+
+  it("still reports whether a username is required", () => {
+    delete process.env.AIRK_SITE_USER;
+    expect(siteUser()).toBeUndefined();
+    process.env.AIRK_SITE_USER = "  ";
+    expect(siteUser(), "whitespace should not become a required username").toBeUndefined();
+    process.env.AIRK_SITE_USER = "brightwood";
+    expect(siteUser()).toBe("brightwood");
   });
 });

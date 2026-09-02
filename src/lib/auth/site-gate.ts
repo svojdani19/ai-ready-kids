@@ -1,39 +1,48 @@
 /**
- * The shared secret in front of the whole deployment.
+ * HTTP Basic authentication in front of the whole deployment.
  *
  * This is not part of the product's own authentication and must never be
  * confused with it. Staff sign in by email and children join by class code;
- * both of those are the product. This is a curtain over the entire site,
- * including the marketing pages, the sign-in page and the public family
- * take-homes, so a deployment can be handed to a named school without being
- * open to the internet.
+ * both of those are the product. This is a curtain over the entire site so a
+ * build can be handed to a named school without being open to the internet.
  *
- * **Off unless configured.** With `AIRK_SITE_PASSWORD` unset the gate does
- * nothing at all, which keeps local development, the test suite and any
- * deliberately public deployment exactly as they were. Setting the variable is
- * what turns it on, so nothing changes for anybody who does not want it.
+ * **Why Basic rather than a password page.** The first version of this was a
+ * styled `/gate` route, which meant `/_next/` had to be served unauthenticated
+ * — the gate page needed its own stylesheet and chunks — and a Next chunk can
+ * contain page copy. That was a real seam, written down at the time. Basic auth
+ * closes it: the browser draws the credential prompt itself, so no asset has to
+ * be reachable before the password, and the allow-list is **empty**. Not one
+ * byte of the application is served without credentials.
  *
- * Runs in middleware, so it uses Web Crypto rather than `node:crypto` and
- * everything here is edge-safe and dependency-free.
+ * The cost is a native browser dialog instead of a designed page. For a preview
+ * handed to a named school that is the right trade; for a public sign-up flow
+ * it would not be.
+ *
+ * **Off unless configured.** With `AIRK_SITE_PASSWORD` unset nothing here runs,
+ * which keeps local development, the test suite and any deliberately public
+ * deployment exactly as they were.
+ *
+ * Runs in middleware, so it uses Web APIs only — no `node:crypto`, no
+ * dependencies.
  */
 
-/** Cookie holding proof the password was entered. Distinct from `airk_session`. */
-export const GATE_COOKIE = "airk_gate";
-
-/** Twelve hours, matching the staff session, so both expire together. */
-export const GATE_MAX_AGE_SECONDS = 60 * 60 * 12;
-
-/**
- * A constant signed with the password as the key.
- *
- * The cookie is therefore not the password and does not reveal it, and forging
- * one requires knowing it. Versioned so the format can change without silently
- * accepting old cookies.
- */
-const GATE_PAYLOAD = "airk-site-gate-v1";
+/** Shown in the browser's credential dialog. Names the site, nothing more. */
+export const GATE_REALM = "AI Ready Kids preview";
 
 export function sitePassword(): string | undefined {
   const value = process.env.AIRK_SITE_PASSWORD?.trim();
+  return value ? value : undefined;
+}
+
+/**
+ * The username, if one is required.
+ *
+ * Unset means any username is accepted and only the password is checked, which
+ * is what a shared preview link usually wants: one secret to pass on, and
+ * nobody stuck at the dialog wondering what to type on the top line.
+ */
+export function siteUser(): string | undefined {
+  const value = process.env.AIRK_SITE_USER?.trim();
   return value ? value : undefined;
 }
 
@@ -42,58 +51,44 @@ export function gateEnabled(): boolean {
   return sitePassword() !== undefined;
 }
 
-async function sign(password: string): Promise<string> {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(password),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(GATE_PAYLOAD));
-  return [...new Uint8Array(mac)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-/** The cookie value to set once somebody has proved they know the password. */
-export async function gateToken(password: string): Promise<string> {
-  return sign(password);
-}
-
-/**
- * Compared in constant time, so a wrong cookie cannot be refined one character
- * at a time by timing the response. The lengths are fixed by SHA-256, so a
- * length mismatch is a malformed cookie rather than a signal.
- */
-export async function gateTokenIsValid(token: string | undefined): Promise<boolean> {
-  const password = sitePassword();
-  if (!password || !token) return false;
-  const expected = await sign(password);
-  if (token.length !== expected.length) return false;
+/** Compared without an early exit, so a wrong value cannot be refined by timing. */
+function constantTimeEquals(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
   let diff = 0;
-  for (let i = 0; i < expected.length; i += 1) {
-    diff |= token.charCodeAt(i) ^ expected.charCodeAt(i);
-  }
+  for (let i = 0; i < a.length; i += 1) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return diff === 0;
 }
 
 /**
- * Paths served without the password, kept to the minimum that lets the gate
- * page itself render and be submitted.
+ * Decode `Authorization: Basic <base64>` into its two halves.
  *
- * `/_next/` is here because the gate page is an ordinary Next route and needs
- * its stylesheet and its chunks. That is a real, small concession: build
- * artifacts are reachable by anyone who can guess a hashed chunk filename, and
- * chunk contents can include page copy. It is the standard shape for this kind
- * of curtain, and it is written down here rather than left implicit — if the
- * requirement is that no byte of the site is reachable, this is the seam, and
- * the answer would be an edge proxy or HTTP basic auth in front of the app
- * rather than middleware inside it.
+ * Returns null for anything malformed rather than guessing. The password may
+ * itself contain a colon — only the first one separates the pair — so the split
+ * is deliberately on the first colon and not on every one.
  */
-export function isAlwaysAllowed(pathname: string): boolean {
-  return (
-    pathname === "/gate" ||
-    pathname.startsWith("/_next/") ||
-    pathname === "/favicon.ico" ||
-    pathname === "/robots.txt"
-  );
+export function decodeBasicAuth(header: string | null): { user: string; password: string } | null {
+  if (!header) return null;
+  const [scheme, encoded] = header.split(" ");
+  if (!scheme || scheme.toLowerCase() !== "basic" || !encoded) return null;
+  let decoded: string;
+  try {
+    decoded = atob(encoded);
+  } catch {
+    return null;
+  }
+  const separator = decoded.indexOf(":");
+  if (separator === -1) return null;
+  return { user: decoded.slice(0, separator), password: decoded.slice(separator + 1) };
+}
+
+/** Whether these credentials open the site. Fails closed when unconfigured. */
+export function credentialsAreValid(header: string | null): boolean {
+  const expected = sitePassword();
+  if (!expected) return false;
+  const supplied = decodeBasicAuth(header);
+  if (!supplied) return false;
+
+  const requiredUser = siteUser();
+  if (requiredUser && !constantTimeEquals(supplied.user, requiredUser)) return false;
+  return constantTimeEquals(supplied.password, expected);
 }

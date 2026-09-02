@@ -1,54 +1,45 @@
 import { NextResponse, type NextRequest } from "next/server";
-import {
-  GATE_COOKIE,
-  gateEnabled,
-  gateTokenIsValid,
-  isAlwaysAllowed,
-} from "@/lib/auth/site-gate";
+import { credentialsAreValid, GATE_REALM, gateEnabled } from "@/lib/auth/site-gate";
 
 /**
- * The site password, applied to every request before anything renders.
+ * HTTP Basic authentication on every request, before anything is served.
  *
- * Middleware rather than a layout check, because the requirement is that
- * nothing is visible — and a layout does not cover all of it. `/family/[slug]`
- * is statically generated at build time and served without ever calling a
- * server component, the marketing pages are their own route group, and
- * `/signin` sits outside both. Middleware is the only layer every one of those
- * requests passes through.
+ * The requirement is that nothing is visible — and "nothing" has to include the
+ * build output. The previous password-page version had to serve `/_next/`
+ * unauthenticated so the gate page could style itself, and a Next chunk can
+ * carry page copy. Basic auth needs no assets at all, because the browser draws
+ * the prompt, so the allow-list is empty and the matcher covers everything.
  *
  * Unset `AIRK_SITE_PASSWORD` and this returns immediately, so local
- * development and the test suite are untouched.
+ * development, the test suite and any deliberately public deployment are
+ * untouched.
  */
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
   if (!gateEnabled()) return NextResponse.next();
-
-  const { pathname, search } = request.nextUrl;
-  if (isAlwaysAllowed(pathname)) return NextResponse.next();
-
-  if (await gateTokenIsValid(request.cookies.get(GATE_COOKIE)?.value)) {
+  if (credentialsAreValid(request.headers.get("authorization"))) {
     return NextResponse.next();
   }
 
-  // Rewrite rather than redirect, so the address bar keeps the page the visitor
-  // asked for and they land on it once past the gate. A redirect would replace
-  // a shared deep link — a specific mission, a family take-home — with `/gate`,
-  // and the link is usually the reason somebody is here.
-  const url = request.nextUrl.clone();
-  url.pathname = "/gate";
-  url.search = "";
-  const response = NextResponse.rewrite(url);
-  // Where to send them afterwards, read by the gate's form. Not signed: it is
-  // a path this request already carried, and the gate only ever uses it as a
-  // same-origin destination.
-  response.headers.set("x-airk-gate-next", `${pathname}${search}`);
-  return response;
+  return new NextResponse("Authentication required.", {
+    status: 401,
+    headers: {
+      // `charset="UTF-8"` so a password with non-ASCII characters is decoded
+      // the same way the browser encoded it.
+      "WWW-Authenticate": `Basic realm="${GATE_REALM}", charset="UTF-8"`,
+      "Content-Type": "text/plain; charset=utf-8",
+      // A 401 is not a page. Nothing should keep it, and nothing should index
+      // the fact that a route exists behind it.
+      "Cache-Control": "no-store",
+      "X-Robots-Tag": "noindex, nofollow",
+    },
+  });
 }
 
 export const config = {
   /**
-   * Everything except Next's own build output and the icon. The allow-list in
-   * `isAlwaysAllowed` is the real rule; this matcher only spares the runtime
-   * the work of evaluating it for every static chunk.
+   * Every path, with no exemption whatsoever — including `/_next/`, the
+   * favicon and any static asset. That total coverage is the whole reason this
+   * replaced the password page.
    */
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/:path*"],
 };
