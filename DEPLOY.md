@@ -33,6 +33,8 @@ railway init
 
 **2. Add a volume — do this before the first deploy**
 
+Right-click the project canvas → **Volume** → pick the service → mount path.
+
 In the Railway dashboard: **your service → Variables → Volumes → New Volume**,
 mount path exactly:
 
@@ -60,6 +62,18 @@ needs it.
 There is an optional third, `AIRK_SITE_USER`. Leave it unset and **any username
 works**, so the only thing to pass on is the password. Set it if you want a
 username too.
+
+**And one more, `PORT`.** Railway injects its own `PORT` and the generated
+domain has a target port; if the two disagree every request returns `502` while
+the deployment reports itself healthy. This deployment sets:
+
+```bash
+railway variables --set "PORT=3210"
+```
+
+with the domain's target port also 3210. Either pin both like this, or set the
+domain's target to whatever the deploy log shows the server bound to — the log
+line is `- Local: http://<container>:<port>`.
 
 **4. Deploy**
 

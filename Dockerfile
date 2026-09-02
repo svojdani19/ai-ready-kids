@@ -34,7 +34,14 @@ COPY --from=build /app/.next/static ./.next/static
 # should be loud rather than silently shipping without static assets.
 COPY --from=build /app/public ./public
 
-# Railway sets PORT; the server binds it. 3210 is only the local default.
-ENV PORT=3210
-EXPOSE 3210
+# The port is the platform's to choose, and this image does not argue with it.
+#
+# There was an `ENV PORT=3210` here, and it was worse than useless: Railway
+# injects its own PORT, which overrode it, so the server bound 8080 while the
+# generated domain pointed at 3210 and every request returned 502. The env var
+# looked like it was setting the port and was in fact being ignored.
+#
+# Next's standalone server binds `process.env.PORT`, defaulting to 3000. Set
+# PORT explicitly in the platform if you need it to match a fixed domain target
+# — this deployment pins it to 3210 — and otherwise let the platform supply it.
 CMD ["node", "server.js"]
