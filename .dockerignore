@@ -1,0 +1,28 @@
+# Everything the image builds for itself, or must never contain.
+#
+# A build sourced from GitHub only ever sees tracked files, so this changes
+# nothing there. It matters for `railway up` from the CLI, which uploads the
+# working directory as-is: without it, 527MB of macOS-native node_modules would
+# overwrite the Linux ones installed in the deps stage, and the local demo
+# database — including the session signing key it stores — would be baked into
+# the image.
+node_modules
+.next
+out
+build
+data
+*.db
+*.db-shm
+*.db-wal
+
+.git
+.github
+.claude
+docs
+tests
+coverage
+*.log
+.DS_Store
+.env
+.env.local
+tsconfig.tsbuildinfo

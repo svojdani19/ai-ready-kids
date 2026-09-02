@@ -27,6 +27,11 @@ ENV AIRK_DB_PATH=/data/airk.db
 # dependencies the app imports.
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
+# `public/` is empty in this project, and git does not track empty directories —
+# so on a build sourced from GitHub the folder simply does not exist and this
+# COPY fails the whole build. A tracked `.gitkeep` keeps it present. Left as a
+# plain COPY rather than made optional, because a missing public directory
+# should be loud rather than silently shipping without static assets.
 COPY --from=build /app/public ./public
 
 # Railway sets PORT; the server binds it. 3210 is only the local default.
