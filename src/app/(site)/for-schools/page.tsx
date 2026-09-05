@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { CERTIFICATION_MINUTES, CERTIFICATION_MODULES } from "@/content/certification";
 import { ALL_SESSIONS } from "@/content/missions";
 import { PageHero, Section } from "@/components/marketing/Page";
 import { ButtonLink } from "@/components/ui/Button";

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { ALL_SESSIONS } from "@/content/missions";
 import { BENCHMARK_FORMS } from "@/content/benchmark";
 import { MIN_REPORTABLE_GROUP } from "@/lib/repo/report";
@@ -9,14 +8,42 @@ import {
   DELETION_SCOPE,
   STUDENT_RECORD,
 } from "@/content/data-inventory";
-import { ButtonLink } from "@/components/ui/Button";
 import { Note } from "@/components/ui/Bits";
+import { Disclosure } from "@/components/ui/Disclosure";
 
 export const metadata: Metadata = {
   title: "Privacy and data model",
   description:
     "Exactly what AI Ready Kids collects about a student, what it refuses to collect, and how a school deletes it.",
 };
+
+/**
+ * The four questions a school asks first, answered before the evidence.
+ *
+ * Deliberately a summary and deliberately not the source of truth: the
+ * enumerated sections below are, and they are derived from the schema. This
+ * exists because a reader who needs "what do you collect and who sees it" was
+ * previously handed six sections of column-level detail and left to assemble
+ * the answer. Every claim here is stated at length further down.
+ */
+const OVERVIEW = [
+  {
+    q: "What we collect",
+    a: "A first name and a last initial, chosen by the teacher. An assigned animal avatar. Which class a student is in, which sessions they finished, and which of nine named skills they showed.",
+  },
+  {
+    q: "What we do not collect",
+    a: "No surname, birthday, address, phone number or email. No photographs, audio or video. No location. No timers, keystrokes or risk scores. No trackers and no advertising.",
+  },
+  {
+    q: "Who can see it",
+    a: "A teacher sees their own roster and what each student showed. An administrator sees aggregate figures only, with small groups withheld. A class code is shared classroom access: anyone holding it can open any listed student's progress.",
+  },
+  {
+    q: "When it is deleted",
+    a: "The school sets the retention window, and the product shows every class its deletion date before anything is clicked. A class can also be deleted immediately.",
+  },
+];
 
 const SECTIONS = [
   {
@@ -115,14 +142,28 @@ export default function PrivacyPage() {
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-relaxed text-ink-soft">
             This page is the whole story, not a summary of a longer document kept
-            elsewhere. It describes {ALL_SESSIONS.length} sessions and missions,{" "}
-            {BENCHMARK_FORMS.pre.items.length * 2} benchmark items and every record the
-            product creates about a seven year old.
+            elsewhere. Four answers first, then every record the product creates about a
+            child &mdash; across {ALL_SESSIONS.length} sessions and missions and{" "}
+            {BENCHMARK_FORMS.pre.items.length * 2} check-in items.
           </p>
         </div>
       </section>
 
       <div className="mx-auto max-w-4xl px-5 py-12">
+        <div className="grid gap-3 sm:grid-cols-2">
+          {OVERVIEW.map((item) => (
+            <div key={item.q} className="rounded-2xl border-2 border-ink bg-surface p-5">
+              <h2 className="font-display text-lg leading-snug text-ink">{item.q}</h2>
+              <p className="mt-2 text-[0.95rem] leading-relaxed text-ink-soft">{item.a}</p>
+            </div>
+          ))}
+        </div>
+
+        <p className="mt-8 text-[1.05rem] leading-relaxed text-ink">
+          The rest of this page is the evidence for those four answers, enumerated rather
+          than summarized.
+        </p>
+
         <nav aria-label="On this page" className="mt-8 rounded-xl border border-sand-deep bg-surface p-5">
           <ol className="grid gap-1.5 sm:grid-cols-2">
             {SECTIONS.map((s, i) => (
@@ -154,9 +195,11 @@ export default function PrivacyPage() {
                 ))}
               </ul>
               {section.footnote && (
-                <p className="mt-4 border-l-4 border-sand-deep pl-4 text-[0.95rem] leading-relaxed text-ink-soft">
-                  {section.footnote}
-                </p>
+                <div className="mt-4">
+                  <Disclosure summary="How this list is kept accurate">
+                    <p>{section.footnote}</p>
+                  </Disclosure>
+                </div>
               )}
             </section>
           ))}

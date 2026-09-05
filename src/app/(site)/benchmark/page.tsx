@@ -3,6 +3,7 @@ import { BENCHMARK_FORMS } from "@/content/benchmark";
 import { COMPETENCY_BY_ID } from "@/content/competencies";
 import { PageHero, Section } from "@/components/marketing/Page";
 import { ButtonLink } from "@/components/ui/Button";
+import { Disclosure } from "@/components/ui/Disclosure";
 
 export const metadata: Metadata = {
   title: "Annual check-ins",
@@ -20,7 +21,7 @@ export default function BenchmarkPage() {
         eyebrow="Annual check-ins"
         tone="pine"
         title="Measured twice a year, on situations the missions never used."
-        lede="A recall quiz would tell you students remember your lessons. That is not the claim worth making. Both check-in forms are set somewhere the curriculum never goes: a grandparent's kitchen speaker, a museum kiosk, a summer camp app, a voice message from a coach."
+        lede="Twice a year, students meet situations the missions never used: a grandparent's kitchen speaker, a museum kiosk, a summer camp app. The check-ins ask one question — can a student spot the safer move somewhere unfamiliar?"
       >
         <ButtonLink href="/demo">See the reports in the demo</ButtonLink>
       </PageHero>
@@ -71,25 +72,32 @@ export default function BenchmarkPage() {
         </div>
       </Section>
 
-      <Section tone="denim" title="How to read the result honestly">
+      <Section tone="denim" title="How to read the result">
         <p className="max-w-3xl text-[1.05rem] leading-relaxed text-ink">
-          These items are multiple choice, and a child can pick a good answer without
-          acting on it. What this measures is whether students can identify the safer move
-          in an unfamiliar situation. That is a real and useful thing to know, and it is
-          not the same as measuring behavior. The difference is calculated only across students
-          who completed both windows, which is the only fair denominator.
+          The result is the difference between two authored check-ins, calculated only
+          across students who completed both windows. That is the only fair denominator,
+          and it is what the report shows.
         </p>
-        <p className="mt-4 max-w-3xl text-[1.05rem] leading-relaxed text-ink">
-          One more limit, stated plainly because it is the kind schools are usually not
-          told. The two forms have not been piloted or statistically equated, and each
-          skill carries a single item. They are matched by authorship and review — same
-          skill, same question shape, same kinds of wrong answer, comparable reading load
-          — which is the weakest kind of parallelism there is. So the number is the
-          difference between two authored check-ins. It is worth having and worth talking
-          about, and it is not a measurement of program growth. We would rather say that
-          than sell you a word the instrument has not earned.
-        </p>
+
+        <div className="mt-6 max-w-3xl">
+          <Disclosure summary="What the check-ins measure, and what they do not">
+            <p>
+              The items are multiple choice, so what they show is whether a student can
+              identify the safer move in an unfamiliar situation. That is a real and useful
+              thing to know. It is not the same as measuring what a child does.
+            </p>
+            <p className="mt-3">
+              The two forms have not been piloted or statistically equated, and each skill
+              carries a single item. They are matched by authorship and review — same
+              skill, same question shape, same kinds of wrong answer, comparable reading
+              load — which is the weakest kind of parallelism there is. The number is
+              therefore the difference between two authored check-ins: worth having, worth
+              talking about, and not a measurement of program growth.
+            </p>
+          </Disclosure>
+        </div>
       </Section>
+
     </>
   );
 }

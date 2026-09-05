@@ -142,10 +142,31 @@ export default async function ClassPage({
           label="Assigned work completed"
           value={`${Math.round(cohort.completionRate * 100)}%`}
         />
+        {/*
+          Two windows, two numbers. This was `23 / 17` under the hint
+          "Fall / spring", which reads as a fraction — and an impossible one,
+          since the second number is not a denominator and is often smaller.
+          Each window is now labeled where its own figure is.
+        */}
         <Stat
           label="Check-ins finished"
-          value={`${bench.preCompleted} / ${bench.postCompleted}`}
-          hint="Fall / spring"
+          value={
+            <span className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
+              <span className="whitespace-nowrap">
+                {bench.preCompleted}
+                <span className="ml-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-ink-faint">
+                  fall
+                </span>
+              </span>
+              <span className="whitespace-nowrap">
+                {bench.postCompleted}
+                <span className="ml-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-ink-faint">
+                  spring
+                </span>
+              </span>
+            </span>
+          }
+          hint={`Students who finished each window, of ${students.length}`}
         />
       </div>
 
@@ -244,7 +265,7 @@ export default async function ClassPage({
       <div className="mt-6">
         <Panel
           title="Competency evidence"
-          description="How many students have chosen a skillful response unaided at least once. Reaching the same answer after a Try again does not count here."
+          description="How many students demonstrated the skill independently at least once. Reaching the same answer after a Try again does not count here."
         >
           <PanelBody className="grid gap-4 sm:grid-cols-3">
             {COMPETENCIES.map((competency) => (
@@ -268,8 +289,8 @@ export default async function ClassPage({
                         />
                         {s.opportunities > 0 && (
                           <p className="mt-1 text-xs text-ink-faint">
-                            {s.independentOpportunities} of {s.opportunities} times it came
-                            up, it was chosen first go
+                            Demonstrated independently {s.independentOpportunities} of
+                            the {s.opportunities} times it came up
                           </p>
                         )}
                       </li>
@@ -285,7 +306,7 @@ export default async function ClassPage({
       <div className="mt-6">
         <Panel
           title="Roster"
-          description="One row per student. Green means chosen unaided at least once. Amber means a partly-right choice, or the safe answer reached after a Try again. Gray means no evidence yet."
+          description="One row per student. Green means demonstrated independently at least once. Amber means a partly-right choice, or the safe answer reached after a Try again. Gray means no evidence yet."
         >
           {students.length === 0 ? (
             <PanelBody>

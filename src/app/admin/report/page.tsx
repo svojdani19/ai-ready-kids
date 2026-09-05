@@ -96,8 +96,8 @@ export default async function AdminReport() {
           <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
             Share of the skill demonstrations that students have actually had a chance at.
             Each competency has three named skills, and a skill counts once a student has
-            chosen it unaided first go. A partly-right choice, or the safe answer reached
-            after a Try again, is recorded as developing instead. Rows read “—” where fewer than five children have contributed.
+            demonstrated it independently. A partly-right choice, or the safe answer
+            reached after a Try again, is recorded as developing instead. Rows read “—” where fewer than five children have contributed.
           </p>
           <table className="mt-3 w-full border-collapse text-sm">
             <thead>

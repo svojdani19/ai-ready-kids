@@ -8,6 +8,8 @@ import type { Classroom } from "@/lib/types";
 import type { Mission } from "@/content/types";
 import { PageHeader, Panel, PanelBody } from "@/components/ui/Panel";
 import { Note, Tag } from "@/components/ui/Bits";
+import { ButtonLink } from "@/components/ui/Button";
+import { Disclosure } from "@/components/ui/Disclosure";
 import { AssignToggle } from "@/components/staff/AssignToggle";
 import { classMayBeAssigned } from "@/lib/domain/eligibility";
 import { requireOpenCurriculum } from "@/lib/auth/instruction-access";
@@ -33,6 +35,18 @@ const DOT: Record<string, string> = {
  * its big idea and its grade band, because that is what a teacher is choosing
  * between when the same three ideas exist in two tiers.
  */
+/**
+ * The first sentence of a mission's summary, for the card face.
+ *
+ * The whole summary is two or three sentences of teaching purpose and belongs
+ * on the card, but not before a teacher has decided this is the mission they
+ * want. It is directly below, under its own label.
+ */
+function firstSentence(text: string): string {
+  const end = text.indexOf(". ");
+  return end === -1 ? text : text.slice(0, end + 1);
+}
+
 function SessionCard({
   mission,
   accent,
@@ -45,6 +59,7 @@ function SessionCard({
   assignedByClass: Map<string, Set<string>>;
 }) {
   const isFoundation = mission.segment === "foundation";
+  const assignedCount = classes.filter((c) => assignedByClass.get(c.id)?.has(mission.id)).length;
   return (
     <Panel
       title={
@@ -55,7 +70,7 @@ function SessionCard({
           {mission.title}
         </Link>
       }
-      description={mission.summary}
+      description={firstSentence(mission.summary)}
       actions={
         <span className="flex items-center gap-2">
           <Tag>{mission.estimatedMinutes} min</Tag>
@@ -65,6 +80,11 @@ function SessionCard({
           {/* Sprint 85 acceptance: every card, not only First Look. The Plans
               page says every mission card shows its grade band, and it did not. */}
           <Tag tone="neutral">Grades {mission.gradeBand}</Tag>
+          <Tag tone={assignedCount > 0 ? "pine" : "neutral"}>
+            {assignedCount === 0
+              ? "Not assigned"
+              : `Assigned to ${assignedCount} of ${classes.length}`}
+          </Tag>
         </span>
       }
     >
@@ -76,27 +96,24 @@ function SessionCard({
               {mission.bigIdea}
             </p>
           )}
-          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-faint">
-            Learning goals
-          </p>
-          <ul className="mt-2 space-y-1.5">
-            {mission.learningGoals.map((goal) => (
-              <li key={goal} className="flex gap-2 text-sm leading-relaxed text-ink-soft">
-                <span
-                  aria-hidden="true"
-                  className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${DOT[accent]}`}
-                />
-                {goal}
-              </li>
-            ))}
-          </ul>
-          <div className="mt-3 flex flex-wrap gap-3 text-sm">
-            <Link
-              href={`/teacher/classroom/${mission.slug}`}
-              className="font-semibold text-pine-deep underline underline-offset-2"
-            >
+          <Disclosure summary="What it teaches, and the learning goals">
+            <p>{mission.summary}</p>
+            <ul className="mt-3 space-y-1.5">
+              {mission.learningGoals.map((goal) => (
+                <li key={goal} className="flex gap-2 text-sm leading-relaxed text-ink-soft">
+                  <span
+                    aria-hidden="true"
+                    className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${DOT[accent]}`}
+                  />
+                  {goal}
+                </li>
+              ))}
+            </ul>
+          </Disclosure>
+          <div className="mt-3.5 flex flex-wrap items-center gap-3 text-sm">
+            <ButtonLink href={`/teacher/classroom/${mission.slug}`} size="sm">
               Teach it on the board
-            </Link>
+            </ButtonLink>
             <Link
               href={`/teacher/missions/${mission.slug}`}
               className="font-semibold text-pine-deep underline underline-offset-2"

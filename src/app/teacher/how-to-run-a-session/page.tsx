@@ -9,6 +9,8 @@ import {
 } from "@/content/session-guide";
 import { PageHeader, Panel, PanelBody } from "@/components/ui/Panel";
 import { Note, Tag } from "@/components/ui/Bits";
+import { ButtonLink } from "@/components/ui/Button";
+import { Disclosure } from "@/components/ui/Disclosure";
 import { requireOpenCurriculum } from "@/lib/auth/instruction-access";
 import { CurriculumClosed } from "@/components/staff/CurriculumClosed";
 
@@ -23,8 +25,39 @@ export default async function HowToRunASession() {
       <PageHeader
         eyebrow="Teaching guide"
         title="How to run a session"
-        description="Every session already has its own guide: what it teaches, what to watch for, what to ask afterwards. This is the part that is the same every time — where the minutes go, what you are doing while they play, and what to do when the room does what rooms do."
+        description="The part that is the same every time: where the minutes go, what you are doing while they play, and what to do when the room does what rooms do."
       />
+
+
+      <div className="mt-6">
+        <Panel
+          title="Quick start"
+          description="Four steps, whichever session you run."
+          actions={
+            <ButtonLink href="/teacher/missions" size="sm">
+              Open the mission library
+            </ButtonLink>
+          }
+        >
+          <PanelBody>
+            <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                ["Pick a session", "The library suggests an order. First Look first, if the class is new to this."],
+                ["Read it through", "Preview every branch and the coach notes before the class sees any of them."],
+                ["Run it", "On the board with Classroom Mode, or assign it and let them play on their own."],
+                ["Talk about it", "The debrief questions are in that session's own guide, with the answers children give."],
+              ].map(([label, detail], i) => (
+                <li key={label} className="rounded-lg border border-sand-deep bg-paper p-3.5">
+                  <p className="text-sm font-semibold text-ink">
+                    {i + 1}. {label}
+                  </p>
+                  <p className="mt-1 text-sm leading-relaxed text-ink-soft">{detail}</p>
+                </li>
+              ))}
+            </ol>
+          </PanelBody>
+        </Panel>
+      </div>
 
       {SESSION_SHAPES.map((shape) => {
         const total = shape.steps.reduce((n, s) => n + s.minutes, 0);
@@ -73,9 +106,9 @@ export default async function HowToRunASession() {
         );
       })}
 
-      <div className="mt-6 grid gap-5 lg:grid-cols-2">
-        <Panel title="Whatever your room actually has">
-          <PanelBody>
+      <div className="mt-6 grid gap-3 lg:grid-cols-2">
+        <Disclosure summary="Whatever your room actually has">
+          <div>
             <dl className="space-y-3">
               {ROOM_SETUPS.map((r) => (
                 <div key={r.setup}>
@@ -84,11 +117,11 @@ export default async function HowToRunASession() {
                 </div>
               ))}
             </dl>
-          </PanelBody>
-        </Panel>
+          </div>
+        </Disclosure>
 
-        <Panel title="What each kind of session leaves behind">
-          <PanelBody>
+        <Disclosure summary="What each kind of session leaves behind">
+          <div>
             <dl className="space-y-3">
               {WHAT_IS_RECORDED.map((w) => (
                 <div key={w.shape}>
@@ -97,13 +130,13 @@ export default async function HowToRunASession() {
                 </div>
               ))}
             </dl>
-          </PanelBody>
-        </Panel>
+          </div>
+        </Disclosure>
       </div>
 
       <div className="mt-6">
         <Panel
-          title="When the room does what rooms do"
+          title="If this happens"
           description="None of these is a problem with the lesson. They are the lesson."
         >
           <PanelBody>

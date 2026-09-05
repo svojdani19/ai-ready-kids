@@ -81,7 +81,7 @@ export default async function TeacherOverview() {
       <PageHeader
         eyebrow="Teacher"
         title={`Good to see you, ${user.name.split(" ")[0]}`}
-        description="Completion, and the skills your students have chosen unaided. Nothing here labels a child, and there is no risk score to look for."
+        description="Completion, and the skills students demonstrated independently. Nothing here labels a child, and there is no risk score."
         actions={
           <>
             <ButtonLink href="/teacher/how-to-run-a-session" variant="secondary">
@@ -185,7 +185,7 @@ export default async function TeacherOverview() {
                   ))}
                 </div>
 
-                <div className="rounded-lg border border-sand-deep bg-paper p-4">
+                <div className="rounded-lg border-2 border-pine bg-pine-wash p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-faint">
                     {focus?.kind === "not-practiced" ? "Next unpracticed skill" : "Suggested next focus"}
                   </p>
@@ -197,8 +197,8 @@ export default async function TeacherOverview() {
                       <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
                         {focus.kind === "reteach" ? (
                           <>
-                            Chosen first go {focus.independentOpportunities} of the{" "}
-                            {focus.opportunities} times it has come up, across{" "}
+                            Demonstrated independently {focus.independentOpportunities} of
+                            the {focus.opportunities} times it has come up, across{" "}
                             {focus.withOpportunity} students.
                           </>
                         ) : (
@@ -212,17 +212,16 @@ export default async function TeacherOverview() {
                                 } so far.`}
                           </>
                         )}
-                        {focus.mission
-                          ? ` The mission built around it is “${focus.mission.title}”.`
-                          : ""}
+                        {focus.mission ? " The mission below is built around it." : ""}
                       </p>
                       {focus.mission && (
-                        <Link
+                        <ButtonLink
                           href={`/teacher/missions/${focus.mission.slug}`}
-                          className="mt-3 inline-block text-sm font-semibold text-pine-deep underline underline-offset-2"
+                          size="sm"
+                          className="mt-3.5"
                         >
-                          Open the discussion guide
-                        </Link>
+                          Teach “{focus.mission.title}”
+                        </ButtonLink>
                       )}
                     </>
                   ) : (
