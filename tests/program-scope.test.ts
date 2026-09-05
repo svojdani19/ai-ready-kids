@@ -217,13 +217,22 @@ describe("no buyer-facing surface sells an annual grades 1 to 5 program", () => 
 
   it("the curriculum hero explains the tracks inside the creatable band", () => {
     // FAILING-BEFORE: the lede ended "…which is also what a grade 1 or grade 5
-    // class is offered." It now says which creatable grade runs which track.
-    const prose = read("src/app/(site)/curriculum/page.tsx").replace(/\s+/g, " ");
-    expect(prose).not.toMatch(/which is also what a grade 1 or grade 5 class is offered/i);
-    expect(prose).toMatch(/two reading levels/i);
-    expect(prose).toMatch(
-      /a Grade 2 class runs the early one while Grades 3 and 4 run the upper one/i,
-    );
+    // class is offered." It now maps each creatable grade to the track it runs.
+    //
+    // The wording has moved once since. "A Grade 2 class runs the early one
+    // while Grades 3 and 4 run the upper one" asked a reader to carry "the
+    // early one" back to a track named in the previous clause; it is a direct
+    // mapping now. The claim is identical and it is still asserted here rather
+    // than trusted to survive the next rewrite.
+    //
+    // Scoped to the lede, like the test below: reading the whole file let the
+    // metadata description satisfy this while the hero said nothing.
+    const lede = read("src/app/(site)/curriculum/page.tsx").match(/lede="([^"]*)"/)?.[1] ?? "";
+    expect(lede, "no hero lede found to assert on").not.toBe("");
+    expect(lede).not.toMatch(/which is also what a grade 1 or grade 5 class is offered/i);
+    expect(lede).toMatch(/two reading levels/i);
+    expect(lede).toMatch(/Grade 2 runs the grades 1 and 2 track/i);
+    expect(lede).toMatch(/Grades 3 and 4 run the grades 3 to 5 track/i);
   });
 
   it("keeps the track names in the hero, because they are reading levels", () => {
