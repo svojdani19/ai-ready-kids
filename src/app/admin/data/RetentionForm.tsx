@@ -13,7 +13,14 @@ export function RetentionForm({ current }: { current: number }) {
 
   return (
     <form action={formAction} noValidate>
-      <fieldset>
+      {/*
+        `min-w-0` on the fieldset: browsers give `fieldset` an implicit
+        `min-width: min-content`, so it refuses to shrink and — inside a grid
+        item, which is `min-width: auto` by default — pushed this panel 176px
+        past a 390px viewport. The radio labels wrap perfectly well once the
+        fieldset lets them.
+      */}
+      <fieldset className="min-w-0">
         <legend className="text-sm font-semibold text-ink">
           Keep student records for
         </legend>

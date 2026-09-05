@@ -123,7 +123,7 @@ export default async function AdminData() {
         </p>
       </div>
 
-      <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr]">
+      <div className="mt-6 grid gap-5 [&>*]:min-w-0 lg:grid-cols-[minmax(0,22rem)_1fr]">
         <Panel title="Retention window">
           <PanelBody>
             <RetentionForm current={school.retention_months} />

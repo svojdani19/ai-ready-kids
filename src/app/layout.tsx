@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     template: "%s · AI Ready Kids",
   },
   description:
-    "AI Ready Kids helps students understand the nuances of safety in using artificial intelligence before they are thrust into prompts and language models. Twenty-seven authored decision-practice missions for grades 2 to 4 build privacy, verification and independent learning, and First Look — three short introductory sessions per class, in a grades 1 and 2 track and a grades 3 to 5 track — is there for a class that has not been told what AI is.",
+    "AI Ready Kids gives students practice at the decisions an AI tool will ask them to make, before they meet one for real. Twenty-seven authored decision-practice missions for grades 2 to 4 build privacy, verification and independent learning, and First Look — three short introductory sessions per class, in a grades 1 and 2 track and a grades 3 to 5 track — is there for a class that has not been told what AI is.",
 };
 
 export const viewport: Viewport = {

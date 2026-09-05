@@ -1189,6 +1189,29 @@ one of them has not tested the thing that was built.
       2.5.8 minimum, as was the pause control. Padding the hit area fixed both
       without changing the drawing, and no amount of staring would have found it.
 
+- [ ] **A guard that pins copy to a file fires when the copy moves for a good
+      reason.** Three did in one pass: an honest phrase followed a section to a
+      better page, a consequence moved from a page description into the
+      confirmation beside the button, and a hand-written duplicate was replaced
+      by the shared module it had drifted from. Each guard was retargeted at
+      what it was protecting, then mutation-checked again. Deleting one because
+      it "failed on a good change" is how a check disappears.
+- [ ] **Measure page overflow on `body.scrollWidth`, not
+      `documentElement.scrollWidth`.** The latter reports the widest scrollable
+      descendant even when it scrolls inside its own box, so any page with a
+      wide table in an `overflow-x-auto` wrapper looks broken and is not. Two of
+      three "overflows" found in a phone-width sweep were this.
+- [ ] **`<fieldset>` will not shrink below its min-content.** Browsers give it
+      an implicit `min-width: min-content`, so inside a grid item — which is
+      `min-width: auto` — it pushes the page wider than the viewport. `min-w-0`
+      on the fieldset and on the grid's children fixes it; nothing about the
+      copy was ever wrong.
+- [ ] **A fix for a stale value can install a false one.** A subscription date
+      that expired was made to float, and the start date it was measured from
+      was left fixed — so the term grew by a day every day until the demo
+      claimed a two-year annual subscription. Assert the invariant the value is
+      supposed to have, across many clocks, not just that it is no longer stale.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

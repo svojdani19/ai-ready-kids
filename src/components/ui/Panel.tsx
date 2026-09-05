@@ -29,7 +29,15 @@ export function Panel({
               <p className="mt-1 max-w-prose text-sm text-ink-soft">{description}</p>
             )}
           </div>
-          {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+          {/*
+            Wraps rather than refusing to shrink. `shrink-0` kept a row of tags
+            at its full width on a phone, so a fourth tag on the mission cards
+            pushed the whole page 43px wide. The header already lets this drop
+            to its own line; now its contents can wrap on that line too.
+          */}
+          {actions && (
+            <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">{actions}</div>
+          )}
         </header>
       )}
       {children}

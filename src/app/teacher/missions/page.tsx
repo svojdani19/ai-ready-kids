@@ -72,7 +72,7 @@ function SessionCard({
       }
       description={firstSentence(mission.summary)}
       actions={
-        <span className="flex items-center gap-2">
+        <span className="flex flex-wrap items-center gap-2">
           <Tag>{mission.estimatedMinutes} min</Tag>
           <Tag tone="neutral">
             {mission.scenes.filter((s) => s.choices?.length).length} decisions

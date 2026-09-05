@@ -7,6 +7,91 @@ likely to be.
 
 ---
 
+## 2026-09-05 — the same evidence, in an order a school can read
+
+- **Repository:** <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-09-05-hierarchy-pass.md`](2026-09-05-hierarchy-pass.md)
+- **Baseline `8ee7bfc` preserved.** Nothing reset, reverted or reconstructed;
+  the diff was swept for accidental reversions before commit, and the sweep
+  found one — the root metadata still said "thrust into prompts and language
+  models" after the homepage had stopped.
+
+### The four corrections
+
+**Sharing.** "No information sharing, ever" invited a school to read "nobody
+else can see this", which the product's own privacy page contradicts. Now **"No
+third-party sharing, ever"**, naming analytics, advertising, generative models,
+outside providers and sale. The class-code card was not restored; its fact is in
+the privacy page's new overview.
+
+**Orientation.** The button a teacher presses said "Complete the certification".
+It says orientation, as does the public demo card. Every accurate use survives —
+the certificate of completion, and the explicit denials of certifying competence.
+
+**Dates.** A fixed renewal expired once; the repair floated the renewal and left
+the start fixed, so the demo school showed a term of two years and eighteen days
+against a page selling one subscription per school year. The whole term slides
+now. The attempt history keeps its own anchor, because it belongs to the
+academic year rather than the invoice.
+
+**Polish.** `ttraveled` → `traveled` in both places, plus a stray `recognises`.
+
+### The pass itself
+
+Every first viewport now answers what this is, why it matters to the reader, and
+what to do next. Detail that does not need reading before acting moved behind a
+shared native `<details>` disclosure — keyboard operable, find-in-page openable,
+and forced open by a print rule so nothing vanishes from a filed report.
+Nothing that must be read *before* acting went into one: archive, delete and
+rotation consequences stay in the confirmations, beside the button.
+
+Highlights: three points per audience on For your school; eight paragraphs of
+plans prose become a summary and four labelled disclosures; the privacy page
+opens with four plain answers before its enumeration; the data page puts its
+controls above the schema; the annual report opens with three lines a district
+reviewer can quote, and stopped calling itself suitable for a family newsletter.
+Classroom Mode was not touched.
+
+### Evidence
+
+```
+typecheck  ✓
+lint       0 errors, 0 warnings (was 2)
+tests      1437 passed (42 files)
+build      ✓ Compiled successfully
+```
+
+Twenty-two routes measured for horizontal overflow at **1280×800, 768×1024 and
+390×844** — all clean, after fixing one real 176px overflow on `/admin/data`
+(a `<fieldset>` will not shrink below min-content inside a grid item) and one I
+introduced on the mission library. Two apparent overflows were measurement
+error: `documentElement.scrollWidth` reports the widest scrollable descendant
+even when it scrolls in its own box.
+
+Four new test files, all mutation-checked, including an **anti-reversion
+baseline** that asserts the last nine commits' decisions — it caught the
+curriculum lede at 57 words on the way in. Three existing guards were retargeted
+rather than deleted, each because the copy it pinned had legitimately moved, and
+each re-checked to confirm it still fails when the fact is removed.
+
+**Demo data untouched**: audit log 6, assignments 65, attempts 1078, before and
+after. No mission was played; the decision reviewed was read through the teacher
+preview for that reason.
+
+### Where to look hardest
+
+- **The educator orientation was not shortened** — five modules of essay-length
+  prose, asked for and not done. The largest remaining item.
+- **The seeded attempt history runs past its own school year** (to late August
+  2026, against a year ending 12 June 2026). Predates this work; fixing it
+  rewrites a year of fictional history.
+- **One test run reported a single failure** that has not reproduced in five
+  subsequent full runs and was never identified.
+- The plain-language summaries are hand-written above schema-derived
+  enumerations. Nothing keeps them in step but a reader.
+
+---
+
 ## 2026-09-04 — the hero quoted a mission it was not connected to
 
 - **Repository:** <https://github.com/svojdani19/ai-ready-kids>
