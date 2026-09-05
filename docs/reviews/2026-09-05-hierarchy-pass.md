@@ -155,12 +155,33 @@ administrator, teacher and student writes nothing, which was checked rather than
 assumed; no mission was played, and the one decision reviewed was read through
 the teacher preview for that reason.
 
-## Known limitations
+## Second pass: the gaps, and a finding that was wrong
 
-- **The educator orientation was not shortened.** Five modules of essay-length
-  body copy, and the brief asked for it. Every module, check, saving behaviour
-  and completion record is intact and the terminology is corrected, but the
-  prose is the length it was. It is the largest remaining item.
+**The orientation is shortened.** Measuring first showed the problem was one
+module: 2 to 5 run 156-163 words, module 1 ran **599** with a 171-word
+paragraph. Now 451 words in five paragraphs, keeping both classroom examples,
+the three assumptions First Look teaches, the no-evidence policy, and all four
+guarded phrases.
+
+**`/admin/benchmarks` was reported as missing small-group suppression. It is
+not.** `MIN_BENCHMARK_GROUP = 5` is applied in `summarizeCohortBenchmark` to
+both rates, the difference and every per-competency cell, on distinct-student
+counts. The false finding came from grepping the report module's constant name
+against the benchmark module and stopping thirty lines short of the answer.
+
+**The unread pages were read** — student map, play, check-in, badges, both
+teacher mission surfaces, printable guide, class join. No drift, no risk
+language, no over-long headers; nothing needed changing.
+
+**First-screen copy measured** across every teacher and administrator page:
+129-247 words including nav chrome. That sweep first returned an identical 169
+for every administrator page, because the session was a teacher's and each
+route had redirected — a green result testing nothing.
+
+**Print:** no printable surface contains a disclosure, so nothing is hidden from
+print today; the `@media print` rule is a safeguard for the next one.
+
+## Known limitations
 - **The seeded attempt history runs past its own school year.** Attempts span
   late August 2025 to late August 2026 while the recorded year ends 12 June
   2026. That predates this work and is not what the term fix was about;

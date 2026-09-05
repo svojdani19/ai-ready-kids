@@ -70,7 +70,7 @@ export default async function CertificationPage() {
         )}
       </div>
 
-      <Note tone="neutral" >
+      <Note tone="neutral">
         The check after each module is not a gate and there is no pass mark. Pick an answer,
         read why, and move on. It is there so the ideas get used once rather than only read.
         That is also why this is called an orientation rather than a certification: finishing

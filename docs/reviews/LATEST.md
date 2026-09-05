@@ -78,17 +78,60 @@ each re-checked to confirm it still fails when the fact is removed.
 after. No mission was played; the decision reviewed was read through the teacher
 preview for that reason.
 
+### Closing the gaps, and one wrong finding
+
+The first pass left four things open and reported a fifth that was not real.
+
+**The educator orientation is shortened.** Measuring the five modules found the
+problem was one module, not five: modules 2 to 5 run 156 to 163 words each, and
+module 1 ran **599**, including a single 171-word paragraph. It is 451 words in
+five paragraphs now, with every concept, both classroom examples and all four
+phrases its guards pin kept intact. The other four modules were already tight
+and were left alone.
+
+**A reported defect that was not one.** The first pass said `/admin/benchmarks`
+applied no small-group suppression and that this contradicted the privacy page.
+That was wrong. `MIN_BENCHMARK_GROUP = 5` is applied in
+`summarizeCohortBenchmark` to both rates, the difference and every
+per-competency cell, on distinct-student counts — at the source, as its own
+comment says, "rather than in one UI surface". The check that produced the false
+finding grepped for `MIN_REPORTABLE_GROUP`, the report module's constant, and
+stopped reading thirty lines short of the benchmark module's own.
+
+**The unread pages were read.** The student map, play, check-in and badges
+routes, both teacher mission surfaces, the printable guide and the class-join
+page were swept for terminology drift, risk language and over-long headers, and
+the two teacher surfaces were reviewed rendered. Nothing needed changing; the
+only "risk" and "ranking" matches were comments explaining their absence.
+
+**The verification gaps are closed.** The orientation page was read end to end —
+five modules, saving as you go, the completion record, the printable
+certificate and the note explaining why it is not a certification, all intact.
+First-screen copy was measured on every teacher and administrator page: 129 to
+247 words including navigation chrome, none of them burying the reader.
+
+That measurement caught its own error first. Every administrator page reported
+an identical 169 words because the session was a teacher's and each `/admin/*`
+route had quietly redirected — a verification that would have passed while
+testing nothing.
+
+**Print.** No printable surface — the annual report, the discussion guide, the
+family take-home, the certificate — contains a disclosure, so nothing is hidden
+from print today. The `@media print` rule that forces them open is a safeguard
+for the next one, and it is live in the served stylesheet.
+
 ### Where to look hardest
 
-- **The educator orientation was not shortened** — five modules of essay-length
-  prose, asked for and not done. The largest remaining item.
 - **The seeded attempt history runs past its own school year** (to late August
   2026, against a year ending 12 June 2026). Predates this work; fixing it
   rewrites a year of fictional history.
-- **One test run reported a single failure** that has not reproduced in five
+- **One test run reported a single failure** that has not reproduced in eight
   subsequent full runs and was never identified.
 - The plain-language summaries are hand-written above schema-derived
   enumerations. Nothing keeps them in step but a reader.
+- **Module 1 of the orientation is still 451 words** against 160 for the others.
+  It carries more — the programme shape, First Look, and why First Look records
+  no evidence — but it is the one module a reader will feel.
 
 ---
 
