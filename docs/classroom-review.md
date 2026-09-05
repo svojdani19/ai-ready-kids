@@ -1173,6 +1173,22 @@ one of them has not tested the thing that was built.
       65 rows as recent the moment the comparison changed to a range. Print the
       columns a sweep actually checked, so the reader can see what it looked at.
 
+- [ ] **Marketing copy that quotes the product should be read from the product.**
+      The landing page hero held a hand-typed paraphrase of a mission's opening
+      line. The mission had since been rewritten, so the front page quoted a
+      sentence that existed nowhere in the product, and no test could tell —
+      there was nothing connecting them. Derive the quote, and add a guard that
+      fails when somebody types it back in.
+- [ ] **Encode the requirement, not just the implementation.** "Make the hero
+      cycle" is only satisfied if the panels differ. The illustration is part of
+      what changes, so the featured set asserts three distinct scenes and throws
+      naming them when two collide. A comment saying "these should look
+      different" would have survived the first edit that made them identical.
+- [ ] **Measure the controls; do not just look at them.** A visual pass called
+      the new carousel dots fine. Measured, they were 12×12px — half the WCAG
+      2.5.8 minimum, as was the pause control. Padding the hit area fixed both
+      without changing the drawing, and no amount of staring would have found it.
+
 ## Recording a review
 
 Write the review to `docs/reviews/<date>-sprint-NN.md` using the same

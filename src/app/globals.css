@@ -102,6 +102,20 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* One panel replacing another. Opacity only, no movement to chase. */
+  @keyframes ark-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .ark-fade-in {
+    animation: ark-fade-in 320ms ease-out;
+  }
+
   /* Ruled paper texture for story panels; two flat repeating lines only. */
   .ark-ruled {
     background-image: repeating-linear-gradient(

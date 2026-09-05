@@ -7,6 +7,91 @@ likely to be.
 
 ---
 
+## 2026-09-04 — the hero quoted a mission it was not connected to
+
+- **Repository:** <https://github.com/svojdani19/ai-ready-kids>
+- **Full review:** [`2026-09-04-hero-rotation.md`](2026-09-04-hero-rotation.md)
+- **Not a review sprint.** Owner-directed work on the landing page: make the
+  hero cycle through other prompts, then a run of copy edits.
+
+### The defect the request exposed
+
+The hero card was a still, and its words were typed into `page.tsx` by hand — a
+paraphrase of `m-privacy-1` scene `s2`. The mission's actual line is *"Hi there!
+I am so happy to meet you. Before we start, what is your full name?"*; the front
+page had been quoting a shorter version that no longer existed anywhere in the
+product, and nothing failed. It also argued the wrong thing: the section
+directly below says the program is three competencies, and the hero showed
+privacy and only privacy.
+
+### The correction
+
+`src/content/hero.ts` derives the panels from `MISSIONS`. Which three missions
+are featured is editorial and written down; every word in a panel is read out of
+the mission. The module fails closed with the cause named on an unknown slug, a
+missing decision scene, a scene with no tempting answer or no answer that shows
+the skill, two panels from one competency, or **two panels drawing the same
+illustration** — the request itself, encoded as a guard.
+
+`src/components/marketing/HeroScenes.tsx` holds the mechanics and no product
+copy. Eight-second dwell; stops on hover, on keyboard focus, on Pause, and
+entirely under `prefers-reduced-motion`. Every panel is reachable by its own
+button, named for its mission rather than numbered.
+
+Featured: **Sprocket Wants to Know** (privacy, tablet), **The Penguin on the
+Playground** (verification, playground), **The Practice That Got Skipped**
+(ownership, kitchen).
+
+### Copy, as asked
+
+"Three things, practiced nine ways" → **"The Fundamentals"**; the "9 missions"
+eyebrow removed from each competency card; "See all 27 missions" → **"See All
+the Missions"**; "What this means for your school" → **"What this is, and what
+this is not"**, with a new opening paragraph on what the product is not.
+
+### Evidence
+
+`tests/hero-rotation.test.tsx`, 14 tests. **Mutation-checked seven ways**; each
+break fails exactly the tests it should. The two that matter: featuring a second
+`tablet` mission throws at import naming the illustrations, and typing the
+Sprocket quote back into `page.tsx` fails the guard against copied copy.
+
+```
+typecheck  ✓
+lint       0 errors, 2 pre-existing warnings
+tests      1098 passed (39 files), was 1084 (38)
+build      ✓ Compiled successfully
+```
+
+Browser at 1280×800 and 768×1024: all three panels correct, card **545px on
+every panel** so the rotation shifts no layout, no horizontal overflow, no
+console errors, Pause exercised live. Measuring turned up two WCAG 2.5.8 misses
+that looking did not — the panel buttons were 12×12px (now 28×28, dot still 12)
+and the Pause control was 16px tall (now 24).
+
+**Limit:** the preview pane was hidden for part of the pass, which makes
+screenshots stale and blocks scroll input. Above the fold was checked visually;
+below it, from the accessibility tree, rendered text and measured geometry.
+
+**Demo data untouched** — only the marketing page was opened. Swept across all
+12 `_at` columns: zero rows dated 2026-08-30 or later; audit log 6, assignments
+65, students 90, classes 4.
+
+### Where to look hardest
+
+- The featured three are an editorial list. The guards check the *shape* of the
+  selection, not that these are the right three.
+- The new opening paragraph overlaps the paragraph two below it — "build with
+  students rather than respond to engagement failures" against "Teachers and
+  families build that with them rather than watching for it". Only the first was
+  asked for, so nothing was cut.
+- The crossfade is untested: one CSS class leaning on the global reduced-motion
+  rule. The rotation itself is JavaScript and is covered.
+- No live region, deliberately. A screen reader user learns the panel changed
+  only by going back to it.
+
+---
+
 ## Sprint 86 — the guard's coverage was a list, and the list was wrong
 
 - **Reviewed against:** HEAD `58cee66`

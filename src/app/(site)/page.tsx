@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { COMPETENCIES } from "@/content/competencies";
-import { MISSIONS } from "@/content/missions";
 import { ButtonLink } from "@/components/ui/Button";
-import { SceneArt } from "@/components/art/SceneArt";
+import { HERO_PANELS } from "@/content/hero";
+import { HeroScenes } from "@/components/marketing/HeroScenes";
 
 /**
  * The landing page.
@@ -51,27 +51,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="overflow-hidden rounded-3xl border-4 border-ink bg-surface shadow-sticker-deep">
-            <div className="h-52 border-b-4 border-ink sm:h-60">
-              <SceneArt art="tablet" />
-            </div>
-            <div className="p-5">
-              <p className="text-xs font-bold uppercase tracking-[0.12em] text-ink-faint">
-                Mission 1 · Keep It Private
-              </p>
-              <p className="mt-2 font-display text-xl leading-snug text-ink">
-                “Hi there! Before we start, what is your full name?”
-              </p>
-              <div className="mt-4 space-y-2">
-                <div className="rounded-xl border-2 border-sand-deep bg-paper px-3.5 py-2.5 text-sm text-ink-soft">
-                  Type your first and last name so it can help you better
-                </div>
-                <div className="rounded-xl border-2 border-pine bg-pine-wash px-3.5 py-2.5 text-sm font-semibold text-pine-deep">
-                  Leave it blank and tap Start ✓
-                </div>
-              </div>
-            </div>
-          </div>
+          <HeroScenes panels={HERO_PANELS} />
         </div>
       </section>
 
@@ -79,30 +59,24 @@ export default function LandingPage() {
       <section className="border-b-2 border-ink bg-surface">
         <div className="mx-auto max-w-6xl px-5 py-12">
           <div className="flex flex-wrap items-end justify-between gap-3">
-            <h2 className="font-display text-3xl text-ink">Three things, practiced nine ways</h2>
+            <h2 className="font-display text-3xl text-ink">The Fundamentals</h2>
             <Link
               href="/curriculum"
               className="text-[0.95rem] font-bold text-grape-deep underline underline-offset-4"
             >
-              See all 27 missions →
+              See All the Missions →
             </Link>
           </div>
           <div className="mt-7 grid gap-4 md:grid-cols-3">
             {COMPETENCIES.map((competency) => {
               const lane = LANE[competency.accent];
-              const count = MISSIONS.filter((m) => m.competency === competency.id).length;
               return (
                 <Link
                   key={competency.id}
                   href="/curriculum"
                   className={`ark-sticker rounded-2xl border-4 border-ink p-5 transition-colors ${lane.wash} hover:bg-surface`}
                 >
-                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-ink-faint">
-                    {count} missions
-                  </p>
-                  <h3 className={`mt-1.5 font-display text-2xl ${lane.text}`}>
-                    {competency.name}
-                  </h3>
+                  <h3 className={`font-display text-2xl ${lane.text}`}>{competency.name}</h3>
                   <p className="mt-2 text-[0.95rem] leading-relaxed text-ink">
                     {competency.kidBlurb}
                   </p>
@@ -118,8 +92,15 @@ export default function LandingPage() {
           <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div>
               <h2 className="font-display text-3xl text-ink">
-                What this means for your school
+                What this is, and what this is not
               </h2>
+              <p className="mt-3 max-w-xl text-[1.05rem] leading-relaxed text-ink-soft">
+                AI Ready Kids is not another prompt tool. It is the tool BEFORE the prompt.
+                Students learn to make the decisions that determine how an agent should be
+                used, which information it should have access to, and what return should be
+                trusted or verified. Schools and families alike build with students rather
+                than respond to engagement failures.
+              </p>
               <p className="mt-3 max-w-xl text-[1.05rem] leading-relaxed text-ink-soft">
                 Your students learn what these tools are, how to use one well and when to
                 decline &mdash; before they ever turn a thought into a prompt. The
