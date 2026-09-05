@@ -24,7 +24,7 @@ export default async function AdminReport() {
         <PageHeader
           eyebrow="Administrator"
           title="Annual school report"
-          description="Aggregate only, with small groups suppressed. Suitable for a district office, a board packet or a family newsletter."
+          description="Aggregate only, with small groups suppressed. Written for a district office or a board packet."
           actions={
             <div className="flex flex-wrap gap-2">
               <PrintButton label="Print or save as PDF" />
@@ -64,6 +64,39 @@ export default async function AdminReport() {
           </div>
           <LogoMark size={44} />
         </header>
+
+        {/*
+          A district reviewer opens this to answer three questions and then
+          decides whether to read the rest. Previously the first thing on the
+          page was a four-figure participation table, and the fall-to-spring
+          change — the only number anybody quotes — was two sections down.
+        */}
+        <section className="mt-6">
+          <h2 className="font-display text-xl text-ink">Summary</h2>
+          <ul className="mt-3 space-y-2 text-[0.95rem] leading-relaxed text-ink">
+            <li>
+              {report.totals.students} students in {report.totals.classes} classes finished{" "}
+              {report.totals.missionsCompleted} missions, {pct(report.totals.completionRate)} of
+              the work assigned to them.
+            </li>
+            <li>
+              {report.benchmark.pointsDifference === null
+                ? `The spring check-in window has not run yet, so there is no fall-to-spring comparison for ${report.school.schoolYear}.`
+                : `Between the fall and spring check-ins, the ${report.benchmark.matched} students who completed both moved ${
+                    report.benchmark.pointsDifference > 0 ? "up" : "down"
+                  } ${Math.abs(Math.round(report.benchmark.pointsDifference))} percentage points.`}
+            </li>
+            <li>
+              {report.certification.completed} of {report.certification.total} staff finished
+              the educator orientation.
+            </li>
+          </ul>
+          <p className="mt-3 text-sm leading-relaxed text-ink-soft">
+            Every figure below is aggregate, and any group of fewer than five students reads
+            &ldquo;&mdash;&rdquo;. What each number counts, and what it cannot tell you, is
+            stated beside it.
+          </p>
+        </section>
 
         <section className="mt-6">
           <h2 className="font-display text-xl text-ink">Participation</h2>

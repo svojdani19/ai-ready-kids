@@ -28,7 +28,7 @@ export default async function AdminStaff() {
       <PageHeader
         eyebrow="Administrator"
         title="Staff and orientation"
-        description="Who has access, what they own, and how far through the educator orientation they are. Finishing it records that the modules were read; the checks are not gated."
+        description="Who has access, what they own, and how far through the educator orientation they are."
       />
 
       <div className="grid gap-3 sm:grid-cols-3">

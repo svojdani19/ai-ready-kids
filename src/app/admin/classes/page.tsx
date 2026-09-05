@@ -12,6 +12,8 @@ import {
   rotateJoinCodeAsAdminAction,
 } from "@/app/actions/admin";
 import { PageHeader, Panel, PanelBody } from "@/components/ui/Panel";
+import { Disclosure } from "@/components/ui/Disclosure";
+import { CLASS_CODE_BOUNDARY, CLASS_CODE_POSTURE } from "@/content/data-inventory";
 import { EmptyState, Note, Tag } from "@/components/ui/Bits";
 import { ConfirmAction } from "@/components/staff/ConfirmAction";
 import { ReassignForm } from "./ReassignForm";
@@ -44,7 +46,7 @@ export default async function AdminClasses() {
       <PageHeader
         eyebrow="Administrator"
         title="Classes"
-        description={`${school.name} · ${schoolYear}. Archiving closes a finished class: students cannot join and those already signed in are signed out on their next request, while its records and their deletion date are unchanged. Deleting removes its roster and every record immediately.`}
+        description={`${school.name} · ${schoolYear}. Create classes, assign teachers, rotate join codes. Archiving and deleting each say what they do before you confirm.`}
       />
 
       <Panel
@@ -201,27 +203,35 @@ export default async function AdminClasses() {
         </Panel>
       </div>
 
-      <div className="mt-6">
-        <Note tone="denim" title="Class codes">
+      <div className="mt-6 space-y-3">
+        {/*
+          The short version sits here, next to the New code buttons; the whole
+          boundary is one click away and comes from the shared module rather
+          than a second copy of it. The copy on this page had already drifted
+          from that module once, down to carrying its own typo.
+        */}
+        <Note tone="denim" title="Before you rotate a code">
           A class code is shared classroom access, not proof of who is using it. Anyone
-          holding it can see that class&rsquo;s roster of first names and avatars, choose
-          any child on it, and open that child&rsquo;s progress. Codes get read aloud and
-          photographed off whiteboards, so choose <strong>New code</strong> above whenever
-          one has traveled further than the class. From then on the old code is rejected
-          on the next request that uses it: nobody can join with it, a half-finished join
-          stops, and a browser already signed in with it is asked to rejoin the next time
-          it loads a page. It does not close a page that is already open &mdash; a child
-          mid-mission keeps that screen until they navigate. Nothing else about the class
-          changes and no records are touched. The teacher of record can do the same
-          from their own class page. Deleting a class is never the way to change its code.
-          Roster sync and single sign-on would replace codes in a production deployment;
-          neither is built, so a class code is the only credential in the product and it is
-          not production access control. This build is a local demonstration on fictional
-          data. Putting real student records behind a class code is a decision for the
-          school, which has to weigh the shared access described above against its own
-          policies first.
+          holding it can open the roster and any listed student&rsquo;s progress, so choose{" "}
+          <strong>New code</strong> whenever one has traveled further than the class. The
+          old code is refused from its next use; nothing about the class or its records
+          changes.
         </Note>
+
+        <Disclosure summary="What a class code reaches, in full">
+          <ul className="space-y-2.5">
+            {CLASS_CODE_BOUNDARY.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+          <p className="mt-3">{CLASS_CODE_POSTURE}</p>
+          <p className="mt-3">
+            The teacher of record can rotate a code from their own class page. Deleting a
+            class is never the way to change its code.
+          </p>
+        </Disclosure>
       </div>
+
     </div>
   );
 }

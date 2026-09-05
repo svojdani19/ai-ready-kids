@@ -9,6 +9,7 @@ import { summarizeCohortBenchmark } from "@/lib/domain/benchmark";
 import { daysBetween, formatDate } from "@/lib/domain/retention";
 import { MISSIONS } from "@/content/missions";
 import { PageHeader, Panel, PanelBody } from "@/components/ui/Panel";
+import { Disclosure } from "@/components/ui/Disclosure";
 import { ButtonLink } from "@/components/ui/Button";
 import { Note, Stat, Tag } from "@/components/ui/Bits";
 import { SchoolForm } from "./SchoolForm";
@@ -197,6 +198,36 @@ export default async function AdminProgram() {
               : "neutral"
           }
         />
+      </div>
+
+      <div className="mt-6">
+        <Disclosure summary="Academic year, seat licence and renewal are three different things">
+          <dl className="grid gap-3 sm:grid-cols-3">
+            {[
+              [
+                "The academic year",
+                "When the children arrive and go home. It moves only when you roll it over, and it is what deletion dates are counted from.",
+              ],
+              [
+                "The seat licence",
+                "How many students the plan covers. Enrolment stops at that number; nothing expires when it is reached.",
+              ],
+              [
+                "The renewal date",
+                "When the subscription is next paid for. It has no effect on the school year, on rosters or on any record.",
+              ],
+            ].map(([term, meaning]) => (
+              <div key={term} className="rounded-lg border border-sand-deep bg-paper p-3.5">
+                <dt className="text-sm font-semibold text-ink">{term}</dt>
+                <dd className="mt-1 text-sm leading-relaxed text-ink-soft">{meaning}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="mt-3">
+            Rolling the year over does not renew anything, and renewing does not roll the
+            year over. Each is done here, separately, and each writes its own audit entry.
+          </p>
+        </Disclosure>
       </div>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-2">

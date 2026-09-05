@@ -218,10 +218,17 @@ describe("no surface draws a risk conclusion the product cannot support", () => 
   });
 
   it("says the same thing in the administrator's note and the audit entry", () => {
-    const classes = copyOf(SURFACES.adminClasses);
+    // `renderedCopy`, not `copyOf`: the page used to hold a hand-written second
+    // copy of the boundary — which had already drifted from the module, down to
+    // its own typo — and now renders CLASS_CODE_BOUNDARY itself. What a reader
+    // sees is identical; what the file contains is not.
+    const classes = renderedCopy(SURFACES.adminClasses);
     expect(classes).not.toMatch(/old code stops working immediately/i);
     expect(classes).toMatch(/rejected\s+on the next request/i);
-    expect(classes).toMatch(/mid-mission keeps that screen until they navigate/i);
+    // The caveat, in whichever words carry it: a page already open is not
+    // closed. The page said "mid-mission keeps that screen"; the shared module
+    // says "keeps looking at it". Same promise, and the promise is what matters.
+    expect(classes).toMatch(/keeps (looking at it|that screen) until they navigate/i);
 
     for (const path of ["src/app/actions/admin.ts", "src/app/actions/teacher.ts"]) {
       const actions = copyOf(path);

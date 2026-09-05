@@ -351,10 +351,18 @@ describe("the copy says what archiving now does", () => {
   });
 
   it("no longer describes archiving as merely keeping a class out of the way", () => {
+    // These facts used to be in the page description, three sentences above the
+    // button. They are now in the confirmation an administrator reads with
+    // their finger on Archive, which is where a consequence belongs — so this
+    // asserts on that confirmation rather than on the page's opening line.
     const page = copyOf("src/app/admin/classes/page.tsx");
     expect(page).not.toMatch(/keeps a finished class out of the way/i);
-    expect(page).toMatch(/those already signed in are signed out on their next request/i);
+
+    const archive = page.match(/question=\{`Archive[^`]*`\}/)?.[0] ?? "";
+    expect(archive, "no archive confirmation found to assert on").not.toBe("");
+    // Children already signed in lose access; it is not merely a join block.
+    expect(archive).toMatch(/already signed in is asked to rejoin/i);
     // The records claim survives, because it is still true.
-    expect(page).toMatch(/its records and their deletion date are unchanged/i);
+    expect(archive).toMatch(/mission history, check-ins and the deletion date do not change/i);
   });
 });

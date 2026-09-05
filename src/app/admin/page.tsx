@@ -12,6 +12,7 @@ import { requireAdmin } from "@/lib/auth/session";
 import { buildSchoolReport } from "@/lib/repo/report";
 import { COMPETENCY_BY_ID } from "@/content/competencies";
 import { daysBetween, formatDate } from "@/lib/domain/retention";
+import { hasVerifiableAcademicDates } from "@/lib/domain/calendar";
 import { PageHeader, Panel, PanelBody } from "@/components/ui/Panel";
 import { ButtonLink } from "@/components/ui/Button";
 import { Note, Stat, Tag } from "@/components/ui/Bits";
@@ -40,12 +41,41 @@ export default async function AdminOverview() {
   const renewalInDays =
     term.kind === "needs-configuration" ? null : daysBetween(now, new Date(school.term_renews_on));
 
+  /**
+   * Annual jobs nobody is reminded of anywhere else.
+   *
+   * The page opened with a sentence about aggregation, which is a fact about
+   * the product rather than something an administrator has to do. These are the
+   * two things that go quietly out of date: the school year, which only moves
+   * when somebody rolls it over, and the staff who never finished the
+   * orientation. Neither is an error, so neither is a warning — they are a list
+   * with the action next to it.
+   */
+  const yearEnded =
+    hasVerifiableAcademicDates(school) && new Date(school.year_ends_on).getTime() < now.getTime();
+  const orientationOutstanding = report.certification.total - report.certification.completed;
+  const tasks: { label: string; href: string; action: string }[] = [];
+  if (yearEnded) {
+    tasks.push({
+      label: `The ${school.academic_year} school year ended ${formatDate(school.year_ends_on)}. Rolling over starts the new year and sets this year's retention dates.`,
+      href: "/admin/program",
+      action: "Roll the year over",
+    });
+  }
+  if (orientationOutstanding > 0) {
+    tasks.push({
+      label: `${orientationOutstanding} of ${report.certification.total} staff have not finished the educator orientation.`,
+      href: "/admin/staff",
+      action: "See who",
+    });
+  }
+
   return (
     <div>
       <PageHeader
         eyebrow={report.school.district}
         title={report.school.name}
-        description={`School year ${report.school.schoolYear}. Everything on this page is aggregate: administrators do not see individual students, and there is no per-child view to open.`}
+        description={`School year ${report.school.schoolYear}. Aggregate figures for the whole school.`}
         actions={
           <ButtonLink href="/admin/report" variant="secondary">
             Annual report
@@ -103,13 +133,37 @@ export default async function AdminOverview() {
             {/* Reads the school, not the report: this block only renders for a
                 verifiable term, and the report no longer carries account
                 dates at all. */}
-            The {report.school.schoolYear} subscription renews {formatDate(school.term_renews_on)}.
-            Your annual report for the year is ready to export for the district office.{" "}
+            The subscription renews {formatDate(school.term_renews_on)}. Your annual report
+            for {report.school.schoolYear} is ready to export for the district office.{" "}
             <Link href="/admin/program" className="font-semibold underline underline-offset-2">
               Review the program status
             </Link>
             .
           </Note>
+        </div>
+      )}
+
+      {tasks.length > 0 && (
+        <div className="mt-6">
+          <Panel title="Needs your attention" description="Annual jobs, not errors.">
+            <PanelBody>
+              <ul className="space-y-3">
+                {tasks.map((task) => (
+                  <li
+                    key={task.href + task.action}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-sand-deep bg-paper px-4 py-3"
+                  >
+                    <span className="min-w-0 flex-1 text-sm leading-relaxed text-ink">
+                      {task.label}
+                    </span>
+                    <ButtonLink href={task.href} size="sm" variant="secondary">
+                      {task.action}
+                    </ButtonLink>
+                  </li>
+                ))}
+              </ul>
+            </PanelBody>
+          </Panel>
         </div>
       )}
 

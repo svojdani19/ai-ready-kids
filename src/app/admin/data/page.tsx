@@ -100,59 +100,27 @@ export default async function AdminData() {
         />
       </div>
 
-      <div className="mt-6 grid gap-5 lg:grid-cols-2">
-        {/* Enumerated from the schema rather than summarized from memory, and
-            from the same module the public privacy page reads. The old list
-            said "the complete list, nothing held back" over six lines that
-            omitted the class relationship, the derived per-attempt evidence and
-            the check-in timestamps — and the public page's list of six was a
-            different six. */}
-        <Panel
-          title="What we hold about a student"
-          description="Every column in the database that hangs off a student row, and the class and staff records those rows hang from. Not the school's own account settings, which are not student records."
-        >
-          <PanelBody className="space-y-5">
-            <dl className="space-y-3">
-              {STUDENT_RECORD.map((entry) => (
-                <div key={entry.what}>
-                  <dt className="text-sm font-semibold text-ink">{entry.what}</dt>
-                  <dd className="text-sm leading-relaxed text-ink-soft">{entry.why}</dd>
-                </div>
-              ))}
-            </dl>
-            <div className="border-t border-sand pt-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-faint">
-                The records a student record hangs from
-              </p>
-              <dl className="mt-3 space-y-3">
-                {SURROUNDING_RECORD.map((entry) => (
-                  <div key={entry.what}>
-                    <dt className="text-sm font-semibold text-ink">{entry.what}</dt>
-                    <dd className="text-sm leading-relaxed text-ink-soft">{entry.why}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          </PanelBody>
-        </Panel>
-
-        <Panel
-          title="What we do not collect"
-          description="These have no column in the database, not merely no screen in the product."
-        >
-          <PanelBody>
-            <ul className="space-y-2">
-              {NOT_COLLECTED.map((item) => (
-                <li key={item} className="flex gap-2.5 text-sm leading-relaxed text-ink-soft">
-                  <span aria-hidden="true" className="mt-0.5 font-bold text-berry">
-                    ✕
-                  </span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </PanelBody>
-        </Panel>
+      {/*
+        Three sentences before three tables. An administrator arrives here to
+        answer "what do you hold, and when does it go", and the page opened with
+        a column-by-column enumeration of the schema — the evidence for the
+        answer, ahead of the answer. The enumeration is still here, below the
+        controls it is evidence for.
+      */}
+      <div className="mt-6 rounded-xl border-2 border-ink bg-surface p-5">
+        <h2 className="font-display text-xl text-ink">In plain language</h2>
+        <p className="mt-2 max-w-3xl text-[1.05rem] leading-relaxed text-ink">
+          This product holds a first name and a last initial, an assigned avatar, which
+          class a student is in, and what they did in the sessions their teacher assigned.
+          It holds no surname, birthday, address, contact details, photographs, location or
+          behavioral tracking of any kind.
+        </p>
+        <p className="mt-3 max-w-3xl text-[1.05rem] leading-relaxed text-ink">
+          A class becomes due for deletion once its own school year has ended and the
+          retention window has passed. Set that window below, see every class&rsquo;s date
+          before anything happens, and delete any class sooner. Every change and every
+          deletion is written to the audit log.
+        </p>
       </div>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr]">
@@ -253,6 +221,61 @@ export default async function AdminData() {
               </tbody>
             </table>
           </div>
+        </Panel>
+      </div>
+
+      <div className="mt-6 grid gap-5 lg:grid-cols-2">
+        {/* Enumerated from the schema rather than summarized from memory, and
+            from the same module the public privacy page reads. The old list
+            said "the complete list, nothing held back" over six lines that
+            omitted the class relationship, the derived per-attempt evidence and
+            the check-in timestamps — and the public page's list of six was a
+            different six. */}
+        <Panel
+          title="What we hold about a student"
+          description="Every column in the database that hangs off a student row, and the class and staff records those rows hang from. Not the school's own account settings, which are not student records."
+        >
+          <PanelBody className="space-y-5">
+            <dl className="space-y-3">
+              {STUDENT_RECORD.map((entry) => (
+                <div key={entry.what}>
+                  <dt className="text-sm font-semibold text-ink">{entry.what}</dt>
+                  <dd className="text-sm leading-relaxed text-ink-soft">{entry.why}</dd>
+                </div>
+              ))}
+            </dl>
+            <div className="border-t border-sand pt-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-faint">
+                The records a student record hangs from
+              </p>
+              <dl className="mt-3 space-y-3">
+                {SURROUNDING_RECORD.map((entry) => (
+                  <div key={entry.what}>
+                    <dt className="text-sm font-semibold text-ink">{entry.what}</dt>
+                    <dd className="text-sm leading-relaxed text-ink-soft">{entry.why}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          </PanelBody>
+        </Panel>
+
+        <Panel
+          title="What we do not collect"
+          description="These have no column in the database, not merely no screen in the product."
+        >
+          <PanelBody>
+            <ul className="space-y-2">
+              {NOT_COLLECTED.map((item) => (
+                <li key={item} className="flex gap-2.5 text-sm leading-relaxed text-ink-soft">
+                  <span aria-hidden="true" className="mt-0.5 font-bold text-berry">
+                    ✕
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </PanelBody>
         </Panel>
       </div>
 
