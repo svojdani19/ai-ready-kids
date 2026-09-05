@@ -16,7 +16,7 @@ export function CompleteButton({ ready }: { ready: boolean }) {
         })
       }
     >
-      {pending ? "Recording…" : "Complete the certification"}
+      {pending ? "Recording…" : "Complete the orientation"}
     </Button>
   );
 }

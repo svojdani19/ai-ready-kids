@@ -18,37 +18,70 @@ import type { Db } from "./helpers";
  */
 
 const SCHOOL_ID = "sch_brightwood";
-const SCHOOL_YEAR = "2025-2026";
-// Subscription dates: when money changes hands.
-const TERM_START = "2025-08-18";
+
 /**
- * One year from the day the database is seeded, not a fixed date.
+ * The demonstration school's subscription term.
  *
- * This was `"2026-09-01"`, and on 2026-09-02 UTC the demo school's subscription
- * simply expired: 56 tests began failing on a suite nobody had touched, and
- * every page of the demo started saying "This subscription has ended" with the
- * curriculum gated behind sprint 81's entitlement check. A demonstration that
- * dies on a calendar date is a demonstration that will be broken the first time
- * somebody opens it after that date — which, for a build meant to be shared
- * with schools, is the worst possible failure.
+ * Two requirements pull against each other and both are real.
  *
- * The academic dates below stay fixed on purpose. They describe a completed
- * 2025–26 school year, which is the fiction the seeded attempt history tells,
- * and sprint 32 established that conflating "when the children arrive" with
- * "when money changes hands" is its own defect. Only the commercial term
- * follows the clock, so a freshly seeded school is always one a teacher could
- * actually use.
+ * **It must never lapse.** The renewal date was once the fixed string
+ * `"2026-09-01"`, and on 2026-09-02 UTC the demo school's subscription simply
+ * expired: 56 tests began failing on a suite nobody had touched, and every page
+ * started saying "This subscription has ended" with the curriculum gated behind
+ * the entitlement check. A demonstration that dies on a calendar date is broken
+ * for whoever opens it next.
+ *
+ * **It must be a year long.** The first repair floated only the renewal date and
+ * left the start fixed at 18 August 2025, so by September 2026 the demo school
+ * showed a term running two years and one month while the plans page sold one
+ * subscription per school year. The fix for a stale date created a false one.
+ *
+ * So the whole term slides: the most recent 18 August on or before today, and
+ * the same day one year later. Always annual, always current, whenever it is
+ * seeded. `tests/subscription-term.test.ts` asserts both properties across a
+ * decade of seed dates, including the boundary day itself.
  */
-const TERM_RENEWS = (() => {
-  const renews = new Date();
-  renews.setUTCFullYear(renews.getUTCFullYear() + 1);
-  return renews.toISOString().slice(0, 10);
-})();
-// Academic dates: when the children arrive and go home. Deliberately different
-// from the two above, because conflating them was the sprint 32 defect and a
-// seed where they coincided would hide it.
+const TERM_ANCHOR = { month: 7, day: 18 } as const; // 18 August, zero-indexed month
+
+export function demonstrationTerm(now: Date): { startsOn: string; renewsOn: string } {
+  const day = (year: number) =>
+    new Date(Date.UTC(year, TERM_ANCHOR.month, TERM_ANCHOR.day)).toISOString().slice(0, 10);
+  const thisYear = now.getUTCFullYear();
+  // On the anchor day itself the term starts today rather than a year ago, so a
+  // school seeded on 18 August has a full year ahead of it.
+  const startYear = now.getTime() >= Date.parse(`${day(thisYear)}T00:00:00.000Z`)
+    ? thisYear
+    : thisYear - 1;
+  return { startsOn: day(startYear), renewsOn: day(startYear + 1) };
+}
+
+const TERM = demonstrationTerm(new Date());
+const TERM_START = TERM.startsOn;
+const TERM_RENEWS = TERM.renewsOn;
+
+/**
+ * Academic dates: when the children arrive and go home.
+ *
+ * Fixed, and deliberately not derived from the term above. Conflating "when the
+ * children arrive" with "when money changes hands" was its own defect, and a
+ * seed where the two coincided would hide it. These describe the completed
+ * 2025–26 year that the seeded attempt history actually tells, which is why the
+ * demo school is one with last year on the books and this year's subscription
+ * live — a school that has not yet rolled its academic year over, which is the
+ * state the rollover control exists for.
+ */
+const SCHOOL_YEAR = "2025-2026";
 const YEAR_STARTS = "2025-08-25";
 const YEAR_ENDS = "2026-06-12";
+
+/**
+ * The day the seeded attempt history is measured from.
+ *
+ * Anchored to the academic year above, not to the sliding term: the stored
+ * attempts have to land inside the school year they belong to, and they would
+ * drift out of it if they followed the invoice.
+ */
+const HISTORY_ANCHOR = "2025-08-18";
 
 /** Small deterministic PRNG so the demo looks identical on every machine. */
 function makeRng(seed: number) {
@@ -64,7 +97,7 @@ function pick<T>(rng: () => number, list: readonly T[]): T {
 }
 
 function isoDay(dayOffsetFromTermStart: number): string {
-  const base = new Date(`${TERM_START}T15:30:00.000Z`);
+  const base = new Date(`${HISTORY_ANCHOR}T15:30:00.000Z`);
   base.setUTCDate(base.getUTCDate() + dayOffsetFromTermStart);
   return base.toISOString();
 }

@@ -24,7 +24,7 @@ import type { CompetencyId, SceneArt } from "./types";
  * - **Sprocket Wants to Know** — the first mission in the program and the
  *   clearest one-line illustration of what this product is.
  * - **The Penguin on the Playground** — a shared picture, which is the
- *   verification case a school evaluator recognises immediately.
+ *   verification case a school evaluator recognizes immediately.
  * - **The Practice That Got Skipped** — the homework shortcut, and the one
  *   families ask about first.
  *

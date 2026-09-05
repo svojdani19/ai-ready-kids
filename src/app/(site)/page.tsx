@@ -112,8 +112,8 @@ export default function LandingPage() {
                   "Students never type into a generative model and never see one respond. Every word a child reads here was authored in advance.",
                 ],
                 [
-                  "No information sharing, ever",
-                  "Nothing a child does leaves this product: no analytics, no third-party services, nothing sold and nothing shared. The only name it holds is a first name and a last initial, typed by the teacher.",
+                  "No third-party sharing, ever",
+                  "Student activity is not sent to analytics services, advertising networks, generative models or any outside provider. It is never sold and never used for advertising.",
                 ],
                 [
                   "No surveillance, ever",

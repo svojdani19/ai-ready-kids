@@ -24,7 +24,7 @@ export default function CurriculumPage() {
         eyebrow="Curriculum"
         tone="marigold"
         title="Twenty-seven missions, and an introduction before them."
-        lede="Three competencies, three named skills each, three missions per skill: twenty-seven authored missions, written for grades 2 to 4. First Look comes before all of it, in three short sessions, and ships in two reading levels — Grade 2 runs the grades 1 and 2 track, Grades 3 and 4 run the grades 3 to 5 track."
+        lede="Three competencies, three skills each, three missions per skill: twenty-seven authored missions for grades 2 to 4. First Look comes first, in three short sessions, in two reading levels — Grade 2 runs the grades 1 and 2 track, Grades 3 and 4 run the grades 3 to 5 track."
       >
         <div className="flex flex-wrap gap-3">
           <ButtonLink href="/demo">Play one in the demo</ButtonLink>

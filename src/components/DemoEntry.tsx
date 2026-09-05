@@ -42,7 +42,7 @@ export async function DemoEntry({ compact = false }: { compact?: boolean }) {
       role: "teacher" as const,
       title: "Teacher",
       who: teacher ? `${teacher.name}, ${classroom?.name ?? "Room 12"}` : "Room 12 teacher",
-      blurb: `${teacherClass} students, ${teacherAssigned} missions assigned, certification complete.`,
+      blurb: `${teacherClass} students, ${teacherAssigned} missions assigned, orientation complete.`,
       accent: "border-pine bg-pine-wash",
     },
     {
