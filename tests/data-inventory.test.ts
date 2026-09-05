@@ -157,8 +157,32 @@ describe("no surface draws a risk conclusion the product cannot support", () => 
     for (const pattern of BANNED) expect(copy).not.toMatch(pattern);
   });
 
-  it("describes what a class code actually reaches, everywhere it is explained", () => {
-    for (const path of [SURFACES.home, SURFACES.privacy, SURFACES.adminClasses]) {
+  /**
+   * The surfaces that raise a class code, found rather than listed.
+   *
+   * This was a hard-coded trio including the landing page. When the landing
+   * page dropped its class-code card the guard failed for a page that no longer
+   * makes the claim at all — the wrong failure, and the kind that gets a check
+   * deleted rather than fixed. The defect it was written for is **half** an
+   * explanation: the words "class code" with nothing about shared access. So
+   * the rule is now what the test always said it was — a surface either
+   * explains a class code properly or does not raise it.
+   */
+  const explainsClassCode = Object.entries(SURFACES).filter(([, path]) =>
+    /class code/i.test(renderedCopy(path)),
+  );
+
+  it("is not a vacuous check: the two surfaces that must explain it still do", () => {
+    // Without this, every surface dropping the subject would make the guard
+    // below pass over an empty list.
+    expect(explainsClassCode.map(([name]) => name)).toEqual(
+      expect.arrayContaining(["privacy", "adminClasses"]),
+    );
+  });
+
+  it.each(explainsClassCode)(
+    "%s describes what a class code actually reaches",
+    (_name, path) => {
       const copy = renderedCopy(path);
       // Shared access, not identity.
       expect(copy).toMatch(/shared classroom access|not a child's password/i);
@@ -167,8 +191,8 @@ describe("no surface draws a risk conclusion the product cannot support", () => 
       expect(copy).toMatch(/progress/i);
       // And the mitigation the product does have.
       expect(copy).toMatch(/rotate|new code/i);
-    }
-  });
+    },
+  );
 
   it("promises only the rotation containment the code delivers", () => {
     const boundary = CLASS_CODE_BOUNDARY.join(" ");
