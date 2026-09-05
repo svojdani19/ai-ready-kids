@@ -13,14 +13,19 @@ export const metadata: Metadata = {
 /**
  * What each audience gets, by role.
  *
+ * Three points each, chosen as the three a person in that seat would ask about
+ * first. The rest is not deleted, it is where it is used: the orientation is
+ * described in full on How it works, badges on the student map, the
+ * fall-to-spring comparison on Annual check-ins.
+ *
  * The Families card is deliberately the one card that promises nothing
- * term-limited. This sprint's acceptance correction: the Teachers bullet used
- * to read "a printable discussion guide and a family take-home for every
- * mission", which put a free
- * public page inside a sentence about what a subscribing teacher gets. The
- * guide is licensed for the term and the take-home is not, so the two are named
- * separately. Exported so `tests/instruction-entitlement.test.ts` can hold the
- * split to the routing decision behind it.
+ * term-limited. An earlier Teachers bullet read "a printable discussion guide
+ * and a family take-home for every mission", which put a free public page
+ * inside a sentence about what a subscribing teacher gets: the guide is
+ * licensed for the term and the take-home is not. The paid cards no longer
+ * mention the take-home at all. Exported so
+ * `tests/instruction-entitlement.test.ts` can hold the split to the routing
+ * decision behind it.
  */
 export const ROLES = [
   {
@@ -31,9 +36,7 @@ export const ROLES = [
     points: [
       "Join with a class code, then tap their own name. No password, no account, nothing to reset.",
       "A competency map, not a score. Nobody is ever shown a number or a risk label.",
-      "Badges with no streaks, no points and no timers. All nine are equal and nothing expires.",
-      "Read-aloud on every dense screen, using the browser's own voice. No microphone is requested.",
-      "Keyboard operable, reduced-motion aware, and legible at 200% zoom.",
+      "Read-aloud on every dense screen in the browser's own voice, keyboard operable, reduced-motion aware and legible at 200% zoom. No microphone is requested.",
     ],
   },
   {
@@ -44,9 +47,7 @@ export const ROLES = [
     points: [
       "Every branch of every mission written out in one page, including coach notes students never see.",
       "Classroom Mode for the projector: teacher-paced, any branch revealable, hands-up tally, nothing recorded.",
-      "Completion and demonstrated-skill evidence per student, framed as next teaching steps.",
-      "A printable discussion guide for every mission, and a family take-home that goes home free either way.",
-      `A ${CERTIFICATION_MODULES.length}-module educator orientation, about ${CERTIFICATION_MINUTES} minutes, with a printable certificate of completion.`,
+      "Per-student evidence against nine named skills, framed as the next teaching step, with a printable discussion guide for each mission.",
     ],
   },
   {
@@ -55,11 +56,9 @@ export const ROLES = [
     tone: "denim" as const,
     lede: "School-level trends, an annual report, and real control over what is kept.",
     points: [
-      "Aggregate figures only. There is no route in the product that shows you a named student's answers.",
-      "The fall-to-spring difference between two authored check-ins, on matched students.",
-      "Groups smaller than five are reported as too few to report, in the product and in every export.",
-      "A retention window you set, with the resulting due date shown per class before anything is clicked, and a purge job that acts on it. You can delete any class, and its records, sooner without waiting for the date.",
+      "Aggregate figures only, with groups smaller than five reported as too few to report. No route in the product shows you a named student's answers.",
       "An annual report to print, plus CSV and JSON export, and an audit log of every configuration change.",
+      "A retention window you set, with the resulting due date shown per class before anything is clicked, and a purge that acts on it. Any class can be deleted sooner.",
     ],
   },
   {
@@ -71,8 +70,6 @@ export const ROLES = [
       `A printable take-home for each of the ${ALL_SESSIONS.length} sessions and missions: what was practiced, three questions, one thing to try.`,
       "Free public resources, not part of any plan: no subscription is needed to read, print or send one home, and they keep working whether or not the school's subscription is current.",
       "No parent account, because creating one would mean collecting a parent.",
-      "Public links with nothing behind them to log into and nothing on them to submit.",
-      "One sentence per mission worth keeping, like “Sounding sure is not the same as being right.”",
     ],
   },
 ];
@@ -108,7 +105,7 @@ export default function ForSchoolsPage() {
             <p className="mt-2 max-w-2xl text-[1.05rem] leading-relaxed text-ink-soft">
               {role.lede}
             </p>
-            <ul className="mt-5 grid gap-2.5 md:grid-cols-2">
+            <ul className="mt-5 grid gap-2.5 md:grid-cols-3">
               {role.points.map((p) => (
                 <li
                   key={p}

@@ -1943,14 +1943,21 @@ describe("educator orientation", () => {
     });
 
     it("keeps the accurate phrases the sweep must not remove", () => {
-      const forSchools = readFileSync(
-        join(process.cwd(), "src/app/(site)/for-schools/page.tsx"),
-        "utf8",
+      // What a teacher actually gets is a certificate of completion, and saying
+      // so is accurate — the fix is never to delete the honest phrase.
+      //
+      // Found rather than pinned. This named `for-schools` because that is
+      // where the sentence happened to live, and it fired when the orientation
+      // moved to How it works, where the programme is actually explained. The
+      // requirement is that the buyer-facing site says it somewhere, and names
+      // the orientation as an orientation while it does.
+      const wherever = MARKETING.map((f) => readFileSync(join(process.cwd(), f), "utf8")).join(" ");
+      expect(wherever, "no buyer-facing page offers a certificate of completion").toContain(
+        "certificate of completion",
       );
-      // What a teacher actually gets is a certificate of completion, and
-      // saying so is accurate — the fix is not to delete the honest phrase.
-      expect(forSchools).toContain("certificate of completion");
-      expect(forSchools).toContain("educator orientation");
+      expect(wherever, "no buyer-facing page names the educator orientation").toContain(
+        "educator orientation",
+      );
 
       const privacy = readFileSync(
         join(process.cwd(), "src/app/(site)/privacy/page.tsx"),

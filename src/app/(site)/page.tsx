@@ -30,11 +30,10 @@ export default function LandingPage() {
               Walk before you run.
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-soft">
-              AI Ready Kids helps students understand the nuances of safety in using
-              artificial intelligence before they are thrust into prompts and language
-              models. Through teacher-guided scenarios, students build privacy,
-              verification and independent learning — specific situations written to
-              instruct and to engage.
+              AI Ready Kids gives students practice at the decisions an AI tool will
+              ask them to make, before they meet one for real. Teacher-guided scenarios
+              build three habits: keeping private things private, checking what they
+              are told, and doing their own thinking.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <ButtonLink href="/demo" size="lg">

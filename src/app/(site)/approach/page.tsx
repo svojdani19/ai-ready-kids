@@ -52,23 +52,19 @@ export default function ApproachPage() {
         tone="paper"
         title="Why it is authored, not generated"
       >
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           {[
             [
-              "A child cannot be surprised by it",
-              "A finite graph of hand-written scenes can be read end to end by a teacher before a class ever sees it. A model's output cannot.",
+              "You can read all of it first",
+              "Every scene and every reply is written in advance, so a teacher can read a mission end to end before a class sees it. Automated checks confirm every path reaches an ending.",
             ],
             [
-              "A child cannot type into it",
-              "Every input in the student experience is a tap on an authored choice. There is no text box, so there is nothing a child could disclose.",
+              "Every class gets the same lesson",
+              "The same mission shows the same words to every child, in every room. Two teachers comparing notes are comparing the same thing.",
             ],
             [
-              "It can be tested mechanically",
-              "Automated tests check that every scene is reachable, every path terminates, every choice has feedback, and no unsafe branch is a dead end.",
-            ],
-            [
-              "It does not expire",
-              "The transferable lessons are phrases, not interfaces: sounding sure is not the same as being right; good help leaves the thinking with you.",
+              "It does not go out of date",
+              "What transfers is phrases, not screens: sounding sure is not the same as being right, and good help leaves the thinking with you.",
             ],
           ].map(([t, b]) => (
             <div key={t} className="rounded-2xl border-2 border-ink bg-surface p-5">
@@ -82,7 +78,7 @@ export default function ApproachPage() {
       <Section
         tone="pine"
         title="Teachers are prepared too"
-        lede={`A ${CERTIFICATION_MODULES.length}-module orientation, about ${CERTIFICATION_MINUTES} minutes in total, designed for two prep periods rather than a summer institute. The checks after each module are not gated, so finishing it records completion rather than certifying competence.`}
+        lede={`A ${CERTIFICATION_MODULES.length}-module educator orientation, about ${CERTIFICATION_MINUTES} minutes, with a printable certificate of completion. The checks after each module are not gated, so finishing it records completion rather than certifying competence.`}
       >
         <ul className="grid gap-2 sm:grid-cols-2">
           {CERTIFICATION_MODULES.map((m) => (

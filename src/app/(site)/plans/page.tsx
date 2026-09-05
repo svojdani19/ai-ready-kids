@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { PageHero, Section } from "@/components/marketing/Page";
 import { ButtonLink } from "@/components/ui/Button";
 import { Tag } from "@/components/ui/Bits";
+import { Disclosure } from "@/components/ui/Disclosure";
 import {
   CORE_GRADE_LABEL,
   CORE_MISSION_COUNT,
@@ -153,76 +154,79 @@ export default function PlansPage() {
 
       <Section tone="denim" title="What a subscription is for, and which grades">
         <p className="max-w-3xl text-[1.05rem] leading-relaxed text-ink">
-          The assessed program is <strong>{CORE_GRADE_LABEL}</strong>. All{" "}
-          {CORE_MISSION_COUNT} core missions are written and reading-levelled for that
-          band, and so are the fall and spring check-ins, the nine-skill evidence, the
-          badges and the school report. Every mission card in the product says its grade
-          band on its face.
+          The assessed program is <strong>{CORE_GRADE_LABEL}</strong>: all{" "}
+          {CORE_MISSION_COUNT} core missions, both check-ins, the nine-skill evidence, the
+          badges and the school report. <strong>First Look is included and is not part of
+          that</strong> — it introduces the idea to a class that has not been told what AI
+          is, and records no skill evidence.
         </p>
-        <p className="mt-4 max-w-3xl text-[1.05rem] leading-relaxed text-ink">
-          <strong>First Look is included and is not part of that.</strong> It is{" "}
-          {FIRST_LOOK_TOTAL_SESSIONS} authored sessions in two tracks, and a class runs the{" "}
-          {FIRST_LOOK_SESSIONS_PER_CLASS} written for its grade — {FIRST_LOOK_TRACK_LABELS[0]},
-          or {FIRST_LOOK_TRACK_LABELS[1]}. It is an introduction for a class that has not
-          been told what AI is, and it deliberately records no skill evidence, so it moves
-          no competency figure and appears in no report total.
-        </p>
-        <p className="mt-4 max-w-3xl text-[1.05rem] leading-relaxed text-ink">
-          <strong>Classes are created in {CORE_GRADE_LABEL}.</strong> First Look ships two
-          tracks because those are the two reading levels the sessions are written for,
-          and a class is offered the one matching its grade: a Grade 2 class runs the
-          early track, Grades 3 and 4 the upper one. This is a {CORE_GRADE_LABEL}{" "}
-          program, and the product is built to be exactly that rather than to stretch.
-        </p>
-        <p className="mt-4 max-w-3xl text-[1.05rem] leading-relaxed text-ink">
-          Within those grades the boundary is enforced, not advertised: a class is offered
-          only the First Look track written for its grade, the core missions only if its
-          grade is inside the band, and a mission outside it cannot be assigned, listed for
-          a child, opened or resumed. Every mission card shows its grade band.
-        </p>
+
+        <div className="mt-6 grid max-w-3xl gap-3">
+          <Disclosure summary="Which grades a class can be created in">
+            <p>
+              <strong>Classes are created in {CORE_GRADE_LABEL}.</strong> First Look ships{" "}
+              {FIRST_LOOK_TOTAL_SESSIONS} sessions in two tracks because those are the two
+              reading levels the sessions are written for, and a class runs the{" "}
+              {FIRST_LOOK_SESSIONS_PER_CLASS} matching its grade: a Grade 2 class runs the{" "}
+              {FIRST_LOOK_TRACK_LABELS[0]} track, Grades 3 and 4 the{" "}
+              {FIRST_LOOK_TRACK_LABELS[1]} one. This is a {CORE_GRADE_LABEL} program, built
+              to be exactly that rather than to stretch.
+            </p>
+          </Disclosure>
+
+          <Disclosure summary="How the grade boundary is enforced">
+            <p>
+              Enforced, not advertised: a class is offered only the First Look track
+              written for its grade, the core missions only if its grade is inside the
+              band, and a mission outside it cannot be assigned, listed for a child, opened
+              or resumed. Every mission card shows its grade band.
+            </p>
+          </Disclosure>
+
+          <Disclosure summary="Family take-homes are free, with or without a subscription">
+            <p>
+              The one-page family take-home for every session and mission is a{" "}
+              <strong>free public resource</strong> and is not part of any plan. The pages
+              need no subscription, no account and no sign-in: they are ordinary links a
+              school can print, photocopy or send home, and they stay readable whether or
+              not the school has a current subscription. Nothing on them collects anything
+              from a family, which is the reason they work this way.
+            </p>
+            <p className="mt-3">
+              What a subscription buys is the classroom side: the missions and their
+              branches, the printable discussion guides, Classroom Mode and the educator
+              orientation. Those are licensed for the term. A school&rsquo;s own records —
+              rosters, class history, reports, exports, retention and deletion — are the
+              school&rsquo;s and stay reachable either way.
+            </p>
+            <p className="mt-3">
+              <ButtonLink href="/family/four-doors" variant="secondary">
+                Read a family take-home
+              </ButtonLink>
+            </p>
+          </Disclosure>
+
+          <Disclosure summary="What this demonstration build does not do">
+            <p>
+              It takes no payment details and stores no billing information. The plan
+              control in the administrator area records an intent to change and writes an
+              audit entry — nothing more. There is no payment processor behind it and no
+              card field anywhere in the product, and selecting a plan there does not
+              switch anything on.
+            </p>
+            <p className="mt-3">
+              It also runs a single school. Roster sync through Clever or ClassLink, single
+              sign-on, and reporting that rolls several schools into a district view are
+              deliberately deferred — named on the District card as production
+              requirements rather than listed as features, because an evaluator reading a
+              feature list is entitled to assume the features are there. Teachers enter
+              rosters by hand, staff sign in by email address with no password, and every
+              figure in the product is scoped to one school.
+            </p>
+          </Disclosure>
+        </div>
       </Section>
 
-      <Section tone="marigold" title="Free for families, subscription or not">
-        <p className="max-w-3xl text-[1.05rem] leading-relaxed text-ink">
-          The one-page family take-home for every session and mission is a{" "}
-          <strong>free public resource</strong> and is not part of any plan. The pages
-          need no subscription, no account and no sign-in: they are ordinary links a
-          school can print, photocopy or send home, and they stay readable whether or not
-          the school has a current subscription. Nothing on them collects anything from a
-          family, which is the reason they work this way.
-        </p>
-        <p className="mt-4 max-w-3xl text-[1.05rem] leading-relaxed text-ink">
-          What a subscription buys is the classroom side: the missions themselves and
-          their branches, the printable discussion guides, Classroom Mode and the educator
-          orientation. Those are licensed for the term. A school’s own records — rosters,
-          class history, reports, exports, retention and deletion — are the school’s and
-          stay reachable either way.
-        </p>
-        <p className="mt-4">
-          <ButtonLink href="/family/four-doors" variant="secondary">
-            Read a family take-home
-          </ButtonLink>
-        </p>
-      </Section>
-
-      <Section tone="grape" title="What this build does not do">
-        <p className="max-w-3xl text-[1.05rem] leading-relaxed text-ink">
-          This demonstration takes no payment details and stores no billing information.
-          The plan control in the administrator area records an intent to change and
-          writes an audit entry — nothing more. There is no payment processor behind it,
-          and there is no card field anywhere in the product. Selecting a plan there does
-          not switch anything on.
-        </p>
-        <p className="mt-4 max-w-3xl text-[1.05rem] leading-relaxed text-ink">
-          It also runs a single school. Roster sync through Clever or ClassLink, single
-          sign-on, and reporting that rolls several schools into a district view are all
-          deliberately deferred — they are named on the District card as production
-          requirements rather than listed as features, because an evaluator reading a
-          feature list is entitled to assume the features are there. Teachers enter
-          rosters by hand, staff sign in by email address with no password, and every
-          figure in the product is scoped to one school.
-        </p>
-      </Section>
     </>
   );
 }

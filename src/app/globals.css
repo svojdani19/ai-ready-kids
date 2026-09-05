@@ -85,6 +85,16 @@
 }
 
 @layer components {
+  /* The native marker duplicates the +, and Safari draws it outside the box. */
+  .ark-disclosure > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .ark-disclosure > summary {
+    list-style: none;
+  }
+
+
   /* Chunky "sticker" control used across the student experience. */
   .ark-sticker {
     box-shadow: var(--shadow-sticker);
@@ -141,6 +151,21 @@
 
   .ark-sticker:active:not(:disabled) {
     transform: none;
+  }
+}
+
+/*
+ * A closed disclosure is a reading choice, not a way to leave something out of
+ * the record. Everything folded away is unfolded for print, so a report a
+ * district files carries its own methodology.
+ */
+@media print {
+  details.ark-disclosure > *:not(summary) {
+    display: block !important;
+  }
+
+  details.ark-disclosure > summary {
+    list-style: none;
   }
 }
 
