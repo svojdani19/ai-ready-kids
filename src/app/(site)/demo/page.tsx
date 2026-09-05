@@ -16,36 +16,32 @@ const HIGHLIGHTS: { href: string; label: string; blurb: string }[] = [
   {
     href: "/teacher/classroom/sprocket-wants-to-know",
     label: "Classroom Mode",
-    blurb:
-      "The projector experience. Arrow keys drive it, 1/2/3 reveal what any branch does, Esc goes back to the choices. Nothing is recorded.",
+    blurb: "The projector experience. Nothing is recorded.",
   },
   {
     href: "/teacher/missions/the-penguin-on-the-playground",
     label: "Every branch, before you assign it",
-    blurb:
-      "The complete content of one mission in a single page, including the coach notes a student never sees.",
+    blurb: "A whole mission on one page, coach notes and all.",
   },
   {
     href: "/admin/report",
     label: "The annual school report",
-    blurb:
-      "Aggregate only, small groups suppressed, with CSV and JSON export. Suitable for a board packet.",
+    blurb: "Aggregate only, small groups suppressed. Board-packet ready.",
   },
   {
     href: "/admin/data",
     label: "Data and retention",
-    blurb:
-      "Everything collected, everything refused, and the date each class is deleted — before you click anything.",
+    blurb: "Everything collected, everything refused, and when it goes.",
   },
   {
     href: "/family/four-doors",
     label: "A family take-home",
-    blurb: "One page, plain language, no account. This is what goes home in a bag.",
+    blurb: "One page, plain language, no account.",
   },
   {
     href: "/join",
     label: "The real student route",
-    blurb: "Class code MAPLE-HERON-317, then tap a name. This is how a child actually gets in.",
+    blurb: "A class code, then tap a name. How a child actually gets in.",
   },
 ];
 
@@ -72,8 +68,8 @@ export default function DemoPage() {
 
       <Section
         tone="paper"
-        title="Worth looking at specifically"
-        lede="Once you are signed in as a teacher or administrator, these are the screens that show what the product is really for."
+        title="Worth a look"
+        lede="Teacher and administrator screens, once you are signed in."
       >
         <ul className="grid gap-4 md:grid-cols-2">
           {HIGHLIGHTS.map((h) => (
