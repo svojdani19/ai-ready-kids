@@ -24,7 +24,7 @@ export default function CurriculumPage() {
         eyebrow="Curriculum"
         tone="marigold"
         title="Twenty-seven missions for grades 2 to 4, and an introduction before them."
-        lede="The assessed program is twenty-seven authored missions written and reading-levelled for grades 2 to 4: three competencies, three named skills each, three missions per skill. A mission takes seven to nine minutes, ends with a printable family take-home, and shares a cast and a setting with all the others. Before any of it, First Look gives a class that has never been told what AI is three short sessions. It ships two reading levels — a grades 1 and 2 track and a grades 3 to 5 track — and within this program a Grade 2 class runs the early one while Grades 3 and 4 run the upper one."
+        lede="Twenty-seven authored missions for grades 2 to 4: three competencies, three skills each, three missions per skill. Before any of them, First Look introduces the idea in three short sessions. It ships two reading levels — a grades 1 and 2 track and a grades 3 to 5 track — and within this program a Grade 2 class runs the early one while Grades 3 and 4 run the upper one."
       >
         <div className="flex flex-wrap gap-3">
           <ButtonLink href="/demo">Play one in the demo</ButtonLink>
@@ -53,12 +53,11 @@ export default function CurriculumPage() {
                 {FOUNDATIONS_BY_TRACK[track.id].map((m) => (
                   <li key={m.id} className="rounded-2xl border-2 border-ink bg-surface p-4">
                     <p className="text-xs font-bold uppercase tracking-[0.1em] text-ink-faint">
-                      Session {m.order} · {m.estimatedMinutes} min
+                      Session {m.order}
                     </p>
                     <h4 className="mt-1.5 font-display text-lg leading-snug text-ink">
                       {m.title}
                     </h4>
-                    <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">{m.bigIdea}</p>
                   </li>
                 ))}
               </ul>
@@ -110,15 +109,11 @@ export default function CurriculumPage() {
                 {missions.map((m) => (
                   <li key={m.id} className="rounded-2xl border-2 border-ink bg-surface p-4">
                     <p className="text-xs font-bold uppercase tracking-[0.1em] text-ink-faint">
-                      Mission {m.order} · {m.estimatedMinutes} min
+                      Mission {m.order}
                     </p>
                     <h4 className="mt-1.5 font-display text-lg leading-snug text-ink">
                       {m.title}
                     </h4>
-                    <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">{m.teaser}</p>
-                    <p className="mt-3 text-xs font-semibold text-ink-faint">
-                      Badge: {m.badge.name}
-                    </p>
                   </li>
                 ))}
               </ul>
