@@ -15,8 +15,8 @@ export default function ApproachPage() {
       <PageHero
         eyebrow="How it works"
         tone="grape"
-        title="The first request for a home address should not be the first time a child has thought about it."
-        lede="Children are already meeting systems built for adults: on a sibling's tablet, on a parent's phone, in a smart speaker, inside a video game, and in a search box that now answers the question instead of helping them learn from it. No school can control that exposure. What a school can be is the place where the decision is formed first."
+        title="The first time it asks should not be the first time they think."
+        lede="Children already meet these systems: a sibling's tablet, a smart speaker, a search box that answers instead of teaching. No school controls that. A school can be where the decision is formed first."
       >
         <div className="flex flex-wrap gap-3">
           <ButtonLink href="/curriculum">Read the curriculum</ButtonLink>
