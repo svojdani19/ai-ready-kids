@@ -22,13 +22,37 @@ import {
   writeSession,
 } from "@/lib/auth/session";
 import { DEMO } from "@/lib/db/seed";
+import {
+  DEMO_LOCKED_MESSAGE,
+  demoPasswordIsValid,
+  demoUnlocked,
+  writeDemoUnlock,
+} from "@/lib/auth/demo-gate";
 
 export interface FormState {
   error?: string;
 }
 
+/**
+ * Type the demonstration password once; the three seats open for twelve hours.
+ *
+ * Checked on the server and answered the same way whether the password is
+ * wrong or the gate is off — there is nothing here worth telling an attacker,
+ * and a deployment with no password set never renders this form.
+ */
+export async function unlockDemo(_prev: FormState, formData: FormData): Promise<FormState> {
+  const supplied = String(formData.get("password") ?? "");
+  if (!supplied) return { error: "Enter the demonstration password." };
+  if (!demoPasswordIsValid(supplied)) return { error: "That password is not right." };
+  await writeDemoUnlock();
+  redirect("/signin");
+}
+
 /** One-click demo entry used by the landing page and the sign-in screen. */
 export async function enterDemo(role: "teacher" | "admin" | "student"): Promise<void> {
+  // The buttons are not rendered while the gate is locked, so this is the
+  // backstop for a form posted from a stale page or from outside the product.
+  if (!(await demoUnlocked())) redirect("/signin");
   const db = getDb();
   if (role === "student") {
     const student = getStudent(db, DEMO.studentId) ?? listStudents(db, DEMO.classId)[0];
@@ -55,6 +79,10 @@ export async function signInWithEmail(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
+  // Email sign-in reaches the same seats as the demo buttons, so gating one
+  // without the other would leave the door open beside the lock.
+  if (!(await demoUnlocked())) return { error: DEMO_LOCKED_MESSAGE };
+
   const email = String(formData.get("email") ?? "").trim();
   if (!email) return { error: "Enter your school email address." };
 

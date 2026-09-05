@@ -102,6 +102,36 @@ classes, 90 students and a year of fictional attempt history. Nothing to import.
    administrator. That is deliberate for a demo — it is what makes it explorable
    in ten seconds — and it means **the site password is the only access control**.
 
+## Two passwords, and what each one is for
+
+**`AIRK_SITE_PASSWORD`** decides whether the deployment answers at all. It is
+HTTP Basic auth in front of every route and every asset — nothing is served
+without it, not a stylesheet and not a chunk.
+
+**`AIRK_DEMO_PASSWORD`** decides whether answering makes you an administrator.
+Past it are the three demonstration seats, and everything an administrator can
+do: assign missions, rotate class codes, archive a class, delete records. On
+fictional data — but a visitor cannot know that until they have done it.
+
+They are separate because one link defeats only the first. Site credentials get
+forwarded, pasted into chats and read over shoulders; the second password is
+what stops the next person who receives them from being an administrator in one
+click.
+
+```bash
+railway variables --set "AIRK_DEMO_PASSWORD=choose-something-here"
+```
+
+Unset, the seats are open to anyone who can load the page. That is deliberate:
+it keeps local development and the test suite as they are, and it means a
+deployment has to ask for the gate rather than inherit it. **Neither password
+belongs in this repository, which is public.**
+
+Email sign-in is behind the same gate. It reaches the same seats, so gating the
+one-click buttons alone would have left the door open beside the lock. The
+student class-code route is *not* gated — that is the product, not the
+demonstration, and a child joining a real class must not need it.
+
 ## Automatic deploys
 
 **Live:** <https://ai-ready-kids-production.up.railway.app>, service

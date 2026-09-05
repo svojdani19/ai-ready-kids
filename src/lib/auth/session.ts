@@ -37,7 +37,7 @@ const JOIN_MAX_AGE_SECONDS = 60 * 10;
 
 export type { SessionValue };
 
-function signingKey(): Buffer {
+export function signingKey(): Buffer {
   const db = getDb();
   const existing = row<{ value: string }>(
     db.prepare("SELECT value FROM meta WHERE key = 'session_key'").get(),

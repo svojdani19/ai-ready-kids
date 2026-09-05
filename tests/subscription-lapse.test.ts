@@ -246,6 +246,10 @@ describe("every server action has a decision about the lapse gate", () => {
     completeCertificationAction: "orientation touches no classroom or child record",
     enterDemo: "sign-in",
     signInWithEmail: "sign-in",
+    unlockDemo:
+      "the demonstration's front door. A lapsed school is one of the things a " +
+      "reviewer is here to look at, and the lapse notice is behind this password " +
+      "like everything else",
     signOut: "sign-out must always work",
   };
 

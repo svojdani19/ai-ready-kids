@@ -5,7 +5,8 @@ import { listAttemptsForStudent } from "@/lib/repo/progress";
 import { summarizeStudent } from "@/lib/domain/evidence";
 import { DEMO } from "@/lib/db/seed";
 import { enterDemo } from "@/app/actions/auth";
-import { Button } from "./ui/Button";
+import { Button, ButtonLink } from "./ui/Button";
+import { demoGateEnabled, demoUnlocked } from "@/lib/auth/demo-gate";
 
 /**
  * Three one-click entries so a reviewer never hunts for credentials. The
@@ -13,6 +14,23 @@ import { Button } from "./ui/Button";
  * so they cannot drift out of step with the demo data.
  */
 export async function DemoEntry({ compact = false }: { compact?: boolean }) {
+  // A locked gate renders no seat buttons at all. Showing three buttons that
+  // bounce to the sign-in page would be a worse answer than saying so.
+  if (demoGateEnabled() && !(await demoUnlocked())) {
+    return (
+      <div className="rounded-xl border-2 border-sand-deep bg-surface p-5">
+        <h3 className="font-display text-lg text-ink">The seats are password protected</h3>
+        <p className="mt-1.5 max-w-prose text-sm leading-relaxed text-ink-soft">
+          Everything past this point can assign missions, rotate class codes, archive a
+          class and delete records. Whoever shared this link has the password.
+        </p>
+        <ButtonLink href="/signin" size="sm" className="mt-4">
+          Enter the password
+        </ButtonLink>
+      </div>
+    );
+  }
+
   const db = getDb();
 
   const student = getStudent(db, DEMO.studentId) ?? listStudents(db, DEMO.classId)[0];

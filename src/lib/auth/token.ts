@@ -49,6 +49,56 @@ export interface JoinGrant {
   exp: number;
 }
 
+/**
+ * Proof that this browser typed the demonstration password.
+ *
+ * A separate cookie from the session on purpose: it authorizes *entering* the
+ * demo, not being anybody in it. Signing out drops the session and leaves this
+ * one, so a reviewer can move between the three seats without retyping.
+ */
+export interface DemoUnlock {
+  kind: "demo";
+  /** Unix seconds. */
+  exp: number;
+  /**
+   * A fingerprint of the password this was issued against.
+   *
+   * Without it, changing `AIRK_DEMO_PASSWORD` left every cookie already handed
+   * out working for the rest of its twelve hours — so rotating the password
+   * after a link spread further than intended would not have taken anything
+   * back. The product makes exactly this promise about class codes and keeps
+   * it; this now keeps it too.
+   */
+  pw: string;
+}
+
+export function encodeDemoUnlock(key: Buffer, unlock: DemoUnlock): string {
+  const payload = Buffer.from(JSON.stringify(unlock), "utf8").toString("base64url");
+  return `${payload}.${signPayload(key, payload)}`;
+}
+
+export function decodeDemoUnlock(
+  key: Buffer,
+  token: string | undefined,
+  now: number,
+): DemoUnlock | null {
+  if (!token) return null;
+  const [payload, signature] = token.split(".");
+  if (!payload || !signature) return null;
+  const expected = signPayload(key, payload);
+  const given = Buffer.from(signature, "utf8");
+  const want = Buffer.from(expected, "utf8");
+  if (given.length !== want.length || !timingSafeEqual(given, want)) return null;
+  try {
+    const value = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as DemoUnlock;
+    if (value?.kind !== "demo" || typeof value.exp !== "number") return null;
+    if (typeof value.pw !== "string" || !value.pw) return null;
+    return value.exp > now ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 export function encodeJoinGrant(key: Buffer, grant: JoinGrant): string {
   const payload = Buffer.from(JSON.stringify(grant), "utf8").toString("base64url");
   return `${payload}.${signPayload(key, payload)}`;

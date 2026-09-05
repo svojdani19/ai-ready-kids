@@ -7,6 +7,8 @@ import { DemoEntry } from "@/components/DemoEntry";
 import { Note } from "@/components/ui/Bits";
 import { ButtonLink } from "@/components/ui/Button";
 import { SignInForm } from "./SignInForm";
+import { DemoUnlockForm } from "./DemoUnlockForm";
+import { demoGateEnabled, demoUnlocked } from "@/lib/auth/demo-gate";
 
 export const metadata: Metadata = { title: "Educator sign in" };
 
@@ -21,6 +23,9 @@ export default async function SignInPage() {
   const db = getDb();
   const school = getPrimarySchool(db);
   const staff = listUsers(db, school.id);
+  // One question, whether or not this deployment sets a password: `demoUnlocked`
+  // is true when the gate is off, so no caller has to check two things.
+  const locked = demoGateEnabled() && !(await demoUnlocked());
 
   return (
     <div className="flex min-h-dvh flex-col bg-paper">
@@ -42,25 +47,42 @@ export default async function SignInPage() {
             <p className="mt-2 text-[0.95rem] leading-relaxed text-ink-soft">
               {school.name} · {school.district}
             </p>
-            <div className="mt-6">
-              <SignInForm />
-            </div>
-            <Note tone="neutral" title="Why there is no password" >
-              This MVP authenticates by email only, on purpose. A real deployment signs
-              in through your district identity provider rather than introducing another
-              credential for staff to manage.
-            </Note>
+            <div className="mt-6">{locked ? <DemoUnlockForm /> : <SignInForm />}</div>
+            {locked ? (
+              <Note tone="neutral" title="What this password is">
+                It opens the demonstration school, and it is not a staff credential.
+                Everything past it &mdash; assigning missions, rotating class codes,
+                archiving a class, deleting records &mdash; is an administrator&rsquo;s to
+                do, on a school where every person is fictional.
+              </Note>
+            ) : (
+              <Note tone="neutral" title="Why there is no password">
+                This MVP authenticates by email only, on purpose. A real deployment signs
+                in through your district identity provider rather than introducing another
+                credential for staff to manage.
+              </Note>
+            )}
           </div>
 
           <div>
-            <h2 className="font-display text-xl text-ink">Or jump straight in</h2>
+            <h2 className="font-display text-xl text-ink">
+              {locked ? "What is behind it" : "Or jump straight in"}
+            </h2>
             <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
-              Three seats, one click each, already populated with a full school year.
+              {locked
+                ? "Three seats — student, teacher and administrator — at a fictional school with a full year of fictional data."
+                : "Three seats, one click each, already populated with a full school year."}
             </p>
-            <div className="mt-5">
-              <DemoEntry compact />
-            </div>
+            {!locked && (
+              <div className="mt-5">
+                <DemoEntry compact />
+              </div>
+            )}
 
+            {/* The staff list is the sign-in credential. It stays behind the
+                password with everything else it opens. */}
+            {!locked && (
+              <>
             <h3 className="mt-9 font-display text-lg text-ink">Staff at this school</h3>
             <ul className="mt-3 divide-y divide-sand rounded-xl border border-sand-deep bg-surface">
               {staff.map((u) => (
@@ -75,6 +97,8 @@ export default async function SignInPage() {
                 </li>
               ))}
             </ul>
+              </>
+            )}
           </div>
         </div>
       </main>
