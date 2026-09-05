@@ -44,11 +44,6 @@ export default function LandingPage() {
                 Read the curriculum
               </ButtonLink>
             </div>
-            <p className="mt-6 max-w-lg rounded-xl border-2 border-grape bg-grape-wash px-4 py-3 text-sm leading-relaxed text-ink">
-              <strong className="font-bold text-grape-deep">No chatbot, ever.</strong>{" "}
-              Students never type into a generative model and never see one respond. Every
-              word a child reads here was authored in advance.
-            </p>
           </div>
 
           <HeroScenes panels={HERO_PANELS} />
@@ -101,18 +96,6 @@ export default function LandingPage() {
                 trusted or verified. Schools and families alike build with students rather
                 than respond to engagement failures.
               </p>
-              <p className="mt-3 max-w-xl text-[1.05rem] leading-relaxed text-ink-soft">
-                Your students learn what these tools are, how to use one well and when to
-                decline &mdash; before they ever turn a thought into a prompt. The
-                decisions come first, so the habit is already there the day a real tool
-                asks them for something.
-              </p>
-              <p className="mt-3 max-w-xl text-[1.05rem] leading-relaxed text-ink-soft">
-                Teachers and families build that with them rather than watching for it.
-                Every mission sends home a page in plain language, and you see which of
-                nine named skills a child has shown. Nothing generative runs in this
-                product: no model improvising at a child, and no behavior to track.
-              </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <ButtonLink href="/approach" variant="secondary">
                   How it works
@@ -124,6 +107,10 @@ export default function LandingPage() {
             </div>
             <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
               {[
+                [
+                  "No chatbot, ever",
+                  "Students never type into a generative model and never see one respond. Every word a child reads here was authored in advance.",
+                ],
                 [
                   "A class code, not a child's password",
                   "Shared classroom access: whoever holds the code can see that roster and open any listed child's progress. Rotate it when it travels. Roster sync and single sign-on are not built here.",

@@ -69,6 +69,13 @@ one.
 | "See all 27 missions →" | "See All the Missions →" |
 | "What this means for your school" | "What this is, and what this is not" |
 | — | new opening paragraph: "AI Ready Kids is not another prompt tool. It is the tool BEFORE the prompt…" |
+| the two paragraphs that followed it | removed — the new one says what they said |
+| the purple "No chatbot, ever" callout in the hero | moved verbatim into the first inset box beside that heading |
+
+The last two came after the first pass and are the reason the section reads as
+one claim now rather than three overlapping ones. The chatbot promise did not
+lose a word; it moved from a coloured box in the hero to the top of the list of
+what this is and is not, which is where a reader looking for it now goes.
 
 ## Acceptance evidence
 

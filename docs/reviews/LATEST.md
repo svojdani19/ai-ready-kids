@@ -47,7 +47,10 @@ Playground** (verification, playground), **The Practice That Got Skipped**
 "Three things, practiced nine ways" → **"The Fundamentals"**; the "9 missions"
 eyebrow removed from each competency card; "See all 27 missions" → **"See All
 the Missions"**; "What this means for your school" → **"What this is, and what
-this is not"**, with a new opening paragraph on what the product is not.
+this is not"**, with a new opening paragraph on what the product is not — and
+then the two paragraphs it overlapped were cut, so the section makes one claim
+instead of three. The purple **"No chatbot, ever"** callout moved out of the
+hero and into the first inset box beside that heading, word for word.
 
 ### Evidence
 
