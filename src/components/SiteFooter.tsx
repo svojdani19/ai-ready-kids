@@ -8,12 +8,6 @@ export function SiteFooter() {
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-5 py-10 sm:flex-row sm:items-start sm:justify-between">
         <div className="max-w-sm">
           <Logo />
-          <p className="mt-3 text-sm leading-relaxed text-ink-soft">
-            Practice before exposure. An annual subscription for elementary schools that
-            gives {CORE_GRADE_LABEL} rehearsed decisions about AI, and gives their school
-            something honest to report. First Look introduces the idea in a grades 1 and 2
-            track and a grades 3 to 5 track.
-          </p>
         </div>
         <nav aria-label="Footer" className="grid gap-x-10 gap-y-6 sm:grid-cols-2">
           {[
@@ -59,8 +53,8 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-sand-deep px-5 py-4">
         <p className="mx-auto max-w-6xl text-xs leading-relaxed text-ink-faint">
-          Demonstration build. All schools, staff and students shown in this product are
-          fictional. AI Ready Kids describes its own data practices and is not a legal
+          Demonstration build of an annual subscription for {CORE_GRADE_LABEL}. All
+          schools, staff and students shown in this product are fictional. AI Ready Kids describes its own data practices and is not a legal
           compliance certification.
         </p>
       </div>

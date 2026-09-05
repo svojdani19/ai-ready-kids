@@ -112,16 +112,20 @@ export default function LandingPage() {
                   "Students never type into a generative model and never see one respond. Every word a child reads here was authored in advance.",
                 ],
                 [
+                  "No information sharing, ever",
+                  "Nothing a child does leaves this product: no analytics, no third-party services, nothing sold and nothing shared. The only name it holds is a first name and a last initial, typed by the teacher.",
+                ],
+                [
+                  "No surveillance, ever",
+                  "No camera, no microphone, no location, no ads and no trackers, anywhere in the product.",
+                ],
+                [
                   "A class code, not a child's password",
                   "Shared classroom access: whoever holds the code can see that roster and open any listed child's progress. Rotate it when it travels. Roster sync and single sign-on are not built here.",
                 ],
                 [
                   "Evidence, not surveillance",
                   "You see which of nine named skills a child has shown. Never a timer, a keystroke or a risk score.",
-                ],
-                [
-                  "It never asks for a permission",
-                  "No camera, no microphone, no location, no ads and no trackers, anywhere in the product.",
                 ],
               ].map(([t, b]) => (
                 <li key={t} className="rounded-2xl border-2 border-ink bg-surface px-4 py-3">
