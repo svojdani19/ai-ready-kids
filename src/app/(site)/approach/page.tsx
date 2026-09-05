@@ -16,7 +16,7 @@ export default function ApproachPage() {
         eyebrow="How it works"
         tone="grape"
         title="The first time it asks should not be the first time they think."
-        lede="Children already meet these systems: a sibling's tablet, a smart speaker, a search box that answers instead of teaching. No school controls that. A school can be where the decision is formed first."
+        lede="Children already meet these systems: a sibling's tablet, a smart speaker, a search box that answers instead of teaching. No school controls that, but a school can be where the decision is formed first."
       >
         <div className="flex flex-wrap gap-3">
           <ButtonLink href="/curriculum">Read the curriculum</ButtonLink>
@@ -51,7 +51,6 @@ export default function ApproachPage() {
       <Section
         tone="paper"
         title="Why it is authored, not generated"
-        lede="Every branch, every piece of feedback and every character line ships with the build. Nothing is produced at run time."
       >
         <div className="grid gap-4 md:grid-cols-2">
           {[
