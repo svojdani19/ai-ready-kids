@@ -102,6 +102,35 @@ classes, 90 students and a year of fictional attempt history. Nothing to import.
    administrator. That is deliberate for a demo — it is what makes it explorable
    in ten seconds — and it means **the site password is the only access control**.
 
+## Automatic deploys
+
+**Live:** <https://ai-ready-kids-production.up.railway.app>, service
+`ai-ready-kids` in the Railway project `rare-emotion`.
+
+A push to `main` builds and deploys on its own. Two things have to be true for
+that, and **both were silently false once already** — a push landed on GitHub,
+Railway never noticed, and the live site sat on a two-day-old build while
+everything locally looked fine:
+
+1. **The Railway GitHub App is installed on the account with access to this
+   repo.** Check at <https://github.com/settings/installations>. It is scoped to
+   `svojdani19/ai-ready-kids` alone, so adding a second Railway project means
+   granting that repo too. When this is missing, Railway's service settings say
+   **"GitHub Repo not found"** under *Branch connected to production*, and the
+   repo picker there lists nothing at all.
+2. **Auto-deploy is enabled for the branch.** Service → **Settings** → *Source*.
+   It should read **"Auto deploys when pushed to GitHub"**; if it reads *"Auto
+   deploy is disabled"*, press **Enable**. Reconnecting the repo does not turn
+   this on by itself.
+
+Enabling it does not deploy whatever is already on `main` — it takes effect from
+the next push. To check the wiring end to end, push a commit and watch a new
+build appear under **Deployments** labelled *via GitHub*.
+
+Deploying is not the same as being online: the trial banner in the Railway
+dashboard is a real deadline, and the service stops when the credit runs out
+regardless of what is pushed.
+
 ## Resetting the demo
 
 Visitors can change things: assign missions, add students, rotate codes, delete
